@@ -11,6 +11,20 @@ export function registerSceneConfigHook(): void {
   Hooks.on(
     "renderSceneConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
+      // Debug: log what v14 passes so we can target the right selector.
+      const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
+      console.log("isoroll | renderSceneConfig fired");
+      console.log("isoroll | data-tab elements found:", $html.find("[data-tab]").length);
+      console.log(
+        "isoroll | tab names:",
+        $html
+          .find("[data-tab]")
+          .map((_: number, el: HTMLElement) => el.getAttribute("data-tab"))
+          .get(),
+      );
+      console.log("isoroll | form elements found:", $html.find("form").length);
+      console.log("isoroll | html snippet:", $html[0]?.outerHTML?.substring(0, 300));
+
       const enabled = app.document.getFlag(MODULE_ID, "enabled") ?? false;
       const label = game.i18n.localize("ISOROLL.SceneConfig.Enable");
       const hint = game.i18n.localize("ISOROLL.SceneConfig.EnableHint");
@@ -24,26 +38,18 @@ export function registerSceneConfigHook(): void {
           <p class="hint">${hint}</p>
         </div>`;
 
-      // Prefer the Basics tab (Foundry v14 AppV2 naming).
-      // Fall back to "basic" (older versions), then any section.tab, then the form body.
+      // Try every known tab selector; fall back to appending to the form.
       const tab =
-        html.find('[data-tab="basics"]').first() ||
-        html.find('[data-tab="basic"]').first() ||
-        html.find("section.tab").first() ||
-        html.find("form").first();
+        $html.find('[data-tab="basics"]').first().length
+          ? $html.find('[data-tab="basics"]').first()
+          : $html.find('[data-tab="basic"]').first().length
+            ? $html.find('[data-tab="basic"]').first()
+            : $html.find("section.tab, div.tab").first().length
+              ? $html.find("section.tab, div.tab").first()
+              : $html.find("form");
 
-      if (tab.length) {
-        // Append at end of first fieldset inside the tab, or directly to tab.
-        const fieldset = tab.find("fieldset, .form-group").first();
-        if (fieldset.length) {
-          fieldset.parent().append(field);
-        } else {
-          tab.append(field);
-        }
-      } else {
-        // Absolute fallback: append anywhere visible in the form.
-        html.find("form").append(field);
-      }
+      tab.append(field);
+      console.log("isoroll | injected into:", tab[0]?.tagName, tab[0]?.getAttribute("data-tab"));
     },
   );
 }
