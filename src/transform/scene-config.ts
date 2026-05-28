@@ -5,26 +5,14 @@ import { MODULE_ID } from "../volume/flags";
  * Stored as scene flag: flags.isoroll.enabled (boolean).
  * Foundry's form submission handles persisting the flag automatically.
  *
- * Handles both Foundry v14 AppV2 ("basics") and older tab naming ("basic").
+ * In v14 AppV2, html IS the <form> element. Tab navigation links and content
+ * sections both carry data-tab attributes — target section/div elements only.
  */
 export function registerSceneConfigHook(): void {
   Hooks.on(
     "renderSceneConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
-      // Debug: log what v14 passes so we can target the right selector.
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      console.log("isoroll | renderSceneConfig fired");
-      console.log("isoroll | data-tab elements found:", $html.find("[data-tab]").length);
-      console.log(
-        "isoroll | tab names:",
-        $html
-          .find("[data-tab]")
-          .map((_: number, el: HTMLElement) => el.getAttribute("data-tab"))
-          .get(),
-      );
-      console.log("isoroll | form elements found:", $html.find("form").length);
-      console.log("isoroll | html snippet:", $html[0]?.outerHTML?.substring(0, 300));
-
       const enabled = app.document.getFlag(MODULE_ID, "enabled") ?? false;
       const label = game.i18n.localize("ISOROLL.SceneConfig.Enable");
       const hint = game.i18n.localize("ISOROLL.SceneConfig.EnableHint");
@@ -38,18 +26,18 @@ export function registerSceneConfigHook(): void {
           <p class="hint">${hint}</p>
         </div>`;
 
-      // Try every known tab selector; fall back to appending to the form.
-      const tab =
-        $html.find('[data-tab="basics"]').first().length
-          ? $html.find('[data-tab="basics"]').first()
-          : $html.find('[data-tab="basic"]').first().length
-            ? $html.find('[data-tab="basic"]').first()
-            : $html.find("section.tab, div.tab").first().length
-              ? $html.find("section.tab, div.tab").first()
-              : $html.find("form");
+      // Target content sections only (not nav <a> elements which also carry data-tab).
+      const basics =
+        $html.find('section[data-tab="basics"]').first().length
+          ? $html.find('section[data-tab="basics"]').first()
+          : $html.find('div[data-tab="basics"]').first().length
+            ? $html.find('div[data-tab="basics"]').first()
+            : $html.find('section.tab, div.tab').first().length
+              ? $html.find('section.tab, div.tab').first()
+              : null;
 
-      tab.append(field);
-      console.log("isoroll | injected into:", tab[0]?.tagName, tab[0]?.getAttribute("data-tab"));
+      // html is already the <form> — append directly if no tab panel found.
+      (basics ?? $html).append(field);
     },
   );
 }
