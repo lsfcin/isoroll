@@ -77,10 +77,13 @@ export class CanvasTransform {
     const paddingX = scene.width * (scene.padding ?? 0);
     const paddingY = scene.height * (scene.padding ?? 0);
 
+    // world_scaleX = local_scaleX × 4/√10  (derived from stage×counter-rotation matrix).
+    // Invert to get local_scaleX = orig.scaleX × √10/4 so world scale = original.
+    const factor = Math.sqrt(10) / 4;
     (bg as unknown as PIXI.Sprite).anchor?.set(0.5, 0.5);
     bg.rotation = reverseRotation;
     bg.skew.set(reverseSkewX, reverseSkewY);
-    bg.scale.set(orig.scaleX, orig.scaleX * ratio);
+    bg.scale.set(orig.scaleX * factor, orig.scaleX * ratio * factor);
     bg.position.set(scene.width / 2 + paddingX, scene.height / 2 + paddingY);
   }
 
