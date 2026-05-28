@@ -84,17 +84,22 @@
 - [x] `canvasReady` + `updateScene` hooks
 - [x] Enable/disable per scene via flag
 
-### Phase 2 — Object Counter-Transform ❌ REMOVED
+### Phase 2 — Object Counter-Transform ✅ DONE
 
-Counter-transforms (reverse rotation/skew, √2 scale, custom anchors) were removed.
-The stage transform alone is sufficient; per-mesh distortions looked bad with isometric art
-and added complexity without value. Art pipeline produces sprites for the raw transformed stage.
+- [x] `refreshToken` / `refreshTile` hooks with scale-guard flags
+- [x] Token counter-transform: `anchor(0.5,0.5)`, rotation locked to `reverseRotation` (auto-facing suppressed)
+- [x] Tile counter-transform: uniform scale `max(docW,docH)/max(texW,texH)` — preserves aspect ratio
+- [x] TokenHUD repositioned via `renderTokenHUD` hook with correct HUD-container-space math
+- [x] `DIMETRIC_2_1` constants shared via `constants.ts`
+- ⏳ Token 8-directional sprite selection (TODO placeholder in `object-transform.ts`) → Phase Future/Multiview
 
-### Phase 2.5 — Scene Config UI ✅ DONE
+### Phase 2.5 — Config UI ✅ DONE
 
-- [x] "Enable Isoroll" checkbox in Scene Config → Basics tab
+- [x] "Enable Isoroll" + "Transform Background" in Scene Config (Isoroll tab)
+- [x] "Transform Token" in Token Config (Isoroll tab)
+- [x] "Transform Tile" in Tile Config (Isoroll tab)
 - [x] pt-BR language support
-- [x] Foundry AppV2 injection (see CONTEXT.md §Gotchas)
+- [x] Foundry AppV2 tab injection (see `/foundry` skill)
 
 ### Phase 3 — Volume Handles (Gizmos) 🔲 PENDING
 
