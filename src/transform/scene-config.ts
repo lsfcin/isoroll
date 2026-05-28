@@ -60,6 +60,13 @@ export function registerSceneConfigHook(): void {
       } else {
         target.prepend(block);
       }
+
+      // Uncheck transformBackground automatically when enabled is unchecked.
+      $html.on("change", `input[name="flags.${MODULE_ID}.enabled"]`, (event) => {
+        if (!(event.target as HTMLInputElement).checked) {
+          $html.find(`input[name="flags.${MODULE_ID}.transformBackground"]`).prop("checked", false);
+        }
+      });
     },
   );
 }
