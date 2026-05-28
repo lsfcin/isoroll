@@ -63,8 +63,12 @@ export class ObjectTransform {
     ObjectTransform.applyTokenCounter(mesh, flags);
   }
 
-  // Reposition the TokenHUD DOM overlay using the stage's world matrix so it tracks
-  // the token's actual screen position under the isometric stage transform.
+  // Reposition the TokenHUD DOM overlay to track the token under the isometric stage transform.
+  //
+  // The #hud container is positioned at canvas.primary.getGlobalPosition() and scaled by zoom
+  // (no rotation). CSS left/top within it are in "canvas units × zoom" space, so raw screen
+  // coords are wrong. The correct formula drops tx/ty and divides by zoom — which reduces to
+  // the pure projection: L = cos(HudAngle)*(cx+cy), T = sin(HudAngle)*(cy-cx).
   private static onRenderTokenHUD(
     hud: { object: unknown },
     html: JQuery | HTMLElement,
@@ -75,11 +79,12 @@ export class ObjectTransform {
     requestAnimationFrame(() => {
       const center = (token.center ?? { x: token.x, y: token.y }) as { x: number; y: number };
       const m = canvas.app?.stage?.worldTransform;
+      const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
       if (!m) return;
-      const sx = m.a * center.x + m.c * center.y + m.tx;
-      const sy = m.b * center.x + m.d * center.y + m.ty;
+      const L = (m.a * center.x + m.c * center.y) / zoom;
+      const T = (m.b * center.x + m.d * center.y) / zoom;
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      $html.css({ left: `${sx}px`, top: `${sy}px`, transform: "translate(-50%, -50%)" });
+      $html.css({ left: `${L}px`, top: `${T}px`, transform: "translate(-50%, -50%)" });
     });
   }
 
