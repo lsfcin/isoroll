@@ -1,12 +1,13 @@
 /**
- * Token occlusion by tile 3D volumes.
+ * Tile occlusion fade when a token stands behind the tile's 3D volume.
  *
- * A tile occludes a token when all three conditions hold:
- *   1. Tile depth-sort key > token depth-sort key  (tile is "in front")
- *   2. Tile and token screen footprints overlap (XY AABB intersection)
- *   3. Tile z-range [baseElev, baseElev + height] intersects token z-range
+ * Tile fades (not token) when ALL hold:
+ *   1. Tile sort key > token sort key  (tile is "in front" of token)
+ *   2. Tile and token screen-space AABB overlap
+ *   3. Tile z-range [baseElev, baseElev+height] intersects token z-range
  *
- * Occluded tokens fade to configurable opacity (default 0.2).
+ * Occluding tiles fade to configurable opacity (default 0.2).
+ * Transition is instant — PIXI alpha set directly.
  */
 
 import { MODULE_ID, VolumeFlags } from "../volume/flags";
@@ -17,55 +18,58 @@ export class Occluder {
     Hooks.on("refreshToken", Occluder.evaluateAll);
     Hooks.on("updateToken", Occluder.evaluateAll);
     Hooks.on("updateTile", Occluder.evaluateAll);
+    Hooks.on("createToken", Occluder.evaluateAll);
+    Hooks.on("deleteToken", Occluder.evaluateAll);
   }
 
   private static evaluateAll(): void {
-    const tokens = canvas.tokens?.placeables ?? [];
-    for (const token of tokens) {
-      Occluder.evaluateToken(token);
+    const tiles = canvas.tiles?.placeables ?? [];
+    for (const tile of tiles) {
+      Occluder.evaluateTile(tile);
     }
   }
 
-  private static evaluateToken(token: Token): void {
-    const occluded = Occluder.isOccluded(token);
-    const targetAlpha = occluded
+  private static evaluateTile(tile: Tile): void {
+    const hiding = Occluder.hasTokenBehind(tile);
+    const targetAlpha = hiding
       ? ((game.settings.get(MODULE_ID, "occlusionOpacity") as number) ?? 0.2)
       : 1.0;
 
-    if (token.mesh) {
-      token.mesh.alpha = targetAlpha;
+    if (tile.mesh) {
+      tile.mesh.alpha = targetAlpha;
     }
   }
 
-  private static isOccluded(token: Token): boolean {
-    const tiles = canvas.tiles?.placeables ?? [];
+  private static hasTokenBehind(tile: Tile): boolean {
+    const tokens = canvas.tokens?.placeables ?? [];
     const gridSize = canvas.grid?.size ?? 100;
 
-    const tokenKey = DepthSorter.sortKey(
-      token.x / gridSize,
-      token.y / gridSize,
-      token.document.elevation ?? 0,
+    const tileKey = DepthSorter.sortKey(
+      tile.x / gridSize,
+      tile.y / gridSize,
+      VolumeFlags.getTileBaseElevation(tile.document),
     );
-    const tokenZBase = token.document.elevation ?? 0;
-    const tokenZTop = tokenZBase + VolumeFlags.getTokenHeight(token.document);
-    const tokenBounds = token.bounds;
+    const tileZBase = VolumeFlags.getTileBaseElevation(tile.document);
+    const tileZTop = tileZBase + VolumeFlags.getTileHeight(tile.document);
+    const tileBounds = tile.bounds;
 
-    for (const tile of tiles) {
-      const tileKey = DepthSorter.sortKey(
-        tile.x / gridSize,
-        tile.y / gridSize,
-        VolumeFlags.getTileBaseElevation(tile.document),
+    for (const token of tokens) {
+      const tokenKey = DepthSorter.sortKey(
+        token.x / gridSize,
+        token.y / gridSize,
+        token.document.elevation ?? 0,
       );
 
+      // tile must be in front of the token
       if (tileKey <= tokenKey) continue;
 
-      const tileZBase = VolumeFlags.getTileBaseElevation(tile.document);
-      const tileZTop = tileZBase + VolumeFlags.getTileHeight(tile.document);
+      const tokenZBase = token.document.elevation ?? 0;
+      const tokenZTop = tokenZBase + VolumeFlags.getTokenHeight(token.document);
 
       const zOverlap = tokenZBase < tileZTop && tokenZTop > tileZBase;
       if (!zOverlap) continue;
 
-      const tileBounds = tile.bounds;
+      const tokenBounds = token.bounds;
       const xyOverlap =
         tokenBounds.right > tileBounds.left &&
         tokenBounds.left < tileBounds.right &&
