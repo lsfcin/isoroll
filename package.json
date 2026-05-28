@@ -10,7 +10,7 @@
     "format": "prettier --write src/**/*.ts styles/**/*.scss"
   },
   "devDependencies": {
-    "@league-of-foundry-developers/foundry-vtt-types": "^10.0.0",
+    "@league-of-foundry-developers/foundry-vtt-types": "13.346.0-beta.20250812191140",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",

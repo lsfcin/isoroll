@@ -1,0 +1,14 @@
+{
+  "ISOROLL": {
+    "Settings": {
+      "DefaultTokenHeight": {
+        "Name": "Altura Padrão do Token",
+        "Hint": "Altura padrão da caixa de colisão (em unidades de grade) para tokens sem flag de altura definida."
+      },
+      "OcclusionOpacity": {
+        "Name": "Opacidade de Oclusão",
+        "Hint": "Valor de transparência para tokens ocluídos atrás de um volume de tile (0 = invisível, 1 = sem efeito)."
+      }
+    }
+  }
+}

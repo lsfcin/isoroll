@@ -1,4 +1,4 @@
-import "./styles/isoroll.scss";
+import "../styles/isoroll.scss";
 import { registerVolumeSettings } from "./volume/settings";
 import { VolumeFlags } from "./volume/flags";
 import { DepthSorter } from "./sorter/depth-sorter";

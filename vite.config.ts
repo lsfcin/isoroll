@@ -13,13 +13,16 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        assetFileNames: "[name][extname]",
+        assetFileNames: (assetInfo) =>
+          assetInfo.names?.some((n) => n.endsWith(".css")) ? "styles.css" : "[name][extname]",
       },
     },
   },
   css: {
     preprocessorOptions: {
-      scss: {},
+      scss: {
+        api: "modern-compiler",
+      },
     },
   },
 });
