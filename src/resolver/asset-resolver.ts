@@ -42,6 +42,8 @@ const STANCE_FALLBACK: Partial<Record<Stance, Stance>> = {
   evade: "ready",
   endure: "ready",
   hurt: "ready",
+  prone: "idle",
+  dead: "idle",
   sneak: "idle",
   fly: "idle",
   talk: "idle",
