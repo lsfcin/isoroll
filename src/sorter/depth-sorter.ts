@@ -13,7 +13,7 @@ export class DepthSorter {
     Hooks.on("refreshTile", DepthSorter.onRefresh);
   }
 
-  static sortKey(gridX: number, gridY: number, elevation: number): number {
+  private static sortKey(gridX: number, gridY: number, elevation: number): number {
     const gridSize = canvas.grid?.size ?? 100;
     return gridX + gridY + elevation / gridSize;
   }

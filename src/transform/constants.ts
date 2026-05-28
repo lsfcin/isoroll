@@ -7,7 +7,7 @@ export interface IsoProjection {
   readonly reverseRotation: number;
   readonly reverseSkewX: number;
   readonly reverseSkewY: number;
-  /** Vertical stretch ratio applied to counter-transformed sprites. */
+  /** Vertical stretch factor for the background counter-transform. */
   readonly ratio: number;
 }
 

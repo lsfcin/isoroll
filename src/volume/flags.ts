@@ -19,11 +19,6 @@ export interface TileVolumeFlags {
 }
 
 export class VolumeFlags {
-  static register(): void {
-    // Extend CONFIG so other modules can read our flag schema
-    // Actual per-document flags set via token/tile config sheets (future UI)
-  }
-
   static getTokenHeight(token: TokenDocument): number {
     return (token.getFlag(MODULE_ID, "boundHeight") as number | undefined) ?? 1;
   }

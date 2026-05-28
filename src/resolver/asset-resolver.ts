@@ -5,6 +5,8 @@
  * Future: accept facing parameter driven by token movement direction.
  */
 
+import { MODULE_ID } from "../volume/flags";
+
 export type Facing = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" | "TOP";
 export type Stance =
   | "idle"
@@ -24,14 +26,10 @@ export type Stance =
   | "talk";
 
 const DEFAULT_FACING: Facing = "SE";
-const ASSET_BASE = "modules/isoroll/assets";
+const ASSET_BASE = `modules/${MODULE_ID}/assets`;
 const EXT = "png";
 
-/**
- * Fallback chain per stance. Combat-adjacent stances fall back to ready,
- * which falls back to idle. Terminal stances (prone, dead) have no fallback
- * — they represent unique physical states that idle would misrepresent.
- */
+// Combat-adjacent stances fall back to ready → idle. prone/dead fall back to idle.
 const STANCE_FALLBACK: Partial<Record<Stance, Stance>> = {
   ready: "idle",
   attack: "ready",

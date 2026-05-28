@@ -17,40 +17,39 @@ export class CanvasTransform {
     Hooks.on("updateScene", CanvasTransform.onUpdateScene);
   }
 
-  static isEnabled(): boolean {
+  private static isEnabled(): boolean {
     return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
   }
 
-  static isBackgroundTransformEnabled(): boolean {
+  private static isBackgroundTransformEnabled(): boolean {
     return canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true;
   }
 
-  static apply(): void {
+  private static apply(): void {
     const stage = canvas.app?.stage;
     if (!stage) return;
     stage.rotation = DIMETRIC_2_1.rotation;
     stage.skew.set(DIMETRIC_2_1.skewX, DIMETRIC_2_1.skewY);
   }
 
-  static reset(): void {
+  private static reset(): void {
     const stage = canvas.app?.stage;
     if (!stage) return;
     stage.rotation = 0;
     stage.skew.set(0, 0);
   }
 
-  // lsfcin/isometric-perspective checks canvas.primary.background for existence
-  // but transforms canvas.environment.primary.background — those are different objects in v14.
-  private static getBackground(): PIXI.Container | null {
-    type WithBg = { background?: PIXI.Container };
+  // canvas.environment.primary.background is the rendered sprite in v14.
+  // canvas.primary.background exists but transforming it has no visual effect.
+  private static getBackground(): PIXI.Sprite | null {
+    type WithBg = { background?: PIXI.Sprite };
     type WithPrimary = { primary?: WithBg };
     const envBg = (canvas as unknown as { environment?: WithPrimary }).environment?.primary?.background;
     if (envBg) return envBg;
     return (canvas.primary as unknown as WithBg).background ?? null;
   }
 
-  private static captureBackground(bg: PIXI.Container): void {
-    const sprite = bg as unknown as PIXI.Sprite;
+  private static captureBackground(bg: PIXI.Sprite): void {
     CanvasTransform.originalBg = {
       rotation: bg.rotation,
       skewX: bg.skew.x,
@@ -59,8 +58,8 @@ export class CanvasTransform {
       scaleY: bg.scale.y,
       posX: bg.position.x,
       posY: bg.position.y,
-      anchorX: sprite.anchor?.x ?? 0,
-      anchorY: sprite.anchor?.y ?? 0,
+      anchorX: bg.anchor?.x ?? 0,
+      anchorY: bg.anchor?.y ?? 0,
     };
   }
 
@@ -68,7 +67,7 @@ export class CanvasTransform {
   // Scale uses captured origScaleX as the base — Foundry pre-scales the background
   // sprite to fill the canvas (texture px → canvas px), so we must build on that,
   // not override with (1, ratio). Y axis multiplied by ratio to cancel dimetric compression.
-  static applyBackground(): void {
+  private static applyBackground(): void {
     const bg = CanvasTransform.getBackground();
     const orig = CanvasTransform.originalBg;
     if (!bg || !orig) return;
@@ -80,7 +79,7 @@ export class CanvasTransform {
     // world_scaleX = local_scaleX × 4/√10  (derived from stage×counter-rotation matrix).
     // Invert to get local_scaleX = orig.scaleX × √10/4 so world scale = original.
     const factor = Math.sqrt(10) / 4;
-    (bg as unknown as PIXI.Sprite).anchor?.set(0.5, 0.5);
+    bg.anchor?.set(0.5, 0.5);
     bg.rotation = reverseRotation;
     bg.skew.set(reverseSkewX, reverseSkewY);
     bg.scale.set(orig.scaleX * factor, orig.scaleX * ratio * factor);
@@ -88,18 +87,18 @@ export class CanvasTransform {
   }
 
   // Restore background to the exact state Foundry set at canvas load.
-  static resetBackground(): void {
+  private static resetBackground(): void {
     const bg = CanvasTransform.getBackground();
     const orig = CanvasTransform.originalBg;
     if (!bg || !orig) return;
-    (bg as unknown as PIXI.Sprite).anchor?.set(orig.anchorX, orig.anchorY);
+    bg.anchor?.set(orig.anchorX, orig.anchorY);
     bg.rotation = orig.rotation;
     bg.skew.set(orig.skewX, orig.skewY);
     bg.scale.set(orig.scaleX, orig.scaleY);
     bg.position.set(orig.posX, orig.posY);
   }
 
-  static refresh(): void {
+  private static refresh(): void {
     for (const token of canvas.tokens?.placeables ?? []) token.refresh();
     for (const tile of canvas.tiles?.placeables ?? []) tile.refresh();
   }

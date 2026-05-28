@@ -44,16 +44,11 @@ export function registerSceneConfigHook(): void {
         </fieldset>`;
 
       // Target content sections only (not nav <a> elements which also carry data-tab).
-      const basics =
-        $html.find('section[data-tab="basics"]').first().length
-          ? $html.find('section[data-tab="basics"]').first()
-          : $html.find('div[data-tab="basics"]').first().length
-            ? $html.find('div[data-tab="basics"]').first()
-            : $html.find('section.tab, div.tab').first().length
-              ? $html.find('section.tab, div.tab').first()
-              : null;
+      let basics = $html.find('section[data-tab="basics"]').first();
+      if (!basics.length) basics = $html.find('div[data-tab="basics"]').first();
+      if (!basics.length) basics = $html.find('section.tab, div.tab').first();
 
-      const target = basics ?? $html;
+      const target = basics.length ? basics : $html;
       const firstFieldset = target.find("fieldset").first();
       if (firstFieldset.length) {
         firstFieldset.before(block);
