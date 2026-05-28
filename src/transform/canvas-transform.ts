@@ -39,10 +39,14 @@ export class CanvasTransform {
     stage.skew.set(0, 0);
   }
 
-  // PrimaryCanvasGroup.background is PrimarySpriteMesh (PIXI.Container subclass).
-  // foundry-vtt-types v13 beta does not declare this property, hence the cast.
+  // lsfcin/isometric-perspective checks canvas.primary.background for existence
+  // but transforms canvas.environment.primary.background — those are different objects in v14.
   private static getBackground(): PIXI.Container | null {
-    return (canvas.primary as unknown as { background?: PIXI.Container }).background ?? null;
+    type WithBg = { background?: PIXI.Container };
+    type WithPrimary = { primary?: WithBg };
+    const envBg = (canvas as unknown as { environment?: WithPrimary }).environment?.primary?.background;
+    if (envBg) return envBg;
+    return (canvas.primary as unknown as WithBg).background ?? null;
   }
 
   private static captureBackground(bg: PIXI.Container): void {
