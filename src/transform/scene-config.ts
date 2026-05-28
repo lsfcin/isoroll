@@ -4,6 +4,8 @@ import { MODULE_ID } from "../volume/flags";
  * Injects the "Enable Isoroll" checkbox into the Scene Configuration form.
  * Stored as scene flag: flags.isoroll.enabled (boolean).
  * Foundry's form submission handles persisting the flag automatically.
+ *
+ * Handles both Foundry v14 AppV2 ("basics") and older tab naming ("basic").
  */
 export function registerSceneConfigHook(): void {
   Hooks.on(
@@ -14,7 +16,7 @@ export function registerSceneConfigHook(): void {
       const hint = game.i18n.localize("ISOROLL.SceneConfig.EnableHint");
 
       const field = `
-        <div class="form-group">
+        <div class="form-group isoroll-enable">
           <label>${label}</label>
           <div class="form-fields">
             <input type="checkbox" name="flags.${MODULE_ID}.enabled" ${enabled ? "checked" : ""}>
@@ -22,13 +24,25 @@ export function registerSceneConfigHook(): void {
           <p class="hint">${hint}</p>
         </div>`;
 
-      // Inject at the top of the Basic tab, after the scene name field.
-      const basicTab = html.find('[data-tab="basic"]');
-      if (basicTab.length) {
-        basicTab.find(".form-group").first().after(field);
+      // Prefer the Basics tab (Foundry v14 AppV2 naming).
+      // Fall back to "basic" (older versions), then any section.tab, then the form body.
+      const tab =
+        html.find('[data-tab="basics"]').first() ||
+        html.find('[data-tab="basic"]').first() ||
+        html.find("section.tab").first() ||
+        html.find("form").first();
+
+      if (tab.length) {
+        // Append at end of first fieldset inside the tab, or directly to tab.
+        const fieldset = tab.find("fieldset, .form-group").first();
+        if (fieldset.length) {
+          fieldset.parent().append(field);
+        } else {
+          tab.append(field);
+        }
       } else {
-        // Fallback: inject before the first form-group if tab structure differs.
-        html.find(".form-group").first().after(field);
+        // Absolute fallback: append anywhere visible in the form.
+        html.find("form").append(field);
       }
     },
   );
