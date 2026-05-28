@@ -65,11 +65,13 @@ export class CanvasTransform {
   }
 
   // Counter-transform: background appears undistorted while the stage is isometric.
-  // Matches lsfcin/isometric-perspective: reverseSkew=0, scale(1, ratio), center at
-  // (width/2 + paddingX, height/2 + paddingY) — the full-canvas center in scene coords.
+  // Scale uses captured origScaleX as the base — Foundry pre-scales the background
+  // sprite to fill the canvas (texture px → canvas px), so we must build on that,
+  // not override with (1, ratio). Y axis multiplied by ratio to cancel dimetric compression.
   static applyBackground(): void {
     const bg = CanvasTransform.getBackground();
-    if (!bg) return;
+    const orig = CanvasTransform.originalBg;
+    if (!bg || !orig) return;
     const { reverseRotation, reverseSkewX, reverseSkewY, ratio } = DIMETRIC_2_1;
     const scene = canvas.scene as unknown as { width: number; height: number; padding: number };
     const paddingX = scene.width * (scene.padding ?? 0);
@@ -78,7 +80,7 @@ export class CanvasTransform {
     (bg as unknown as PIXI.Sprite).anchor?.set(0.5, 0.5);
     bg.rotation = reverseRotation;
     bg.skew.set(reverseSkewX, reverseSkewY);
-    bg.scale.set(1, ratio);
+    bg.scale.set(orig.scaleX, orig.scaleX * ratio);
     bg.position.set(scene.width / 2 + paddingX, scene.height / 2 + paddingY);
   }
 
