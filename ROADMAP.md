@@ -84,11 +84,11 @@
 - [x] `canvasReady` + `updateScene` hooks
 - [x] Enable/disable per scene via flag
 
-### Phase 2 — Object Counter-Transform ✅ DONE
+### Phase 2 — Object Counter-Transform ❌ REMOVED
 
-- [x] Tile mesh: scale(uniform, uniform*ratio), anchor(0, 1)
-- [x] Token mesh: width/height via √2*ratio, anchor(0.5, 0.5)
-- [x] `refreshTile` + `refreshToken` hooks
+Counter-transforms (reverse rotation/skew, √2 scale, custom anchors) were removed.
+The stage transform alone is sufficient; per-mesh distortions looked bad with isometric art
+and added complexity without value. Art pipeline produces sprites for the raw transformed stage.
 
 ### Phase 2.5 — Scene Config UI ✅ DONE
 
@@ -143,10 +143,6 @@
 - Frame naming: `{name}_{stance}_{facing}_{frame:04d}.{ext}`
 
 ---
-
-## Known Issues / Active Bugs
-
-- **Character distortion** (noticed 2026-05-27): tiles/tokens may appear squished/stretched — counter-transform scale values need calibration against actual art dimensions. Diagnose next.
 
 ---
 

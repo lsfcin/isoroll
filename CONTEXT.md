@@ -13,7 +13,6 @@
 |------|---------------|
 | `src/module.ts` | Entry point — wires all hooks in `Hooks.once("init")` |
 | `src/transform/canvas-transform.ts` | Stage rotation+skew (dimetric 2:1), hooks: canvasReady/updateScene |
-| `src/transform/object-transform.ts` | Counter-transform tile/token meshes, hooks: refreshTile/refreshToken |
 | `src/transform/scene-config.ts` | "Enable Isoroll" checkbox injection into Scene Config UI |
 | `src/transform/constants.ts` | `DIMETRIC_2_1` projection constants |
 | `src/volume/flags.ts` | `MODULE_ID`, `VolumeFlags` registration |
@@ -31,10 +30,8 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - `skewX = skewY = 18.435°`
 - `ratio = 2.0` (vertical compression factor)
 
-Counter-transforms on meshes:
-- **Tiles**: `scale(uniform, uniform * ratio)`, `anchor(0, 1)` (bottom-left)
-- **Tokens**: `width = scaleX * gridSize * √2`, `height = scaleY * gridSize * √2 * ratio`, `anchor(0.5, 0.5)`
 - **Grid**: untouched — aligns naturally with stage transform
+- **Sprites**: rendered as-is in transformed stage space (no per-mesh counter-transforms)
 
 ## Foundry v14 Gotchas
 
