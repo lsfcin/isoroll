@@ -13,6 +13,7 @@ export class ObjectTransform {
   static activate(): void {
     Hooks.on("refreshToken", ObjectTransform.onRefreshToken);
     Hooks.on("refreshTile", ObjectTransform.onRefreshTile);
+    Hooks.on("renderTokenHUD", ObjectTransform.onRenderTokenHUD);
   }
 
   private static isSceneEnabled(): boolean {
@@ -60,6 +61,26 @@ export class ObjectTransform {
     const mesh = token.mesh as unknown as MeshLike | null | undefined;
     if (!mesh) return;
     ObjectTransform.applyTokenCounter(mesh, flags);
+  }
+
+  // Reposition the TokenHUD DOM overlay using the stage's world matrix so it tracks
+  // the token's actual screen position under the isometric stage transform.
+  private static onRenderTokenHUD(
+    hud: { object: unknown },
+    html: JQuery | HTMLElement,
+  ): void {
+    if (!ObjectTransform.isSceneEnabled()) return;
+    const token = hud.object as Token;
+    if (token.document.getFlag(MODULE_ID, "transformToken") === true) return;
+    requestAnimationFrame(() => {
+      const center = (token.center ?? { x: token.x, y: token.y }) as { x: number; y: number };
+      const m = canvas.app?.stage?.worldTransform;
+      if (!m) return;
+      const sx = m.a * center.x + m.c * center.y + m.tx;
+      const sy = m.b * center.x + m.d * center.y + m.ty;
+      const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
+      $html.css({ left: `${sx}px`, top: `${sy}px`, transform: "translate(-50%, -50%)" });
+    });
   }
 
   private static onRefreshTile(tile: Tile, flags?: Record<string, boolean>): void {
