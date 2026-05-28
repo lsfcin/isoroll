@@ -1,5 +1,9 @@
 {
   "ISOROLL": {
+    "SceneConfig": {
+      "Enable": "Ativar Isoroll (Dimétrico 2:1)",
+      "EnableHint": "Aplica projeção isométrica nesta cena. Tiles e tokens serão contra-transformados para aparecer como sprites 2D planas."
+    },
     "Settings": {
       "DefaultTokenHeight": {
         "Name": "Altura Padrão do Token",
