@@ -1,12 +1,14 @@
 import { MODULE_ID } from "../volume/flags";
 
 /**
- * Injects the "Enable Isoroll" checkbox into the Scene Configuration form.
- * Stored as scene flag: flags.isoroll.enabled (boolean).
- * Foundry's form submission handles persisting the flag automatically.
+ * Injects an "Isometric" fieldset into the Scene Config Basics tab,
+ * before the first existing fieldset (Presentation block).
  *
- * In v14 AppV2, html IS the <form> element. Tab navigation links and content
- * sections both carry data-tab attributes — target section/div elements only.
+ * Flags persisted automatically by Foundry form submission:
+ *   flags.isoroll.enabled                   (boolean)
+ *   flags.isoroll.counterTransformBackground (boolean)
+ *
+ * v14 AppV2: html IS the <form>. Target section[data-tab], not nav <a>.
  */
 export function registerSceneConfigHook(): void {
   Hooks.on(
@@ -14,17 +16,32 @@ export function registerSceneConfigHook(): void {
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
       const enabled = app.document.getFlag(MODULE_ID, "enabled") ?? false;
-      const label = game.i18n.localize("ISOROLL.SceneConfig.Enable");
-      const hint = game.i18n.localize("ISOROLL.SceneConfig.EnableHint");
+      const counterBg = app.document.getFlag(MODULE_ID, "counterTransformBackground") ?? false;
 
-      const field = `
-        <div class="form-group isoroll-enable">
-          <label>${label}</label>
-          <div class="form-fields">
-            <input type="checkbox" name="flags.${MODULE_ID}.enabled" ${enabled ? "checked" : ""}>
+      const heading = game.i18n.localize("ISOROLL.SceneConfig.Heading");
+      const enableLabel = game.i18n.localize("ISOROLL.SceneConfig.Enable");
+      const enableHint = game.i18n.localize("ISOROLL.SceneConfig.EnableHint");
+      const bgLabel = game.i18n.localize("ISOROLL.SceneConfig.CounterBackground");
+      const bgHint = game.i18n.localize("ISOROLL.SceneConfig.CounterBackgroundHint");
+
+      const block = `
+        <fieldset>
+          <legend>${heading}</legend>
+          <div class="form-group">
+            <label>${enableLabel}</label>
+            <div class="form-fields">
+              <input type="checkbox" name="flags.${MODULE_ID}.enabled" ${enabled ? "checked" : ""}>
+            </div>
+            <p class="hint">${enableHint}</p>
           </div>
-          <p class="hint">${hint}</p>
-        </div>`;
+          <div class="form-group">
+            <label>${bgLabel}</label>
+            <div class="form-fields">
+              <input type="checkbox" name="flags.${MODULE_ID}.counterTransformBackground" ${counterBg ? "checked" : ""}>
+            </div>
+            <p class="hint">${bgHint}</p>
+          </div>
+        </fieldset>`;
 
       // Target content sections only (not nav <a> elements which also carry data-tab).
       const basics =
@@ -36,8 +53,13 @@ export function registerSceneConfigHook(): void {
               ? $html.find('section.tab, div.tab').first()
               : null;
 
-      // html is already the <form> — append directly if no tab panel found.
-      (basics ?? $html).append(field);
+      const target = basics ?? $html;
+      const firstFieldset = target.find("fieldset").first();
+      if (firstFieldset.length) {
+        firstFieldset.before(block);
+      } else {
+        target.prepend(block);
+      }
     },
   );
 }

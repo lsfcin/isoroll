@@ -1,8 +1,11 @@
 {
   "ISOROLL": {
     "SceneConfig": {
-      "Enable": "Ativar Isoroll (Dimétrico 2:1)",
-      "EnableHint": "Aplica projeção isométrica nesta cena. Tiles e tokens serão contra-transformados para aparecer como sprites 2D planas."
+      "Heading": "Isométrico",
+      "Enable": "Ativar Isométrico",
+      "EnableHint": "Aplica projeção dimétrica 2:1 nesta cena.",
+      "CounterBackground": "Contra-transformar Fundo",
+      "CounterBackgroundHint": "Desfaz a distorção isométrica na imagem de fundo da cena."
     },
     "Settings": {
       "DefaultTokenHeight": {

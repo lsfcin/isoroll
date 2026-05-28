@@ -1,16 +1,6 @@
 import { DIMETRIC_2_1 } from "./constants";
 import { MODULE_ID } from "../volume/flags";
 
-/**
- * Applies/removes the dimetric 2:1 isometric projection to canvas.app.stage.
- *
- * The transform is purely visual — Foundry's grid, walls, lighting, movement,
- * and all mechanical systems continue to operate in unmodified grid-space
- * coordinates. Only rendering is affected.
- *
- * Grid layer is intentionally NOT counter-transformed: the stage rotation+skew
- * naturally produces a correctly aligned isometric grid from Foundry's square grid.
- */
 export class CanvasTransform {
   static activate(): void {
     Hooks.on("canvasReady", CanvasTransform.onCanvasReady);
@@ -19,6 +9,10 @@ export class CanvasTransform {
 
   static isEnabled(): boolean {
     return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
+  }
+
+  static isBackgroundCounterEnabled(): boolean {
+    return canvas.scene?.getFlag(MODULE_ID, "counterTransformBackground") === true;
   }
 
   static apply(): void {
@@ -35,7 +29,26 @@ export class CanvasTransform {
     stage.skew.set(0, 0);
   }
 
-  /** Force-refresh all token and tile counter-transforms after applying. */
+  // PrimaryCanvasGroup.background is PrimarySpriteMesh (PIXI.Container subclass).
+  // foundry-vtt-types v13 beta does not declare this property, hence the cast.
+  private static getBackground(): PIXI.Container | null {
+    return (canvas.primary as unknown as { background?: PIXI.Container }).background ?? null;
+  }
+
+  static applyBackground(): void {
+    const bg = CanvasTransform.getBackground();
+    if (!bg) return;
+    bg.rotation = DIMETRIC_2_1.reverseRotation;
+    bg.skew.set(DIMETRIC_2_1.reverseSkewX, DIMETRIC_2_1.reverseSkewY);
+  }
+
+  static resetBackground(): void {
+    const bg = CanvasTransform.getBackground();
+    if (!bg) return;
+    bg.rotation = 0;
+    bg.skew.set(0, 0);
+  }
+
   static refresh(): void {
     for (const token of canvas.tokens?.placeables ?? []) token.refresh();
     for (const tile of canvas.tiles?.placeables ?? []) tile.refresh();
@@ -44,8 +57,14 @@ export class CanvasTransform {
   private static onCanvasReady(): void {
     if (CanvasTransform.isEnabled()) {
       CanvasTransform.apply();
+      if (CanvasTransform.isBackgroundCounterEnabled()) {
+        CanvasTransform.applyBackground();
+      } else {
+        CanvasTransform.resetBackground();
+      }
     } else {
       CanvasTransform.reset();
+      CanvasTransform.resetBackground();
     }
   }
 
