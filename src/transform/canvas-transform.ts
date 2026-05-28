@@ -61,19 +61,21 @@ export class CanvasTransform {
   }
 
   // Counter-transform: background appears undistorted while the stage is isometric.
-  // Anchor moves to center, position snaps to canvas center (scene.width/2, scene.height/2),
-  // scale compensates for the 45° rotation stretch and the 2:1 vertical ratio.
+  // Matches lsfcin/isometric-perspective: reverseSkew=0, scale(1, ratio), center at
+  // (width/2 + paddingX, height/2 + paddingY) — the full-canvas center in scene coords.
   static applyBackground(): void {
     const bg = CanvasTransform.getBackground();
     if (!bg) return;
     const { reverseRotation, reverseSkewX, reverseSkewY, ratio } = DIMETRIC_2_1;
-    const scene = canvas.scene as unknown as { width: number; height: number };
+    const scene = canvas.scene as unknown as { width: number; height: number; padding: number };
+    const paddingX = scene.width * (scene.padding ?? 0);
+    const paddingY = scene.height * (scene.padding ?? 0);
 
     (bg as unknown as PIXI.Sprite).anchor?.set(0.5, 0.5);
     bg.rotation = reverseRotation;
     bg.skew.set(reverseSkewX, reverseSkewY);
-    bg.scale.set(Math.SQRT2, Math.SQRT2 * ratio);
-    bg.position.set(scene.width / 2, scene.height / 2);
+    bg.scale.set(1, ratio);
+    bg.position.set(scene.width / 2 + paddingX, scene.height / 2 + paddingY);
   }
 
   // Restore background to the exact state Foundry set at canvas load.
