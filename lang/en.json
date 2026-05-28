@@ -3,9 +3,9 @@
     "SceneConfig": {
       "Heading": "Isometric",
       "Enable": "Enable Isometric",
-      "EnableHint": "Apply dimetric 2:1 isometric projection to this scene.",
-      "CounterBackground": "Counter-transform Background",
-      "CounterBackgroundHint": "Undo isometric distortion on the scene background image."
+      "EnableHint": "Apply dimetric 2:1 isometric projection to this scene and its grid.",
+      "TransformBackground": "Transform Background",
+      "TransformBackgroundHint": "Also apply the isometric projection to the scene background image."
     },
     "Settings": {
       "DefaultTokenHeight": {

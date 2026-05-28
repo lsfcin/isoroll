@@ -3,9 +3,9 @@
     "SceneConfig": {
       "Heading": "Isométrico",
       "Enable": "Ativar Isométrico",
-      "EnableHint": "Aplica projeção dimétrica 2:1 nesta cena.",
-      "CounterBackground": "Contra-transformar Fundo",
-      "CounterBackgroundHint": "Desfaz a distorção isométrica na imagem de fundo da cena."
+      "EnableHint": "Aplica projeção dimétrica 2:1 à cena e à grade.",
+      "TransformBackground": "Transformar Fundo",
+      "TransformBackgroundHint": "Aplica também a projeção isométrica à imagem de fundo da cena."
     },
     "Settings": {
       "DefaultTokenHeight": {

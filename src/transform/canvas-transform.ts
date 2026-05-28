@@ -1,7 +1,17 @@
 import { DIMETRIC_2_1 } from "./constants";
 import { MODULE_ID } from "../volume/flags";
 
+type BgState = {
+  rotation: number; skewX: number; skewY: number;
+  scaleX: number; scaleY: number;
+  posX: number; posY: number;
+  anchorX: number; anchorY: number;
+};
+
 export class CanvasTransform {
+  // Captured at canvasReady before any modification; restored on reset.
+  private static originalBg: BgState | null = null;
+
   static activate(): void {
     Hooks.on("canvasReady", CanvasTransform.onCanvasReady);
     Hooks.on("updateScene", CanvasTransform.onUpdateScene);
@@ -11,8 +21,8 @@ export class CanvasTransform {
     return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
   }
 
-  static isBackgroundCounterEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "counterTransformBackground") === true;
+  static isBackgroundTransformEnabled(): boolean {
+    return canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true;
   }
 
   static apply(): void {
@@ -35,18 +45,47 @@ export class CanvasTransform {
     return (canvas.primary as unknown as { background?: PIXI.Container }).background ?? null;
   }
 
+  private static captureBackground(bg: PIXI.Container): void {
+    const sprite = bg as unknown as PIXI.Sprite;
+    CanvasTransform.originalBg = {
+      rotation: bg.rotation,
+      skewX: bg.skew.x,
+      skewY: bg.skew.y,
+      scaleX: bg.scale.x,
+      scaleY: bg.scale.y,
+      posX: bg.position.x,
+      posY: bg.position.y,
+      anchorX: sprite.anchor?.x ?? 0,
+      anchorY: sprite.anchor?.y ?? 0,
+    };
+  }
+
+  // Counter-transform: background appears undistorted while the stage is isometric.
+  // Anchor moves to center, position snaps to canvas center (scene.width/2, scene.height/2),
+  // scale compensates for the 45° rotation stretch and the 2:1 vertical ratio.
   static applyBackground(): void {
     const bg = CanvasTransform.getBackground();
     if (!bg) return;
-    bg.rotation = DIMETRIC_2_1.reverseRotation;
-    bg.skew.set(DIMETRIC_2_1.reverseSkewX, DIMETRIC_2_1.reverseSkewY);
+    const { reverseRotation, reverseSkewX, reverseSkewY, ratio } = DIMETRIC_2_1;
+    const scene = canvas.scene as unknown as { width: number; height: number };
+
+    (bg as unknown as PIXI.Sprite).anchor?.set(0.5, 0.5);
+    bg.rotation = reverseRotation;
+    bg.skew.set(reverseSkewX, reverseSkewY);
+    bg.scale.set(Math.SQRT2, Math.SQRT2 * ratio);
+    bg.position.set(scene.width / 2, scene.height / 2);
   }
 
+  // Restore background to the exact state Foundry set at canvas load.
   static resetBackground(): void {
     const bg = CanvasTransform.getBackground();
-    if (!bg) return;
-    bg.rotation = 0;
-    bg.skew.set(0, 0);
+    const orig = CanvasTransform.originalBg;
+    if (!bg || !orig) return;
+    (bg as unknown as PIXI.Sprite).anchor?.set(orig.anchorX, orig.anchorY);
+    bg.rotation = orig.rotation;
+    bg.skew.set(orig.skewX, orig.skewY);
+    bg.scale.set(orig.scaleX, orig.scaleY);
+    bg.position.set(orig.posX, orig.posY);
   }
 
   static refresh(): void {
@@ -54,10 +93,10 @@ export class CanvasTransform {
     for (const tile of canvas.tiles?.placeables ?? []) tile.refresh();
   }
 
-  private static onCanvasReady(): void {
+  private static applyCurrentState(): void {
     if (CanvasTransform.isEnabled()) {
       CanvasTransform.apply();
-      if (CanvasTransform.isBackgroundCounterEnabled()) {
+      if (!CanvasTransform.isBackgroundTransformEnabled()) {
         CanvasTransform.applyBackground();
       } else {
         CanvasTransform.resetBackground();
@@ -68,11 +107,18 @@ export class CanvasTransform {
     }
   }
 
+  private static onCanvasReady(): void {
+    const bg = CanvasTransform.getBackground();
+    CanvasTransform.originalBg = null;
+    if (bg) CanvasTransform.captureBackground(bg);
+    CanvasTransform.applyCurrentState();
+  }
+
   private static onUpdateScene(scene: Scene, changes: Record<string, unknown>): void {
     if (scene.id !== canvas.scene?.id) return;
     const changed = (changes as { flags?: Record<string, unknown> }).flags?.[MODULE_ID];
     if (changed === undefined) return;
-    CanvasTransform.onCanvasReady();
+    CanvasTransform.applyCurrentState();
     CanvasTransform.refresh();
   }
 }

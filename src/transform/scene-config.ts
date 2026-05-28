@@ -5,8 +5,8 @@ import { MODULE_ID } from "../volume/flags";
  * before the first existing fieldset (Presentation block).
  *
  * Flags persisted automatically by Foundry form submission:
- *   flags.isoroll.enabled                   (boolean)
- *   flags.isoroll.counterTransformBackground (boolean)
+ *   flags.isoroll.enabled            (boolean) — stage + grid projection
+ *   flags.isoroll.transformBackground (boolean) — also project background image
  *
  * v14 AppV2: html IS the <form>. Target section[data-tab], not nav <a>.
  */
@@ -16,13 +16,13 @@ export function registerSceneConfigHook(): void {
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
       const enabled = app.document.getFlag(MODULE_ID, "enabled") ?? false;
-      const counterBg = app.document.getFlag(MODULE_ID, "counterTransformBackground") ?? false;
+      const transformBg = app.document.getFlag(MODULE_ID, "transformBackground") ?? false;
 
       const heading = game.i18n.localize("ISOROLL.SceneConfig.Heading");
       const enableLabel = game.i18n.localize("ISOROLL.SceneConfig.Enable");
       const enableHint = game.i18n.localize("ISOROLL.SceneConfig.EnableHint");
-      const bgLabel = game.i18n.localize("ISOROLL.SceneConfig.CounterBackground");
-      const bgHint = game.i18n.localize("ISOROLL.SceneConfig.CounterBackgroundHint");
+      const bgLabel = game.i18n.localize("ISOROLL.SceneConfig.TransformBackground");
+      const bgHint = game.i18n.localize("ISOROLL.SceneConfig.TransformBackgroundHint");
 
       const block = `
         <fieldset>
@@ -37,7 +37,7 @@ export function registerSceneConfigHook(): void {
           <div class="form-group">
             <label>${bgLabel}</label>
             <div class="form-fields">
-              <input type="checkbox" name="flags.${MODULE_ID}.counterTransformBackground" ${counterBg ? "checked" : ""}>
+              <input type="checkbox" name="flags.${MODULE_ID}.transformBackground" ${transformBg ? "checked" : ""}>
             </div>
             <p class="hint">${bgHint}</p>
           </div>
