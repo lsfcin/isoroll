@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Update module.json version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          jq --arg v "$VERSION" \
+             --arg manifest "https://github.com/${{ github.repository }}/releases/latest/download/module.json" \
+             --arg download "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/isoroll.zip" \
+             '.version = $v | .manifest = $manifest | .download = $download' \
+             module.json > module.tmp.json && mv module.tmp.json module.json
+
+      - name: Package module
+        run: |
+          mkdir -p package
+          cp module.json package/
+          cp -r dist package/
+          cp -r lang package/
+          cp -r assets package/
+          cd package && zip -r ../isoroll.zip . && cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            isoroll.zip
+            module.json
+          generate_release_notes: true

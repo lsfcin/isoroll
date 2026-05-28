@@ -1,0 +1,14 @@
+{
+  "ISOROLL": {
+    "Settings": {
+      "DefaultTokenHeight": {
+        "Name": "Default Token Height",
+        "Hint": "Default bounding box height (in grid units) for tokens without an explicit height flag."
+      },
+      "OcclusionOpacity": {
+        "Name": "Occlusion Opacity",
+        "Hint": "Alpha value for tokens occluded behind a tile volume (0 = invisible, 1 = no effect)."
+      }
+    }
+  }
+}

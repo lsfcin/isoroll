@@ -1,0 +1,38 @@
+/**
+ * Custom document flags for 3D bounding volumes.
+ *
+ * Tokens: z from elevation (existing), height + depth from flags.
+ * Tiles:  base elevation, height, depth all from flags (tiles have no native elevation).
+ *
+ * Footprint (x/y grid cells) derived from token/tile pixel size at render time.
+ */
+
+export const MODULE_ID = "isoroll";
+
+export interface TokenVolumeFlags {
+  boundHeight: number;  // height in grid units (default 1)
+}
+
+export interface TileVolumeFlags {
+  baseElevation: number;  // z-base in grid units (default 0)
+  boundHeight: number;    // height in grid units (default 1)
+}
+
+export class VolumeFlags {
+  static register(): void {
+    // Extend CONFIG so other modules can read our flag schema
+    // Actual per-document flags set via token/tile config sheets (future UI)
+  }
+
+  static getTokenHeight(token: TokenDocument): number {
+    return (token.getFlag(MODULE_ID, "boundHeight") as number | undefined) ?? 1;
+  }
+
+  static getTileBaseElevation(tile: TileDocument): number {
+    return (tile.getFlag(MODULE_ID, "baseElevation") as number | undefined) ?? 0;
+  }
+
+  static getTileHeight(tile: TileDocument): number {
+    return (tile.getFlag(MODULE_ID, "boundHeight") as number | undefined) ?? 1;
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "isoroll",
+  "version": "0.0.1",
+  "description": "Isometric play module for Foundry VTT",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src/**/*.ts styles/**/*.scss"
+  },
+  "devDependencies": {
+    "@league-of-foundry-developers/foundry-vtt-types": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "sass": "^1.70.0",
+    "typescript": "^5.4.0",
+    "vite": "^5.0.0"
+  }
+}
