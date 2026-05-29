@@ -2,6 +2,8 @@ import { getProjection } from "./constants";
 import { MODULE_ID, VolumeFlags } from "../volume/flags";
 
 type MeshLike = {
+  x: number;
+  y: number;
   rotation: number;
   skew?: { set(x: number, y: number): void };
   scale: { x: number; y: number; set(x: number, y: number): void };
@@ -96,8 +98,13 @@ export class ObjectTransform {
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
     const mesh = tile.mesh as unknown as MeshLike | null | undefined;
     if (!mesh) return;
-    const gridSize = canvas.grid?.size ?? 100;
-    const boundH   = VolumeFlags.getTileHeight(tile.document) * gridSize;
+    const gs      = canvas.grid?.size ?? 100;
+    const gd      = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+    const elev    = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
+    const boundH  = VolumeFlags.getTileHeight(tile.document) * gs;
+    const E       = elev * gs / gd;
+    const proj    = getProjection(canvas.scene);
+    const { x: hdx, y: hdy } = proj.heightDir;
     ObjectTransform.applyTileCounter(
       mesh,
       tile.document.rotation ?? 0,
@@ -106,5 +113,8 @@ export class ObjectTransform {
       boundH,
       flags,
     );
+    // Displace mesh to match elevation — same (hdx*E, hdy*E) offset as the 3D box base
+    mesh.x = (tile.document.x ?? 0) + hdx * E;
+    mesh.y = (tile.document.y ?? 0) + hdy * E;
   }
 }
