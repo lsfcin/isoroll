@@ -36,7 +36,7 @@ export function makeElevHandle(color: number): PIXI.Container {
   const g = new PIXI.Graphics();
   g.lineStyle(0.5, BLACK, 1);
   g.beginFill(color, 0.9);
-  g.drawCircle(0, 0, HALF * 0.9);
+  g.drawCircle(0, 0, HALF * 0.945);
   g.endFill();
   wrap.addChild(g);
   wrap.eventMode = "static";
@@ -49,7 +49,7 @@ export function makeMoveHandle(color: number): PIXI.Graphics {
   const g = new PIXI.Graphics();
   g.lineStyle(0.5, 0x000000, 1);
   g.beginFill(color, 0.9);
-  g.drawCircle(0, 0, HALF * 0.9);
+  g.drawCircle(0, 0, HALF * 0.945);
   g.endFill();
   g.eventMode = "static";
   g.cursor = "move";

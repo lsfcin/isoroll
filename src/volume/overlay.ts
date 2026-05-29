@@ -92,8 +92,27 @@ export class VolumeOverlay {
     stage.addChild(layer);
   }
 
+  private static drawAnchorLine(g: PIXI.Graphics, v: ReturnType<typeof computeVerts>): void {
+    if (Math.abs(v.elevation) < 0.01) return;
+    const dx = v.baseCenter.x - v.ground.x;
+    const dy = v.baseCenter.y - v.ground.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 4) return;
+    const ux = dx / len, uy = dy / len;
+    const gap = 7; // canvas px — leaves space so line doesn't visually overlap circles
+    const x1 = v.ground.x + ux * gap,      y1 = v.ground.y + uy * gap;
+    const x2 = v.baseCenter.x - ux * gap,  y2 = v.baseCenter.y - uy * gap;
+    g.lineStyle(2, BLACK, 0.3);
+    g.moveTo(x1, y1); g.lineTo(x2, y2);
+    g.lineStyle(1, ORANGE, 0.7);
+    g.moveTo(x1, y1); g.lineTo(x2, y2);
+  }
+
   private static draw(g: PIXI.Graphics, tile: Tile): void {
     const v = computeVerts(tile);
+
+    // Anchor line: behind box when elevated (+), in front when below ground (-)
+    if (v.elevation > 0) VolumeOverlay.drawAnchorLine(g, v);
 
     // back=true for the 3 edges meeting at the NE corner (far/hidden from SE camera)
     const edges: Array<[P, P, boolean]> = [
@@ -122,6 +141,9 @@ export class VolumeOverlay {
     }
 
     g.endFill();
+
+    // Anchor line in front of box when below ground
+    if (v.elevation < 0) VolumeOverlay.drawAnchorLine(g, v);
 
     // DEBUG: 8 colored circles at each box corner for reference
     const corners: Array<[P, number, string]> = [
