@@ -1,3 +1,4 @@
+// Interactive square handles for tile volume (width, height, boundHeight) + Flip button.
 import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import {

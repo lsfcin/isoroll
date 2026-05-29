@@ -1,3 +1,4 @@
+// Geometry helpers for the 3D volume overlay: vertex computation, dashed-line drawing.
 import { getProjection } from "../transform/constants";
 import { VolumeFlags } from "./flags";
 

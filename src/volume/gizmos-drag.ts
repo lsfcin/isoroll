@@ -1,3 +1,4 @@
+// Pure drag-math helpers for VolumeGizmos: axis projection, snapping, handle positions.
 import { getProjection } from "../transform/constants";
 import { MODULE_ID } from "./flags";
 

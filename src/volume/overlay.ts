@@ -1,3 +1,4 @@
+// Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer.
 import { MODULE_ID } from "./flags";
 import {
   ORANGE, BLACK, DASH_LEN, GAP_LEN, ANCHOR_DASH, ANCHOR_GAP,
