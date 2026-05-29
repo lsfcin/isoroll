@@ -101,13 +101,37 @@
 - [x] pt-BR language support
 - [x] Foundry AppV2 tab injection (see `/foundry` skill)
 
-### Phase 3 — Volume Handles (Gizmos) 🔲 PENDING
+### Phase 3 — Volume Handles (Gizmos) ✅ DONE (v2 — full redesign)
 
-- [ ] 4 PIXI handles per tile (X/Y/Z axis + uniform)
-- [ ] Handles live in `canvas.controls` (screen-space, not world-space)
-- [ ] Bottom-face drag = XY position
-- [ ] 0.5 grid-unit snap
-- [ ] Right-click tile → "Edit Volume" shortcut
+**3D Box Overlay** (`src/volume/overlay.ts`):
+- [x] 8-vertex, 12-edge 3D bounding box drawn with dashed PIXI.Graphics
+- [x] Front edges: full alpha orange + dark outline; back/hidden edges: 40% alpha
+- [x] Height direction: canvas (+1,−1) per grid unit — produces pure screen-vertical for all presets
+- [x] Elevation offset: tile.document.elevation × gridSize / gridDistance
+- [x] Height offset: boundHeight flag × gridSize
+- [x] Anchor dashed line from ground center to box base (elevated) or top (below ground)
+- [x] Redraws on controlTile/refreshTile, clears on canvasReady/updateScene
+
+**Gizmo Handles** (`src/volume/gizmos.ts`):
+- [x] 3 square handles (Foundry-native style — appear as diamonds under isometric stage)
+  - Right-edge midpoint of base → changes tile width
+  - Bottom-edge midpoint of base → changes tile height
+  - Top-face center → changes boundHeight flag
+- [x] Position fix: uses `tile.x`/`tile.y` (canvas-space, includes padding) not `tile.document.x/y`
+- [x] 1/4 grid-unit snap (Foundry-native behavior)
+- [x] Flip Tile button in TileHUD — swaps width↔height, adjusts Y to keep SE corner fixed
+- [x] Auto-show on tile select, auto-hide on deselect, rebuild on refreshTile
+
+**Projection System** (`src/transform/constants.ts`):
+- [x] PROJECTION_TYPES map: dimetric_2_1, true_iso, overhead, proj_3_2, diablo, torment, hades (approx.), custom
+- [x] getProjection(scene) — reads flags.isoroll.projection, handles custom numeric inputs
+- [x] heightDir field on IsoProjection for 3D box math
+- [x] canvas-transform.ts + object-transform.ts use getProjection() per hook call
+
+**Scene Config** (`src/transform/scene-config.ts`):
+- [x] Projection dropdown added to Iso tab (after Transform Background)
+- [x] Custom projection: 4 numeric fields (rotation°, skewX°, skewY°, ratio) shown when "custom" selected
+- [x] Tab renamed: "Isoroll" → "Iso" (all sheets: scene/tile/token)
 
 ### Phase 4 — Image Edit Mode 🔲 PENDING
 

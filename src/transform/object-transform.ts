@@ -1,4 +1,4 @@
-import { DIMETRIC_2_1 } from "./constants";
+import { getProjection } from "./constants";
 import { MODULE_ID } from "../volume/flags";
 
 type MeshLike = {
@@ -12,7 +12,7 @@ type MeshLike = {
 export class ObjectTransform {
   static activate(): void {
     Hooks.on("refreshToken", ObjectTransform.onRefreshToken);
-    Hooks.on("refreshTile", ObjectTransform.onRefreshTile);
+    Hooks.on("refreshTile",  ObjectTransform.onRefreshTile);
     Hooks.on("renderTokenHUD", ObjectTransform.onRenderTokenHUD);
   }
 
@@ -26,7 +26,8 @@ export class ObjectTransform {
   }
 
   private static applyTokenCounter(mesh: MeshLike, flags?: Record<string, boolean>): void {
-    const { reverseRotation, ratio, counterFactor } = DIMETRIC_2_1;
+    const proj = getProjection(canvas.scene);
+    const { reverseRotation, ratio, counterFactor } = proj;
     // TODO: select sprite frame based on docRotation for 8-directional sprite support
     mesh.rotation = reverseRotation;
     mesh.skew?.set(0, 0);
@@ -44,7 +45,8 @@ export class ObjectTransform {
     docH: number,
     flags?: Record<string, boolean>,
   ): void {
-    const { reverseRotation, ratio, counterFactor } = DIMETRIC_2_1;
+    const proj = getProjection(canvas.scene);
+    const { reverseRotation, ratio, counterFactor } = proj;
     mesh.rotation = (docRotationDeg * Math.PI) / 180 + reverseRotation;
     mesh.skew?.set(0, 0);
     if (ObjectTransform.isMeshReset(flags)) {

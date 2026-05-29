@@ -1,4 +1,4 @@
-import { DIMETRIC_2_1 } from "./constants";
+import { getProjection } from "./constants";
 import { MODULE_ID } from "../volume/flags";
 
 type BgState = {
@@ -9,7 +9,6 @@ type BgState = {
 };
 
 export class CanvasTransform {
-  // Captured at canvasReady before any modification; restored on reset.
   private static originalBg: BgState | null = null;
 
   static activate(): void {
@@ -28,8 +27,9 @@ export class CanvasTransform {
   private static apply(): void {
     const stage = canvas.app?.stage;
     if (!stage) return;
-    stage.rotation = DIMETRIC_2_1.rotation;
-    stage.skew.set(DIMETRIC_2_1.skewX, DIMETRIC_2_1.skewY);
+    const proj = getProjection(canvas.scene);
+    stage.rotation = proj.rotation;
+    stage.skew.set(proj.skewX, proj.skewY);
   }
 
   private static reset(): void {
@@ -71,22 +71,19 @@ export class CanvasTransform {
     const bg = CanvasTransform.getBackground();
     const orig = CanvasTransform.originalBg;
     if (!bg || !orig) return;
-    const { reverseRotation, reverseSkewX, reverseSkewY, ratio } = DIMETRIC_2_1;
+    const proj = getProjection(canvas.scene);
+    const { reverseRotation, reverseSkewX, reverseSkewY, ratio, counterFactor } = proj;
     const scene = canvas.scene as unknown as { width: number; height: number; padding: number };
     const paddingX = scene.width * (scene.padding ?? 0);
     const paddingY = scene.height * (scene.padding ?? 0);
 
-    // world_scaleX = local_scaleX × 4/√10  (derived from stage×counter-rotation matrix).
-    // Invert to get local_scaleX = orig.scaleX × √10/4 so world scale = original.
-    const factor = Math.sqrt(10) / 4;
     bg.anchor?.set(0.5, 0.5);
     bg.rotation = reverseRotation;
     bg.skew.set(reverseSkewX, reverseSkewY);
-    bg.scale.set(orig.scaleX * factor, orig.scaleX * ratio * factor);
+    bg.scale.set(orig.scaleX * counterFactor, orig.scaleX * ratio * counterFactor);
     bg.position.set(scene.width / 2 + paddingX, scene.height / 2 + paddingY);
   }
 
-  // Restore background to the exact state Foundry set at canvas load.
   private static resetBackground(): void {
     const bg = CanvasTransform.getBackground();
     const orig = CanvasTransform.originalBg;

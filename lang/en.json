@@ -1,11 +1,41 @@
 {
   "ISOROLL": {
+    "TabLabel": "Iso",
     "SceneConfig": {
       "Heading": "Isometric",
       "Enable": "Enable Isometric",
       "EnableHint": "Apply dimetric 2:1 isometric projection to this scene and its grid.",
       "TransformBackground": "Transform Background",
-      "TransformBackgroundHint": "Also apply the isometric projection to the scene background image."
+      "TransformBackgroundHint": "Also apply the isometric projection to the scene background image. When unchecked (default), the background appears undistorted.",
+      "Projection": "Projection",
+      "ProjectionHint": "Isometric projection style. Switch to Custom to enter exact rotation/skew/ratio values.",
+      "CustomRotation": "Rotation (°)",
+      "CustomSkewX": "Skew X (°)",
+      "CustomSkewY": "Skew Y (°)",
+      "CustomRatio": "Vertical Ratio"
+    },
+    "TokenConfig": {
+      "Heading": "Isometric",
+      "TransformToken": "Transform Token",
+      "TransformTokenHint": "Apply the isometric stage transform to this token. When unchecked (default), the token sprite appears undistorted regardless of stage rotation."
+    },
+    "TileConfig": {
+      "Heading": "Isometric",
+      "TransformTile": "Transform Tile",
+      "TransformTileHint": "Apply the isometric stage transform to this tile. When unchecked (default), the tile sprite appears undistorted regardless of stage rotation."
+    },
+    "Projection": {
+      "Dimetric21": "Dimetric 2:1 (default)",
+      "TrueIso":    "True Isometric",
+      "Overhead":   "Overhead (√2:1)",
+      "Proj32":     "Projection 3:2",
+      "Diablo":     "Game: Diablo style",
+      "Torment":    "Game: Planescape Torment",
+      "Hades":      "Game: Hades style (approx.)",
+      "Custom":     "Custom…"
+    },
+    "VolumeGizmos": {
+      "Flip": "Flip Tile (swap width/height)"
     },
     "Settings": {
       "DefaultTokenHeight": {

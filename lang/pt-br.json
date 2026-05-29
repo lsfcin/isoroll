@@ -1,11 +1,41 @@
 {
   "ISOROLL": {
+    "TabLabel": "Iso",
     "SceneConfig": {
       "Heading": "Isométrico",
       "Enable": "Ativar Isométrico",
       "EnableHint": "Aplica projeção dimétrica 2:1 à cena e à grade.",
       "TransformBackground": "Transformar Fundo",
-      "TransformBackgroundHint": "Aplica também a projeção isométrica à imagem de fundo da cena."
+      "TransformBackgroundHint": "Aplica também a projeção isométrica à imagem de fundo da cena. Quando desmarcado (padrão), o fundo aparece sem distorção.",
+      "Projection": "Projeção",
+      "ProjectionHint": "Estilo de projeção isométrica. Selecione Customizado para inserir valores exatos de rotação/skew/razão.",
+      "CustomRotation": "Rotação (°)",
+      "CustomSkewX": "Skew X (°)",
+      "CustomSkewY": "Skew Y (°)",
+      "CustomRatio": "Razão Vertical"
+    },
+    "TokenConfig": {
+      "Heading": "Isométrico",
+      "TransformToken": "Transformar Token",
+      "TransformTokenHint": "Aplica a transformação isométrica do palco ao token. Quando desmarcado (padrão), o sprite do token aparece sem distorção independente da rotação do palco."
+    },
+    "TileConfig": {
+      "Heading": "Isométrico",
+      "TransformTile": "Transformar Tile",
+      "TransformTileHint": "Aplica a transformação isométrica do palco ao tile. Quando desmarcado (padrão), o sprite do tile aparece sem distorção independente da rotação do palco."
+    },
+    "Projection": {
+      "Dimetric21": "Dimétrico 2:1 (padrão)",
+      "TrueIso":    "Isométrico Verdadeiro",
+      "Overhead":   "Overhead (√2:1)",
+      "Proj32":     "Projeção 3:2",
+      "Diablo":     "Jogo: estilo Diablo",
+      "Torment":    "Jogo: Planescape Torment",
+      "Hades":      "Jogo: estilo Hades (aprox.)",
+      "Custom":     "Customizado…"
+    },
+    "VolumeGizmos": {
+      "Flip": "Virar Tile (trocar largura/altura)"
     },
     "Settings": {
       "DefaultTokenHeight": {
