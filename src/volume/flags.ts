@@ -34,4 +34,8 @@ export class VolumeFlags {
   static getImageOffset(tile: TileDocument): { x: number; y: number } {
     return (tile.getFlag(MODULE_ID, "imageOffset") as { x: number; y: number } | undefined) ?? { x: 0, y: 0 };
   }
+
+  static getImageScale(tile: TileDocument): number {
+    return (tile.getFlag(MODULE_ID, "imageScale") as number | undefined) ?? 1;
+  }
 }

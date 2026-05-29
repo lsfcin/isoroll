@@ -44,6 +44,23 @@ export function makeElevHandle(color: number, cursor = "n-resize"): PIXI.Contain
   return wrap;
 }
 
+// Counter-transform applied → square appears as a true square in screen space.
+export function makeSquareCounterHandle(color: number, cursor = "pointer"): PIXI.Container {
+  const proj = getProjection(canvas.scene);
+  const wrap = new PIXI.Container();
+  wrap.rotation = proj.reverseRotation;
+  wrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
+  const g = new PIXI.Graphics();
+  g.lineStyle(0.5, BLACK, 1);
+  g.beginFill(color, 0.9);
+  g.drawRect(-HALF, -HALF, HANDLE_SIZE, HANDLE_SIZE);
+  g.endFill();
+  wrap.addChild(g);
+  wrap.eventMode = "static";
+  wrap.cursor = cursor;
+  return wrap;
+}
+
 // Plain canvas-space circle for translate — appears as an ellipse under isometric stage.
 export function makeMoveHandle(color: number): PIXI.Graphics {
   const g = new PIXI.Graphics();
@@ -63,6 +80,7 @@ export function makeHandleForType(
   const color = HANDLE_COLOR[type];
   if (type === "elevation") return makeElevHandle(color);
   if (type === "imgOffset") return makeElevHandle(0xffffff, "move");
+  if (type === "imgScale")  return makeSquareCounterHandle(0xffffff, "nwse-resize");
   if (type === "move")      return makeMoveHandle(color);
   if (type === "boundH") {
     const vLen = Math.sqrt(hdx * hdx + hdy * hdy);

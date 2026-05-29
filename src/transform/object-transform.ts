@@ -46,17 +46,16 @@ export class ObjectTransform {
     docW: number,
     docH: number,
     docBoundH: number,
+    imgScale: number,
     flags?: Record<string, boolean>,
   ): void {
     const proj = getProjection(canvas.scene);
     const { reverseRotation, ratio, counterFactor } = proj;
     mesh.rotation = (docRotationDeg * Math.PI) / 180 + reverseRotation;
     mesh.skew?.set(0, 0);
-    // Scale: always recompute (absolute set, not accumulate) so boundHeight changes apply too.
-    // isMeshReset guard was skipping flag-only refreshes (refreshPosition/refreshPerception).
     const texW = mesh.texture?.width || 1;
     const texH = mesh.texture?.height || 1;
-    const uniform = Math.max(docW, docH, docBoundH) / Math.max(texW, texH);
+    const uniform = Math.max(docW, docH, docBoundH) / Math.max(texW, texH) * imgScale;
     mesh.scale.set(uniform * counterFactor, uniform * ratio * counterFactor);
   }
 
@@ -105,15 +104,16 @@ export class ObjectTransform {
     const E       = elev * gs / gd;
     const proj    = getProjection(canvas.scene);
     const { x: hdx, y: hdy } = proj.heightDir;
+    const imgScale = VolumeFlags.getImageScale(tile.document);
     ObjectTransform.applyTileCounter(
       mesh,
       tile.document.rotation ?? 0,
       tile.document.width ?? 0,
       tile.document.height ?? 0,
       boundH,
+      imgScale,
       flags,
     );
-    // Displace mesh: elevation offset + per-tile image alignment offset
     const imgOff = VolumeFlags.getImageOffset(tile.document);
     mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x;
     mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y;

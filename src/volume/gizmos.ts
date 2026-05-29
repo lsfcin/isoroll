@@ -3,7 +3,7 @@ import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import {
   HandleType, DragState, handleTypeMap,
-  handlePositions, imageBLCorner, clientToGlobal, commitDrag,
+  handlePositions, imageBLCorner, imageTRCorner, clientToGlobal, commitDrag,
 } from "./gizmos-drag";
 import { makeHandleForType, createRotateBlocker } from "./gizmos-handles";
 
@@ -84,10 +84,12 @@ export class VolumeGizmos {
     const EH     = E + boundH * gs;
     const { x: hdx, y: hdy } = proj.heightDir;
     const imgBL    = imageBLCorner(tile);
+    const imgTR    = imageTRCorner(tile);
     const imgOff   = VolumeFlags.getImageOffset(tile.document);
-    const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy, imgBL);
+    const imgScale = VolumeFlags.getImageScale(tile.document);
+    const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy, imgBL, imgTR);
     const container = new PIXI.Container();
-    for (const type of (["width", "height", "boundH", "elevation", "scale", "move", "imgOffset"] as HandleType[])) {
+    for (const type of (["width", "height", "boundH", "elevation", "scale", "move", "imgOffset", "imgScale"] as HandleType[])) {
       const pos    = positions[type];
       const handle = makeHandleForType(type, hdx, hdy);
       handle.x = pos.cx;
@@ -97,7 +99,7 @@ export class VolumeGizmos {
         e.stopPropagation();
         VolumeGizmos.beginDrag(type, tile, e.global.x, e.global.y,
           tx, ty, tw, th, boundH, elev, tile.document.x ?? 0, tile.document.y ?? 0,
-          imgOff.x, imgOff.y);
+          imgOff.x, imgOff.y, imgScale);
       });
       container.addChild(handle);
     }
@@ -156,7 +158,7 @@ export class VolumeGizmos {
     gx: number, gy: number,
     tx: number, ty: number, tw: number, th: number,
     boundH: number, elev: number, docX: number, docY: number,
-    imgOffX = 0, imgOffY = 0,
+    imgOffX = 0, imgOffY = 0, imgScale = 1,
   ): void {
     VolumeGizmos.drag = {
       type, tile,
@@ -169,6 +171,7 @@ export class VolumeGizmos {
       startDocY: docY,
       startImgOffX: imgOffX,
       startImgOffY: imgOffY,
+      startImgScale: imgScale,
     };
     window.addEventListener("pointermove", VolumeGizmos.onMove);
     window.addEventListener("pointerup",   VolumeGizmos.onUp, { once: true });
