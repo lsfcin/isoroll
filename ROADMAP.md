@@ -112,13 +112,19 @@
 - [x] Anchor dashed line from ground center to box base (elevated) or top (below ground)
 - [x] Redraws on controlTile/refreshTile, clears on canvasReady/updateScene
 
-**Gizmo Handles** (`src/volume/gizmos.ts`):
-- [x] 3 square handles (Foundry-native style — appear as diamonds under isometric stage)
-  - Right-edge midpoint of base → changes tile width
-  - Bottom-edge midpoint of base → changes tile height
-  - Top-face center → changes boundHeight flag
-- [x] Position fix: uses `tile.x`/`tile.y` (canvas-space, includes padding) not `tile.document.x/y`
-- [x] 1/4 grid-unit snap (Foundry-native behavior)
+**Gizmo Handles** (`src/volume/gizmos.ts`, `gizmos-handles.ts`, `gizmos-drag.ts`):
+- [x] 6 handles, all Foundry orange `#ff9829`, live-drag on pointermove:
+  - Width (diamond) — left-edge midpoint of base → tile.document.width
+  - Height (diamond) — bottom-edge midpoint of base → tile.document.height
+  - BoundH (face parallelogram) — top back-face of box → boundHeight flag
+  - Elevation (counter-transformed circle) — SE vertical edge midpoint → tile.document.elevation
+  - Scale (diamond) — SE_base corner → proportional width+height
+  - Move (circle) — base face center → tile.document.x/y
+- [x] 1/4 grid-unit snap; elevation snaps to integer feet
+- [x] Tile mesh displaced by elevation: `mesh.x/y = doc.x/y + hdx/hdy * E`
+- [x] Image scale includes boundHeight: `Math.max(docW, docH, docBoundH)`
+- [x] Rotation handle suppressed: invisible event-absorber over Foundry's triangle
+- [x] Anchor line: orange line from ground center to elevated base
 - [x] Flip Tile button in TileHUD — swaps width↔height, adjusts Y to keep SE corner fixed
 - [x] Auto-show on tile select, auto-hide on deselect, rebuild on refreshTile
 

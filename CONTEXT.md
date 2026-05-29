@@ -24,7 +24,8 @@
 | `src/volume/overlay-geometry.ts` | 3D box math: `computeVerts()`, `drawDash()`, `BoxVerts` type |
 | `src/volume/overlay.ts` | `VolumeOverlay` — dashed 3D bounding box drawn on selected tiles |
 | `src/volume/gizmos-drag.ts` | Pure drag math: `projectDrag()`, `handlePositions()`, `commitDrag()`, snap helpers |
-| `src/volume/gizmos.ts` | `VolumeGizmos` — 3 square handles (width/height/boundH) + Flip button in TileHUD |
+| `src/volume/gizmos-handles.ts` | PIXI factory functions for all handle shapes + `createRotateBlocker()` |
+| `src/volume/gizmos.ts` | `VolumeGizmos` — 6 handles (width/height/boundH/elevation/scale/move) + rotation suppressor + Flip button |
 | `src/sorter/depth-sorter.ts` | Depth sort (dormant — not activated, see ROADMAP) |
 | `src/occluder/occluder.ts` | Tile alpha fade when token is behind it |
 | `src/resolver/asset-resolver.ts` | Stance fallback chain, `resolveBestTokenAsset()` |
