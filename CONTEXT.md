@@ -17,10 +17,14 @@
 | `src/module.ts` | Entry point — wires all hooks in `Hooks.once("init")` |
 | `src/transform/canvas-transform.ts` | Stage rotation+skew, background counter-transform, hooks: canvasReady/updateScene |
 | `src/transform/object-transform.ts` | Per-token/tile counter-transform + HUD repositioning, hooks: refreshToken/refreshTile/renderTokenHUD |
-| `src/transform/scene-config.ts` | Isoroll tab injection for SceneConfig, TokenConfig, TileConfig |
-| `src/transform/constants.ts` | `DIMETRIC_2_1` projection constants |
+| `src/transform/scene-config.ts` | Isoroll tab injection for SceneConfig, TokenConfig, TileConfig; projection dropdown |
+| `src/transform/constants.ts` | `PROJECTION_TYPES` (8 presets), `getProjection(scene)`, `IsoProjection` interface |
 | `src/volume/flags.ts` | `MODULE_ID`, `VolumeFlags` flag accessors |
 | `src/volume/settings.ts` | DefaultTokenHeight, OcclusionOpacity module settings |
+| `src/volume/overlay-geometry.ts` | 3D box math: `computeVerts()`, `drawDash()`, `BoxVerts` type |
+| `src/volume/overlay.ts` | `VolumeOverlay` — dashed 3D bounding box drawn on selected tiles |
+| `src/volume/gizmos-drag.ts` | Pure drag math: `projectDrag()`, `handlePositions()`, `commitDrag()`, snap helpers |
+| `src/volume/gizmos.ts` | `VolumeGizmos` — 3 square handles (width/height/boundH) + Flip button in TileHUD |
 | `src/sorter/depth-sorter.ts` | Depth sort (dormant — not activated, see ROADMAP) |
 | `src/occluder/occluder.ts` | Tile alpha fade when token is behind it |
 | `src/resolver/asset-resolver.ts` | Stance fallback chain, `resolveBestTokenAsset()` |
@@ -40,15 +44,23 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | Flag | Type | Scope | Default | Purpose |
 |------|------|-------|---------|---------|
 | `flags.isoroll.enabled` | boolean | scene | false | Enable isometric stage transform |
-| `flags.isoroll.transformBackground` | boolean | scene | false | Apply isometric to background (default: counter-transform = undistorted) |
-| `flags.isoroll.transformToken` | boolean | token | false | Apply isometric to token (default: counter-transform = undistorted) |
-| `flags.isoroll.transformTile` | boolean | tile | false | Apply isometric to tile (default: counter-transform = undistorted) |
-| `flags.isoroll.volume.*` | object | tile/token | — | 3D bounding volume (x,y,z,width,depth,height) |
+| `flags.isoroll.transformBackground` | boolean | scene | false | Apply isometric to background image |
+| `flags.isoroll.projection` | string | scene | `"dimetric_2_1"` | Projection preset key; `"custom"` enables 4 extra flags |
+| `flags.isoroll.customRotation` | number | scene | -45 | Custom projection rotation (degrees) |
+| `flags.isoroll.customSkewX` | number | scene | 18.435 | Custom projection skewX (degrees) |
+| `flags.isoroll.customSkewY` | number | scene | 18.435 | Custom projection skewY (degrees) |
+| `flags.isoroll.customRatio` | number | scene | 2.0 | Custom projection vertical ratio |
+| `flags.isoroll.transformToken` | boolean | token | false | Apply isometric stage to token sprite |
+| `flags.isoroll.transformTile` | boolean | tile | false | Apply isometric stage to tile sprite |
+| `flags.isoroll.boundHeight` | number | tile | 1 | 3D volume height in grid units (Z axis) |
 
-## Known Limitations
+## Known Limitations / Gotchas
 
 - Token rotation: v14 auto-facing suppressed for undistorted tokens; 8-directional sprite selection not yet implemented (placeholder in `object-transform.ts`)
-- Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP phase 3
+- Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP
+- `tile.x/tile.y` = 0 in v14 — use `tile.document.x/y` (CENTER, not top-left); top-left = `doc.x - width/2, doc.y - height/2`
+- `setFlag` fires `refreshTile` with `{refreshPosition, refreshPerception}` only — `isMeshReset` returns false; scale guarded by meshReset won't run for flag-only changes
+- `mesh.scale.set()` (absolute) is safe on every refresh; only `*=` patterns need meshReset guard
 
 ## See Also
 
