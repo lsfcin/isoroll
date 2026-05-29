@@ -1,9 +1,9 @@
 // Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer.
 import { MODULE_ID } from "./flags";
 import {
-  ORANGE, BLACK,
+  ORANGE, BLACK, DASH_LEN, GAP_LEN,
   ALPHA_FRONT_OUTLINE, ALPHA_FRONT_FILL, ALPHA_BACK_OUTLINE, ALPHA_BACK_FILL,
-  P, computeVerts,
+  P, computeVerts, drawDash,
 } from "./overlay-geometry";
 
 export class VolumeOverlay {
@@ -111,6 +111,9 @@ export class VolumeOverlay {
   private static draw(g: PIXI.Graphics, tile: Tile): void {
     const v = computeVerts(tile);
 
+    // Image contour drawn first so it appears behind the 3D box lines
+    VolumeOverlay.drawImageContour(g, tile);
+
     // Anchor line: behind box when elevated (+), in front when below ground (-)
     if (v.elevation > 0) VolumeOverlay.drawAnchorLine(g, v);
 
@@ -144,6 +147,48 @@ export class VolumeOverlay {
 
     // Anchor line in front of box when below ground
     if (v.elevation < 0) VolumeOverlay.drawAnchorLine(g, v);
+  }
 
+  private static drawImageContour(g: PIXI.Graphics, tile: Tile): void {
+    type M = {
+      x: number; y: number; rotation: number;
+      scale: { x: number; y: number };
+      texture?: { width: number; height: number };
+      anchor?: { x: number; y: number };
+    };
+    const mesh = tile.mesh as unknown as M | null | undefined;
+    if (!mesh?.texture) return;
+
+    const texW = mesh.texture.width, texH = mesh.texture.height;
+    const ax = mesh.anchor?.x ?? 0.5, ay = mesh.anchor?.y ?? 0.5;
+    const sx = mesh.scale.x, sy = mesh.scale.y;
+    const cr = Math.cos(mesh.rotation), sr = Math.sin(mesh.rotation);
+
+    // Four corners in mesh local space (relative to anchor), scaled then rotated into canvas space
+    const local = [
+      { x: -ax * texW,       y: -ay * texH      },
+      { x: (1-ax) * texW,    y: -ay * texH      },
+      { x: (1-ax) * texW,    y: (1-ay) * texH   },
+      { x: -ax * texW,       y: (1-ay) * texH   },
+    ];
+    const pts = local.map(c => ({
+      x: mesh.x + cr * (c.x * sx) - sr * (c.y * sy),
+      y: mesh.y + sr * (c.x * sx) + cr * (c.y * sy),
+    }));
+
+    // Adapt dash length per edge so dashes are uniform in screen pixels across all directions
+    const wt = (canvas.app as unknown as { stage: { worldTransform: { a: number; b: number; c: number; d: number } } }).stage.worldTransform;
+    const screenAdapt = (dx: number, dy: number): number => {
+      const canLen = Math.sqrt(dx * dx + dy * dy);
+      const scrLen = Math.sqrt((wt.a*dx + wt.c*dy) ** 2 + (wt.b*dx + wt.d*dy) ** 2);
+      return scrLen > 0 ? canLen / scrLen : 1;
+    };
+
+    for (let i = 0; i < 4; i++) {
+      const a = pts[i], b = pts[(i + 1) % 4];
+      const s = screenAdapt(b.x - a.x, b.y - a.y);
+      g.lineStyle(1.5, BLACK, 0.4);   drawDash(g, a.x, a.y, b.x, b.y, DASH_LEN * s, GAP_LEN * s);
+      g.lineStyle(1,   0xffffff, 0.9); drawDash(g, a.x, a.y, b.x, b.y, DASH_LEN * s, GAP_LEN * s);
+    }
   }
 }
