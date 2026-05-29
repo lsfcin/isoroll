@@ -5,14 +5,12 @@ import {
   HandleType, DragState, handleTypeMap,
   handlePositions, clientToGlobal, commitDrag,
 } from "./gizmos-drag";
-import {
-  HALF, HANDLE_COLOR,
-  makeHandle, makeElevHandle, makeFaceHandle, makeMoveHandle,
-} from "./gizmos-handles";
+import { makeHandleForType, createRotateBlocker } from "./gizmos-handles";
 
 export class VolumeGizmos {
   private static layer: PIXI.Container | null = null;
   private static sets: Map<string, PIXI.Container> = new Map();
+  private static blockers: Map<string, PIXI.Graphics> = new Map();
   private static drag: DragState | null = null;
   private static readonly onMove = (e: PointerEvent): void => VolumeGizmos.handleMove(e);
   private static readonly onUp   = (e: PointerEvent): void => VolumeGizmos.handleUp(e);
@@ -38,14 +36,25 @@ export class VolumeGizmos {
 
   private static onControlTile(tile: Tile, controlled: boolean): void {
     if (!VolumeGizmos.isEnabled()) return;
-    if (controlled) VolumeGizmos.show(tile);
-    else VolumeGizmos.hide(tile.id);
+    if (controlled) { VolumeGizmos.show(tile); VolumeGizmos.suppressRotateHandle(tile); }
+    else              { VolumeGizmos.hide(tile.id); }
   }
 
   private static onRefreshTile(tile: Tile): void {
     if (!VolumeGizmos.isEnabled()) return;
     if (!VolumeGizmos.sets.has(tile.id)) return;
     VolumeGizmos.show(tile);
+    VolumeGizmos.suppressRotateHandle(tile);
+  }
+
+  private static suppressRotateHandle(tile: Tile): void {
+    const old = VolumeGizmos.blockers.get(tile.id);
+    if (old) { old.parent?.removeChild(old); old.destroy(); VolumeGizmos.blockers.delete(tile.id); }
+    const layer = VolumeGizmos.ensureLayer();
+    const blocker = createRotateBlocker(tile, layer as unknown as PIXI.Container);
+    if (!blocker) return;
+    layer.addChild(blocker);
+    VolumeGizmos.blockers.set(tile.id, blocker);
   }
 
   private static onRenderTileHUD(hud: { object: unknown }, html: JQuery | HTMLElement): void {
@@ -62,39 +71,23 @@ export class VolumeGizmos {
   static show(tile: Tile): void {
     VolumeGizmos.hide(tile.id);
     const layer = VolumeGizmos.ensureLayer();
-
-    // document.x/y = tile CENTER in v14; subtract half-dims for top-left
     const tw = tile.document.width  ?? 0;
     const th = tile.document.height ?? 0;
     const tx = (tile.document.x ?? 0) - tw / 2;
     const ty = (tile.document.y ?? 0) - th / 2;
-
-    const proj    = getProjection(canvas.scene);
-    const gs      = canvas.grid?.size ?? 100;
-    const gd      = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
-    const elev    = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
-    const boundH  = VolumeFlags.getTileHeight(tile.document);
-    const E       = elev * gs / gd;
-    const EH      = E + boundH * gs;
+    const proj   = getProjection(canvas.scene);
+    const gs     = canvas.grid?.size ?? 100;
+    const gd     = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+    const elev   = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
+    const boundH = VolumeFlags.getTileHeight(tile.document);
+    const E      = elev * gs / gd;
+    const EH     = E + boundH * gs;
     const { x: hdx, y: hdy } = proj.heightDir;
-
     const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy);
     const container = new PIXI.Container();
-
     for (const type of (["width", "height", "boundH", "elevation", "scale", "move"] as HandleType[])) {
-      const pos = positions[type];
-      let handle: PIXI.Container | PIXI.Graphics;
-      if (type === "elevation") {
-        handle = makeElevHandle(HANDLE_COLOR[type]);
-      } else if (type === "move") {
-        handle = makeMoveHandle(HANDLE_COLOR[type]);
-      } else if (type === "boundH") {
-        const vLen = Math.sqrt(hdx * hdx + hdy * hdy);
-        handle = makeFaceHandle(HANDLE_COLOR[type],
-          0, HALF, (hdx / vLen) * HALF * 2, (hdy / vLen) * HALF * 2);
-      } else {
-        handle = makeHandle(HANDLE_COLOR[type]);
-      }
+      const pos    = positions[type];
+      const handle = makeHandleForType(type, hdx, hdy);
       handle.x = pos.cx;
       handle.y = pos.cy;
       handleTypeMap.set(handle, type);
@@ -105,7 +98,6 @@ export class VolumeGizmos {
       });
       container.addChild(handle);
     }
-
     layer.addChild(container);
     VolumeGizmos.sets.set(tile.id, container);
     VolumeGizmos.bringToTop();
@@ -113,10 +105,9 @@ export class VolumeGizmos {
 
   static hide(tileId: string): void {
     const c = VolumeGizmos.sets.get(tileId);
-    if (!c) return;
-    VolumeGizmos.layer?.removeChild(c);
-    c.destroy({ children: true });
-    VolumeGizmos.sets.delete(tileId);
+    if (c) { VolumeGizmos.layer?.removeChild(c); c.destroy({ children: true }); VolumeGizmos.sets.delete(tileId); }
+    const b = VolumeGizmos.blockers.get(tileId);
+    if (b) { b.parent?.removeChild(b); b.destroy(); VolumeGizmos.blockers.delete(tileId); }
   }
 
   static clearAll(): void {

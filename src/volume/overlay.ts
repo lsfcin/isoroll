@@ -145,22 +145,5 @@ export class VolumeOverlay {
     // Anchor line in front of box when below ground
     if (v.elevation < 0) VolumeOverlay.drawAnchorLine(g, v);
 
-    // DEBUG: 8 colored circles at each box corner for reference
-    const corners: Array<[P, number, string]> = [
-      [v.NW_base, 0xff0000, "NW_base"],
-      [v.NE_base, 0xff8800, "NE_base"],
-      [v.SW_base, 0xffff00, "SW_base"],
-      [v.SE_base, 0x00ff00, "SE_base"],
-      [v.NW_top,  0x00ffff, "NW_top"],
-      [v.NE_top,  0x0088ff, "NE_top"],
-      [v.SW_top,  0x9900ff, "SW_top"],
-      [v.SE_top,  0xff00ff, "SE_top"],
-    ];
-    for (const [pt, color] of corners) {
-      g.lineStyle(0);
-      g.beginFill(color, 1);
-      g.drawCircle(pt.x, pt.y, 4);
-      g.endFill();
-    }
   }
 }
