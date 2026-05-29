@@ -2,7 +2,7 @@
 import { getProjection } from "../transform/constants";
 import { VolumeFlags } from "./flags";
 
-export const ORANGE   = 0xff6600;
+export const ORANGE   = 0xff9829;
 export const BLACK    = 0x000000;
 export const DASH_LEN = 4;
 export const GAP_LEN  = 5;

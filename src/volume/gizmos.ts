@@ -1,20 +1,14 @@
-// Interactive square handles for tile volume (width, height, boundHeight) + Flip button.
+// Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button.
 import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import {
   HandleType, DragState, handleTypeMap,
   handlePositions, clientToGlobal, commitDrag,
 } from "./gizmos-drag";
-
-const HANDLE_SIZE = 10;
-const HALF        = HANDLE_SIZE / 2;
-const BLACK       = 0x000000;
-
-const HANDLE_COLOR: Record<HandleType, number> = {
-  width:  0xff4444,  // red   — X axis
-  height: 0x44dd44,  // green — Y axis
-  boundH: 0x4488ff,  // blue  — Z axis
-};
+import {
+  HALF, HANDLE_COLOR,
+  makeHandle, makeElevHandle, makeFaceHandle,
+} from "./gizmos-handles";
 
 export class VolumeGizmos {
   private static layer: PIXI.Container | null = null;
@@ -84,20 +78,29 @@ export class VolumeGizmos {
     const EH      = E + boundH * gs;
     const { x: hdx, y: hdy } = proj.heightDir;
 
-    const positions  = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy);
-    const container  = new PIXI.Container();
+    const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy);
+    const container = new PIXI.Container();
 
-    for (const type of (["width", "height", "boundH"] as HandleType[])) {
+    for (const type of (["width", "height", "boundH", "elevation", "scale"] as HandleType[])) {
       const pos = positions[type];
-      const g   = VolumeGizmos.makeHandle(HANDLE_COLOR[type]);
-      g.x = pos.cx;
-      g.y = pos.cy;
-      handleTypeMap.set(g, type);
-      g.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
+      let handle: PIXI.Container | PIXI.Graphics;
+      if (type === "elevation") {
+        handle = makeElevHandle(HANDLE_COLOR[type]);
+      } else if (type === "boundH") {
+        const vLen = Math.sqrt(hdx * hdx + hdy * hdy);
+        handle = makeFaceHandle(HANDLE_COLOR[type],
+          0, HALF, (hdx / vLen) * HALF * 2, (hdy / vLen) * HALF * 2);
+      } else {
+        handle = makeHandle(HANDLE_COLOR[type]);
+      }
+      handle.x = pos.cx;
+      handle.y = pos.cy;
+      handleTypeMap.set(handle, type);
+      handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
         e.stopPropagation();
-        VolumeGizmos.beginDrag(type, tile, e.global.x, e.global.y, tx, ty, tw, th, boundH);
+        VolumeGizmos.beginDrag(type, tile, e.global.x, e.global.y, tx, ty, tw, th, boundH, elev);
       });
-      container.addChild(g);
+      container.addChild(handle);
     }
 
     layer.addChild(container);
@@ -124,7 +127,6 @@ export class VolumeGizmos {
 
   static flipTile(tile: Tile): void {
     const w = tile.document.width ?? 0, h = tile.document.height ?? 0;
-    // Adjust Y to keep the SE corner fixed after swap
     void tile.document.update({ width: h, height: w, y: (tile.document.y ?? 0) + (h - w) });
   }
 
@@ -152,22 +154,10 @@ export class VolumeGizmos {
     stage.addChild(layer);
   }
 
-  // Squares in canvas-space → appear as diamonds under the isometric stage transform.
-  private static makeHandle(color: number): PIXI.Graphics {
-    const g = new PIXI.Graphics();
-    g.lineStyle(0.5, BLACK, 1);
-    g.beginFill(color, 0.9);
-    g.drawRect(-HALF, -HALF, HANDLE_SIZE, HANDLE_SIZE);
-    g.endFill();
-    g.eventMode = "static";
-    g.cursor = "pointer";
-    return g;
-  }
-
   private static beginDrag(
     type: HandleType, tile: Tile,
     gx: number, gy: number,
-    tx: number, ty: number, tw: number, th: number, boundH: number,
+    tx: number, ty: number, tw: number, th: number, boundH: number, elev: number,
   ): void {
     VolumeGizmos.drag = {
       type, tile,
@@ -175,6 +165,7 @@ export class VolumeGizmos {
       startX: tx, startY: ty,
       startW: tw, startH: th,
       startBoundH: boundH,
+      startElev: elev,
     };
     window.addEventListener("pointermove", VolumeGizmos.onMove);
     window.addEventListener("pointerup",   VolumeGizmos.onUp, { once: true });
