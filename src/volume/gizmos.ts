@@ -3,7 +3,7 @@ import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import {
   HandleType, DragState, handleTypeMap,
-  handlePositions, clientToGlobal, commitDrag,
+  handlePositions, imageBLCorner, clientToGlobal, commitDrag,
 } from "./gizmos-drag";
 import { makeHandleForType, createRotateBlocker } from "./gizmos-handles";
 
@@ -83,9 +83,11 @@ export class VolumeGizmos {
     const E      = elev * gs / gd;
     const EH     = E + boundH * gs;
     const { x: hdx, y: hdy } = proj.heightDir;
-    const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy);
+    const imgBL    = imageBLCorner(tile);
+    const imgOff   = VolumeFlags.getImageOffset(tile.document);
+    const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy, imgBL);
     const container = new PIXI.Container();
-    for (const type of (["width", "height", "boundH", "elevation", "scale", "move"] as HandleType[])) {
+    for (const type of (["width", "height", "boundH", "elevation", "scale", "move", "imgOffset"] as HandleType[])) {
       const pos    = positions[type];
       const handle = makeHandleForType(type, hdx, hdy);
       handle.x = pos.cx;
@@ -94,7 +96,8 @@ export class VolumeGizmos {
       handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
         e.stopPropagation();
         VolumeGizmos.beginDrag(type, tile, e.global.x, e.global.y,
-          tx, ty, tw, th, boundH, elev, tile.document.x ?? 0, tile.document.y ?? 0);
+          tx, ty, tw, th, boundH, elev, tile.document.x ?? 0, tile.document.y ?? 0,
+          imgOff.x, imgOff.y);
       });
       container.addChild(handle);
     }
@@ -153,6 +156,7 @@ export class VolumeGizmos {
     gx: number, gy: number,
     tx: number, ty: number, tw: number, th: number,
     boundH: number, elev: number, docX: number, docY: number,
+    imgOffX = 0, imgOffY = 0,
   ): void {
     VolumeGizmos.drag = {
       type, tile,
@@ -163,6 +167,8 @@ export class VolumeGizmos {
       startElev: elev,
       startDocX: docX,
       startDocY: docY,
+      startImgOffX: imgOffX,
+      startImgOffY: imgOffY,
     };
     window.addEventListener("pointermove", VolumeGizmos.onMove);
     window.addEventListener("pointerup",   VolumeGizmos.onUp, { once: true });

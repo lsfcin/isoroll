@@ -2,21 +2,23 @@
 import { getProjection } from "../transform/constants";
 import { MODULE_ID } from "./flags";
 
-export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move";
+export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset";
 
 export interface DragState {
-  type:        HandleType;
-  tile:        Tile;
-  startGX:     number;
-  startGY:     number;
-  startX:      number;
-  startY:      number;
-  startW:      number;
-  startH:      number;
-  startBoundH: number;
-  startElev:   number;
-  startDocX:   number;
-  startDocY:   number;
+  type:         HandleType;
+  tile:         Tile;
+  startGX:      number;
+  startGY:      number;
+  startX:       number;
+  startY:       number;
+  startW:       number;
+  startH:       number;
+  startBoundH:  number;
+  startElev:    number;
+  startDocX:    number;
+  startDocY:    number;
+  startImgOffX: number;
+  startImgOffY: number;
 }
 
 // WeakMap key is PIXI.Container (Graphics extends Container; elevation handle is plain Container)
@@ -35,23 +37,35 @@ export function snapQuarterUnits(units: number): number {
 // Used to offset the elevation handle away from the SE vertical edge.
 const ELEV_GAP = 5; // canvas px
 
+// Returns the BL corner of the tile mesh in canvas coords (for imgOffset handle placement).
+export function imageBLCorner(tile: Tile): { x: number; y: number } | null {
+  type M = { x: number; y: number; rotation: number; scale: { x: number; y: number }; texture?: { width: number; height: number }; anchor?: { x: number; y: number } };
+  const mesh = tile.mesh as unknown as M | null | undefined;
+  if (!mesh?.texture) return null;
+  const texW = mesh.texture.width, texH = mesh.texture.height;
+  const ax = mesh.anchor?.x ?? 0.5, ay = mesh.anchor?.y ?? 0.5;
+  const sx = mesh.scale.x, sy = mesh.scale.y;
+  const cr = Math.cos(mesh.rotation), sr = Math.sin(mesh.rotation);
+  const lx = -ax * texW, ly = (1 - ay) * texH;
+  return { x: mesh.x + cr*(lx*sx) - sr*(ly*sy), y: mesh.y + sr*(lx*sx) + cr*(ly*sy) };
+}
+
 // Returns canvas-space positions for all handle anchors
 export function handlePositions(
   tx: number, ty: number, tw: number, th: number,
   E: number, EH: number, hdx: number, hdy: number,
+  imgBL?: { x: number; y: number } | null,
 ): Record<HandleType, { cx: number; cy: number }> {
-  // Midpoint of SE vertical edge (rightmost visible vertical)
   const seMidX = tx + tw + hdx * (E + EH) / 2;
   const seMidY = ty + th + hdy * (E + EH) / 2;
   return {
-    width:     { cx: tx + hdx * E,            cy: ty + th / 2 + hdy * E },
-    height:    { cx: tx + tw / 2 + hdx * E,   cy: ty + th + hdy * E },
-    boundH:    { cx: tx + tw + hdx * EH,       cy: ty + th / 2 + hdy * EH },
-    elevation: { cx: seMidX,                    cy: seMidY },
-    // SE_base corner — proportional scale (mirrors Foundry's native corner handle)
+    width:     { cx: tx + hdx * E,              cy: ty + th / 2 + hdy * E },
+    height:    { cx: tx + tw / 2 + hdx * E,     cy: ty + th + hdy * E },
+    boundH:    { cx: tx + tw + hdx * EH,         cy: ty + th / 2 + hdy * EH },
+    elevation: { cx: seMidX,                      cy: seMidY },
     scale:     { cx: tx + tw + hdx * E,           cy: ty + th + hdy * E },
-    // Center of base face — move/translate (mirrors Foundry's native center handle)
     move:      { cx: tx + tw / 2 + hdx * E,       cy: ty + th / 2 + hdy * E },
+    imgOffset: { cx: imgBL?.x ?? tx,              cy: imgBL?.y ?? (ty + th) },
   };
 }
 
@@ -64,7 +78,7 @@ export function clientToGlobal(clientX: number, clientY: number): { x: number; y
 // m = canvas.app.stage.worldTransform (rotation+skew only); zoom separate.
 export function projectDrag(
   drag: DragState, gx: number, gy: number,
-): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number } {
+): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number; imgOffX: number; imgOffY: number } {
   const dx = gx - drag.startGX, dy = gy - drag.startGY;
   const m    = canvas.app!.stage.worldTransform;
   const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
@@ -73,6 +87,7 @@ export function projectDrag(
 
   let tw = drag.startW, th = drag.startH, boundH = drag.startBoundH, elev = drag.startElev;
   let docX = drag.startDocX, docY = drag.startDocY;
+  let imgOffX = drag.startImgOffX, imgOffY = drag.startImgOffY;
   switch (drag.type) {
     case "width": {
       const d = (dx * m.a + dy * m.b) / zoom;
@@ -105,7 +120,6 @@ export function projectDrag(
       break;
     }
     case "move": {
-      // Invert worldTransform to convert screen delta → canvas delta
       const det = m.a * m.d - m.b * m.c;
       const cdx = (dx * m.d - dy * m.c) / det;
       const cdy = (-dx * m.b + dy * m.a) / det;
@@ -113,13 +127,19 @@ export function projectDrag(
       docY = snapQuarterPx(drag.startDocY + cdy, gs);
       break;
     }
+    case "imgOffset": {
+      const det = m.a * m.d - m.b * m.c;
+      imgOffX = drag.startImgOffX + (dx * m.d - dy * m.c) / det;
+      imgOffY = drag.startImgOffY + (-dx * m.b + dy * m.a) / det;
+      break;
+    }
   }
-  return { tw, th, boundH, elev, docX, docY };
+  return { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY };
 }
 
 // Commit drag result to document
 export function commitDrag(drag: DragState, gx: number, gy: number): void {
-  const { tw, th, boundH, elev, docX, docY } = projectDrag(drag, gx, gy);
+  const { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY } = projectDrag(drag, gx, gy);
   switch (drag.type) {
     case "width":     void drag.tile.document.update({ width: tw }); break;
     case "height":    void drag.tile.document.update({ height: th }); break;
@@ -127,5 +147,6 @@ export function commitDrag(drag: DragState, gx: number, gy: number): void {
     case "elevation": void drag.tile.document.update({ elevation: elev }); break;
     case "scale":     void drag.tile.document.update({ width: tw, height: th }); break;
     case "move":      void drag.tile.document.update({ x: docX, y: docY }); break;
+    case "imgOffset": void drag.tile.document.setFlag(MODULE_ID, "imageOffset", { x: imgOffX, y: imgOffY }); break;
   }
 }

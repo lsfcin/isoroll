@@ -113,8 +113,9 @@ export class ObjectTransform {
       boundH,
       flags,
     );
-    // Displace mesh to match elevation — same (hdx*E, hdy*E) offset as the 3D box base
-    mesh.x = (tile.document.x ?? 0) + hdx * E;
-    mesh.y = (tile.document.y ?? 0) + hdy * E;
+    // Displace mesh: elevation offset + per-tile image alignment offset
+    const imgOff = VolumeFlags.getImageOffset(tile.document);
+    mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x;
+    mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y;
   }
 }

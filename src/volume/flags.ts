@@ -30,4 +30,8 @@ export class VolumeFlags {
   static getTileHeight(tile: TileDocument): number {
     return (tile.getFlag(MODULE_ID, "boundHeight") as number | undefined) ?? 1;
   }
+
+  static getImageOffset(tile: TileDocument): { x: number; y: number } {
+    return (tile.getFlag(MODULE_ID, "imageOffset") as { x: number; y: number } | undefined) ?? { x: 0, y: 0 };
+  }
 }
