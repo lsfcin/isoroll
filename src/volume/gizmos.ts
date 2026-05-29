@@ -3,13 +3,18 @@ import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import {
   HandleType, DragState, handleTypeMap,
-  handlePositions, clientToGlobal, previewHandles, commitDrag,
+  handlePositions, clientToGlobal, commitDrag,
 } from "./gizmos-drag";
 
 const HANDLE_SIZE = 10;
 const HALF        = HANDLE_SIZE / 2;
-const ORANGE      = 0xff6600;
 const BLACK       = 0x000000;
+
+const HANDLE_COLOR: Record<HandleType, number> = {
+  width:  0xff4444,  // red   — X axis
+  height: 0x44dd44,  // green — Y axis
+  boundH: 0x4488ff,  // blue  — Z axis
+};
 
 export class VolumeGizmos {
   private static layer: PIXI.Container | null = null;
@@ -84,7 +89,7 @@ export class VolumeGizmos {
 
     for (const type of (["width", "height", "boundH"] as HandleType[])) {
       const pos = positions[type];
-      const g   = VolumeGizmos.makeHandle();
+      const g   = VolumeGizmos.makeHandle(HANDLE_COLOR[type]);
       g.x = pos.cx;
       g.y = pos.cy;
       handleTypeMap.set(g, type);
@@ -148,10 +153,10 @@ export class VolumeGizmos {
   }
 
   // Squares in canvas-space → appear as diamonds under the isometric stage transform.
-  private static makeHandle(): PIXI.Graphics {
+  private static makeHandle(color: number): PIXI.Graphics {
     const g = new PIXI.Graphics();
-    g.lineStyle(2, BLACK, 1);
-    g.beginFill(ORANGE, 0.85);
+    g.lineStyle(0.5, BLACK, 1);
+    g.beginFill(color, 0.9);
     g.drawRect(-HALF, -HALF, HANDLE_SIZE, HANDLE_SIZE);
     g.endFill();
     g.eventMode = "static";
@@ -179,7 +184,7 @@ export class VolumeGizmos {
     if (!VolumeGizmos.drag) return;
     e.preventDefault();
     const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
-    previewHandles(VolumeGizmos.drag, gx, gy, VolumeGizmos.sets, handleTypeMap);
+    commitDrag(VolumeGizmos.drag, gx, gy);
   }
 
   private static handleUp(e: PointerEvent): void {

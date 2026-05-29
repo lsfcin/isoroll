@@ -1,5 +1,5 @@
 import { getProjection } from "./constants";
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID, VolumeFlags } from "../volume/flags";
 
 type MeshLike = {
   rotation: number;
@@ -43,18 +43,19 @@ export class ObjectTransform {
     docRotationDeg: number,
     docW: number,
     docH: number,
+    docBoundH: number,
     flags?: Record<string, boolean>,
   ): void {
     const proj = getProjection(canvas.scene);
     const { reverseRotation, ratio, counterFactor } = proj;
     mesh.rotation = (docRotationDeg * Math.PI) / 180 + reverseRotation;
     mesh.skew?.set(0, 0);
-    if (ObjectTransform.isMeshReset(flags)) {
-      const texW = mesh.texture?.width || 1;
-      const texH = mesh.texture?.height || 1;
-      const uniform = Math.max(docW, docH) / Math.max(texW, texH);
-      mesh.scale.set(uniform * counterFactor, uniform * ratio * counterFactor);
-    }
+    // Scale: always recompute (absolute set, not accumulate) so boundHeight changes apply too.
+    // isMeshReset guard was skipping flag-only refreshes (refreshPosition/refreshPerception).
+    const texW = mesh.texture?.width || 1;
+    const texH = mesh.texture?.height || 1;
+    const uniform = Math.max(docW, docH, docBoundH) / Math.max(texW, texH);
+    mesh.scale.set(uniform * counterFactor, uniform * ratio * counterFactor);
   }
 
   private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
@@ -95,11 +96,14 @@ export class ObjectTransform {
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
     const mesh = tile.mesh as unknown as MeshLike | null | undefined;
     if (!mesh) return;
+    const gridSize = canvas.grid?.size ?? 100;
+    const boundH   = VolumeFlags.getTileHeight(tile.document) * gridSize;
     ObjectTransform.applyTileCounter(
       mesh,
       tile.document.rotation ?? 0,
       tile.document.width ?? 0,
       tile.document.height ?? 0,
+      boundH,
       flags,
     );
   }

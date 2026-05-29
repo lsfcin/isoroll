@@ -1,9 +1,9 @@
 // Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer.
 import { MODULE_ID } from "./flags";
 import {
-  ORANGE, BLACK, DASH_LEN, GAP_LEN, ANCHOR_DASH, ANCHOR_GAP,
+  ORANGE, BLACK,
   ALPHA_FRONT_OUTLINE, ALPHA_FRONT_FILL, ALPHA_BACK_OUTLINE, ALPHA_BACK_FILL,
-  P, drawDash, computeVerts,
+  P, computeVerts,
 } from "./overlay-geometry";
 
 export class VolumeOverlay {
@@ -93,42 +93,32 @@ export class VolumeOverlay {
   }
 
   private static draw(g: PIXI.Graphics, tile: Tile): void {
-    // DIAGNOSTIC: solid red rect = tile footprint; remove once positioning confirmed
-    const tw = tile.document.width ?? 100, th = tile.document.height ?? 100;
-    const tx = (tile.document.x ?? 0) - tw / 2, ty = (tile.document.y ?? 0) - th / 2;
-    const gs = canvas.grid?.size ?? 100;
-    console.log(
-      `isoroll | tile: x=${tx} y=${ty} w=${tw} h=${th}` +
-      `  grid col=${Math.floor(tx/gs)} row=${Math.floor(ty/gs)} size=${gs}` +
-      `  gridUnits: ${Math.round(tw/gs*10)/10}×${Math.round(th/gs*10)/10}`,
-    );
-    g.lineStyle(2, 0xff0000, 1); g.drawRect(tx, ty, tw, th); g.endFill();
-
     const v = computeVerts(tile);
+
+    // back=true for the 3 edges meeting at the NE corner (far/hidden from SE camera)
     const edges: Array<[P, P, boolean]> = [
-      [v.SE_base, v.NE_base, true],  [v.SE_base, v.SW_base, true],
-      [v.NW_base, v.NE_base, false], [v.NW_base, v.SW_base, false],
-      [v.SW_base, v.SW_top,  true],  [v.SE_base, v.SE_top,  true],
-      [v.NW_base, v.NW_top,  false], [v.NE_base, v.NE_top,  false],
-      [v.NE_top,  v.SE_top,  true],  [v.SW_top,  v.SE_top,  true],
-      [v.SW_top,  v.NW_top,  true],  [v.NE_top,  v.NW_top,  true],
+      [v.SE_base, v.NE_base, true],   // base right  — SE→NE  (back: touches NE)
+      [v.SE_base, v.SW_base, false],  // base bottom — SE→SW
+      [v.NW_base, v.NE_base, true],   // base top    — NW→NE  (back: touches NE)
+      [v.NW_base, v.SW_base, false],  // base left   — NW→SW
+      [v.SW_base, v.SW_top,  false],  // vert SW
+      [v.SE_base, v.SE_top,  false],  // vert SE
+      [v.NW_base, v.NW_top,  false],  // vert NW
+      [v.NE_base, v.NE_top,  true],   // vert NE     (back: is NE)
+      [v.NE_top,  v.SE_top,  false],  // top right   — NE→SE
+      [v.SW_top,  v.SE_top,  false],  // top bottom  — SW→SE
+      [v.SW_top,  v.NW_top,  false],  // top left    — SW→NW
+      [v.NE_top,  v.NW_top,  false],  // top top     — NE→NW
     ];
 
-    for (const [a, b, front] of edges) {
-      g.lineStyle(3, BLACK, front ? ALPHA_FRONT_OUTLINE : ALPHA_BACK_OUTLINE);
-      drawDash(g, a.x, a.y, b.x, b.y, DASH_LEN, GAP_LEN);
+    // Two-pass solid lines: thin black outline first, thin orange on top
+    for (const [a, b, back] of edges) {
+      g.lineStyle(2, BLACK, back ? ALPHA_BACK_OUTLINE : ALPHA_FRONT_OUTLINE);
+      g.moveTo(a.x, a.y); g.lineTo(b.x, b.y);
     }
-    for (const [a, b, front] of edges) {
-      g.lineStyle(1.5, ORANGE, front ? ALPHA_FRONT_FILL : ALPHA_BACK_FILL);
-      drawDash(g, a.x, a.y, b.x, b.y, DASH_LEN, GAP_LEN);
-    }
-
-    if (Math.abs(v.elevation) > 0.01) {
-      const target = v.elevation >= 0 ? v.baseCenter : v.topCenter;
-      g.lineStyle(1.5, BLACK, 0.25);
-      drawDash(g, v.ground.x, v.ground.y, target.x, target.y, ANCHOR_DASH, ANCHOR_GAP);
-      g.lineStyle(1, ORANGE, 0.5);
-      drawDash(g, v.ground.x, v.ground.y, target.x, target.y, ANCHOR_DASH, ANCHOR_GAP);
+    for (const [a, b, back] of edges) {
+      g.lineStyle(1, ORANGE, back ? ALPHA_BACK_FILL : ALPHA_FRONT_FILL);
+      g.moveTo(a.x, a.y); g.lineTo(b.x, b.y);
     }
 
     g.endFill();

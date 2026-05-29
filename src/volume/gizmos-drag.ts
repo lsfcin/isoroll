@@ -33,9 +33,9 @@ export function handlePositions(
   E: number, EH: number, hdx: number, hdy: number,
 ): Record<HandleType, { cx: number; cy: number }> {
   return {
-    width:  { cx: tx + tw + hdx * E,       cy: ty + th / 2 + hdy * E },
-    height: { cx: tx + tw / 2 + hdx * E,   cy: ty + th + hdy * E },
-    boundH: { cx: tx + tw / 2 + hdx * EH,  cy: ty + th / 2 + hdy * EH },
+    width:  { cx: tx + hdx * E,            cy: ty + th / 2 + hdy * E },  // midpoint NW–SW (front-left edge)
+    height: { cx: tx + tw / 2 + hdx * E,   cy: ty + th + hdy * E },      // midpoint SW–SE (front-bottom edge)
+    boundH: { cx: tx + tw / 2 + hdx * EH,  cy: ty + th / 2 + hdy * EH }, // center of top face
   };
 }
 
@@ -58,7 +58,7 @@ export function projectDrag(
   switch (drag.type) {
     case "width": {
       const d = (dx * m.a + dy * m.b) / zoom;
-      tw = Math.max(gs * 0.25, snapQuarterPx(drag.startW + d, gs));
+      tw = Math.max(gs * 0.25, snapQuarterPx(drag.startW - d, gs));
       break;
     }
     case "height": {
