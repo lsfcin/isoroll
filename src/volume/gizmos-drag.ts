@@ -2,7 +2,7 @@
 import { getProjection } from "../transform/constants";
 import { MODULE_ID } from "./flags";
 
-export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale";
+export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move";
 
 export interface DragState {
   type:        HandleType;
@@ -15,6 +15,8 @@ export interface DragState {
   startH:      number;
   startBoundH: number;
   startElev:   number;
+  startDocX:   number;
+  startDocY:   number;
 }
 
 // WeakMap key is PIXI.Container (Graphics extends Container; elevation handle is plain Container)
@@ -47,7 +49,9 @@ export function handlePositions(
     boundH:    { cx: tx + tw + hdx * EH,       cy: ty + th / 2 + hdy * EH },
     elevation: { cx: seMidX,                    cy: seMidY },
     // SE_base corner — proportional scale (mirrors Foundry's native corner handle)
-    scale:     { cx: tx + tw + hdx * E,         cy: ty + th + hdy * E },
+    scale:     { cx: tx + tw + hdx * E,           cy: ty + th + hdy * E },
+    // Center of base face — move/translate (mirrors Foundry's native center handle)
+    move:      { cx: tx + tw / 2 + hdx * E,       cy: ty + th / 2 + hdy * E },
   };
 }
 
@@ -60,7 +64,7 @@ export function clientToGlobal(clientX: number, clientY: number): { x: number; y
 // m = canvas.app.stage.worldTransform (rotation+skew only); zoom separate.
 export function projectDrag(
   drag: DragState, gx: number, gy: number,
-): { tw: number; th: number; boundH: number; elev: number } {
+): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number } {
   const dx = gx - drag.startGX, dy = gy - drag.startGY;
   const m    = canvas.app!.stage.worldTransform;
   const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
@@ -68,6 +72,7 @@ export function projectDrag(
   const gd   = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
 
   let tw = drag.startW, th = drag.startH, boundH = drag.startBoundH, elev = drag.startElev;
+  let docX = drag.startDocX, docY = drag.startDocY;
   switch (drag.type) {
     case "width": {
       const d = (dx * m.a + dy * m.b) / zoom;
@@ -99,18 +104,28 @@ export function projectDrag(
       th = Math.max(gs * 0.25, snapQuarterPx(tw / ratio, gs));
       break;
     }
+    case "move": {
+      // Invert worldTransform to convert screen delta → canvas delta
+      const det = m.a * m.d - m.b * m.c;
+      const cdx = (dx * m.d - dy * m.c) / det;
+      const cdy = (-dx * m.b + dy * m.a) / det;
+      docX = snapQuarterPx(drag.startDocX + cdx, gs);
+      docY = snapQuarterPx(drag.startDocY + cdy, gs);
+      break;
+    }
   }
-  return { tw, th, boundH, elev };
+  return { tw, th, boundH, elev, docX, docY };
 }
 
 // Commit drag result to document
 export function commitDrag(drag: DragState, gx: number, gy: number): void {
-  const { tw, th, boundH, elev } = projectDrag(drag, gx, gy);
+  const { tw, th, boundH, elev, docX, docY } = projectDrag(drag, gx, gy);
   switch (drag.type) {
     case "width":     void drag.tile.document.update({ width: tw }); break;
     case "height":    void drag.tile.document.update({ height: th }); break;
     case "boundH":    void drag.tile.document.setFlag(MODULE_ID, "boundHeight", boundH); break;
     case "elevation": void drag.tile.document.update({ elevation: elev }); break;
     case "scale":     void drag.tile.document.update({ width: tw, height: th }); break;
+    case "move":      void drag.tile.document.update({ x: docX, y: docY }); break;
   }
 }

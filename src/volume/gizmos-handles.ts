@@ -12,6 +12,7 @@ export const HANDLE_COLOR: Record<HandleType, number> = {
   boundH:    0x4488ff,  // blue   — Z axis
   elevation: 0x9900ff,  // purple — elevation
   scale:     0xff9829,  // Foundry orange — proportional scale (mirrors native corner handle)
+  move:      0xff9829,  // Foundry orange — translate (mirrors native center handle)
 };
 
 // Canvas-aligned square → appears as a diamond under the isometric stage transform.
@@ -41,6 +42,18 @@ export function makeElevHandle(color: number): PIXI.Container {
   wrap.eventMode = "static";
   wrap.cursor = "n-resize";
   return wrap;
+}
+
+// Plain canvas-space circle for translate — appears as an ellipse under isometric stage.
+export function makeMoveHandle(color: number): PIXI.Graphics {
+  const g = new PIXI.Graphics();
+  g.lineStyle(0.5, 0x000000, 1);
+  g.beginFill(color, 0.9);
+  g.drawCircle(0, 0, HALF * 0.9);
+  g.endFill();
+  g.eventMode = "static";
+  g.cursor = "move";
+  return g;
 }
 
 // Parallelogram that is a square in face-coordinate space (projected onto a box face).
