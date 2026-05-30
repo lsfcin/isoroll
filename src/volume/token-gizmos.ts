@@ -1,0 +1,165 @@
+// Image offset + scale handles for tokens (BL circle, TR square).
+import { getProjection } from "../transform/constants";
+import { MODULE_ID, VolumeFlags } from "./flags";
+import { imageBLCorner, imageTRCorner, clientToGlobal } from "./gizmos-drag";
+import { makeElevHandle, makeSquareCounterHandle } from "./gizmos-handles";
+
+interface TkDrag {
+  type: "imgOffset" | "imgScale";
+  token: Token;
+  startGX: number; startGY: number;
+  startImgOffX: number; startImgOffY: number;
+  startImgScale: number;
+  startMeshCX: number; startMeshCY: number;  // mesh canvas center at drag start
+}
+
+export class TokenGizmos {
+  private static layer: PIXI.Container | null = null;
+  private static sets: Map<string, PIXI.Container> = new Map();
+  private static drag: TkDrag | null = null;
+  private static readonly onMove = (e: PointerEvent): void => TokenGizmos.handleMove(e);
+  private static readonly onUp   = (e: PointerEvent): void => TokenGizmos.handleUp(e);
+
+  static activate(): void {
+    Hooks.on("canvasReady",  TokenGizmos.onCanvasReady);
+    Hooks.on("updateScene",  TokenGizmos.onUpdateScene);
+    Hooks.on("controlToken", TokenGizmos.onControlToken);
+    Hooks.on("refreshToken", TokenGizmos.onRefreshToken);
+  }
+
+  private static isEnabled(): boolean {
+    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
+  }
+
+  private static onCanvasReady(): void { TokenGizmos.clearAll(); }
+
+  private static onUpdateScene(scene: Scene): void {
+    if (scene.id !== canvas.scene?.id) return;
+    TokenGizmos.clearAll();
+  }
+
+  private static onControlToken(token: Token, controlled: boolean): void {
+    if (!TokenGizmos.isEnabled()) return;
+    if (controlled) TokenGizmos.show(token);
+    else TokenGizmos.hide(token.id);
+  }
+
+  private static onRefreshToken(token: Token): void {
+    if (!TokenGizmos.isEnabled()) return;
+    if (!TokenGizmos.sets.has(token.id)) return;
+    TokenGizmos.show(token);
+  }
+
+  static show(token: Token): void {
+    TokenGizmos.hide(token.id);
+    const layer  = TokenGizmos.ensureLayer();
+    const tAsT   = token as unknown as Tile;
+    const bl     = imageBLCorner(tAsT);
+    const tr     = imageTRCorner(tAsT);
+    const imgOff = VolumeFlags.getImageOffset(token.document);
+    const imgScl = VolumeFlags.getImageScale(token.document);
+    const container = new PIXI.Container();
+
+    type M = { x: number; y: number };
+    const meshCX = (token.mesh as unknown as M | null | undefined)?.x ?? (token.document.x ?? 0);
+    const meshCY = (token.mesh as unknown as M | null | undefined)?.y ?? (token.document.y ?? 0);
+    const defs: Array<[PIXI.Container, "imgOffset" | "imgScale", { x: number; y: number } | null]> = [
+      [makeElevHandle(0xffffff, "move"),                "imgOffset", bl],
+      [makeSquareCounterHandle(0xffffff, "nwse-resize"), "imgScale",  tr],
+    ];
+    for (const [handle, type, pos] of defs) {
+      if (pos) { handle.x = pos.x; handle.y = pos.y; }
+      handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
+        e.stopPropagation();
+        TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x, imgOff.y, imgScl, meshCX, meshCY);
+      });
+      container.addChild(handle);
+    }
+    layer.addChild(container);
+    TokenGizmos.sets.set(token.id, container);
+    TokenGizmos.bringToTop();
+  }
+
+  static hide(tokenId: string): void {
+    const c = TokenGizmos.sets.get(tokenId);
+    if (!c) return;
+    TokenGizmos.layer?.removeChild(c);
+    c.destroy({ children: true });
+    TokenGizmos.sets.delete(tokenId);
+  }
+
+  static clearAll(): void {
+    for (const id of Array.from(TokenGizmos.sets.keys())) TokenGizmos.hide(id);
+    if (TokenGizmos.layer) {
+      try { (canvas.stage as unknown as PIXI.Container).removeChild(TokenGizmos.layer!); } catch { /* ok */ }
+      TokenGizmos.layer.destroy({ children: true });
+      TokenGizmos.layer = null;
+    }
+  }
+
+  private static ensureLayer(): PIXI.Container {
+    if (TokenGizmos.layer && !TokenGizmos.layer.parent) TokenGizmos.layer = null;
+    if (TokenGizmos.layer) return TokenGizmos.layer;
+    const layer = new PIXI.Container();
+    layer.eventMode = "passive";
+    (canvas.stage as unknown as PIXI.Container).addChild(layer);
+    TokenGizmos.layer = layer;
+    return layer;
+  }
+
+  private static bringToTop(): void {
+    if (TokenGizmos.layer && !TokenGizmos.layer.parent) TokenGizmos.layer = null;
+    if (!TokenGizmos.layer) return;
+    const stage = canvas.stage as unknown as PIXI.Container;
+    try { stage.removeChild(TokenGizmos.layer); } catch { /* ok */ }
+    stage.addChild(TokenGizmos.layer);
+  }
+
+  private static beginDrag(
+    type: "imgOffset" | "imgScale", token: Token,
+    gx: number, gy: number, imgOffX: number, imgOffY: number, imgScale: number,
+    meshCX = 0, meshCY = 0,
+  ): void {
+    TokenGizmos.drag = { type, token, startGX: gx, startGY: gy, startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale, startMeshCX: meshCX, startMeshCY: meshCY };
+    window.addEventListener("pointermove", TokenGizmos.onMove);
+    window.addEventListener("pointerup",   TokenGizmos.onUp, { once: true });
+  }
+
+  private static commit(drag: TkDrag, gx: number, gy: number): void {
+    const dx = gx - drag.startGX, dy = gy - drag.startGY;
+    const m = canvas.app!.stage.worldTransform;
+    if (drag.type === "imgOffset") {
+      const det = m.a * m.d - m.b * m.c;
+      void drag.token.document.setFlag(MODULE_ID, "imageOffset", {
+        x: drag.startImgOffX + (dx * m.d - dy * m.c) / det,
+        y: drag.startImgOffY + (-dx * m.b + dy * m.a) / det,
+      });
+    } else {
+      const cx  = drag.startMeshCX;
+      const cy  = drag.startMeshCY;
+      const csx = m.a*cx + m.c*cy + m.tx, csy = m.b*cx + m.d*cy + m.ty;
+      const rxRef = drag.startGX - csx, ryRef = drag.startGY - csy;
+      const distRef = Math.sqrt(rxRef*rxRef + ryRef*ryRef);
+      if (distRef > 0) {
+        const cur = ((gx-csx)*rxRef + (gy-csy)*ryRef) / distRef;
+        void drag.token.document.setFlag(MODULE_ID, "imageScale", Math.max(0.05, drag.startImgScale * (cur / distRef)));
+      }
+    }
+  }
+
+  private static handleMove(e: PointerEvent): void {
+    if (!TokenGizmos.drag) return;
+    e.preventDefault();
+    const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
+    TokenGizmos.commit(TokenGizmos.drag, gx, gy);
+  }
+
+  private static handleUp(e: PointerEvent): void {
+    window.removeEventListener("pointermove", TokenGizmos.onMove);
+    const drag = TokenGizmos.drag;
+    TokenGizmos.drag = null;
+    if (!drag) return;
+    const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
+    TokenGizmos.commit(drag, gx, gy);
+  }
+}

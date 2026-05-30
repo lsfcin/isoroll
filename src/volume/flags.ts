@@ -31,12 +31,12 @@ export class VolumeFlags {
     return (tile.getFlag(MODULE_ID, "boundHeight") as number | undefined) ?? 1;
   }
 
-  static getImageOffset(tile: TileDocument): { x: number; y: number } {
-    return (tile.getFlag(MODULE_ID, "imageOffset") as { x: number; y: number } | undefined) ?? { x: 0, y: 0 };
+  static getImageOffset(doc: { getFlag(s: string, k: string): unknown }): { x: number; y: number } {
+    return (doc.getFlag(MODULE_ID, "imageOffset") as { x: number; y: number } | undefined) ?? { x: 0, y: 0 };
   }
 
-  static getImageScale(tile: TileDocument): number {
-    return (tile.getFlag(MODULE_ID, "imageScale") as number | undefined) ?? 1;
+  static getImageScale(doc: { getFlag(s: string, k: string): unknown }): number {
+    return (doc.getFlag(MODULE_ID, "imageScale") as number | undefined) ?? 1;
   }
 
   static getTileFlipped(tile: TileDocument): boolean {

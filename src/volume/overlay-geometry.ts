@@ -5,7 +5,7 @@ import { VolumeFlags } from "./flags";
 export const ORANGE   = 0xff9829;
 export const BLACK    = 0x000000;
 export const DASH_LEN = 4;
-export const GAP_LEN  = 20;
+export const GAP_LEN  = 10;
 export const ANCHOR_DASH = 2;
 export const ANCHOR_GAP  = 9;
 

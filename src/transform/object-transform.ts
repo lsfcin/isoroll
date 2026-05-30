@@ -12,6 +12,9 @@ type MeshLike = {
 };
 
 export class ObjectTransform {
+  // Stores Foundry's base mesh position per token, updated only on full mesh resets.
+  private static readonly tokenBase = new WeakMap<object, { x: number; y: number }>();
+
   static activate(): void {
     Hooks.on("refreshToken", ObjectTransform.onRefreshToken);
     Hooks.on("refreshTile",  ObjectTransform.onRefreshTile);
@@ -28,17 +31,17 @@ export class ObjectTransform {
       || flags["refreshShape"] || flags["redraw"];
   }
 
-  private static applyTokenCounter(mesh: MeshLike, flags?: Record<string, boolean>): void {
+  private static applyTokenCounter(
+    mesh: MeshLike, docW: number, docH: number, imgScale: number,
+  ): void {
     const proj = getProjection(canvas.scene);
     const { reverseRotation, ratio, counterFactor } = proj;
-    // TODO: select sprite frame based on docRotation for 8-directional sprite support
     mesh.rotation = reverseRotation;
     mesh.skew?.set(0, 0);
     mesh.anchor?.set(0.5, 0.5);
-    if (ObjectTransform.isMeshReset(flags)) {
-      mesh.scale.x *= counterFactor;
-      mesh.scale.y *= ratio * counterFactor;
-    }
+    const texW = mesh.texture?.width || 1, texH = mesh.texture?.height || 1;
+    const uniform = Math.max(docW, docH) / Math.max(texW, texH) * imgScale;
+    mesh.scale.set(uniform * counterFactor, uniform * ratio * counterFactor);
   }
 
   private static applyTileCounter(
@@ -65,7 +68,19 @@ export class ObjectTransform {
     if (token.document.getFlag(MODULE_ID, "transformToken") === true) return;
     const mesh = token.mesh as unknown as MeshLike | null | undefined;
     if (!mesh) return;
-    ObjectTransform.applyTokenCounter(mesh, flags);
+    const gs   = canvas.grid?.size ?? 100;
+    const docW = (token.document.width ?? 1) * gs;
+    const docH = (token.document.height ?? 1) * gs;
+    const imgOff = VolumeFlags.getImageOffset(token.document);
+    // On full mesh reset Foundry has set mesh.x/y to the base position; store it.
+    // On flag-only refreshes, reuse the stored base to avoid accumulation.
+    if (ObjectTransform.isMeshReset(flags)) {
+      ObjectTransform.tokenBase.set(token, { x: mesh.x, y: mesh.y });
+    }
+    const base = ObjectTransform.tokenBase.get(token) ?? { x: mesh.x - imgOff.x, y: mesh.y - imgOff.y };
+    ObjectTransform.applyTokenCounter(mesh, docW, docH, VolumeFlags.getImageScale(token.document));
+    mesh.x = base.x + imgOff.x;
+    mesh.y = base.y + imgOff.y;
   }
 
   // Reposition the TokenHUD DOM overlay to track the token under the isometric stage transform.
