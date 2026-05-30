@@ -17,12 +17,20 @@
     "TokenConfig": {
       "Heading": "Isométrico",
       "TransformToken": "Transformar Token",
-      "TransformTokenHint": "Aplica a transformação isométrica do palco ao token. Quando desmarcado (padrão), o sprite do token aparece sem distorção independente da rotação do palco."
+      "TransformTokenHint": "Aplica a transformação isométrica do palco ao token. Quando desmarcado (padrão), o sprite do token aparece sem distorção independente da rotação do palco.",
+      "ShowImageManipulation": "Exibir Manipulação de Imagem",
+      "ShowImageManipulationHint": "Exibe as alças de deslocamento/escala da imagem (círculo e quadrado brancos) e o contorno tracejado da imagem quando o token está selecionado.",
+      "ShowVolumeManipulation": "Exibir Manipulação de Volume",
+      "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e a alça de elevação quando o token está selecionado."
     },
     "TileConfig": {
       "Heading": "Isométrico",
       "TransformTile": "Transformar Tile",
-      "TransformTileHint": "Aplica a transformação isométrica do palco ao tile. Quando desmarcado (padrão), o sprite do tile aparece sem distorção independente da rotação do palco."
+      "TransformTileHint": "Aplica a transformação isométrica do palco ao tile. Quando desmarcado (padrão), o sprite do tile aparece sem distorção independente da rotação do palco.",
+      "ShowImageManipulation": "Exibir Manipulação de Imagem",
+      "ShowImageManipulationHint": "Exibe as alças de deslocamento/escala da imagem (círculo e quadrado brancos) e o contorno tracejado da imagem quando o tile está selecionado.",
+      "ShowVolumeManipulation": "Exibir Manipulação de Volume",
+      "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e todas as alças de volume (tamanho, elevação, movimento) quando o tile está selecionado."
     },
     "Projection": {
       "Dimetric21": "Dimétrico 2:1 (padrão)",

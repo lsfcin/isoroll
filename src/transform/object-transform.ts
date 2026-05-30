@@ -64,6 +64,11 @@ export class ObjectTransform {
     const mesh = token.mesh as unknown as MeshLike | null | undefined;
     if (!mesh) return;
     const gs   = canvas.grid?.size ?? 100;
+    const gd   = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+    const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
+    const E    = elev * gs / gd;
+    const proj = getProjection(canvas.scene);
+    const { x: hdx, y: hdy } = proj.heightDir;
     const docW = (token.document.width ?? 1) * gs;
     const docH = (token.document.height ?? 1) * gs;
     const imgOff = VolumeFlags.getImageOffset(token.document);
@@ -71,15 +76,15 @@ export class ObjectTransform {
     // That happens exactly when refreshPosition is set (movement, setFlag, or any propagation
     // from redraw/refreshSize/refreshShape). Do NOT update on refreshMesh alone — the hide
     // animation fires refreshMesh every frame (alpha lerp) without refreshPosition, and
-    // mesh.x/y already contains our imgOff at that point; capturing it would compound the
+    // mesh.x/y already contains our offsets at that point; capturing it would compound the
     // offset on each frame, causing the image to drift off screen.
     if (!flags || flags["refreshPosition"]) {
       ObjectTransform.tokenBase.set(token, { x: mesh.x, y: mesh.y });
     }
-    const base = ObjectTransform.tokenBase.get(token) ?? { x: mesh.x - imgOff.x, y: mesh.y - imgOff.y };
+    const base = ObjectTransform.tokenBase.get(token) ?? { x: mesh.x - hdx * E - imgOff.x, y: mesh.y - hdy * E - imgOff.y };
     ObjectTransform.applyTokenCounter(mesh, docW, docH, VolumeFlags.getImageScale(token.document));
-    mesh.x = base.x + imgOff.x;
-    mesh.y = base.y + imgOff.y;
+    mesh.x = base.x + hdx * E + imgOff.x;
+    mesh.y = base.y + hdy * E + imgOff.y;
   }
 
   // Reposition the TokenHUD DOM overlay to track the token under the isometric stage transform.

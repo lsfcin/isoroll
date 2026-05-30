@@ -4,6 +4,8 @@ import { VolumeOverlay } from "./volume/overlay";
 import { VolumeGizmos } from "./volume/gizmos";
 import { TokenOverlay } from "./volume/token-overlay";
 import { TokenGizmos } from "./volume/token-gizmos";
+import { TokenVolumeOverlay } from "./volume/token-volume-overlay";
+import { TokenVolumeGizmos } from "./volume/token-volume-gizmos";
 import { Occluder } from "./occluder/occluder";
 import { CanvasTransform } from "./transform/canvas-transform";
 import { ObjectTransform } from "./transform/object-transform";
@@ -20,6 +22,8 @@ Hooks.once("init", () => {
   VolumeGizmos.activate();
   TokenOverlay.activate();
   TokenGizmos.activate();
+  TokenVolumeOverlay.activate();
+  TokenVolumeGizmos.activate();
   Occluder.activate();
   console.log("isoroll | initialized");
 });

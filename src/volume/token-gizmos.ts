@@ -52,6 +52,7 @@ export class TokenGizmos {
 
   static show(token: Token): void {
     TokenGizmos.hide(token.id);
+    if (!VolumeFlags.getShowImageManipulation(token.document, true)) return;
     const layer  = TokenGizmos.ensureLayer();
     const tAsT   = token as unknown as Tile;
     const bl     = imageBLCorner(tAsT);

@@ -74,9 +74,14 @@ export class VolumeGizmos {
     const imgBL = imageBLCorner(tile), imgTR = imageTRCorner(tile), imgBC = imageBCCorner(tile);
     const imgOff = VolumeFlags.getImageOffset(tile.document);
     const imgScale = VolumeFlags.getImageScale(tile.document);
+    const showVolManip = VolumeFlags.getShowVolumeManipulation(tile.document, true);
+    const showImgManip = VolumeFlags.getShowImageManipulation(tile.document, true);
     const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy, imgBL, imgTR, imgBC);
     const container = new PIXI.Container();
-    for (const type of (["width", "height", "boundH", "elevation", "scale", "move", "imgOffset", "imgScale", "swapSide"] as HandleType[])) {
+    const handleTypes: HandleType[] = [];
+    if (showVolManip) handleTypes.push("width", "height", "boundH", "elevation", "scale", "move");
+    if (showImgManip) handleTypes.push("imgOffset", "imgScale", "swapSide");
+    for (const type of handleTypes) {
       const pos    = positions[type];
       const handle = makeHandleForType(type, hdx, hdy);
       handle.x = pos.cx;

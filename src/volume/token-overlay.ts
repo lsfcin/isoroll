@@ -1,5 +1,5 @@
 // White dashed image contour drawn on selected tokens.
-import { MODULE_ID } from "./flags";
+import { MODULE_ID, VolumeFlags } from "./flags";
 import { BLACK, DASH_LEN, GAP_LEN, drawDash } from "./overlay-geometry";
 
 export class TokenOverlay {
@@ -38,6 +38,7 @@ export class TokenOverlay {
 
   static show(token: Token): void {
     TokenOverlay.hide(token.id);
+    if (!VolumeFlags.getShowImageManipulation(token.document, true)) return;
     const layer = TokenOverlay.ensureLayer();
     const g = new PIXI.Graphics();
     g.eventMode = "passive";

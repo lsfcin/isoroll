@@ -17,12 +17,20 @@
     "TokenConfig": {
       "Heading": "Isometric",
       "TransformToken": "Transform Token",
-      "TransformTokenHint": "Apply the isometric stage transform to this token. When unchecked (default), the token sprite appears undistorted regardless of stage rotation."
+      "TransformTokenHint": "Apply the isometric stage transform to this token. When unchecked (default), the token sprite appears undistorted regardless of stage rotation.",
+      "ShowImageManipulation": "Show Image Manipulation",
+      "ShowImageManipulationHint": "Show the image offset/scale handles (white circle and square) and the dashed image contour when the token is selected.",
+      "ShowVolumeManipulation": "Show Volume Manipulation",
+      "ShowVolumeManipulationHint": "Show the 3D bounding box and the elevation handle when the token is selected."
     },
     "TileConfig": {
       "Heading": "Isometric",
       "TransformTile": "Transform Tile",
-      "TransformTileHint": "Apply the isometric stage transform to this tile. When unchecked (default), the tile sprite appears undistorted regardless of stage rotation."
+      "TransformTileHint": "Apply the isometric stage transform to this tile. When unchecked (default), the tile sprite appears undistorted regardless of stage rotation.",
+      "ShowImageManipulation": "Show Image Manipulation",
+      "ShowImageManipulationHint": "Show the image offset/scale handles (white circle and square) and the dashed image contour when the tile is selected.",
+      "ShowVolumeManipulation": "Show Volume Manipulation",
+      "ShowVolumeManipulationHint": "Show the 3D bounding box and all volume handles (size, elevation, move) when the tile is selected."
     },
     "Projection": {
       "Dimetric21": "Dimetric 2:1 (default)",

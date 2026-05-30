@@ -3,19 +3,8 @@ import { PROJECTION_TYPES } from "./constants";
 
 const TAB = "isoroll";
 
-/**
- * Injects an "Iso" tab (last) into an AppV2 config sheet.
- *
- * Approach derived from lsfcin/isometric-perspective fork:
- *   - Nav: `nav.tabs` (TokenConfig) or `nav.sheet-tabs` (SceneConfig), excluding secondary-tabs
- *   - Content: `<div class="tab" data-tab="...">` inserted after `.tab[data-tab]` last
- *     (lands inside `.sheet-body`, not after the footer)
- *
- * Tab activation is manual because "isoroll" is not registered in AppV2's static TABS,
- * so calling changeTab("isoroll") would fail. stopPropagation on our nav item prevents
- * AppV2's delegated handler from reaching the nav and calling changeTab.
- * Other tabs deactivate ours via a delegated handler on the nav.
- */
+// Manual tab activation: "isoroll" isn't in AppV2's static TABS, so changeTab() would throw.
+// stopPropagation prevents AppV2's delegated handler; we handle active-class ourselves.
 function addIsorollTab($html: JQuery, label: string, fieldsetContent: string): void {
   const $nav = $html
     .find("nav.tabs:not(.secondary-tabs), nav.sheet-tabs:not(.secondary-tabs)")
@@ -47,6 +36,12 @@ function addIsorollTab($html: JQuery, label: string, fieldsetContent: string): v
     $html.find(`.tab[data-tab="${TAB}"]`).removeClass("active");
     $html.find(`a[data-tab="${TAB}"]`).removeClass("active");
   });
+}
+
+// Renders one checkbox form-group. flagKey is camelCase; i18n key = PascalCase of flagKey.
+function cbGroup(flagKey: string, ns: string, checked: boolean): string {
+  const k = flagKey.charAt(0).toUpperCase() + flagKey.slice(1);
+  return `<div class="form-group"><label>${game.i18n.localize(`ISOROLL.${ns}.${k}`)}</label><div class="form-fields"><input type="checkbox" name="flags.${MODULE_ID}.${flagKey}" ${checked ? "checked" : ""}></div><p class="hint">${game.i18n.localize(`ISOROLL.${ns}.${k}Hint`)}</p></div>`;
 }
 
 // Build the <option> list for the projection selector
@@ -158,17 +153,15 @@ export function registerTokenConfigHook(): void {
     "renderTokenConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      const transformToken = app.document.getFlag(MODULE_ID, "transformToken") ?? false;
+      const transformToken  = app.document.getFlag(MODULE_ID, "transformToken")          ?? false;
+      const showImgManip    = app.document.getFlag(MODULE_ID, "showImageManipulation")   ?? true;
+      const showVolManip    = app.document.getFlag(MODULE_ID, "showVolumeManipulation")  ?? true;
 
-      addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"), `
-          <legend>${game.i18n.localize("ISOROLL.TokenConfig.Heading")}</legend>
-          <div class="form-group">
-            <label>${game.i18n.localize("ISOROLL.TokenConfig.TransformToken")}</label>
-            <div class="form-fields">
-              <input type="checkbox" name="flags.${MODULE_ID}.transformToken" ${transformToken ? "checked" : ""}>
-            </div>
-            <p class="hint">${game.i18n.localize("ISOROLL.TokenConfig.TransformTokenHint")}</p>
-          </div>`);
+      addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
+        `<legend>${game.i18n.localize("ISOROLL.TokenConfig.Heading")}</legend>` +
+        cbGroup("transformToken",         "TokenConfig", transformToken as boolean) +
+        cbGroup("showImageManipulation",  "TokenConfig", showImgManip  as boolean) +
+        cbGroup("showVolumeManipulation", "TokenConfig", showVolManip  as boolean));
     },
   );
 }
@@ -178,17 +171,15 @@ export function registerTileConfigHook(): void {
     "renderTileConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      const transformTile = app.document.getFlag(MODULE_ID, "transformTile") ?? false;
+      const transformTile = app.document.getFlag(MODULE_ID, "transformTile")           ?? false;
+      const showImgManip  = app.document.getFlag(MODULE_ID, "showImageManipulation")   ?? true;
+      const showVolManip  = app.document.getFlag(MODULE_ID, "showVolumeManipulation")  ?? true;
 
-      addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"), `
-          <legend>${game.i18n.localize("ISOROLL.TileConfig.Heading")}</legend>
-          <div class="form-group">
-            <label>${game.i18n.localize("ISOROLL.TileConfig.TransformTile")}</label>
-            <div class="form-fields">
-              <input type="checkbox" name="flags.${MODULE_ID}.transformTile" ${transformTile ? "checked" : ""}>
-            </div>
-            <p class="hint">${game.i18n.localize("ISOROLL.TileConfig.TransformTileHint")}</p>
-          </div>`);
+      addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
+        `<legend>${game.i18n.localize("ISOROLL.TileConfig.Heading")}</legend>` +
+        cbGroup("transformTile",          "TileConfig", transformTile as boolean) +
+        cbGroup("showImageManipulation",  "TileConfig", showImgManip  as boolean) +
+        cbGroup("showVolumeManipulation", "TileConfig", showVolManip  as boolean));
     },
   );
 }

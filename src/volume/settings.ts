@@ -7,7 +7,7 @@ export function registerVolumeSettings(): void {
     scope: "world",
     config: true,
     type: Number,
-    default: 1,
+    default: 2,
     range: { min: 0.5, max: 10, step: 0.5 },
   });
 

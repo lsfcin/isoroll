@@ -20,7 +20,9 @@ export interface TileVolumeFlags {
 
 export class VolumeFlags {
   static getTokenHeight(token: TokenDocument): number {
-    return (token.getFlag(MODULE_ID, "boundHeight") as number | undefined) ?? 1;
+    const flagVal = token.getFlag(MODULE_ID, "boundHeight") as number | undefined;
+    if (flagVal !== undefined) return flagVal;
+    return (game.settings?.get(MODULE_ID, "defaultTokenHeight") as number | undefined) ?? 2;
   }
 
   static getTileBaseElevation(tile: TileDocument): number {
@@ -41,5 +43,15 @@ export class VolumeFlags {
 
   static getTileFlipped(tile: TileDocument): boolean {
     return (tile.getFlag(MODULE_ID, "tileFlipped") as boolean | undefined) ?? false;
+  }
+
+  static getShowImageManipulation(doc: { getFlag(s: string, k: string): unknown }, defaultValue: boolean): boolean {
+    const val = doc.getFlag(MODULE_ID, "showImageManipulation");
+    return (val !== undefined && val !== null) ? (val as boolean) : defaultValue;
+  }
+
+  static getShowVolumeManipulation(doc: { getFlag(s: string, k: string): unknown }, defaultValue: boolean): boolean {
+    const val = doc.getFlag(MODULE_ID, "showVolumeManipulation");
+    return (val !== undefined && val !== null) ? (val as boolean) : defaultValue;
   }
 }
