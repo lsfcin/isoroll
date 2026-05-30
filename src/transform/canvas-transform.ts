@@ -149,29 +149,23 @@ export class CanvasTransform {
       const sky = (this.skew as PIXI.ObservablePoint).y;
       const tw = this.texture?.width ?? 1;
       const th = this.texture?.height ?? 1;
-      
-      // Apply counter-transform (same pattern as applyBackground)
+      // anchor=0,0: position = texture top-left; center computed via R·S matrix below
       (this.anchor as PIXI.ObservablePoint).set(0, 0);
       this.rotation = proj.reverseRotation;
       (this.skew as PIXI.ObservablePoint).set(proj.reverseSkewX, proj.reverseSkewY);
       this.scale.set(sx * proj.counterFactor, sx * proj.ratio * proj.counterFactor);
-      // 5a: grid displacement — bg top-left corner at scene/grid center (canvas coords)
-      const gridCX = x + sx * tw * 0.5;
-      const gridCY = y + sy * th * 0.5;
-      // 5b: offset from anchor (top-left) to image center, in image (texture) space
-      const offImgX = -tw * 0.5;
-      const offImgY = -th * 0.5;
-      // 5c: R·S matrix (skew=0 for all presets): x'=cos·sX·vx−sin·sY·vy, y'=sin·sX·vx+cos·sY·vy
+      // scene center + R·S·(-tw/2,-th/2): converts texture half-size to canvas space
+      // skew=0 for all presets so R·S = cos·scX·vx−sin·scY·vy / sin·scX·vx+cos·scY·vy
       const cosR = Math.cos(proj.reverseRotation);
       const sinR = Math.sin(proj.reverseRotation);
       const scX = sx * proj.counterFactor;
       const scY = sx * proj.ratio * proj.counterFactor;
-      const offCanX = cosR * scX * offImgX - sinR * scY * offImgY;
-      const offCanY = sinR * scX * offImgX + cosR * scY * offImgY;
-      this.position.set(gridCX + offCanX, gridCY + offCanY);
+      this.position.set(
+        x + sx * tw * 0.5 + cosR * scX * (-tw * 0.5) - sinR * scY * (-th * 0.5),
+        y + sy * th * 0.5 + sinR * scX * (-tw * 0.5) + cosR * scY * (-th * 0.5),
+      );
       origUpdate.call(this);
-      
-      // Restore Foundry values so next frame starts clean (no accumulation)
+      // restore so next frame starts clean (#refreshPreview resets x/y/scale on every form change)
       (this.anchor as PIXI.ObservablePoint).set(ax, ay);
       this.rotation = rot;
       (this.skew as PIXI.ObservablePoint).set(skx, sky);

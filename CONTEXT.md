@@ -15,7 +15,7 @@
 | Path | Responsibility |
 |------|---------------|
 | `src/module.ts` | Entry point — wires all hooks in `Hooks.once("init")` |
-| `src/transform/canvas-transform.ts` | Stage rotation+skew, background counter-transform, hooks: canvasReady/updateScene |
+| `src/transform/canvas-transform.ts` | Stage rotation+skew, background counter-transform, hooks: canvasReady/updateScene/renderGridConfig |
 | `src/transform/object-transform.ts` | Per-token/tile counter-transform + HUD repositioning, hooks: refreshToken/refreshTile/renderTokenHUD |
 | `src/transform/scene-config.ts` | Isoroll tab injection for SceneConfig, TokenConfig, TileConfig; projection dropdown |
 | `src/transform/constants.ts` | `PROJECTION_TYPES` (8 presets), `getProjection(scene)`, `IsoProjection` interface |
@@ -71,6 +71,8 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - `tile.x/tile.y` = 0 in v14 — use `tile.document.x/y` (CENTER, not top-left); top-left = `doc.x - width/2, doc.y - height/2`
 - `setFlag` fires `refreshTile` with `{refreshPosition, refreshPerception}` only — `isMeshReset` returns false; scale guarded by meshReset won't run for flag-only changes
 - `mesh.scale.set()` (absolute) is safe on every refresh; only `*=` patterns need meshReset guard
+- `addIsorollTab` has no double-inject guard — if `renderSceneConfig` fires more than once for the same dialog (edge case), the Iso tab will appear twice; add `if ($html.find(\`a[data-tab="${TAB}"]\`).length) return;` at the top of `addIsorollTab` if this becomes a problem
+- AppV2 `stopPropagation` on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on the content section (see `scene-config.ts`)
 
 ## See Also
 

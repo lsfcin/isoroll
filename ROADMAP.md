@@ -100,6 +100,8 @@
 - [x] "Transform Tile" in Tile Config (Isoroll tab)
 - [x] pt-BR language support
 - [x] Foundry AppV2 tab injection (see `/foundry` skill)
+- [x] Grid Configuration Tool (grid wrench): counter-transforms preview bg sprite when `transformBackground=false`; grid mesh stays isometric; camera position unchanged. Pattern: `updateTransform` override with save→apply→origUpdate→restore on `renderGridConfig` hook.
+- [x] AppV2 stale `tabGroups` bug: clicking native tab after custom tab was activated left content hidden; fixed by explicit `addClass("active")` in other-tab handler
 
 ### Phase 3 — Volume Handles (Gizmos) ✅ DONE (v2 — full redesign)
 
