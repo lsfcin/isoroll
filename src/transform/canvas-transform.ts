@@ -115,15 +115,10 @@ export class CanvasTransform {
     }
   }
 
-  // GridConfig._createPreview() adds a plain PIXI.Container to canvas.stage.
-  // container.children[0] = black fill (screen-space override, always correct)
-  // container.children[1] = background sprite (needs counter-transform when transformBackground=false)
-  // container.children[2] = grid mesh (should stay isometric — inherits stage transform)
-  //
-  // We override only the background sprite's updateTransform with a save→apply→compute→restore
-  // cycle so that GridConfig.#refreshPreview()'s position/scale resets (on every form change)
-  // are read as the natural "Foundry-set" values each frame with no accumulation.
-  // The container is left untransformed: grid stays isometric, camera position unchanged.
+  // Override bg sprite's updateTransform (save→counter-transform→origUpdate→restore) so
+  // #refreshPreview()'s per-change resets are picked up cleanly each frame without accumulation.
+  // Container untouched: grid stays isometric, camera unchanged.
+  // children[1]=bg sprite, children[2]=grid mesh.
   private static onRenderGridConfig(): void {
     if (!CanvasTransform.isEnabled() || CanvasTransform.isBackgroundTransformEnabled()) return;
     const stage = canvas.app?.stage;
@@ -145,7 +140,6 @@ export class CanvasTransform {
     (bg as unknown as { updateTransform: () => void }).updateTransform = function(
       this: PIXI.Sprite,
     ) {
-      // Save Foundry values set by #refreshPreview: position=(sceneX,sceneY), scale from width=
       const x = this.x, y = this.y;
       const sx = this.scale.x, sy = this.scale.y;
       const rot = this.rotation;
@@ -167,9 +161,13 @@ export class CanvasTransform {
       // 5b: offset from anchor (top-left) to image center, in image (texture) space
       const offImgX = -tw * 0.5;
       const offImgY = -th * 0.5;
-      // 5c: TODO — transform offImg → canvas space via counter-transform matrix
-      const offCanX = offImgX * 0; // placeholder
-      const offCanY = offImgY * 0;
+      // 5c: R·S matrix (skew=0 for all presets): x'=cos·sX·vx−sin·sY·vy, y'=sin·sX·vx+cos·sY·vy
+      const cosR = Math.cos(proj.reverseRotation);
+      const sinR = Math.sin(proj.reverseRotation);
+      const scX = sx * proj.counterFactor;
+      const scY = sx * proj.ratio * proj.counterFactor;
+      const offCanX = cosR * scX * offImgX - sinR * scY * offImgY;
+      const offCanY = sinR * scX * offImgX + cosR * scY * offImgY;
       this.position.set(gridCX + offCanX, gridCY + offCanY);
       origUpdate.call(this);
       
