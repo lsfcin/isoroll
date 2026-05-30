@@ -20,7 +20,6 @@ export class VolumeGizmos {
     Hooks.on("updateScene",   VolumeGizmos.onUpdateScene);
     Hooks.on("controlTile",   VolumeGizmos.onControlTile);
     Hooks.on("refreshTile",   VolumeGizmos.onRefreshTile);
-    Hooks.on("renderTileHUD", VolumeGizmos.onRenderTileHUD);
   }
 
   private static isEnabled(): boolean {
@@ -55,17 +54,6 @@ export class VolumeGizmos {
     if (!blocker) return;
     layer.addChild(blocker);
     VolumeGizmos.blockers.set(tile.id, blocker);
-  }
-
-  private static onRenderTileHUD(hud: { object: unknown }, html: JQuery | HTMLElement): void {
-    if (!VolumeGizmos.isEnabled()) return;
-    const tile  = hud.object as Tile;
-    const $html = html instanceof jQuery ? html : $(html as HTMLElement);
-    const label = game.i18n.localize("ISOROLL.VolumeGizmos.Flip");
-    $html.find(".col.left").append(
-      `<button class="isoroll-flip-btn" title="${label}"><i class="fas fa-arrows-alt-h"></i></button>`,
-    );
-    $html.on("click", ".isoroll-flip-btn", () => VolumeGizmos.flipTile(tile));
   }
 
   static show(tile: Tile): void {
@@ -124,10 +112,6 @@ export class VolumeGizmos {
     }
   }
 
-  static flipTile(tile: Tile): void {
-    const w = tile.document.width ?? 0, h = tile.document.height ?? 0;
-    void tile.document.update({ width: h, height: w, y: (tile.document.y ?? 0) + (h - w) });
-  }
 
   private static getLayer(): PIXI.Container | null {
     if (VolumeGizmos.layer && !VolumeGizmos.layer.parent) VolumeGizmos.layer = null;

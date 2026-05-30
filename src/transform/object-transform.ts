@@ -16,6 +16,7 @@ export class ObjectTransform {
     Hooks.on("refreshToken", ObjectTransform.onRefreshToken);
     Hooks.on("refreshTile",  ObjectTransform.onRefreshTile);
     Hooks.on("renderTokenHUD", ObjectTransform.onRenderTokenHUD);
+    Hooks.on("renderTileHUD",  ObjectTransform.onRenderTileHUD);
   }
 
   private static isSceneEnabled(): boolean {
@@ -87,6 +88,25 @@ export class ObjectTransform {
       if (!m) return;
       const L = (m.a * center.x + m.c * center.y) / zoom;
       const T = (m.b * center.x + m.d * center.y) / zoom;
+      const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
+      $html.css({ left: `${L}px`, top: `${T}px`, transform: "translate(-50%, -50%)" });
+    });
+  }
+
+  private static onRenderTileHUD(
+    hud: { object: unknown },
+    html: JQuery | HTMLElement,
+  ): void {
+    if (!ObjectTransform.isSceneEnabled()) return;
+    const tile = hud.object as Tile;
+    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
+    requestAnimationFrame(() => {
+      const cx = tile.document.x ?? 0, cy = tile.document.y ?? 0;
+      const m = canvas.app?.stage?.worldTransform;
+      const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
+      if (!m) return;
+      const L = (m.a * cx + m.c * cy) / zoom;
+      const T = (m.b * cx + m.d * cy) / zoom;
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
       $html.css({ left: `${L}px`, top: `${T}px`, transform: "translate(-50%, -50%)" });
     });
