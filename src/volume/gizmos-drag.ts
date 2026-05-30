@@ -2,7 +2,7 @@
 import { getProjection } from "../transform/constants";
 import { MODULE_ID } from "./flags";
 
-export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale";
+export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale" | "swapSide";
 
 export interface DragState {
   type:          HandleType;
@@ -38,22 +38,22 @@ export function snapQuarterUnits(units: number): number {
 // Used to offset the elevation handle away from the SE vertical edge.
 const ELEV_GAP = 5; // canvas px
 
-// Shared helper: transform a local corner of the tile mesh into canvas coords.
-// lxSign: -1 for left, +1 for right.  lySign: -1 for top, +1 for bottom.
+// lxSign: -1 left, 0 center, +1 right.  lySign: -1 top, 0 middle, +1 bottom.
 function meshCorner(tile: Tile, lxSign: number, lySign: number): { x: number; y: number } | null {
   type M = { x: number; y: number; rotation: number; scale: { x: number; y: number }; texture?: { width: number; height: number }; anchor?: { x: number; y: number } };
   const mesh = tile.mesh as unknown as M | null | undefined;
   if (!mesh?.texture) return null;
   const texW = mesh.texture.width, texH = mesh.texture.height;
   const ax = mesh.anchor?.x ?? 0.5, ay = mesh.anchor?.y ?? 0.5;
-  const sx = mesh.scale.x, sy = mesh.scale.y;
+  const sx = Math.abs(mesh.scale.x), sy = mesh.scale.y;  // abs so flipped image corners stay correct
   const cr = Math.cos(mesh.rotation), sr = Math.sin(mesh.rotation);
-  const lx = (lxSign < 0 ? -ax : 1 - ax) * texW;
-  const ly = (lySign < 0 ? -ay : 1 - ay) * texH;
+  const lx = (lxSign < 0 ? -ax : lxSign > 0 ? 1 - ax : 0.5 - ax) * texW;
+  const ly = (lySign < 0 ? -ay : lySign > 0 ? 1 - ay : 0.5 - ay) * texH;
   return { x: mesh.x + cr*(lx*sx) - sr*(ly*sy), y: mesh.y + sr*(lx*sx) + cr*(ly*sy) };
 }
 export function imageBLCorner(tile: Tile) { return meshCorner(tile, -1, +1); }
 export function imageTRCorner(tile: Tile) { return meshCorner(tile, +1, -1); }
+export function imageBCCorner(tile: Tile) { return meshCorner(tile,  0, +1); }
 
 // Returns canvas-space positions for all handle anchors
 export function handlePositions(
@@ -61,6 +61,7 @@ export function handlePositions(
   E: number, EH: number, hdx: number, hdy: number,
   imgBL?: { x: number; y: number } | null,
   imgTR?: { x: number; y: number } | null,
+  imgBC?: { x: number; y: number } | null,
 ): Record<HandleType, { cx: number; cy: number }> {
   const seMidX = tx + tw + hdx * (E + EH) / 2;
   const seMidY = ty + th + hdy * (E + EH) / 2;
@@ -73,6 +74,7 @@ export function handlePositions(
     move:      { cx: tx + tw / 2 + hdx * E,       cy: ty + th / 2 + hdy * E },
     imgOffset: { cx: imgBL?.x ?? tx,              cy: imgBL?.y ?? (ty + th) },
     imgScale:  { cx: imgTR?.x ?? (tx + tw),       cy: imgTR?.y ?? ty },
+    swapSide:  { cx: imgBC?.x ?? (tx + tw / 2),   cy: imgBC?.y ?? (ty + th) },
   };
 }
 
@@ -172,5 +174,6 @@ export function commitDrag(drag: DragState, gx: number, gy: number): void {
     case "move":      void drag.tile.document.update({ x: docX, y: docY }); break;
     case "imgOffset": void drag.tile.document.setFlag(MODULE_ID, "imageOffset", { x: imgOffX, y: imgOffY }); break;
     case "imgScale":  void drag.tile.document.setFlag(MODULE_ID, "imageScale",  imgScale); break;
+    case "swapSide":  break; // handled via pointerdown, not drag
   }
 }

@@ -13,6 +13,9 @@ export const HANDLE_COLOR: Record<HandleType, number> = {
   elevation: 0xff9829,
   scale:     0xff9829,
   move:      0xff9829,
+  imgOffset: 0xffffff,  // overridden in makeHandleForType
+  imgScale:  0xffffff,  // overridden in makeHandleForType
+  swapSide:  0xff0000,  // overridden in makeHandleForType
 };
 
 // Canvas-aligned square → appears as a diamond under the isometric stage transform.
@@ -81,6 +84,7 @@ export function makeHandleForType(
   if (type === "elevation") return makeElevHandle(color);
   if (type === "imgOffset") return makeElevHandle(0xffffff, "move");
   if (type === "imgScale")  return makeSquareCounterHandle(0xffffff, "nwse-resize");
+  if (type === "swapSide")  return makeSwapHandle();
   if (type === "move")      return makeMoveHandle(color);
   if (type === "boundH") {
     const vLen = Math.sqrt(hdx * hdx + hdy * hdy);
@@ -115,6 +119,31 @@ export function createRotateBlocker(tile: Tile, layer: PIXI.Container): PIXI.Gra
   g.eventMode = "static";
   g.cursor    = "default";
   return g;
+}
+
+// Counter-transformed square with two swap triangles (◀/▶) for the mirror-tile action.
+export function makeSwapHandle(): PIXI.Container {
+  const proj = getProjection(canvas.scene);
+  const wrap = new PIXI.Container();
+  wrap.rotation = proj.reverseRotation;
+  wrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
+  const S = HANDLE_SIZE;
+  const g = new PIXI.Graphics();
+  g.lineStyle(0); g.beginFill(0xff0000, 0.05);
+  g.drawRect(-S, -S, S * 2, S * 2); g.endFill();
+  // hl = 5× original S*0.3; hh unchanged; dir=+1 → ◀ (tip left), dir=-1 → ▶ (tip right)
+  const ay = S * 0.38, hh = S * 0.33, hl = S * 1.275;
+  for (const [ys, dir] of [[-ay, +1], [ay, -1]] as [number, 1|-1][]) {
+    const tip  = dir * (-S * 0.7);
+    const base = tip + dir * hl;
+    g.lineStyle(0.5, 0xffffff, 1); g.beginFill(0x000000, 1);
+    g.drawPolygon([tip, ys,  base, ys - hh,  base, ys + hh]);
+    g.endFill();
+  }
+  wrap.addChild(g);
+  wrap.eventMode = "static";
+  wrap.cursor = "pointer";
+  return wrap;
 }
 
 // Parallelogram that is a square in face-coordinate space (projected onto a box face).

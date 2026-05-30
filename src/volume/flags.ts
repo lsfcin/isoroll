@@ -38,4 +38,8 @@ export class VolumeFlags {
   static getImageScale(tile: TileDocument): number {
     return (tile.getFlag(MODULE_ID, "imageScale") as number | undefined) ?? 1;
   }
+
+  static getTileFlipped(tile: TileDocument): boolean {
+    return (tile.getFlag(MODULE_ID, "tileFlipped") as boolean | undefined) ?? false;
+  }
 }

@@ -104,7 +104,8 @@ export class ObjectTransform {
     const E       = elev * gs / gd;
     const proj    = getProjection(canvas.scene);
     const { x: hdx, y: hdy } = proj.heightDir;
-    const imgScale = VolumeFlags.getImageScale(tile.document);
+    const imgScale   = VolumeFlags.getImageScale(tile.document);
+    const imgFlipped = VolumeFlags.getTileFlipped(tile.document);
     ObjectTransform.applyTileCounter(
       mesh,
       tile.document.rotation ?? 0,
@@ -114,6 +115,7 @@ export class ObjectTransform {
       imgScale,
       flags,
     );
+    if (imgFlipped) mesh.scale.x = -Math.abs(mesh.scale.x);
     const imgOff = VolumeFlags.getImageOffset(tile.document);
     mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x;
     mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y;
