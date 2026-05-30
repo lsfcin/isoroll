@@ -67,11 +67,13 @@ export class ObjectTransform {
     const docW = (token.document.width ?? 1) * gs;
     const docH = (token.document.height ?? 1) * gs;
     const imgOff = VolumeFlags.getImageOffset(token.document);
-    // Foundry calls _refreshPosition() before our hook whenever refreshPosition is set,
-    // resetting mesh.x/y to the natural token position. Capture it then — covers both
-    // actual token movement and flag-only updates (e.g. setFlag fires refreshPosition).
-    if (!flags || flags["refreshMesh"] || flags["refreshSize"]
-        || flags["refreshShape"] || flags["redraw"] || flags["refreshPosition"]) {
+    // Only capture mesh.x/y as the natural base when _refreshPosition() has run.
+    // That happens exactly when refreshPosition is set (movement, setFlag, or any propagation
+    // from redraw/refreshSize/refreshShape). Do NOT update on refreshMesh alone — the hide
+    // animation fires refreshMesh every frame (alpha lerp) without refreshPosition, and
+    // mesh.x/y already contains our imgOff at that point; capturing it would compound the
+    // offset on each frame, causing the image to drift off screen.
+    if (!flags || flags["refreshPosition"]) {
       ObjectTransform.tokenBase.set(token, { x: mesh.x, y: mesh.y });
     }
     const base = ObjectTransform.tokenBase.get(token) ?? { x: mesh.x - imgOff.x, y: mesh.y - imgOff.y };
