@@ -32,9 +32,13 @@ function addIsorollTab($html: JQuery, label: string, fieldsetContent: string): v
   });
 
   // Other tab clicks: deactivate ours.
-  $nav.on("click", `a[data-tab]:not([data-tab="${TAB}"])`, () => {
-    $html.find(`.tab[data-tab="${TAB}"]`).removeClass("active");
-    $html.find(`a[data-tab="${TAB}"]`).removeClass("active");
+  // Also re-activate the target section explicitly: our stopPropagation on the isoroll click
+  // leaves AppV2's tabGroups[group] stale, so changeTab() may return early and leave the
+  // native tab content hidden (it was removed when we activated isoroll).
+  $nav.on("click", `a[data-tab]:not([data-tab="${TAB}"])`, (e) => {
+    $html.find(`.tab[data-tab="${TAB}"], a[data-tab="${TAB}"]`).removeClass("active");
+    const clickedTab = (e.currentTarget as HTMLElement).dataset.tab;
+    if (clickedTab) $html.find(`.tab[data-tab="${clickedTab}"]`).addClass("active");
   });
 }
 

@@ -14,6 +14,7 @@ export class CanvasTransform {
   static activate(): void {
     Hooks.on("canvasReady", CanvasTransform.onCanvasReady);
     Hooks.on("updateScene", CanvasTransform.onUpdateScene);
+    Hooks.on("renderGridConfig", CanvasTransform.onRenderGridConfig);
   }
 
   private static isEnabled(): boolean {
@@ -112,6 +113,62 @@ export class CanvasTransform {
       CanvasTransform.reset();
       CanvasTransform.resetBackground();
     }
+  }
+
+  // GridConfig._createPreview() adds a plain PIXI.Container to canvas.stage.
+  // container.children[0] = black fill (screen-space override, always correct)
+  // container.children[1] = background sprite (needs counter-transform when transformBackground=false)
+  // container.children[2] = grid mesh (should stay isometric — inherits stage transform)
+  //
+  // We override only the background sprite's updateTransform with a save→apply→compute→restore
+  // cycle so that GridConfig.#refreshPreview()'s position/scale resets (on every form change)
+  // are read as the natural "Foundry-set" values each frame with no accumulation.
+  // The container is left untransformed: grid stays isometric, camera position unchanged.
+  private static onRenderGridConfig(): void {
+    if (!CanvasTransform.isEnabled() || CanvasTransform.isBackgroundTransformEnabled()) return;
+    const stage = canvas.app?.stage;
+    if (!stage) return;
+    const stageChildren = (stage as PIXI.Container).children;
+    let previewContainer: PIXI.Container | null = null;
+    for (let i = stageChildren.length - 1; i >= 0; i--) {
+      const c = stageChildren[i];
+      if (c instanceof PIXI.Container && c.constructor === PIXI.Container) {
+        previewContainer = c;
+        break;
+      }
+    }
+    if (!previewContainer) return;
+    const bg = previewContainer.children[1];
+    if (!(bg instanceof PIXI.Sprite)) return;
+    const proj = getProjection(canvas.scene);
+    const origUpdate = bg.updateTransform.bind(bg);
+    (bg as unknown as { updateTransform: () => void }).updateTransform = function(
+      this: PIXI.Sprite,
+    ) {
+      // Save Foundry values set by #refreshPreview: position=(sceneX,sceneY), scale from width=
+      const x = this.x, y = this.y;
+      const sx = this.scale.x, sy = this.scale.y;
+      const rot = this.rotation;
+      const ax = (this.anchor as PIXI.ObservablePoint).x;
+      const ay = (this.anchor as PIXI.ObservablePoint).y;
+      const skx = (this.skew as PIXI.ObservablePoint).x;
+      const sky = (this.skew as PIXI.ObservablePoint).y;
+      const tw = this.texture?.width ?? 1;
+      const th = this.texture?.height ?? 1;
+      // Apply counter-transform (same pattern as applyBackground)
+      (this.anchor as PIXI.ObservablePoint).set(0.5, 0.5);
+      this.rotation = proj.reverseRotation;
+      (this.skew as PIXI.ObservablePoint).set(proj.reverseSkewX, proj.reverseSkewY);
+      this.scale.set(sx * proj.counterFactor, sx * proj.ratio * proj.counterFactor);
+      this.position.set(x + sx * tw * 0.5, y + sy * th * 0.5);
+      origUpdate.call(this);
+      // Restore Foundry values so next frame starts clean (no accumulation)
+      (this.anchor as PIXI.ObservablePoint).set(ax, ay);
+      this.rotation = rot;
+      (this.skew as PIXI.ObservablePoint).set(skx, sky);
+      this.scale.set(sx, sy);
+      this.position.set(x, y);
+    };
   }
 
   private static onCanvasReady(): void {
