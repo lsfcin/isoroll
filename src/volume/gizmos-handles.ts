@@ -129,7 +129,7 @@ export function makeSwapHandle(): PIXI.Container {
   wrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
   const S = HANDLE_SIZE;
   const g = new PIXI.Graphics();
-  g.lineStyle(0); g.beginFill(0xff0000, 0.05);
+  g.lineStyle(0); g.beginFill(0xff0000, 0.01);
   g.drawRect(-S, -S, S * 2, S * 2); g.endFill();
   // hl = 5× original S*0.3; hh unchanged; dir=+1 → ◀ (tip left), dir=-1 → ▶ (tip right)
   const ay = S * 0.38, hh = S * 0.33, hl = S * 1.275;
