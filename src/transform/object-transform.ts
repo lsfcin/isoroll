@@ -12,7 +12,7 @@ type MeshLike = {
 };
 
 export class ObjectTransform {
-  // Stores Foundry's base mesh position per token, updated only on full mesh resets.
+  // Stores Foundry's natural mesh position per token (before our imgOff), updated whenever Foundry resets it.
   private static readonly tokenBase = new WeakMap<object, { x: number; y: number }>();
 
   static activate(): void {
@@ -24,11 +24,6 @@ export class ObjectTransform {
 
   private static isSceneEnabled(): boolean {
     return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
-  }
-
-  private static isMeshReset(flags?: Record<string, boolean>): boolean {
-    return !flags || flags["refreshMesh"] || flags["refreshSize"]
-      || flags["refreshShape"] || flags["redraw"];
   }
 
   private static applyTokenCounter(
@@ -72,9 +67,11 @@ export class ObjectTransform {
     const docW = (token.document.width ?? 1) * gs;
     const docH = (token.document.height ?? 1) * gs;
     const imgOff = VolumeFlags.getImageOffset(token.document);
-    // On full mesh reset Foundry has set mesh.x/y to the base position; store it.
-    // On flag-only refreshes, reuse the stored base to avoid accumulation.
-    if (ObjectTransform.isMeshReset(flags)) {
+    // Foundry calls _refreshPosition() before our hook whenever refreshPosition is set,
+    // resetting mesh.x/y to the natural token position. Capture it then — covers both
+    // actual token movement and flag-only updates (e.g. setFlag fires refreshPosition).
+    if (!flags || flags["refreshMesh"] || flags["refreshSize"]
+        || flags["refreshShape"] || flags["redraw"] || flags["refreshPosition"]) {
       ObjectTransform.tokenBase.set(token, { x: mesh.x, y: mesh.y });
     }
     const base = ObjectTransform.tokenBase.get(token) ?? { x: mesh.x - imgOff.x, y: mesh.y - imgOff.y };
