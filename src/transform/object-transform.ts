@@ -14,6 +14,8 @@ type MeshLike = {
 const EPS = 1e-6;
 
 export class ObjectTransform {
+  private static readonly tokenBase = new WeakMap<object, { x: number; y: number }>();
+
   private static applyTileCounter(
     mesh: MeshLike,
     docRotationDeg: number,
@@ -75,16 +77,19 @@ export class ObjectTransform {
       mesh.scale.set(targetSX, targetSY);
     }
 
-    // mesh.x/y only when _refreshPosition() ran — not on pure animation ticks.
-    if (flags && !flags["refreshPosition"]) return;
-
+    // Capture natural base when _refreshPosition() ran (Foundry reset mesh.x to center).
+    // Do NOT capture on refreshMesh-only frames — mesh.x already has our offset at that point.
+    // On elevation/flag changes (no refreshPosition), reuse cached base with updated E.
+    if (!flags || flags["refreshPosition"]) {
+      ObjectTransform.tokenBase.set(token, { x: mesh.x, y: mesh.y });
+    }
+    const base   = ObjectTransform.tokenBase.get(token) ?? { x: mesh.x, y: mesh.y };
     const gd     = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
     const elev   = (token.document as unknown as { elevation?: number }).elevation ?? 0;
     const E      = elev * gs / gd;
     const imgOff = VolumeFlags.getImageOffset(token.document);
-    // _refreshPosition() just set mesh.x = token.center.x; add our offsets on top.
-    mesh.x = mesh.x + hdx * E + imgOff.x;
-    mesh.y = mesh.y + hdy * E + imgOff.y;
+    mesh.x = base.x + hdx * E + imgOff.x;
+    mesh.y = base.y + hdy * E + imgOff.y;
   }
 
   // Reposition the TokenHUD to track the token under the isometric stage transform.
