@@ -139,8 +139,17 @@
 - [x] Custom projection: 4 numeric fields (rotation°, skewX°, skewY°, ratio) shown when "custom" selected
 - [x] Tab renamed: "Isoroll" → "Iso" (all sheets: scene/tile/token)
 
-### Phase 4 — Image Edit Mode 🔲 PENDING
+### Phase 4 — Image Edit Mode 🔲 PARTIAL
 
+**Tokens (done):**
+- [x] BL circle handle → drag to translate image (canvas-pixel offset stored in `flags.isoroll.imageOffset`)
+- [x] TR square handle → drag to scale image (stored in `flags.isoroll.imageScale`)
+- [x] Handles shown on token select via `controlToken` hook; rebuilt on `refreshToken`
+- [x] Drag math: screen-space delta inverted through worldTransform for offset; radial distance ratio for scale
+- [x] Image offset correctly tracks token movement (only captured on `refreshPosition`)
+- [x] Hide/show animation safe (no drift — `refreshMesh` frames skipped)
+
+**Tiles (pending):**
 - [ ] Double-click tile enters image-edit mode
 - [ ] Corner handles for scale, drag for move
 - [ ] Fine-tune text inputs (numeric fields)
