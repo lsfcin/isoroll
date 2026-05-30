@@ -10,9 +10,12 @@ interface TokenElevDrag {
   startElev: number;
 }
 
+type ElevHandleState = { x: number; y: number; elev: number; boundH: number };
+
 export class TokenVolumeGizmos {
   private static layer: PIXI.Container | null = null;
   private static sets: Map<string, PIXI.Container> = new Map();
+  private static lastState: Map<string, ElevHandleState> = new Map();
   private static drag: TokenElevDrag | null = null;
   private static readonly onMove = (e: PointerEvent): void => TokenVolumeGizmos.handleMove(e);
   private static readonly onUp   = (e: PointerEvent): void => TokenVolumeGizmos.handleUp(e);
@@ -44,6 +47,12 @@ export class TokenVolumeGizmos {
   private static onRefreshToken(token: Token): void {
     if (!TokenVolumeGizmos.isEnabled()) return;
     if (!TokenVolumeGizmos.sets.has(token.id)) return;
+    const x = token.document.x ?? 0, y = token.document.y ?? 0;
+    const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
+    const boundH = VolumeFlags.getTokenHeight(token.document);
+    const last = TokenVolumeGizmos.lastState.get(token.id);
+    if (last && last.x === x && last.y === y && last.elev === elev && last.boundH === boundH) return;
+    TokenVolumeGizmos.lastState.set(token.id, { x, y, elev, boundH });
     TokenVolumeGizmos.show(token);
   }
 
@@ -91,10 +100,12 @@ export class TokenVolumeGizmos {
     TokenVolumeGizmos.layer?.removeChild(c);
     c.destroy({ children: true });
     TokenVolumeGizmos.sets.delete(tokenId);
+    TokenVolumeGizmos.lastState.delete(tokenId);
   }
 
   static clearAll(): void {
     for (const id of Array.from(TokenVolumeGizmos.sets.keys())) TokenVolumeGizmos.hide(id);
+    TokenVolumeGizmos.lastState.clear();
     if (TokenVolumeGizmos.layer) {
       try { (canvas.stage as unknown as PIXI.Container).removeChild(TokenVolumeGizmos.layer!); } catch { /* ok */ }
       TokenVolumeGizmos.layer.destroy({ children: true });

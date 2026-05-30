@@ -44,9 +44,10 @@ export class TokenGizmos {
     else TokenGizmos.hide(token.id);
   }
 
-  private static onRefreshToken(token: Token): void {
+  private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
     if (!TokenGizmos.isEnabled()) return;
     if (!TokenGizmos.sets.has(token.id)) return;
+    if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
     TokenGizmos.show(token);
   }
 

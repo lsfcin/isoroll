@@ -30,9 +30,10 @@ export class TokenOverlay {
     else TokenOverlay.hide(token.id);
   }
 
-  private static onRefreshToken(token: Token): void {
+  private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
     if (!TokenOverlay.isEnabled()) return;
     if (!TokenOverlay.boxes.has(token.id)) return;
+    if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
     TokenOverlay.show(token);
   }
 

@@ -2,9 +2,12 @@
 import { MODULE_ID, VolumeFlags } from "./flags";
 import { computeTokenVerts, drawBox, drawAnchorLine } from "./overlay-geometry";
 
+type TokenVolumeState = { x: number; y: number; elev: number; boundH: number };
+
 export class TokenVolumeOverlay {
   private static layer: PIXI.Container | null = null;
   private static boxes: Map<string, PIXI.Graphics> = new Map();
+  private static lastState: Map<string, TokenVolumeState> = new Map();
 
   static activate(): void {
     Hooks.on("canvasReady",  TokenVolumeOverlay.onCanvasReady);
@@ -33,6 +36,14 @@ export class TokenVolumeOverlay {
   private static onRefreshToken(token: Token): void {
     if (!TokenVolumeOverlay.isEnabled()) return;
     if (!TokenVolumeOverlay.boxes.has(token.id)) return;
+    // The 3D box is positioned by document values (not animated mesh). During movement
+    // animation the document is already at the destination, so skip redundant redraws.
+    const x = token.document.x ?? 0, y = token.document.y ?? 0;
+    const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
+    const boundH = VolumeFlags.getTokenHeight(token.document);
+    const last = TokenVolumeOverlay.lastState.get(token.id);
+    if (last && last.x === x && last.y === y && last.elev === elev && last.boundH === boundH) return;
+    TokenVolumeOverlay.lastState.set(token.id, { x, y, elev, boundH });
     TokenVolumeOverlay.show(token);
   }
 
@@ -57,10 +68,12 @@ export class TokenVolumeOverlay {
     TokenVolumeOverlay.layer?.removeChild(g);
     g.destroy();
     TokenVolumeOverlay.boxes.delete(tokenId);
+    TokenVolumeOverlay.lastState.delete(tokenId);
   }
 
   static clearAll(): void {
     for (const id of Array.from(TokenVolumeOverlay.boxes.keys())) TokenVolumeOverlay.hide(id);
+    TokenVolumeOverlay.lastState.clear();
     if (TokenVolumeOverlay.layer) {
       try { (canvas.stage as unknown as PIXI.Container).removeChild(TokenVolumeOverlay.layer!); } catch { /* ok */ }
       TokenVolumeOverlay.layer.destroy({ children: true });

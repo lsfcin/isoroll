@@ -5,15 +5,37 @@ type MeshLike = {
   x: number;
   y: number;
   rotation: number;
-  skew?: { set(x: number, y: number): void };
+  skew?: { x: number; y: number; set(x: number, y: number): void };
   scale: { x: number; y: number; set(x: number, y: number): void };
-  anchor?: { set(x: number, y: number): void };
+  anchor?: { x: number; y: number; set(x: number, y: number): void };
   texture?: { width: number; height: number };
 };
 
+const EPS = 1e-6;
+
 export class ObjectTransform {
-  // Stores Foundry's natural mesh position per token (before our imgOff), updated whenever Foundry resets it.
-  private static readonly tokenBase = new WeakMap<object, { x: number; y: number }>();
+  private static applyTileCounter(
+    mesh: MeshLike,
+    docRotationDeg: number,
+    docW: number,
+    docH: number,
+    docBoundH: number,
+    imgScale: number,
+  ): void {
+    const proj = getProjection(canvas.scene);
+    const { reverseRotation, ratio, counterFactor } = proj;
+    const targetRot = (docRotationDeg * Math.PI) / 180 + reverseRotation;
+    if (Math.abs(mesh.rotation - targetRot) > EPS) mesh.rotation = targetRot;
+    if (mesh.skew && (mesh.skew.x !== 0 || mesh.skew.y !== 0)) mesh.skew.set(0, 0);
+    const texW = mesh.texture?.width || 1;
+    const texH = mesh.texture?.height || 1;
+    const uniform = Math.max(docW, docH, docBoundH) / Math.max(texW, texH) * imgScale;
+    const sx = uniform * counterFactor, sy = uniform * ratio * counterFactor;
+    // Use abs on scale.x so a flipped tile (scale.x < 0) still passes as "correct magnitude".
+    if (Math.abs(Math.abs(mesh.scale.x) - sx) > EPS || Math.abs(mesh.scale.y - sy) > EPS) {
+      mesh.scale.set(sx, sy);
+    }
+  }
 
   static activate(): void {
     Hooks.on("refreshToken", ObjectTransform.onRefreshToken);
@@ -26,77 +48,47 @@ export class ObjectTransform {
     return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
   }
 
-  private static applyTokenCounter(
-    mesh: MeshLike, docW: number, docH: number, imgScale: number,
-  ): void {
-    const proj = getProjection(canvas.scene);
-    const { reverseRotation, ratio, counterFactor } = proj;
-    mesh.rotation = reverseRotation;
-    mesh.skew?.set(0, 0);
-    mesh.anchor?.set(0.5, 0.5);
-    const texW = mesh.texture?.width || 1, texH = mesh.texture?.height || 1;
-    const uniform = Math.max(docW, docH) / Math.max(texW, texH) * imgScale;
-    mesh.scale.set(uniform * counterFactor, uniform * ratio * counterFactor);
-  }
-
-  private static applyTileCounter(
-    mesh: MeshLike,
-    docRotationDeg: number,
-    docW: number,
-    docH: number,
-    docBoundH: number,
-    imgScale: number,
-    flags?: Record<string, boolean>,
-  ): void {
-    const proj = getProjection(canvas.scene);
-    const { reverseRotation, ratio, counterFactor } = proj;
-    mesh.rotation = (docRotationDeg * Math.PI) / 180 + reverseRotation;
-    mesh.skew?.set(0, 0);
-    const texW = mesh.texture?.width || 1;
-    const texH = mesh.texture?.height || 1;
-    const uniform = Math.max(docW, docH, docBoundH) / Math.max(texW, texH) * imgScale;
-    mesh.scale.set(uniform * counterFactor, uniform * ratio * counterFactor);
-  }
-
   private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
     if (!ObjectTransform.isSceneEnabled()) return;
     if (token.document.getFlag(MODULE_ID, "transformToken") === true) return;
     const mesh = token.mesh as unknown as MeshLike | null | undefined;
     if (!mesh) return;
-    const gs   = canvas.grid?.size ?? 100;
-    const gd   = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
-    const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
-    const E    = elev * gs / gd;
-    const proj = getProjection(canvas.scene);
-    const { x: hdx, y: hdy } = proj.heightDir;
-    const docW = (token.document.width ?? 1) * gs;
-    const docH = (token.document.height ?? 1) * gs;
-    const imgOff = VolumeFlags.getImageOffset(token.document);
-    // Only capture mesh.x/y as the natural base when _refreshPosition() has run.
-    // That happens exactly when refreshPosition is set (movement, setFlag, or any propagation
-    // from redraw/refreshSize/refreshShape). Do NOT update on refreshMesh alone — the hide
-    // animation fires refreshMesh every frame (alpha lerp) without refreshPosition, and
-    // mesh.x/y already contains our offsets at that point; capturing it would compound the
-    // offset on each frame, causing the image to drift off screen.
-    if (!flags || flags["refreshPosition"]) {
-      ObjectTransform.tokenBase.set(token, { x: mesh.x, y: mesh.y });
+    const gs     = canvas.grid?.size ?? 100;
+    const proj   = getProjection(canvas.scene);
+    const { reverseRotation, ratio, counterFactor, heightDir: { x: hdx, y: hdy } } = proj;
+    const docW   = (token.document.width  ?? 1) * gs;
+    const docH   = (token.document.height ?? 1) * gs;
+    const imgScl = VolumeFlags.getImageScale(token.document);
+
+    // Re-apply counter-transform — _refreshMesh() resets scale/anchor on animation frames.
+    // Guards avoid setting PIXI dirty when the value is already correct, breaking any
+    // feedback loop where setting a property re-triggers refreshToken.
+    if (Math.abs(mesh.rotation - reverseRotation) > EPS) mesh.rotation = reverseRotation;
+    if (mesh.skew && (mesh.skew.x !== 0 || mesh.skew.y !== 0)) mesh.skew.set(0, 0);
+    if (mesh.anchor && (Math.abs(mesh.anchor.x - 0.5) > EPS || Math.abs(mesh.anchor.y - 0.5) > EPS)) {
+      mesh.anchor.set(0.5, 0.5);
     }
-    const base = ObjectTransform.tokenBase.get(token) ?? { x: mesh.x - hdx * E - imgOff.x, y: mesh.y - hdy * E - imgOff.y };
-    ObjectTransform.applyTokenCounter(mesh, docW, docH, VolumeFlags.getImageScale(token.document));
-    mesh.x = base.x + hdx * E + imgOff.x;
-    mesh.y = base.y + hdy * E + imgOff.y;
+    const texW = mesh.texture?.width || 1, texH = mesh.texture?.height || 1;
+    const uniform = Math.max(docW, docH) / Math.max(texW, texH) * imgScl;
+    const targetSX = uniform * counterFactor, targetSY = uniform * ratio * counterFactor;
+    if (Math.abs(mesh.scale.x - targetSX) > EPS || Math.abs(mesh.scale.y - targetSY) > EPS) {
+      mesh.scale.set(targetSX, targetSY);
+    }
+
+    // mesh.x/y only when _refreshPosition() ran — not on pure animation ticks.
+    if (flags && !flags["refreshPosition"]) return;
+
+    const gd     = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+    const elev   = (token.document as unknown as { elevation?: number }).elevation ?? 0;
+    const E      = elev * gs / gd;
+    const imgOff = VolumeFlags.getImageOffset(token.document);
+    // _refreshPosition() just set mesh.x = token.center.x; add our offsets on top.
+    mesh.x = mesh.x + hdx * E + imgOff.x;
+    mesh.y = mesh.y + hdy * E + imgOff.y;
   }
 
-  // Reposition the TokenHUD DOM overlay to track the token under the isometric stage transform.
-  //
-  // The #hud container is positioned at canvas.primary.getGlobalPosition() and scaled by zoom
-  // (no rotation). CSS left/top within it are in "canvas units × zoom" space, so raw screen
-  // coords are wrong. The correct formula drops tx/ty and divides by zoom — which reduces to
-  // the pure projection: L = cos(HudAngle)*(cx+cy), T = sin(HudAngle)*(cy-cx).
-  private static onRenderTokenHUD(
-    hud: { object: unknown },
-    html: JQuery | HTMLElement,
-  ): void {
+  // Reposition the TokenHUD to track the token under the isometric stage transform.
+  private static onRenderTokenHUD(hud: { object: unknown }, html: JQuery | HTMLElement): void {
     if (!ObjectTransform.isSceneEnabled()) return;
     const token = hud.object as Token;
     if (token.document.getFlag(MODULE_ID, "transformToken") === true) return;
@@ -112,10 +104,7 @@ export class ObjectTransform {
     });
   }
 
-  private static onRenderTileHUD(
-    hud: { object: unknown },
-    html: JQuery | HTMLElement,
-  ): void {
+  private static onRenderTileHUD(hud: { object: unknown }, html: JQuery | HTMLElement): void {
     if (!ObjectTransform.isSceneEnabled()) return;
     const tile = hud.object as Tile;
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
@@ -152,9 +141,9 @@ export class ObjectTransform {
       tile.document.height ?? 0,
       boundH,
       imgScale,
-      flags,
     );
-    if (imgFlipped) mesh.scale.x = -Math.abs(mesh.scale.x);
+    // applyTileCounter sets scale.x > 0; negate only if still positive after that.
+    if (imgFlipped && mesh.scale.x > 0) mesh.scale.x = -mesh.scale.x;
     const imgOff = VolumeFlags.getImageOffset(tile.document);
     mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x;
     mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y;
