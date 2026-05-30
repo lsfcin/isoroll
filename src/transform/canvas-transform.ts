@@ -155,13 +155,24 @@ export class CanvasTransform {
       const sky = (this.skew as PIXI.ObservablePoint).y;
       const tw = this.texture?.width ?? 1;
       const th = this.texture?.height ?? 1;
+      
       // Apply counter-transform (same pattern as applyBackground)
-      (this.anchor as PIXI.ObservablePoint).set(0.5, 0.5);
+      (this.anchor as PIXI.ObservablePoint).set(0, 0);
       this.rotation = proj.reverseRotation;
       (this.skew as PIXI.ObservablePoint).set(proj.reverseSkewX, proj.reverseSkewY);
       this.scale.set(sx * proj.counterFactor, sx * proj.ratio * proj.counterFactor);
-      this.position.set(x + sx * tw * 0.5, y + sy * th * 0.5);
+      // 5a: grid displacement — bg top-left corner at scene/grid center (canvas coords)
+      const gridCX = x + sx * tw * 0.5;
+      const gridCY = y + sy * th * 0.5;
+      // 5b: offset from anchor (top-left) to image center, in image (texture) space
+      const offImgX = -tw * 0.5;
+      const offImgY = -th * 0.5;
+      // 5c: TODO — transform offImg → canvas space via counter-transform matrix
+      const offCanX = offImgX * 0; // placeholder
+      const offCanY = offImgY * 0;
+      this.position.set(gridCX + offCanX, gridCY + offCanY);
       origUpdate.call(this);
+      
       // Restore Foundry values so next frame starts clean (no accumulation)
       (this.anchor as PIXI.ObservablePoint).set(ax, ay);
       this.rotation = rot;
