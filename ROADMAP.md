@@ -112,21 +112,43 @@
 - [x] Anchor dashed line from ground center to box base (elevated) or top (below ground)
 - [x] Redraws on controlTile/refreshTile, clears on canvasReady/updateScene
 
-**Gizmo Handles** (`src/volume/gizmos.ts`, `gizmos-handles.ts`, `gizmos-drag.ts`):
-- [x] 6 handles, all Foundry orange `#ff9829`, live-drag on pointermove:
+**Gizmo Handles — Tiles** (`src/volume/gizmos.ts`, `gizmos-handles.ts`, `gizmos-drag.ts`):
+- [x] Volume handles (orange `#ff9829`), live-drag on pointermove — gated by `showVolumeManipulation`:
   - Width (diamond) — left-edge midpoint of base → tile.document.width
   - Height (diamond) — bottom-edge midpoint of base → tile.document.height
   - BoundH (face parallelogram) — top back-face of box → boundHeight flag
   - Elevation (counter-transformed circle) — SE vertical edge midpoint → tile.document.elevation
   - Scale (diamond) — SE_base corner → proportional width+height
   - Move (circle) — base face center → tile.document.x/y
+- [x] Image handles (white), gated by `showImageManipulation`:
+  - imgOffset (circle, BL corner) → imageOffset flag
+  - imgScale (square, TR corner) → imageScale flag
+  - swapSide (triangle button, BC edge) — swaps width↔height; also triggers tileFlipped flag
 - [x] 1/4 grid-unit snap; elevation snaps to integer feet
 - [x] Tile mesh displaced by elevation: `mesh.x/y = doc.x/y + hdx/hdy * E`
 - [x] Image scale includes boundHeight: `Math.max(docW, docH, docBoundH)`
 - [x] Rotation handle suppressed: invisible event-absorber over Foundry's triangle
 - [x] Anchor line: orange line from ground center to elevated base
-- [x] Flip Tile button in TileHUD — swaps width↔height, adjusts Y to keep SE corner fixed
 - [x] Auto-show on tile select, auto-hide on deselect, rebuild on refreshTile
+
+**Gizmo Handles — Tokens** (`src/volume/token-gizmos.ts`, `token-volume-gizmos.ts`):
+- [x] Image handles (white), gated by `showImageManipulation`:
+  - imgOffset (circle, BL corner) → imageOffset flag
+  - imgScale (square, TR corner) → imageScale flag
+- [x] Volume handle (orange), gated by `showVolumeManipulation`:
+  - Elevation (counter-transformed circle) — SE edge midpoint → token.document.elevation (with `{ animate: false }`)
+- [x] Doc-state cache (x, y, elevation, boundH) prevents 60fps PIXI rebuild during movement animation
+
+**Token Volume Overlay** (`src/volume/token-volume-overlay.ts`):
+- [x] Same 12-edge 3D wireframe box as tiles; uses `computeTokenVerts()` (token coords: x/y = top-left, width/height × gridSize)
+- [x] Anchor line from ground to elevated base
+- [x] Token mesh displaced by elevation: `mesh.x/y = base + hdx/hdy * E + imgOff`; tokenBase captures natural center on `refreshPosition` only; elevation fresh-read every frame so drag updates immediately
+- [x] Doc-state cache avoids redundant redraws when document unchanged
+
+**Config UI — Manipulation flags** (`src/transform/scene-config.ts`):
+- [x] `showImageManipulation` checkbox in TokenConfig + TileConfig Iso tab (default true)
+- [x] `showVolumeManipulation` checkbox in TokenConfig + TileConfig Iso tab (default true)
+- [x] `defaultTokenHeight` setting default raised to 2 grid units (≈ 10 ft at standard 5 ft/sq grid)
 
 **Projection System** (`src/transform/constants.ts`):
 - [x] PROJECTION_TYPES map: dimetric_2_1, true_iso, overhead, proj_3_2, diablo, torment, hades (approx.), custom
@@ -139,21 +161,22 @@
 - [x] Custom projection: 4 numeric fields (rotation°, skewX°, skewY°, ratio) shown when "custom" selected
 - [x] Tab renamed: "Isoroll" → "Iso" (all sheets: scene/tile/token)
 
-### Phase 4 — Image Edit Mode 🔲 PARTIAL
+### Phase 4 — Image Edit Mode ✅ HANDLES DONE / 🔲 UX PENDING
 
-**Tokens (done):**
-- [x] BL circle handle → drag to translate image (canvas-pixel offset stored in `flags.isoroll.imageOffset`)
-- [x] TR square handle → drag to scale image (stored in `flags.isoroll.imageScale`)
-- [x] Handles shown on token select via `controlToken` hook; rebuilt on `refreshToken`
+**Tokens + Tiles (done):**
+- [x] BL circle handle → drag to translate image (`flags.isoroll.imageOffset`)
+- [x] TR square handle → drag to scale image (`flags.isoroll.imageScale`)
+- [x] Dashed image contour shown on select (white dash, screen-pixel-adapted length)
+- [x] Handles shown on select via `controlToken`/`controlTile`; rebuilt on refresh
 - [x] Drag math: screen-space delta inverted through worldTransform for offset; radial distance ratio for scale
-- [x] Image offset correctly tracks token movement (only captured on `refreshPosition`)
-- [x] Hide/show animation safe (no drift — `refreshMesh` frames skipped)
+- [x] Image offset correctly tracks movement (tokenBase pattern, captured on `refreshPosition` only)
+- [x] Hide/show animation safe (refreshMesh-only frames skipped)
+- [x] `showImageManipulation` flag (default true) gates handles + contour per object
 
-**Tiles (pending):**
-- [ ] Double-click tile enters image-edit mode
-- [ ] Corner handles for scale, drag for move
-- [ ] Fine-tune text inputs (numeric fields)
-- [ ] Volume handles hidden while in this mode
+**UX polish (pending):**
+- [ ] Double-click enters image-edit mode (volume handles hidden while active)
+- [ ] Fine-tune numeric text inputs for offset/scale
+- [ ] ESC / click-outside exits image-edit mode
 
 ### Phase 5 — Preset System 🔲 PENDING
 

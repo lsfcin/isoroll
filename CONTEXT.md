@@ -19,13 +19,17 @@
 | `src/transform/object-transform.ts` | Per-token/tile counter-transform + HUD repositioning, hooks: refreshToken/refreshTile/renderTokenHUD |
 | `src/transform/scene-config.ts` | Isoroll tab injection for SceneConfig, TokenConfig, TileConfig; projection dropdown |
 | `src/transform/constants.ts` | `PROJECTION_TYPES` (8 presets), `getProjection(scene)`, `IsoProjection` interface |
-| `src/volume/flags.ts` | `MODULE_ID`, `VolumeFlags` flag accessors |
-| `src/volume/settings.ts` | DefaultTokenHeight, OcclusionOpacity module settings |
-| `src/volume/overlay-geometry.ts` | 3D box math: `computeVerts()`, `drawDash()`, `BoxVerts` type |
-| `src/volume/overlay.ts` | `VolumeOverlay` — dashed 3D bounding box drawn on selected tiles |
+| `src/volume/flags.ts` | `MODULE_ID`, `VolumeFlags` flag accessors (boundHeight, imageOffset, imageScale, showImageManipulation, showVolumeManipulation, …) |
+| `src/volume/settings.ts` | DefaultTokenHeight (default 2 grid units ≈ 10 ft), OcclusionOpacity module settings |
+| `src/volume/overlay-geometry.ts` | 3D box geometry: `computeVerts()` (tile), `computeTokenVerts()` (token), `drawBox()`, `drawAnchorLine()`, `drawDash()`, `BoxVerts` |
+| `src/volume/overlay.ts` | `VolumeOverlay` — 3D box + image contour on selected tiles; gated by showVolumeManipulation / showImageManipulation |
+| `src/volume/token-volume-overlay.ts` | `TokenVolumeOverlay` — 3D bounding box on selected tokens; doc-state cached to skip 60fps rebuilds during animation |
 | `src/volume/gizmos-drag.ts` | Pure drag math: `projectDrag()`, `handlePositions()`, `commitDrag()`, snap helpers |
 | `src/volume/gizmos-handles.ts` | PIXI factory functions for all handle shapes + `createRotateBlocker()` |
-| `src/volume/gizmos.ts` | `VolumeGizmos` — 6 handles (width/height/boundH/elevation/scale/move) + rotation suppressor + Flip button |
+| `src/volume/gizmos.ts` | `VolumeGizmos` — volume handles (width/height/boundH/elevation/scale/move) gated by showVolumeManipulation; image handles (imgOffset/imgScale/swapSide) gated by showImageManipulation |
+| `src/volume/token-gizmos.ts` | `TokenGizmos` — image offset (BL circle) + scale (TR square) handles for tokens; gated by showImageManipulation |
+| `src/volume/token-overlay.ts` | `TokenOverlay` — dashed image contour on selected tokens; gated by showImageManipulation |
+| `src/volume/token-volume-gizmos.ts` | `TokenVolumeGizmos` — elevation handle (orange circle, SE edge midpoint) for tokens; doc-state cached |
 | `src/sorter/depth-sorter.ts` | Depth sort (dormant — not activated, see ROADMAP) |
 | `src/occluder/occluder.ts` | Tile alpha fade when token is behind it |
 | `src/resolver/asset-resolver.ts` | Stance fallback chain, `resolveBestTokenAsset()` |
@@ -53,7 +57,12 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | `flags.isoroll.customRatio` | number | scene | 2.0 | Custom projection vertical ratio |
 | `flags.isoroll.transformToken` | boolean | token | false | Apply isometric stage to token sprite |
 | `flags.isoroll.transformTile` | boolean | tile | false | Apply isometric stage to tile sprite |
-| `flags.isoroll.boundHeight` | number | tile | 1 | 3D volume height in grid units (Z axis) |
+| `flags.isoroll.boundHeight` | number | tile+token | tile:1 / token:2 | 3D volume height in grid units (token default from `defaultTokenHeight` setting) |
+| `flags.isoroll.imageOffset` | {x,y} | tile+token | {0,0} | Canvas-pixel offset of image from natural center |
+| `flags.isoroll.imageScale` | number | tile+token | 1 | Image scale multiplier |
+| `flags.isoroll.tileFlipped` | boolean | tile | false | Swap tile width↔height (mirror) |
+| `flags.isoroll.showImageManipulation` | boolean | tile+token | true | Show image contour + imgOffset/imgScale/swapSide handles on select |
+| `flags.isoroll.showVolumeManipulation` | boolean | tile+token | true | Show 3D box + elevation handle on select (tiles also: width/height/boundH/scale/move) |
 
 ## Known Limitations / Gotchas
 
