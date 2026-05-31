@@ -172,7 +172,7 @@ export function commitDrag(drag: DragState, gx: number, gy: number): void {
     case "elevation": void drag.tile.document.update({ elevation: elev }); break;
     case "scale":     void drag.tile.document.update({ width: tw, height: th }); break;
     case "move":      void drag.tile.document.update({ x: docX, y: docY }); break;
-    case "imgOffset": void drag.tile.document.setFlag(MODULE_ID, "imageOffset", { x: imgOffX, y: imgOffY }); break;
+    case "imgOffset": { const gs = canvas.grid?.size ?? 100; void drag.tile.document.setFlag(MODULE_ID, "imageOffset", { x: imgOffX / gs, y: imgOffY / gs }); break; }
     case "imgScale":  void drag.tile.document.setFlag(MODULE_ID, "imageScale",  imgScale); break;
     case "swapSide":  break; // handled via pointerdown, not drag
   }

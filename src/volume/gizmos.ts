@@ -92,7 +92,7 @@ export class VolumeGizmos {
         if (type === "swapSide") { VolumeGizmos.swapSide(tile); return; }
         VolumeGizmos.beginDrag(type, tile, e.global.x, e.global.y,
           tx, ty, tw, th, boundH, elev, tile.document.x ?? 0, tile.document.y ?? 0,
-          imgOff.x, imgOff.y, imgScale);
+          imgOff.x * gs, imgOff.y * gs, imgScale);
       });
       container.addChild(handle);
     }

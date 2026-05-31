@@ -88,8 +88,8 @@ export class ObjectTransform {
     const elev   = (token.document as unknown as { elevation?: number }).elevation ?? 0;
     const E      = elev * gs / gd;
     const imgOff = VolumeFlags.getImageOffset(token.document);
-    mesh.x = base.x + hdx * E + imgOff.x;
-    mesh.y = base.y + hdy * E + imgOff.y;
+    mesh.x = base.x + hdx * E + imgOff.x * gs;
+    mesh.y = base.y + hdy * E + imgOff.y * gs;
   }
 
   // Reposition the TokenHUD to track the token under the isometric stage transform.
@@ -150,7 +150,7 @@ export class ObjectTransform {
     // applyTileCounter sets scale.x > 0; negate only if still positive after that.
     if (imgFlipped && mesh.scale.x > 0) mesh.scale.x = -mesh.scale.x;
     const imgOff = VolumeFlags.getImageOffset(tile.document);
-    mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x;
-    mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y;
+    mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x * gs;
+    mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y * gs;
   }
 }

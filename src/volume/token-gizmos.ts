@@ -58,6 +58,7 @@ export class TokenGizmos {
     const tAsT   = token as unknown as Tile;
     const bl     = imageBLCorner(tAsT);
     const tr     = imageTRCorner(tAsT);
+    const gs     = canvas.grid?.size ?? 100;
     const imgOff = VolumeFlags.getImageOffset(token.document);
     const imgScl = VolumeFlags.getImageScale(token.document);
     const container = new PIXI.Container();
@@ -73,7 +74,7 @@ export class TokenGizmos {
       if (pos) { handle.x = pos.x; handle.y = pos.y; }
       handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
         e.stopPropagation();
-        TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x, imgOff.y, imgScl, meshCX, meshCY);
+        TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gs, imgOff.y * gs, imgScl, meshCX, meshCY);
       });
       container.addChild(handle);
     }
@@ -132,9 +133,10 @@ export class TokenGizmos {
     const m = canvas.app!.stage.worldTransform;
     if (drag.type === "imgOffset") {
       const det = m.a * m.d - m.b * m.c;
+      const gs  = canvas.grid?.size ?? 100;
       void drag.token.document.setFlag(MODULE_ID, "imageOffset", {
-        x: drag.startImgOffX + (dx * m.d - dy * m.c) / det,
-        y: drag.startImgOffY + (-dx * m.b + dy * m.a) / det,
+        x: (drag.startImgOffX + (dx * m.d - dy * m.c) / det) / gs,
+        y: (drag.startImgOffY + (-dx * m.b + dy * m.a) / det) / gs,
       });
     } else {
       const cx  = drag.startMeshCX;
