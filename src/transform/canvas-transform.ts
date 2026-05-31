@@ -74,15 +74,14 @@ export class CanvasTransform {
     if (!bg || !orig) return;
     const proj = getProjection(canvas.scene);
     const { reverseRotation, reverseSkewX, reverseSkewY, ratio, counterFactor } = proj;
-    const scene = canvas.scene as unknown as { width: number; height: number; padding: number };
-    const paddingX = scene.width * (scene.padding ?? 0);
-    const paddingY = scene.height * (scene.padding ?? 0);
+    // Use canvas.dimensions.sceneX/Y so position tracks scene offset (scene flags are static)
+    const dims = canvas.dimensions as unknown as { sceneX: number; sceneY: number; sceneWidth: number; sceneHeight: number };
 
     bg.anchor?.set(0.5, 0.5);
     bg.rotation = reverseRotation;
     bg.skew.set(reverseSkewX, reverseSkewY);
     bg.scale.set(orig.scaleX * counterFactor, orig.scaleX * ratio * counterFactor);
-    bg.position.set(scene.width / 2 + paddingX, scene.height / 2 + paddingY);
+    bg.position.set(dims.sceneX + dims.sceneWidth / 2, dims.sceneY + dims.sceneHeight / 2);
   }
 
   private static resetBackground(): void {
