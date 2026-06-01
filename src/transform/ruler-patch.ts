@@ -67,12 +67,15 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
 }
 
 export function registerRulerPatch(): void {
-  const g = globalThis as unknown as { Ruler?: { prototype: RulerProto } };
   type CfgToken = { rulerClass?: { prototype: RulerProto } };
   type CfgTile  = { hudClass?:  { prototype: HudProto  } };
+  // Prefer the v14 namespaced path; fall back to deprecated global for older hosts.
+  type GWithFoundry = { foundry?: { canvas?: { interaction?: { Ruler?: { prototype: RulerProto } } } }; Ruler?: { prototype: RulerProto } };
+  const g = globalThis as unknown as GWithFoundry;
+  const rulerCls = g.foundry?.canvas?.interaction?.Ruler ?? g.Ruler;
   const tokenRulerCls = (CONFIG as unknown as { Token?: CfgToken })?.Token?.rulerClass;
   const tileHudCls    = (CONFIG as unknown as { Tile?:  CfgTile  })?.Tile?.hudClass;
-  patchRulerProto(g.Ruler?.prototype);
+  patchRulerProto(rulerCls?.prototype);
   patchRulerProto(tokenRulerCls?.prototype);
   patchTileHUDProto(tileHudCls?.prototype);
 }

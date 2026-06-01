@@ -2,55 +2,59 @@ export { registerRulerPatch } from "./ruler-patch";
 import { MODULE_ID } from "../volume/flags";
 import { PROJECTION_TYPES } from "./constants";
 
-
 const TAB = "isoroll";
 
-// Manual tab activation: "isoroll" isn't in AppV2's static TABS, so changeTab() would throw.
-// stopPropagation prevents AppV2's delegated handler; we handle active-class ourselves.
-function addIsorollTab($html: JQuery, label: string, fieldsetContent: string): void {
+// AppV2 partial re-renders wipe nav <a> items but preserve injected tab content <div>s.
+// Guard on content div (persists); always re-inject nav item (wiped); bind events once.
+// All click handlers delegated from $html so they survive nav DOM replacement.
+function addIsorollTab(
+  $html: JQuery,
+  label: string,
+  fieldsetContent: string,
+  onFirstInject?: ($html: JQuery) => void,
+): void {
   const $nav = $html
     .find("nav.tabs:not(.secondary-tabs), nav.sheet-tabs:not(.secondary-tabs)")
     .first();
 
-  $nav.append(`<a class="item" data-tab="${TAB}"><i class="fas fa-cube"></i> ${label}</a>`);
+  const tabContentExists = $html.find(`.tab[data-tab="${TAB}"]`).length > 0;
+
+  if (!$nav.find(`a[data-tab="${TAB}"]`).length) {
+    $nav.append(`<a class="item" data-tab="${TAB}"><i class="fas fa-cube"></i> ${label}</a>`);
+  }
+
+  if (tabContentExists) return;
 
   const $section = $(`<div class="tab" data-tab="${TAB}"></div>`)
     .append(`<fieldset>${fieldsetContent}</fieldset>`);
-
   const $lastTab = $html.find(".tab[data-tab]").last();
-  if ($lastTab.length) {
-    $lastTab.after($section);
-  } else {
-    ($html.is("form") ? $html : $html.find("form").first()).append($section);
-  }
+  if ($lastTab.length) $lastTab.after($section);
+  else ($html.is("form") ? $html : $html.find("form").first()).append($section);
 
-  // Our tab click: activate manually and stop AppV2 from calling changeTab("isoroll").
   $html.on("click", `a[data-tab="${TAB}"]`, (e) => {
     e.stopPropagation();
-    $nav.find("a[data-tab]").removeClass("active");
+    $html.find("nav.tabs:not(.secondary-tabs), nav.sheet-tabs:not(.secondary-tabs)")
+      .first().find("a[data-tab]").removeClass("active");
     $html.find(".tab[data-tab]").removeClass("active");
     $(e.currentTarget).addClass("active");
     $html.find(`.tab[data-tab="${TAB}"]`).addClass("active");
   });
 
-  // Other tab clicks: deactivate ours.
-  // Also re-activate the target section explicitly: our stopPropagation on the isoroll click
-  // leaves AppV2's tabGroups[group] stale, so changeTab() may return early and leave the
-  // native tab content hidden (it was removed when we activated isoroll).
-  $nav.on("click", `a[data-tab]:not([data-tab="${TAB}"])`, (e) => {
+  // stopPropagation on isoroll click leaves AppV2 tabGroups stale — re-activate target explicitly.
+  $html.on("click", `nav a[data-tab]:not([data-tab="${TAB}"])`, (e) => {
     $html.find(`.tab[data-tab="${TAB}"], a[data-tab="${TAB}"]`).removeClass("active");
     const clickedTab = (e.currentTarget as HTMLElement).dataset.tab;
     if (clickedTab) $html.find(`.tab[data-tab="${clickedTab}"]`).addClass("active");
   });
+
+  onFirstInject?.($html);
 }
 
-// Renders one checkbox form-group. flagKey is camelCase; i18n key = PascalCase of flagKey.
 function cbGroup(flagKey: string, ns: string, checked: boolean): string {
   const k = flagKey.charAt(0).toUpperCase() + flagKey.slice(1);
   return `<div class="form-group"><label>${game.i18n.localize(`ISOROLL.${ns}.${k}`)}</label><div class="form-fields"><input type="checkbox" name="flags.${MODULE_ID}.${flagKey}" ${checked ? "checked" : ""}></div><p class="hint">${game.i18n.localize(`ISOROLL.${ns}.${k}Hint`)}</p></div>`;
 }
 
-// Build the <option> list for the projection selector
 function projectionOptions(currentKey: string): string {
   const labels: Record<string, string> = {
     dimetric_2_1: game.i18n.localize("ISOROLL.Projection.Dimetric21"),
@@ -71,19 +75,23 @@ function projectionOptions(currentKey: string): string {
 }
 
 export function registerSceneConfigHook(): void {
-  Hooks.on(
-    "renderSceneConfig",
+  Hooks.on("renderSceneConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
       const doc = app.document;
-      const enabled     = doc.getFlag(MODULE_ID, "enabled")            ?? false;
-      const transformBg = doc.getFlag(MODULE_ID, "transformBackground") ?? false;
-      const projection  = (doc.getFlag(MODULE_ID, "projection") as string | undefined) ?? "dimetric_2_1";
-      const cRot  = (doc.getFlag(MODULE_ID, "customRotation")  as number | undefined) ?? -45;
-      const cSkX  = (doc.getFlag(MODULE_ID, "customSkewX")     as number | undefined) ?? 18.435;
-      const cSkY  = (doc.getFlag(MODULE_ID, "customSkewY")     as number | undefined) ?? 18.435;
-      const cRatio = (doc.getFlag(MODULE_ID, "customRatio")    as number | undefined) ?? 2.0;
-
+      // Sanitize with strict checks: prior bad saves may store arrays as "false,false,false" etc.
+      const enabled     = doc.getFlag(MODULE_ID, "enabled")            === true;
+      const transformBg = doc.getFlag(MODULE_ID, "transformBackground") === true;
+      const rawProj  = doc.getFlag(MODULE_ID, "projection");
+      const rawRot   = doc.getFlag(MODULE_ID, "customRotation");
+      const rawSkX   = doc.getFlag(MODULE_ID, "customSkewX");
+      const rawSkY   = doc.getFlag(MODULE_ID, "customSkewY");
+      const rawRatio = doc.getFlag(MODULE_ID, "customRatio");
+      const projection = (typeof rawProj  === "string" ? rawProj  : undefined) ?? "dimetric_2_1";
+      const cRot   = (typeof rawRot   === "number" ? rawRot   : undefined) ?? -45;
+      const cSkX   = (typeof rawSkX   === "number" ? rawSkX   : undefined) ?? 18.435;
+      const cSkY   = (typeof rawSkY   === "number" ? rawSkY   : undefined) ?? 18.435;
+      const cRatio = (typeof rawRatio === "number" ? rawRatio : undefined) ?? 2.0;
       const customVisible = projection === "custom" ? "" : 'style="display:none"';
 
       addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"), `
@@ -136,58 +144,46 @@ export function registerSceneConfigHook(): void {
                 <input type="number" step="0.001" min="0.1" name="flags.${MODULE_ID}.customRatio" value="${cRatio}">
               </div>
             </div>
-          </div>`);
-
-      // Disable transformBackground when enabled is unchecked
-      $html.on("change", `input[name="flags.${MODULE_ID}.enabled"]`, (event) => {
-        if (!(event.target as HTMLInputElement).checked) {
-          $html.find(`input[name="flags.${MODULE_ID}.transformBackground"]`).prop("checked", false);
-        }
-      });
-
-      // Show/hide custom projection fields
-      $html.on("change", ".isoroll-projection-select", (event) => {
-        const val = (event.target as HTMLSelectElement).value;
-        $html.find(".isoroll-custom-fields").toggle(val === "custom");
-      });
+          </div>`,
+        ($h) => {
+          $h.on("change", `input[name="flags.${MODULE_ID}.enabled"]`, (event) => {
+            if (!(event.target as HTMLInputElement).checked)
+              $h.find(`input[name="flags.${MODULE_ID}.transformBackground"]`).prop("checked", false);
+          });
+          $h.on("change", ".isoroll-projection-select", (event) => {
+            $h.find(".isoroll-custom-fields").toggle((event.target as HTMLSelectElement).value === "custom");
+          });
+        },
+      );
     },
   );
 }
 
 export function registerTokenConfigHook(): void {
-  Hooks.on(
-    "renderTokenConfig",
+  Hooks.on("renderTokenConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      const transformToken  = app.document.getFlag(MODULE_ID, "transformToken")          ?? false;
-      const showImgManip    = app.document.getFlag(MODULE_ID, "showImageManipulation")   ?? true;
-      const showVolManip    = app.document.getFlag(MODULE_ID, "showVolumeManipulation")  ?? true;
-
+      const d = app.document;
       addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
         `<legend>${game.i18n.localize("ISOROLL.TokenConfig.Heading")}</legend>` +
-        cbGroup("transformToken",         "TokenConfig", transformToken as boolean) +
-        cbGroup("showImageManipulation",  "TokenConfig", showImgManip  as boolean) +
-        cbGroup("showVolumeManipulation", "TokenConfig", showVolManip  as boolean));
+        cbGroup("transformToken",        "TokenConfig", d.getFlag(MODULE_ID, "transformToken")         === true) +
+        cbGroup("showImageManipulation", "TokenConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
+        cbGroup("showVolumeManipulation","TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false));
     },
   );
 }
 
 export function registerTileConfigHook(): void {
-  Hooks.on(
-    "renderTileConfig",
+  Hooks.on("renderTileConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      const transformTile   = app.document.getFlag(MODULE_ID, "transformTile")           ?? false;
-      const showImgManip    = app.document.getFlag(MODULE_ID, "showImageManipulation")   ?? true;
-      const showVolManip    = app.document.getFlag(MODULE_ID, "showVolumeManipulation")  ?? true;
-      const foregroundTile  = app.document.getFlag(MODULE_ID, "foregroundTile") !== false;
-
+      const d = app.document;
       addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
         `<legend>${game.i18n.localize("ISOROLL.TileConfig.Heading")}</legend>` +
-        cbGroup("foregroundTile",         "TileConfig", foregroundTile as boolean) +
-        cbGroup("transformTile",          "TileConfig", transformTile  as boolean) +
-        cbGroup("showImageManipulation",  "TileConfig", showImgManip   as boolean) +
-        cbGroup("showVolumeManipulation", "TileConfig", showVolManip   as boolean));
+        cbGroup("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
+        cbGroup("transformTile",         "TileConfig", d.getFlag(MODULE_ID, "transformTile")          === true) +
+        cbGroup("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
+        cbGroup("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false));
     },
   );
 }
