@@ -1,5 +1,7 @@
+export { registerRulerPatch } from "./ruler-patch";
 import { MODULE_ID } from "../volume/flags";
 import { PROJECTION_TYPES } from "./constants";
+
 
 const TAB = "isoroll";
 

@@ -9,13 +9,14 @@ import { TokenVolumeGizmos } from "./volume/token-volume-gizmos";
 import { Occluder } from "./occluder/occluder";
 import { CanvasTransform } from "./transform/canvas-transform";
 import { ObjectTransform } from "./transform/object-transform";
-import { registerSceneConfigHook, registerTokenConfigHook, registerTileConfigHook } from "./transform/scene-config";
+import { registerSceneConfigHook, registerTokenConfigHook, registerTileConfigHook, registerRulerPatch } from "./transform/scene-config";
 
 Hooks.once("init", () => {
   registerVolumeSettings();
   registerSceneConfigHook();
   registerTokenConfigHook();
   registerTileConfigHook();
+  registerRulerPatch();
   CanvasTransform.activate();
   ObjectTransform.activate();
   VolumeOverlay.activate();
