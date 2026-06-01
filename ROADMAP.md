@@ -90,6 +90,8 @@
 - [x] Token counter-transform: `anchor(0.5,0.5)`, rotation locked to `reverseRotation` (auto-facing suppressed)
 - [x] Tile counter-transform: uniform scale `max(docW,docH)/max(texW,texH)` — preserves aspect ratio
 - [x] TokenHUD repositioned via `renderTokenHUD` hook with correct HUD-container-space math
+- [x] TileHUD repositioned via `_updatePosition` prototype patch on `CONFIG.Tile.hudClass`; spans tile visual isometric footprint width `cosA*(docW+docH)`; swap-stable vertical `T - visualCssW/4`
+- [x] Movement ruler labels (Ruler + TokenRuler `_getWaypointLabelContext`) patched to apply worldTransform correction — same HUD displacement bug as TokenHUD
 - [x] `DIMETRIC_2_1` constants shared via `constants.ts`
 - ⏳ Token 8-directional sprite selection (TODO placeholder in `object-transform.ts`) → Phase Future/Multiview
 
@@ -101,7 +103,10 @@
 - [x] pt-BR language support
 - [x] Foundry AppV2 tab injection (see `/foundry` skill)
 - [x] Grid Configuration Tool (grid wrench): counter-transforms preview bg sprite when `transformBackground=false`; grid mesh stays isometric; camera position unchanged. Pattern: `updateTransform` override with save→apply→origUpdate→restore on `renderGridConfig` hook.
+- [x] Grid Config scene offset: bg position uses `canvas.dimensions.sceneX/Y` (not static scene flags) so Scene Offset changes are reflected live
 - [x] AppV2 stale `tabGroups` bug: clicking native tab after custom tab was activated left content hidden; fixed by explicit `addClass("active")` in other-tab handler
+- [x] `imageOffset` stored in grid-relative units (divide on save, multiply by `gs` on apply/drag-start) — preserves offset across gridSize changes
+- [x] `foregroundTile` flag (default true): foreground tiles rescale `x/y/width/height` canvas px when scene gridSize changes (via `preUpdateScene`/`updateScene` hooks), preserving grid-unit footprint like tokens. Checkbox in TileConfig Iso tab.
 
 ### Phase 3 — Volume Handles (Gizmos) ✅ DONE (v2 — full redesign)
 
@@ -125,7 +130,7 @@
 - [x] Image handles (white), gated by `showImageManipulation`:
   - imgOffset (circle, BL corner) → imageOffset flag
   - imgScale (square, TR corner) → imageScale flag
-  - swapSide (triangle button, BC edge) — swaps width↔height; also triggers tileFlipped flag
+  - swapSide (triangle button, BC edge) — swaps width↔height + tileFlipped in single `document.update()` (avoids mid-swap refreshTile with inconsistent state)
 - [x] 1/4 grid-unit snap; elevation snaps to integer feet
 - [x] Tile mesh displaced by elevation: `mesh.x/y = doc.x/y + hdx/hdy * E`
 - [x] Image scale includes boundHeight: `Math.max(docW, docH, docBoundH)`
