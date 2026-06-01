@@ -54,9 +54,12 @@ function patchRulerProto(name: string, proto: RulerProto | undefined): void {
 
 // Ruler and TokenRuler both set context.position in canvas px, used as CSS left/top
 // in #hud #measurement — same displacement as TokenHUD without stage rotation.
+// TokenRuler is not a global — it lives at CONFIG.Token.rulerClass.
 export function registerRulerPatch(): void {
-  const g = globalThis as unknown as { Ruler?: { prototype: RulerProto }; TokenRuler?: { prototype: RulerProto } };
-  console.log("isoroll | ruler-patch: registering. Ruler=", !!g.Ruler, "TokenRuler=", !!g.TokenRuler);
+  const g = globalThis as unknown as { Ruler?: { prototype: RulerProto } };
+  type CfgToken = { rulerClass?: { prototype: RulerProto } };
+  const tokenRulerCls = (CONFIG as unknown as { Token?: CfgToken })?.Token?.rulerClass;
+  console.log("isoroll | ruler-patch: registering. Ruler=", !!g.Ruler, "TokenRuler(CONFIG)=", !!tokenRulerCls);
   patchRulerProto("Ruler", g.Ruler?.prototype);
-  patchRulerProto("TokenRuler", g.TokenRuler?.prototype);
+  patchRulerProto("TokenRuler", tokenRulerCls?.prototype);
 }
