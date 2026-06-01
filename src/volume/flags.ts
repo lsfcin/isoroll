@@ -54,4 +54,9 @@ export class VolumeFlags {
     const val = doc.getFlag(MODULE_ID, "showVolumeManipulation");
     return (val !== undefined && val !== null) ? (val as boolean) : defaultValue;
   }
+
+  // Foreground tiles scale with gridSize (like tokens). Default true for all tiles.
+  static isForegroundTile(tile: TileDocument): boolean {
+    return tile.getFlag(MODULE_ID, "foregroundTile") !== false;
+  }
 }

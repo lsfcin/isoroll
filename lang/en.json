@@ -25,6 +25,8 @@
     },
     "TileConfig": {
       "Heading": "Isometric",
+      "ForegroundTile": "Foreground Tile",
+      "ForegroundTileHint": "Treat as a 3D foreground object. Size and position scale with grid size changes, like tokens. Uncheck for background or floor tiles that should remain visually fixed.",
       "TransformTile": "Transform Tile",
       "TransformTileHint": "Apply the isometric stage transform to this tile. When unchecked (default), the tile sprite appears undistorted regardless of stage rotation.",
       "ShowImageManipulation": "Show Image Manipulation",

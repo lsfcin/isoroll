@@ -25,6 +25,8 @@
     },
     "TileConfig": {
       "Heading": "Isométrico",
+      "ForegroundTile": "Tile de Primeiro Plano",
+      "ForegroundTileHint": "Trata como objeto 3D de primeiro plano. Tamanho e posição escalam com mudanças no tamanho da grade, como tokens. Desmarque para tiles de fundo ou chão que devem permanecer visualmente fixos.",
       "TransformTile": "Transformar Tile",
       "TransformTileHint": "Aplica a transformação isométrica do palco ao tile. Quando desmarcado (padrão), o sprite do tile aparece sem distorção independente da rotação do palco.",
       "ShowImageManipulation": "Exibir Manipulação de Imagem",

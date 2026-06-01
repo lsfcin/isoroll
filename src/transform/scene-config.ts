@@ -175,15 +175,17 @@ export function registerTileConfigHook(): void {
     "renderTileConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      const transformTile = app.document.getFlag(MODULE_ID, "transformTile")           ?? false;
-      const showImgManip  = app.document.getFlag(MODULE_ID, "showImageManipulation")   ?? true;
-      const showVolManip  = app.document.getFlag(MODULE_ID, "showVolumeManipulation")  ?? true;
+      const transformTile   = app.document.getFlag(MODULE_ID, "transformTile")           ?? false;
+      const showImgManip    = app.document.getFlag(MODULE_ID, "showImageManipulation")   ?? true;
+      const showVolManip    = app.document.getFlag(MODULE_ID, "showVolumeManipulation")  ?? true;
+      const foregroundTile  = app.document.getFlag(MODULE_ID, "foregroundTile") !== false;
 
       addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
         `<legend>${game.i18n.localize("ISOROLL.TileConfig.Heading")}</legend>` +
-        cbGroup("transformTile",          "TileConfig", transformTile as boolean) +
-        cbGroup("showImageManipulation",  "TileConfig", showImgManip  as boolean) +
-        cbGroup("showVolumeManipulation", "TileConfig", showVolManip  as boolean));
+        cbGroup("foregroundTile",         "TileConfig", foregroundTile as boolean) +
+        cbGroup("transformTile",          "TileConfig", transformTile  as boolean) +
+        cbGroup("showImageManipulation",  "TileConfig", showImgManip   as boolean) +
+        cbGroup("showVolumeManipulation", "TileConfig", showVolManip   as boolean));
     },
   );
 }

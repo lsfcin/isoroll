@@ -15,6 +15,7 @@ const EPS = 1e-6;
 
 export class ObjectTransform {
   private static readonly tokenBase = new WeakMap<object, { x: number; y: number }>();
+  private static pendingGridRescale: { sceneId: string; ratio: number } | null = null;
 
   private static applyTileCounter(
     mesh: MeshLike,
@@ -40,10 +41,12 @@ export class ObjectTransform {
   }
 
   static activate(): void {
-    Hooks.on("refreshToken", ObjectTransform.onRefreshToken);
-    Hooks.on("refreshTile",  ObjectTransform.onRefreshTile);
-    Hooks.on("renderTokenHUD", ObjectTransform.onRenderTokenHUD);
-    Hooks.on("renderTileHUD",  ObjectTransform.onRenderTileHUD);
+    Hooks.on("refreshToken",      ObjectTransform.onRefreshToken);
+    Hooks.on("refreshTile",       ObjectTransform.onRefreshTile);
+    Hooks.on("renderTokenHUD",    ObjectTransform.onRenderTokenHUD);
+    Hooks.on("renderTileHUD",     ObjectTransform.onRenderTileHUD);
+    Hooks.on("preUpdateScene",    ObjectTransform.onPreUpdateScene);
+    Hooks.on("updateScene",       ObjectTransform.onUpdateSceneGridRescale);
   }
 
   private static isSceneEnabled(): boolean {
@@ -123,6 +126,38 @@ export class ObjectTransform {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
       $html.css({ left: `${L}px`, top: `${T}px`, transform: "translate(-50%, -50%)" });
     });
+  }
+
+  private static onPreUpdateScene(
+    scene: { id: string; grid: unknown },
+    changes: { grid?: { size?: number } },
+  ): void {
+    if (!changes.grid?.size) return;
+    const oldGs = (scene.grid as { size: number }).size;
+    const newGs = changes.grid.size;
+    if (oldGs <= 0 || oldGs === newGs) return;
+    ObjectTransform.pendingGridRescale = { sceneId: (scene as { id: string }).id, ratio: newGs / oldGs };
+  }
+
+  private static onUpdateSceneGridRescale(scene: { id: string }): void {
+    const pending = ObjectTransform.pendingGridRescale;
+    ObjectTransform.pendingGridRescale = null;
+    if (!pending || pending.sceneId !== scene.id) return;
+    if (scene.id !== canvas.scene?.id) return;
+    if (!game.user?.isGM) return;
+    const { ratio } = pending;
+    const tiles = (canvas.tiles?.placeables as Tile[] | undefined) ?? [];
+    const updates = tiles
+      .filter(t => VolumeFlags.isForegroundTile(t.document))
+      .map(t => ({
+        _id: t.id,
+        x:      (t.document.x      ?? 0) * ratio,
+        y:      (t.document.y      ?? 0) * ratio,
+        width:  (t.document.width  ?? 0) * ratio,
+        height: (t.document.height ?? 0) * ratio,
+      }));
+    if (updates.length === 0) return;
+    void canvas.scene!.updateEmbeddedDocuments("Tile", updates);
   }
 
   private static onRefreshTile(tile: Tile, flags?: Record<string, boolean>): void {
