@@ -53,11 +53,15 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
     // Visual center of the tile in CSS/HUD space (pan tx/ty absorbed by #hud)
     const L = (m.a * cx + m.c * cy) / zoom;
     const T = (m.b * cx + m.d * cy) / zoom;
-    // Set left so visual left edge = L - visualCssW/2 (tile visual left corner)
-    // CSS box: left = L - visualCssW/(2s), visual center after scale(s) = L ✓
-    pos.left  = L - visualCssW / (2 * s);
-    pos.top   = T - (pos.height ?? 0) / 2;  // visual center Y = T
-    pos.width = visualCssW / s;
+    // AppV2 uses transform-origin: top-left, so visual_left = CSS_left.
+    // Set CSS left = tile visual left edge = L - visualCssW/2.
+    // top = T - visualCssW/4 (= T - sinB*(W+H)/2) = tile visual top, invariant to swap
+    // because sinB = cosA/2 and (W+H) doesn't change when dimensions swap.
+    // height = 0 → el.style.height = "" (auto) — avoids docH dependency across swap.
+    pos.left   = L - visualCssW / 2;
+    pos.top    = T - visualCssW / 4;
+    pos.width  = visualCssW / s;
+    pos.height = 0;
     return pos;
   };
 }
