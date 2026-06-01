@@ -116,6 +116,8 @@ export class ObjectTransform {
     if (!ObjectTransform.isSceneEnabled()) return;
     const tile = hud.object as Tile;
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
+    const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
+    console.log("isoroll | renderTileHUD fired", { docX: tile.document.x, docY: tile.document.y, docW: tile.document.width, docH: tile.document.height });
     requestAnimationFrame(() => {
       const cx = tile.document.x ?? 0, cy = tile.document.y ?? 0;
       const m = canvas.app?.stage?.worldTransform;
@@ -123,8 +125,11 @@ export class ObjectTransform {
       if (!m) return;
       const L = (m.a * cx + m.c * cy) / zoom;
       const T = (m.b * cx + m.d * cy) / zoom;
-      const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
+      const before = { left: $html.css("left"), top: $html.css("top"), transform: $html.css("transform") };
       $html.css({ left: `${L}px`, top: `${T}px`, transform: "translate(-50%, -50%)" });
+      console.log("isoroll | TileHUD rAF", { cx, cy, docW: tile.document.width, docH: tile.document.height,
+        zoom, m: { a: m.a.toFixed(3), b: m.b.toFixed(3), c: m.c.toFixed(3), d: m.d.toFixed(3), tx: m.tx.toFixed(1), ty: m.ty.toFixed(1) },
+        before, setTo: { L: L.toFixed(1), T: T.toFixed(1) } });
     });
   }
 
