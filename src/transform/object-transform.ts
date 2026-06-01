@@ -112,26 +112,7 @@ export class ObjectTransform {
     });
   }
 
-  private static applyTileHUDPosition(tile: Tile): void {
-    const hud = (canvas.hud as unknown as { tile?: { object: unknown; element?: HTMLElement } } | null)?.tile;
-    if (!hud || hud.object !== tile) return;
-    const el = hud.element;
-    if (!el) return;
-    const cx = tile.document.x ?? 0, cy = tile.document.y ?? 0;
-    const m = canvas.app?.stage?.worldTransform;
-    const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
-    if (!m) return;
-    const L = (m.a * cx + m.c * cy) / zoom;
-    const T = (m.b * cx + m.d * cy) / zoom;
-    $(el).css({ left: `${L}px`, top: `${T}px`, transform: "translate(-50%, -50%)" });
-  }
-
-  private static onRenderTileHUD(hud: { object: unknown }, html: JQuery | HTMLElement): void {
-    if (!ObjectTransform.isSceneEnabled()) return;
-    const tile = hud.object as Tile;
-    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
-    requestAnimationFrame(() => ObjectTransform.applyTileHUDPosition(tile));
-  }
+  private static onRenderTileHUD(_hud: unknown, _html: unknown): void { /* handled by _updatePosition patch */ }
 
   private static onPreUpdateScene(
     scene: { id: string; grid: unknown },
@@ -192,8 +173,5 @@ export class ObjectTransform {
     const imgOff = VolumeFlags.getImageOffset(tile.document);
     mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x * gs;
     mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y * gs;
-    // Foundry calls _updatePosition() on tile changes (e.g. swap) without re-firing renderTileHUD.
-    // Re-correct the HUD position each time the tile refreshes.
-    requestAnimationFrame(() => ObjectTransform.applyTileHUDPosition(tile));
   }
 }

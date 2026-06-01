@@ -144,8 +144,10 @@ export class VolumeGizmos {
 
   private static swapSide(tile: Tile): void {
     const tw = tile.document.width ?? 0, th = tile.document.height ?? 0;
-    void tile.document.update({ width: th, height: tw });
-    void tile.document.setFlag(MODULE_ID, "tileFlipped", !VolumeFlags.getTileFlipped(tile.document));
+    void tile.document.update({
+      width: th, height: tw,
+      [`flags.${MODULE_ID}.tileFlipped`]: !VolumeFlags.getTileFlipped(tile.document),
+    });
   }
 
   private static beginDrag(
