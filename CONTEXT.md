@@ -32,6 +32,10 @@
 | `src/volume/background-gizmos-drag.ts` | `BgDrag` type + `commitBgDrag()` — drag math for all three background handle types |
 | `src/volume/token-overlay.ts` | `TokenOverlay` — dashed image contour on selected tokens; gated by showImageManipulation |
 | `src/volume/token-volume-gizmos.ts` | `TokenVolumeGizmos` — elevation handle (orange circle, SE edge midpoint) for tokens; doc-state cached |
+| `src/preset/preset-types.ts` | `TilePreset`, `TokenPreset`, `BackgroundPreset` interfaces; `IsorollPreset` union |
+| `src/preset/preset-storage.ts` | File I/O: `deriveKey()`, `readPreset()`, `writePreset()`, `getCachedPreset()`, `preloadCache()`; in-memory cache + `_index.json` |
+| `src/preset/preset-ops.ts` | Extract/apply/auto-apply/upsert functions for all preset types; debounce infra; `changedFlagKeys()`; `applyPresetToSource()` (sync, for `preCreateTile`) |
+| `src/preset/preset-manager.ts` | `PresetManager.activate()`: hooks (`preCreateTile`, `createTile/Token/Scene`, `updateTile/Token/Scene`); console API (`window.ISOROLL_PRESETS`) |
 | `src/sorter/depth-sorter.ts` | Depth sort (dormant — not activated, see ROADMAP) |
 | `src/occluder/occluder.ts` | Tile alpha fade when token is behind it |
 | `src/resolver/asset-resolver.ts` | Stance fallback chain, `resolveBestTokenAsset()` |
@@ -67,6 +71,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | `flags.isoroll.tileFlipped` | boolean | tile | false | Swap tile width↔height (mirror) |
 | `flags.isoroll.showImageManipulation` | boolean | tile+token | true | Show image contour + imgOffset/imgScale/swapSide handles on select |
 | `flags.isoroll.showVolumeManipulation` | boolean | tile+token | true | Show 3D box + elevation handle on select (tiles also: width/height/boundH/scale/move) |
+| `flags.isoroll.presetEnabled` | boolean | tile+token | true | Opt-out of image preset auto-apply/upsert for this specific object |
 
 ## Known Limitations / Gotchas
 
@@ -79,6 +84,8 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - AppV2 `stopPropagation` on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on the content section (see `scene-config.ts`)
 - **GridConfig `_processSubmitData`** only calls `super._processSubmitData` when one of 7 native fields changed (`width/height/padding/shiftX/shiftY/grid.size/grid.type`). Module-specific form fields are silently skipped. Workaround: instance-level patch on `app._processSubmitData` at `renderGridConfig` time.
 - **GridConfig `updateTransform` centering**: when overriding the bg sprite's `updateTransform`, `scY` in the position formula (the `R·S·(-tw/2,-th/2)` center offset) must include `bgYScale` — if only `scale.set()` uses it, the visual center shifts vertically instead of scaling around center.
+- **`preCreateTile` + `updateSource`**: calling `doc.updateSource(data)` in `preCreateTile` does modify the creation data (confirmed: `createTile` fires with the updated width/height/flags). BUT calling `doc.update()` again in `createTile` with the same data causes a PIXI sprite redraw blink. Solution: skip the `createTile` fallback when the in-memory cache confirms `preCreateTile` already applied (i.e. `getCachedPreset(key)` returns a hit).
+- **`FilePicker.upload` 5-param API**: `FilePicker.upload(source, path, file, body, options)` — the 4th param is `body` (extra FormData entries, pass `{}`), the 5th is `options` (where `notify: false` lives). Passing `{ notify: false }` as the 4th arg silently uses it as body and shows success notifications regardless.
 
 ## See Also
 

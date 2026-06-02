@@ -70,9 +70,12 @@
 
 ### Preset System
 
-- World-scoped setting (not scene-scoped)
-- Filename-keyed: preset name = asset filename without extension
-- Silent auto-apply on tile place + discrete toast (e.g. "dungeon wall tile's volume updated")
+- **Storage**: one JSON per image at `Data/isoroll/presets/<mirrored-src-path>.json`; flat `_index.json` for fast cache preload at startup
+- **Key**: derived from `texture.src` — strip query/hash, lowercase (e.g. `assets/wall.rembg.png` → `assets/wall.rembg.png.json`)
+- **Cache**: in-memory `Map<imageKey, preset>` populated from `_index.json` on `ready`; updated immediately on every write
+- **No-blink placement**: `preCreateTile` applies from cache synchronously via `doc.updateSource()` before Foundry persists the tile; `createTile` async fallback fires ONLY on cache miss (skipped on hit to avoid redundant PIXI redraw blink)
+- **Auto-upsert**: `updateTile`/`updateToken`/`updateScene` hooks watch for relevant flag or native field changes; debounced 500ms to batch drag events
+- **Opt-out**: `flags.isoroll.presetEnabled` (default true) per tile/token for special cases
 
 ---
 
@@ -194,11 +197,36 @@
 - [ ] Fine-tune numeric text inputs for offset/scale
 - [ ] ESC / click-outside exits image-edit mode
 
-### Phase 5 — Preset System 🔲 PENDING
+### Phase 5 — Preset System ✅ DONE
 
-- [ ] World-scoped setting for preset library
-- [ ] Filename-keyed auto-apply on tile placement
-- [ ] Toast notification (discrete, not modal)
+**Storage** (`src/preset/preset-storage.ts`):
+- [x] File-per-image at `Data/isoroll/presets/<mirrored-path>.json`; intermediate dirs created lazily and cached
+- [x] `_index.json` flat map for O(1) startup preload (created empty on first run to suppress 404 noise)
+- [x] In-memory cache (`Map<key, IsorollPreset>`); populated from index on `ready`, updated on every write
+- [x] `FilePicker.upload(source, path, file, body, options)` — body={} 4th param, notify:false in 5th options param
+
+**Hooks** (`src/preset/preset-manager.ts`):
+- [x] `preCreateTile` → `doc.updateSource(presetData)` — synchronous cache lookup, applies width/height + all flags before Foundry persists the tile (zero blink)
+- [x] `createTile` → async fallback (file fetch) ONLY on cache miss; skipped on cache hit to avoid redundant PIXI sprite redraw blink
+- [x] `createToken` / `createScene` → async auto-apply on first placement
+- [x] `updateTile` / `updateToken` → upsert on preset flag or native width/height changes; 500ms debounce
+- [x] `updateScene` → upsert on background native fields or `backgroundYScale` flag change; 500ms debounce
+- [x] Circular guard: preset-triggered `doc.update()` passes `{ isoroll: "preset" }` option; hooks skip those updates
+
+**Preset fields** (`src/preset/preset-types.ts`):
+- Tile: `gridWidth`, `gridHeight` (grid units), `boundHeight`, `imageScale`, `imageYScale`, `imageOffset`, `tileFlipped`, `foregroundTile`
+- Token: same minus `gridWidth`/`gridHeight`/`foregroundTile`
+- Background: `scaleX`, `offsetX`, `offsetY`, `gridSize`, `backgroundYScale`
+
+**Ops** (`src/preset/preset-ops.ts`): extract, apply, auto-apply, upsert functions; debounce infra; changedFlagKeys helpers
+
+**Config UI** (`src/transform/scene-config.ts`):
+- [x] "Use Image Preset" checkbox in TileConfig + TokenConfig Iso tab (`flags.isoroll.presetEnabled`, default true/opt-out)
+
+**Console API** (`window.ISOROLL_PRESETS`):
+- `tile.{get(src), save(src?), apply(src)}`
+- `token.{get(src), save(src?), apply(src)}`
+- `background.{get(src), save(), apply(src)}`
 
 ### Phase 6 — Stance State Machine 🔲 PENDING
 
@@ -235,7 +263,8 @@
 isoroll-module/          ← this repo (public, Foundry module)
   src/
     transform/           canvas-transform, object-transform, scene-config, constants
-    volume/              flags, settings
+    volume/              flags, settings, overlay, gizmos, background-gizmos, …
+    preset/              preset-types, preset-storage, preset-ops, preset-manager
     sorter/              depth-sorter
     occluder/            occluder
     resolver/            asset-resolver
