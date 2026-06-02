@@ -148,7 +148,19 @@ export class ObjectTransform {
 
   private static onRefreshTile(tile: Tile, flags?: Record<string, boolean>): void {
     if (!ObjectTransform.isSceneEnabled()) return;
-    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
+    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) {
+      // Mesh may carry stale counter-transform values (flag just toggled, or drag-drop with
+      // position-only refresh). Detect by comparing mesh.rotation to the native (un-offset) value.
+      const mesh0 = tile.mesh as unknown as MeshLike | null | undefined;
+      if (mesh0) {
+        const nativeRot = ((tile.document.rotation ?? 0) * Math.PI) / 180;
+        if (Math.abs(mesh0.rotation - nativeRot) > EPS) {
+          type HasFlags = { renderFlags: { set(f: Record<string, boolean>): void } };
+          (tile as unknown as HasFlags).renderFlags.set({ refreshRotation: true, refreshSize: true });
+        }
+      }
+      return;
+    }
     const mesh = tile.mesh as unknown as MeshLike | null | undefined;
     if (!mesh) return;
     const gs      = canvas.grid?.size ?? 100;
