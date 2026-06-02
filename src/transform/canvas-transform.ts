@@ -1,5 +1,6 @@
 import { getProjection } from "./constants";
 import { MODULE_ID } from "../volume/flags";
+import { BackgroundGizmos } from "../volume/background-gizmos";
 
 type BgState = {
   rotation: number; skewX: number; skewY: number;
@@ -64,10 +65,8 @@ export class CanvasTransform {
     };
   }
 
-  // Counter-transform: background appears undistorted while the stage is isometric.
-  // Scale uses captured origScaleX as the base — Foundry pre-scales the background
-  // sprite to fill the canvas (texture px → canvas px), so we must build on that,
-  // not override with (1, ratio). Y axis multiplied by ratio to cancel dimetric compression.
+  // Counter-transform: background appears undistorted while stage is isometric.
+  // Scale builds on captured origScaleX (Foundry pre-scales bg to fill canvas, not 1:1 px).
   private static applyBackground(): void {
     const bg = CanvasTransform.getBackground();
     const orig = CanvasTransform.originalBg;
@@ -76,11 +75,11 @@ export class CanvasTransform {
     const { reverseRotation, reverseSkewX, reverseSkewY, ratio, counterFactor } = proj;
     // Use canvas.dimensions.sceneX/Y so position tracks scene offset (scene flags are static)
     const dims = canvas.dimensions as unknown as { sceneX: number; sceneY: number; sceneWidth: number; sceneHeight: number };
-
+    const bgYS = (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
     bg.anchor?.set(0.5, 0.5);
     bg.rotation = reverseRotation;
     bg.skew.set(reverseSkewX, reverseSkewY);
-    bg.scale.set(orig.scaleX * counterFactor, orig.scaleX * ratio * counterFactor);
+    bg.scale.set(orig.scaleX * counterFactor, orig.scaleX * ratio * counterFactor * bgYS);
     bg.position.set(dims.sceneX + dims.sceneWidth / 2, dims.sceneY + dims.sceneHeight / 2);
   }
 
@@ -123,10 +122,8 @@ export class CanvasTransform {
     }
   }
 
-  // Override bg sprite's updateTransform (save→counter-transform→origUpdate→restore) so
-  // #refreshPreview()'s per-change resets are picked up cleanly each frame without accumulation.
-  // Container untouched: grid stays isometric, camera unchanged.
-  // children[1]=bg sprite, children[2]=grid mesh.
+  // Override bg sprite's updateTransform so #refreshPreview resets pick up each frame.
+  // Grid mesh (children[2]) untouched: stays isometric, camera unchanged.
   private static onRenderGridConfig(): void {
     if (!CanvasTransform.isEnabled() || CanvasTransform.isBackgroundTransformEnabled()) return;
     const stage = canvas.app?.stage;
@@ -161,9 +158,9 @@ export class CanvasTransform {
       (this.anchor as PIXI.ObservablePoint).set(0, 0);
       this.rotation = proj.reverseRotation;
       (this.skew as PIXI.ObservablePoint).set(proj.reverseSkewX, proj.reverseSkewY);
-      this.scale.set(sx * proj.counterFactor, sx * proj.ratio * proj.counterFactor);
-      // scene center + R·S·(-tw/2,-th/2): converts texture half-size to canvas space
-      // skew=0 for all presets so R·S = cos·scX·vx−sin·scY·vy / sin·scX·vx+cos·scY·vy
+      const bgYS = BackgroundGizmos.getTempYScale();
+      this.scale.set(sx * proj.counterFactor, sx * proj.ratio * proj.counterFactor * bgYS);
+      // center = position + R·S·(-tw/2,-th/2); skew=0 for all presets
       const cosR = Math.cos(proj.reverseRotation);
       const sinR = Math.sin(proj.reverseRotation);
       const scX = sx * proj.counterFactor;

@@ -148,6 +148,32 @@ export function makeSwapHandle(): PIXI.Container {
   return wrap;
 }
 
+// Canvas-space corner of a counter-transformed sprite. fx/fy in [-0.5, 0.5] relative to center.
+export function bgCorner(
+  fx: number, fy: number, cx: number, cy: number,
+  texW: number, texH: number, scX: number, scY: number, cosR: number, sinR: number,
+): { x: number; y: number } {
+  const lx = fx * texW * scX, ly = fy * texH * scY;
+  return { x: cx + cosR * lx - sinR * ly, y: cy + sinR * lx + cosR * ly };
+}
+
+// Draw dashed polygon outline on a PIXI.Graphics in canvas space.
+export function drawDashedContour(g: PIXI.Graphics, pts: { x: number; y: number }[], dash: number, gap: number): void {
+  g.lineStyle(1.5, 0xffffff, 0.85);
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const nx = dx / len, ny = dy / len;
+    let t = 0, on = true;
+    while (t < len) {
+      const s = Math.min(on ? dash : gap, len - t);
+      if (on) { g.moveTo(a.x + nx * t, a.y + ny * t); g.lineTo(a.x + nx * (t + s), a.y + ny * (t + s)); }
+      t += s; on = !on;
+    }
+  }
+}
+
 // Parallelogram that is a square in face-coordinate space (projected onto a box face).
 // uH/vH: half-vectors along the two face axes, in canvas pixels.
 export function makeFaceHandle(
