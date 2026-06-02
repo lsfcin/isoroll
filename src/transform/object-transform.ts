@@ -155,8 +155,12 @@ export class ObjectTransform {
       if (mesh0) {
         const nativeRot = ((tile.document.rotation ?? 0) * Math.PI) / 180;
         if (Math.abs(mesh0.rotation - nativeRot) > EPS) {
-          type HasFlags = { renderFlags: { set(f: Record<string, boolean>): void } };
-          (tile as unknown as HasFlags).renderFlags.set({ refreshRotation: true, refreshSize: true });
+          // Apply native rotation/size synchronously — deferred renderFlags would leave a
+          // visible flash when the preview clone is destroyed and original re-appears.
+          type HasRefresh = { _refreshRotation(): void; _refreshSize(): void };
+          const t = tile as unknown as HasRefresh;
+          t._refreshRotation();
+          t._refreshSize();
         }
       }
       return;
