@@ -104,14 +104,16 @@ export class BackgroundGizmos {
     const baseH = Math.max(1, texH * sx * proj.ratio * proj.counterFactor / 2);
     const [tr, tc, bl, tl, br] = [[.5,-.5],[0,-.5],[-.5,.5],[-.5,-.5],[.5,.5]]
       .map(([fx,fy]) => bgCorner(fx, fy, cx, cy, texW, texH, scX, scY, cosR, sinR));
+    const m      = canvas.app!.stage.worldTransform;
+    const topSc  = Math.hypot(m.a*cosR + m.c*sinR, m.b*cosR + m.d*sinR);
+    const leftSc = Math.hypot(-m.a*sinR + m.c*cosR, -m.b*sinR + m.d*cosR);
     const g = new PIXI.Graphics();
-    drawDashedContour(g, [tl, tr, br, bl], 8, 5); layer.addChild(g);
+    drawDashedContour(g, [tl, tr, br, bl], 8, 5, leftSc > 0 ? 8*topSc/leftSc : 8, leftSc > 0 ? 5*topSc/leftSc : 5); layer.addChild(g);
     const form   = (html.closest('form') ?? html.querySelector('form')) as HTMLFormElement | null;
     const getEl  = (n: string) => form?.elements.namedItem?.(n) as HTMLInputElement | null;
     const shiftX = Number(getEl('shiftX')?.value) || 0;
     const shiftY = Number(getEl('shiftY')?.value) || 0;
     const scale  = Number(getEl('scale')?.value) || sx;
-    const m      = canvas.app!.stage.worldTransform;
     const sCX    = m.a * cx + m.c * cy + m.tx, sCY = m.b * cx + m.d * cy + m.ty;
     for (const [handle, type, pos] of [
       [makeSquareCounterHandle(0xffffff, "nwse-resize"), "bgScale",     tr],
@@ -130,13 +132,11 @@ export class BackgroundGizmos {
 
   private static scaleVerticalStep(delta: number): void {
     const html = BackgroundGizmos.currentHtml; if (!html) return;
-    const newYS = Math.max(0.05, Math.min(5.0, Math.round(((BackgroundGizmos.bgYScaleTemp ?? 1) + delta * 0.01) * 1000) / 1000));
-    BackgroundGizmos.bgYScaleTemp = newYS;
+    BackgroundGizmos.bgYScaleTemp = Math.max(0.05, Math.min(5.0, Math.round(((BackgroundGizmos.bgYScaleTemp ?? 1) + delta * 0.01) * 1000) / 1000));
     const el = html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
-    if (el) el.value = newYS.toFixed(3);
+    if (el) el.value = BackgroundGizmos.bgYScaleTemp.toFixed(3);
     BackgroundGizmos.show();
   }
-
   private static clearLayer(): void {
     BackgroundGizmos.layer?.removeChildren().forEach(c => (c as PIXI.Container).destroy({ children: true }));
   }
@@ -177,6 +177,7 @@ export class BackgroundGizmos {
       BackgroundGizmos.bgYScaleTemp = ys;
       const ye = document.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
       if (ye) ye.value = ys.toFixed(3);
+      BackgroundGizmos.show();
     });
   }
 
@@ -193,6 +194,5 @@ export class BackgroundGizmos {
     if (!drag) return;
     const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
     BackgroundGizmos.commit(drag, gx, gy);
-    if (drag.type === "bgYScale") BackgroundGizmos.show();
   }
 }
