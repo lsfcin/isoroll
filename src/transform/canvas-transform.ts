@@ -11,19 +11,21 @@ type BgState = {
 
 export class CanvasTransform {
   private static originalBg: BgState | null = null;
+  static previewOverride: { enabled: boolean; transformBg: boolean } | null = null;
 
   static activate(): void {
-    Hooks.on("canvasReady", CanvasTransform.onCanvasReady);
-    Hooks.on("updateScene", CanvasTransform.onUpdateScene);
-    Hooks.on("renderGridConfig", CanvasTransform.onRenderGridConfig);
+    Hooks.on("canvasReady",       CanvasTransform.onCanvasReady);
+    Hooks.on("updateScene",       CanvasTransform.onUpdateScene);
+    Hooks.on("renderGridConfig",  CanvasTransform.onRenderGridConfig);
+    Hooks.on("closeSceneConfig",  CanvasTransform.onCloseSceneConfig);
   }
 
   private static isEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
+    return CanvasTransform.previewOverride?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true);
   }
 
   private static isBackgroundTransformEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true;
+    return CanvasTransform.previewOverride?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true);
   }
 
   private static apply(): void {
@@ -53,15 +55,9 @@ export class CanvasTransform {
 
   private static captureBackground(bg: PIXI.Sprite): void {
     CanvasTransform.originalBg = {
-      rotation: bg.rotation,
-      skewX: bg.skew.x,
-      skewY: bg.skew.y,
-      scaleX: bg.scale.x,
-      scaleY: bg.scale.y,
-      posX: bg.position.x,
-      posY: bg.position.y,
-      anchorX: bg.anchor?.x ?? 0,
-      anchorY: bg.anchor?.y ?? 0,
+      rotation: bg.rotation, skewX: bg.skew.x, skewY: bg.skew.y,
+      scaleX: bg.scale.x, scaleY: bg.scale.y, posX: bg.position.x, posY: bg.position.y,
+      anchorX: bg.anchor?.x ?? 0, anchorY: bg.anchor?.y ?? 0,
     };
   }
 
@@ -94,7 +90,7 @@ export class CanvasTransform {
     bg.position.set(orig.posX, orig.posY);
   }
 
-  private static refresh(): void {
+  static refresh(): void {
     for (const token of canvas.tokens?.placeables ?? []) token.refresh();
     for (const tile of canvas.tiles?.placeables ?? []) tile.refresh();
   }
@@ -105,7 +101,7 @@ export class CanvasTransform {
     if (outline) outline.visible = v;
   }
 
-  private static applyCurrentState(): void {
+  static applyCurrentState(): void {
     if (CanvasTransform.isEnabled()) {
       CanvasTransform.apply();
       if (!CanvasTransform.isBackgroundTransformEnabled()) {
@@ -177,6 +173,13 @@ export class CanvasTransform {
       this.scale.set(sx, sy);
       this.position.set(x, y);
     };
+  }
+
+  private static onCloseSceneConfig(): void {
+    if (!CanvasTransform.previewOverride) return;
+    CanvasTransform.previewOverride = null;
+    CanvasTransform.applyCurrentState();
+    CanvasTransform.refresh();
   }
 
   private static onCanvasReady(): void {

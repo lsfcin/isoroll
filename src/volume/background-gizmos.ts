@@ -29,10 +29,7 @@ export class BackgroundGizmos {
       ?? (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
   }
 
-  private static isEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true
-      && canvas.scene?.getFlag(MODULE_ID, "transformBackground") !== true;
-  }
+  private static isEnabled(): boolean { return canvas.scene != null; }
 
   private static onRenderGridConfig(app: GCApp, html: HTMLElement): void {
     if (!BackgroundGizmos.isEnabled()) return;
@@ -91,15 +88,17 @@ export class BackgroundGizmos {
     const html  = BackgroundGizmos.currentHtml;
     const layer = BackgroundGizmos.ensureLayer();
     const proj  = getProjection(canvas.scene);
-    const cosR  = Math.cos(proj.reverseRotation), sinR = Math.sin(proj.reverseRotation);
+    const isoCT = canvas.scene?.getFlag(MODULE_ID, "enabled") === true && canvas.scene?.getFlag(MODULE_ID, "transformBackground") !== true;
+    const cosR  = isoCT ? Math.cos(proj.reverseRotation) : 1;
+    const sinR  = isoCT ? Math.sin(proj.reverseRotation) : 0;
     const previewBg = BackgroundGizmos.previewBg;
     if (!previewBg) return;
     const texW = previewBg.texture?.width || 1, texH = previewBg.texture?.height || 1;
     const bgX = previewBg.x, bgY = previewBg.y, bgW = previewBg.width || 1;
     const sx   = bgW / texW;
     const bgYS = BackgroundGizmos.bgYScaleTemp ?? 1;
-    const scX  = sx * proj.counterFactor;
-    const scY  = sx * proj.ratio * proj.counterFactor * bgYS;
+    const scX  = isoCT ? sx * proj.counterFactor : sx;
+    const scY  = isoCT ? sx * proj.ratio * proj.counterFactor * bgYS : sx;
     const cx   = bgX + bgW / 2, cy = bgY + texH * sx / 2;
     const baseH = Math.max(1, texH * sx * proj.ratio * proj.counterFactor / 2);
     const [tr, tc, bl, tl, br] = [[.5,-.5],[0,-.5],[-.5,.5],[-.5,-.5],[.5,.5]]
@@ -115,16 +114,14 @@ export class BackgroundGizmos {
     const shiftY = Number(getEl('shiftY')?.value) || 0;
     const scale  = Number(getEl('scale')?.value) || sx;
     const sCX    = m.a * cx + m.c * cy + m.tx, sCY = m.b * cx + m.d * cy + m.ty;
-    for (const [handle, type, pos] of [
+    const defs: [PIXI.Container, BgDrag["type"], { x: number; y: number }][] = [
       [makeSquareCounterHandle(0xffffff, "nwse-resize"), "bgScale",     tr],
-      [makeSquareCounterHandle(0xffffff, "ns-resize"),   "bgYScale",    tc],
       [makeElevHandle(0xffffff, "move"),                 "bgTranslate", bl],
-    ] as [PIXI.Container, BgDrag["type"], { x: number; y: number }][]) {
+    ];
+    if (isoCT) defs.splice(1, 0, [makeSquareCounterHandle(0xffffff, "ns-resize"), "bgYScale", tc]);
+    for (const [handle, type, pos] of defs) {
       handle.x = pos.x; handle.y = pos.y;
-      handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
-        e.stopPropagation();
-        BackgroundGizmos.beginDrag(type, e.global.x, e.global.y, scale, sCX, sCY, bgYS, baseH, shiftX, shiftY);
-      });
+      handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => { e.stopPropagation(); BackgroundGizmos.beginDrag(type, e.global.x, e.global.y, scale, sCX, sCY, bgYS, baseH, shiftX, shiftY); });
       layer.addChild(handle);
     }
     BackgroundGizmos.bringToTop();

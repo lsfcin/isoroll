@@ -1,5 +1,6 @@
 export { registerRulerPatch } from "./ruler-patch";
 import { MODULE_ID } from "../volume/flags";
+import { CanvasTransform } from "./canvas-transform";
 import { PROJECTION_TYPES } from "./constants";
 
 const TAB = "isoroll";
@@ -154,6 +155,14 @@ export function registerSceneConfigHook(): void {
           $h.on("change", ".isoroll-projection-select", (event) => {
             $h.find(".isoroll-custom-fields").toggle((event.target as HTMLSelectElement).value === "custom");
           });
+          const sync = () => {
+            CanvasTransform.previewOverride = {
+              enabled: $h.find(`input[name="flags.${MODULE_ID}.enabled"]`).is(':checked'),
+              transformBg: $h.find(`input[name="flags.${MODULE_ID}.transformBackground"]`).is(':checked'),
+            };
+            CanvasTransform.applyCurrentState(); CanvasTransform.refresh();
+          };
+          $h.on("change", `input[name="flags.${MODULE_ID}.enabled"], input[name="flags.${MODULE_ID}.transformBackground"]`, sync);
         },
       );
     },
