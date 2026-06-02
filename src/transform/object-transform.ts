@@ -24,6 +24,7 @@ export class ObjectTransform {
     docH: number,
     docBoundH: number,
     imgScale: number,
+    imgYScale: number,
   ): void {
     const proj = getProjection(canvas.scene);
     const { reverseRotation, ratio, counterFactor } = proj;
@@ -33,7 +34,7 @@ export class ObjectTransform {
     const texW = mesh.texture?.width || 1;
     const texH = mesh.texture?.height || 1;
     const uniform = Math.max(docW, docH, docBoundH) / Math.max(texW, texH) * imgScale;
-    const sx = uniform * counterFactor, sy = uniform * ratio * counterFactor;
+    const sx = uniform * counterFactor, sy = uniform * ratio * counterFactor * imgYScale;
     // Use abs on scale.x so a flipped tile (scale.x < 0) still passes as "correct magnitude".
     if (Math.abs(Math.abs(mesh.scale.x) - sx) > EPS || Math.abs(mesh.scale.y - sy) > EPS) {
       mesh.scale.set(sx, sy);
@@ -63,7 +64,8 @@ export class ObjectTransform {
     const { reverseRotation, ratio, counterFactor, heightDir: { x: hdx, y: hdy } } = proj;
     const docW   = (token.document.width  ?? 1) * gs;
     const docH   = (token.document.height ?? 1) * gs;
-    const imgScl = VolumeFlags.getImageScale(token.document);
+    const imgScl   = VolumeFlags.getImageScale(token.document);
+    const imgYScl  = VolumeFlags.getImageYScale(token.document);
 
     // Re-apply counter-transform — _refreshMesh() resets scale/anchor on animation frames.
     // Guards avoid setting PIXI dirty when the value is already correct, breaking any
@@ -75,7 +77,7 @@ export class ObjectTransform {
     }
     const texW = mesh.texture?.width || 1, texH = mesh.texture?.height || 1;
     const uniform = Math.max(docW, docH) / Math.max(texW, texH) * imgScl;
-    const targetSX = uniform * counterFactor, targetSY = uniform * ratio * counterFactor;
+    const targetSX = uniform * counterFactor, targetSY = uniform * ratio * counterFactor * imgYScl;
     if (Math.abs(mesh.scale.x - targetSX) > EPS || Math.abs(mesh.scale.y - targetSY) > EPS) {
       mesh.scale.set(targetSX, targetSY);
     }
@@ -175,6 +177,7 @@ export class ObjectTransform {
     const proj    = getProjection(canvas.scene);
     const { x: hdx, y: hdy } = proj.heightDir;
     const imgScale   = VolumeFlags.getImageScale(tile.document);
+    const imgYScale  = VolumeFlags.getImageYScale(tile.document);
     const imgFlipped = VolumeFlags.getTileFlipped(tile.document);
     ObjectTransform.applyTileCounter(
       mesh,
@@ -183,6 +186,7 @@ export class ObjectTransform {
       tile.document.height ?? 0,
       boundH,
       imgScale,
+      imgYScale,
     );
     // applyTileCounter sets scale.x > 0; negate only if still positive after that.
     if (imgFlipped && mesh.scale.x > 0) mesh.scale.x = -mesh.scale.x;

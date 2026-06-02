@@ -41,6 +41,10 @@ export class VolumeFlags {
     return (doc.getFlag(MODULE_ID, "imageScale") as number | undefined) ?? 1;
   }
 
+  static getImageYScale(doc: { getFlag(s: string, k: string): unknown }): number {
+    return (doc.getFlag(MODULE_ID, "imageYScale") as number | undefined) ?? 1;
+  }
+
   static getTileFlipped(tile: TileDocument): boolean {
     return (tile.getFlag(MODULE_ID, "tileFlipped") as boolean | undefined) ?? false;
   }

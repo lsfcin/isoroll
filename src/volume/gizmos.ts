@@ -3,7 +3,7 @@ import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import {
   HandleType, DragState, handleTypeMap,
-  handlePositions, imageBLCorner, imageTRCorner, imageBCCorner, clientToGlobal, commitDrag,
+  handlePositions, imageBLCorner, imageTRCorner, imageBCCorner, imageTCCorner, clientToGlobal, commitDrag,
 } from "./gizmos-drag";
 import { makeHandleForType, createRotateBlocker } from "./gizmos-handles";
 
@@ -72,15 +72,23 @@ export class VolumeGizmos {
     const EH     = E + boundH * gs;
     const { x: hdx, y: hdy } = proj.heightDir;
     const imgBL = imageBLCorner(tile), imgTR = imageTRCorner(tile), imgBC = imageBCCorner(tile);
-    const imgOff = VolumeFlags.getImageOffset(tile.document);
-    const imgScale = VolumeFlags.getImageScale(tile.document);
+    const imgOff    = VolumeFlags.getImageOffset(tile.document);
+    const imgScale  = VolumeFlags.getImageScale(tile.document);
+    const imgYScale = VolumeFlags.getImageYScale(tile.document);
     const showVolManip = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImgManip = VolumeFlags.getShowImageManipulation(tile.document, true);
-    const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy, imgBL, imgTR, imgBC);
+    const imgTC = imageTCCorner(tile);
+    const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy, imgBL, imgTR, imgBC, imgTC);
+    // baseHalfH: canvas-px half image height when imgYScale=1 — used for snap in projectDrag
+    type MeshSnap = { scale: { y: number }; texture?: { height: number } };
+    const tileMeshSnap = tile.mesh as unknown as MeshSnap | null | undefined;
+    const snapTexH    = tileMeshSnap?.texture?.height ?? 100;
+    const snapScaleY  = tileMeshSnap?.scale?.y ?? 1;
+    const imgHalfH    = Math.max(1, snapTexH * Math.abs(snapScaleY) / (2 * Math.max(0.01, Math.abs(imgYScale))));
     const container = new PIXI.Container();
     const handleTypes: HandleType[] = [];
     if (showVolManip) handleTypes.push("width", "height", "boundH", "elevation", "scale", "move");
-    if (showImgManip) handleTypes.push("imgOffset", "imgScale", "swapSide");
+    if (showImgManip) handleTypes.push("imgOffset", "imgScale", "imgYScale", "swapSide");
     for (const type of handleTypes) {
       const pos    = positions[type];
       const handle = makeHandleForType(type, hdx, hdy);
@@ -92,7 +100,7 @@ export class VolumeGizmos {
         if (type === "swapSide") { VolumeGizmos.swapSide(tile); return; }
         VolumeGizmos.beginDrag(type, tile, e.global.x, e.global.y,
           tx, ty, tw, th, boundH, elev, tile.document.x ?? 0, tile.document.y ?? 0,
-          imgOff.x * gs, imgOff.y * gs, imgScale);
+          imgOff.x * gs, imgOff.y * gs, imgScale, imgYScale, imgHalfH);
       });
       container.addChild(handle);
     }
@@ -154,13 +162,14 @@ export class VolumeGizmos {
     type: HandleType, tile: Tile, gx: number, gy: number,
     tx: number, ty: number, tw: number, th: number,
     boundH: number, elev: number, docX: number, docY: number,
-    imgOffX = 0, imgOffY = 0, imgScale = 1,
+    imgOffX = 0, imgOffY = 0, imgScale = 1, imgYScale = 1, imgHalfH = 100,
   ): void {
     VolumeGizmos.drag = {
       type, tile, startGX: gx, startGY: gy, startX: tx, startY: ty,
       startW: tw, startH: th, startBoundH: boundH, startElev: elev,
       startDocX: docX, startDocY: docY,
       startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale,
+      startImgYScale: imgYScale, startImgHalfH: imgHalfH,
     };
     window.addEventListener("pointermove", VolumeGizmos.onMove);
     window.addEventListener("pointerup",   VolumeGizmos.onUp, { once: true });

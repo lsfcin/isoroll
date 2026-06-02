@@ -1,15 +1,17 @@
 // Image offset + scale handles for tokens (BL circle, TR square).
 import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
-import { imageBLCorner, imageTRCorner, clientToGlobal } from "./gizmos-drag";
+import { imageBLCorner, imageTRCorner, imageTCCorner, clientToGlobal } from "./gizmos-drag";
 import { makeElevHandle, makeSquareCounterHandle } from "./gizmos-handles";
 
 interface TkDrag {
-  type: "imgOffset" | "imgScale";
+  type: "imgOffset" | "imgScale" | "imgYScale";
   token: Token;
   startGX: number; startGY: number;
   startImgOffX: number; startImgOffY: number;
   startImgScale: number;
+  startImgYScale: number;
+  startImgHalfH: number;  // canvas px: half image height when imgYScale=1 (for snap calc)
   startMeshCX: number; startMeshCY: number;  // mesh canvas center at drag start
 }
 
@@ -55,26 +57,34 @@ export class TokenGizmos {
     TokenGizmos.hide(token.id);
     if (!VolumeFlags.getShowImageManipulation(token.document, true)) return;
     const layer  = TokenGizmos.ensureLayer();
-    const tAsT   = token as unknown as Tile;
-    const bl     = imageBLCorner(tAsT);
-    const tr     = imageTRCorner(tAsT);
-    const gs     = canvas.grid?.size ?? 100;
-    const imgOff = VolumeFlags.getImageOffset(token.document);
-    const imgScl = VolumeFlags.getImageScale(token.document);
+    const tAsT    = token as unknown as Tile;
+    const bl      = imageBLCorner(tAsT);
+    const tr      = imageTRCorner(tAsT);
+    const tc      = imageTCCorner(tAsT);
+    const gs      = canvas.grid?.size ?? 100;
+    const imgOff  = VolumeFlags.getImageOffset(token.document);
+    const imgScl  = VolumeFlags.getImageScale(token.document);
+    const imgYScl = VolumeFlags.getImageYScale(token.document);
     const container = new PIXI.Container();
 
-    type M = { x: number; y: number };
-    const meshCX = (token.mesh as unknown as M | null | undefined)?.x ?? (token.document.x ?? 0);
-    const meshCY = (token.mesh as unknown as M | null | undefined)?.y ?? (token.document.y ?? 0);
-    const defs: Array<[PIXI.Container, "imgOffset" | "imgScale", { x: number; y: number } | null]> = [
+    type M = { x: number; y: number; scale?: { y: number }; texture?: { height: number } };
+    const tkMesh  = token.mesh as unknown as M | null | undefined;
+    const meshCX  = tkMesh?.x ?? (token.document.x ?? 0);
+    const meshCY  = tkMesh?.y ?? (token.document.y ?? 0);
+    const tkTexH  = tkMesh?.texture?.height ?? 100;
+    const tkScaleY = tkMesh?.scale?.y ?? 1;
+    const tkImgHalfH = Math.max(1, tkTexH * Math.abs(tkScaleY) / (2 * Math.max(0.01, Math.abs(imgYScl))));
+
+    const defs: Array<[PIXI.Container, "imgOffset" | "imgScale" | "imgYScale", { x: number; y: number } | null]> = [
       [makeElevHandle(0xffffff, "move"),                "imgOffset", bl],
       [makeSquareCounterHandle(0xffffff, "nwse-resize"), "imgScale",  tr],
+      [makeSquareCounterHandle(0xffffff, "ns-resize"),   "imgYScale", tc],
     ];
     for (const [handle, type, pos] of defs) {
       if (pos) { handle.x = pos.x; handle.y = pos.y; }
       handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
         e.stopPropagation();
-        TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gs, imgOff.y * gs, imgScl, meshCX, meshCY);
+        TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gs, imgOff.y * gs, imgScl, imgYScl, tkImgHalfH, meshCX, meshCY);
       });
       container.addChild(handle);
     }
@@ -119,11 +129,11 @@ export class TokenGizmos {
   }
 
   private static beginDrag(
-    type: "imgOffset" | "imgScale", token: Token,
+    type: "imgOffset" | "imgScale" | "imgYScale", token: Token,
     gx: number, gy: number, imgOffX: number, imgOffY: number, imgScale: number,
-    meshCX = 0, meshCY = 0,
+    imgYScale = 1, imgHalfH = 100, meshCX = 0, meshCY = 0,
   ): void {
-    TokenGizmos.drag = { type, token, startGX: gx, startGY: gy, startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale, startMeshCX: meshCX, startMeshCY: meshCY };
+    TokenGizmos.drag = { type, token, startGX: gx, startGY: gy, startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale, startImgYScale: imgYScale, startImgHalfH: imgHalfH, startMeshCX: meshCX, startMeshCY: meshCY };
     window.addEventListener("pointermove", TokenGizmos.onMove);
     window.addEventListener("pointerup",   TokenGizmos.onUp, { once: true });
   }
@@ -138,6 +148,15 @@ export class TokenGizmos {
         x: (drag.startImgOffX + (dx * m.d - dy * m.c) / det) / gs,
         y: (drag.startImgOffY + (-dx * m.b + dy * m.a) / det) / gs,
       });
+    } else if (drag.type === "imgYScale") {
+      const det = m.a * m.d - m.b * m.c;
+      const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
+      const canvasDY = (-dx * m.b + dy * m.a) / det;
+      const baseHalfH = drag.startImgHalfH;
+      const newHalfH = baseHalfH * drag.startImgYScale - canvasDY;
+      let newImgYScale = Math.max(0.05, newHalfH / baseHalfH);
+      if (Math.abs(newImgYScale - 1.0) * baseHalfH * zoom < 12) newImgYScale = 1.0;
+      void drag.token.document.setFlag(MODULE_ID, "imageYScale", newImgYScale);
     } else {
       const cx  = drag.startMeshCX;
       const cy  = drag.startMeshCY;

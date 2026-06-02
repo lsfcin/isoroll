@@ -15,6 +15,7 @@ export const HANDLE_COLOR: Record<HandleType, number> = {
   move:      0xff9829,
   imgOffset: 0xffffff,  // overridden in makeHandleForType
   imgScale:  0xffffff,  // overridden in makeHandleForType
+  imgYScale: 0xffffff,  // overridden in makeHandleForType
   swapSide:  0xff0000,  // overridden in makeHandleForType
 };
 
@@ -84,6 +85,7 @@ export function makeHandleForType(
   if (type === "elevation") return makeElevHandle(color);
   if (type === "imgOffset") return makeElevHandle(0xffffff, "move");
   if (type === "imgScale")  return makeSquareCounterHandle(0xffffff, "nwse-resize");
+  if (type === "imgYScale") return makeSquareCounterHandle(0xffffff, "ns-resize");
   if (type === "swapSide")  return makeSwapHandle();
   if (type === "move")      return makeMoveHandle(color);
   if (type === "boundH") {
