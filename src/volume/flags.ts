@@ -67,4 +67,9 @@ export class VolumeFlags {
   static isForegroundTile(tile: TileDocument): boolean {
     return tile.getFlag(MODULE_ID, "foregroundTile") !== false;
   }
+
+  // Default true (opt-out model): set false to disable preset auto-apply/upsert for this doc.
+  static getPresetEnabled(doc: { getFlag(s: string, k: string): unknown }): boolean {
+    return doc.getFlag(MODULE_ID, "presetEnabled") !== false;
+  }
 }

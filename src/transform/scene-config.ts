@@ -178,22 +178,22 @@ export function registerTokenConfigHook(): void {
         `<legend>${game.i18n.localize("ISOROLL.TokenConfig.Heading")}</legend>` +
         cbGroup("transformToken",        "TokenConfig", d.getFlag(MODULE_ID, "transformToken")         === true) +
         cbGroup("showImageManipulation", "TokenConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
-        cbGroup("showVolumeManipulation","TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false));
+        cbGroup("showVolumeManipulation","TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
+        cbGroup("presetEnabled",         "TokenConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false));
     },
   );
 }
 
 export function registerTileConfigHook(): void {
-  Hooks.on("renderTileConfig",
-    (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
-      const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      const d = app.document;
-      addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
-        `<legend>${game.i18n.localize("ISOROLL.TileConfig.Heading")}</legend>` +
-        cbGroup("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
-        cbGroup("transformTile",         "TileConfig", d.getFlag(MODULE_ID, "transformTile")          === true) +
-        cbGroup("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
-        cbGroup("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false));
-    },
-  );
+  Hooks.on("renderTileConfig", (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
+    const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
+    const d = app.document;
+    addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
+      `<legend>${game.i18n.localize("ISOROLL.TileConfig.Heading")}</legend>` +
+      cbGroup("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
+      cbGroup("transformTile",         "TileConfig", d.getFlag(MODULE_ID, "transformTile")          === true) +
+      cbGroup("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
+      cbGroup("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
+      cbGroup("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false));
+  });
 }

@@ -21,7 +21,9 @@
       "ShowImageManipulation": "Exibir Manipulação de Imagem",
       "ShowImageManipulationHint": "Exibe as alças de deslocamento/escala da imagem (círculo e quadrado brancos) e o contorno tracejado da imagem quando o token está selecionado.",
       "ShowVolumeManipulation": "Exibir Manipulação de Volume",
-      "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e a alça de elevação quando o token está selecionado."
+      "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e a alça de elevação quando o token está selecionado.",
+      "PresetEnabled": "Usar Predefinição de Imagem",
+      "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um token com esta imagem, e atualiza a predefinição ao editar este token."
     },
     "TileConfig": {
       "Heading": "Isométrico",
@@ -32,7 +34,9 @@
       "ShowImageManipulation": "Exibir Manipulação de Imagem",
       "ShowImageManipulationHint": "Exibe as alças de deslocamento/escala da imagem (círculo e quadrado brancos) e o contorno tracejado da imagem quando o tile está selecionado.",
       "ShowVolumeManipulation": "Exibir Manipulação de Volume",
-      "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e todas as alças de volume (tamanho, elevação, movimento) quando o tile está selecionado."
+      "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e todas as alças de volume (tamanho, elevação, movimento) quando o tile está selecionado.",
+      "PresetEnabled": "Usar Predefinição de Imagem",
+      "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um tile com esta imagem, e atualiza a predefinição ao editar este tile."
     },
     "Projection": {
       "Dimetric21": "Dimétrico 2:1 (padrão)",

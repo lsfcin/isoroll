@@ -11,6 +11,7 @@ import { CanvasTransform } from "./transform/canvas-transform";
 import { BackgroundGizmos } from "./volume/background-gizmos";
 import { ObjectTransform } from "./transform/object-transform";
 import { registerSceneConfigHook, registerTokenConfigHook, registerTileConfigHook, registerRulerPatch } from "./transform/scene-config";
+import { PresetManager } from "./preset/preset-manager";
 
 Hooks.once("init", () => {
   registerVolumeSettings();
@@ -28,5 +29,6 @@ Hooks.once("init", () => {
   TokenVolumeOverlay.activate();
   TokenVolumeGizmos.activate();
   Occluder.activate();
+  PresetManager.activate();
   console.log("isoroll | initialized");
 });

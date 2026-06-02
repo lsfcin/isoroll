@@ -21,7 +21,9 @@
       "ShowImageManipulation": "Show Image Manipulation",
       "ShowImageManipulationHint": "Show the image offset/scale handles (white circle and square) and the dashed image contour when the token is selected.",
       "ShowVolumeManipulation": "Show Volume Manipulation",
-      "ShowVolumeManipulationHint": "Show the 3D bounding box and the elevation handle when the token is selected."
+      "ShowVolumeManipulationHint": "Show the 3D bounding box and the elevation handle when the token is selected.",
+      "PresetEnabled": "Use Image Preset",
+      "PresetEnabledHint": "Automatically apply saved configuration when a token with this image is placed, and update the preset when you edit this token."
     },
     "TileConfig": {
       "Heading": "Isometric",
@@ -32,7 +34,9 @@
       "ShowImageManipulation": "Show Image Manipulation",
       "ShowImageManipulationHint": "Show the image offset/scale handles (white circle and square) and the dashed image contour when the tile is selected.",
       "ShowVolumeManipulation": "Show Volume Manipulation",
-      "ShowVolumeManipulationHint": "Show the 3D bounding box and all volume handles (size, elevation, move) when the tile is selected."
+      "ShowVolumeManipulationHint": "Show the 3D bounding box and all volume handles (size, elevation, move) when the tile is selected.",
+      "PresetEnabled": "Use Image Preset",
+      "PresetEnabledHint": "Automatically apply saved configuration when a tile with this image is placed, and update the preset when you edit this tile."
     },
     "Projection": {
       "Dimetric21": "Dimetric 2:1 (default)",
