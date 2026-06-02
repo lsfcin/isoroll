@@ -51,7 +51,6 @@ export function registerTileConfigHook(): void {
     })();
 
     addIsorollTab($html, t("ISOROLL.TabLabel"),
-      `<legend>${t("ISOROLL.TileConfig.Heading")}</legend>` +
       cbGroup("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
       cbGroup("transformTile",         "TileConfig", d.getFlag(MODULE_ID, "transformTile")          === true) +
       cbGroup("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +

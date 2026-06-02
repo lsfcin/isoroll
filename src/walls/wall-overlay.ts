@@ -6,13 +6,13 @@ import { addEndpointHandles, addLineHover, addSelectInteraction, hideWallHud } f
 // Colors matching Foundry's Wall layer rendering exactly
 export const WALL_COLORS = {
   normal:    0xFFFFBB,  // cream yellow
-  terrain:   0x7CFC00,  // lime green
+  terrain:   0x81B90C,  // olive green
   invisible: 0x77E7E8,  // cyan (sight passes)
-  ethereal:  0x9090C0,  // periwinkle (movement passes)
+  ethereal:  0xC880FC,  // purple (movement passes)
   sound:     0x00BFFF,  // sky blue (sound-only)
-  door:      0x4444EE,  // blue
-  secret:    0xFF44AA,  // hot pink
-  window:    0xFFFFFF,  // white (limited sight)
+  door:      0x6666EE,  // blue
+  secret:    0xA612D4,  // dark purple (secret door)
+  window:    0xC7D8FF,  // pale blue (limited sight)
 };
 const UNLINKED_ALPHA = 0.7;
 const LINE_W = 1;
@@ -44,9 +44,6 @@ export class WallOverlay {
     Hooks.on("controlTile", (tile: Tile, controlled: boolean) => {
       if (controlled) WallOverlay.show(tile);
       else { WallOverlay._selectTile = null; hideWallHud(); WallOverlay.hide(tile.id); }
-    });
-    Hooks.on("refreshTile", (tile: Tile) => {
-      if (WallOverlay._boxes.has(tile.id)) WallOverlay.show(tile);
     });
     window.addEventListener("keydown", e => { if (e.altKey) WallOverlay._setAltMode(true); });
     window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay._setAltMode(false); });
@@ -121,7 +118,7 @@ export class WallOverlay {
   }
 
   private static _drawDisplay(ctr: PIXI.Container, doc: TileDocument): void {
-    const r = WallOverlay._altMode ? 7 : 4;
+    const r = WallOverlay._altMode ? 3 : 2;
     for (const id of getLinkedWallIds(doc)) {
       const wall = wallsLayer().get(id);
       if (!wall) continue;
@@ -142,7 +139,7 @@ export class WallOverlay {
 
   private static _drawSelect(ctr: PIXI.Container, doc: TileDocument): void {
     const linked = new Set(getLinkedWallIds(doc));
-    const r      = WallOverlay._altMode ? 7 : 4;
+    const r      = WallOverlay._altMode ? 3 : 2;
     for (const wall of wallsLayer().placeables) {
       const id    = wall.document.id ?? "";
       const wdoc  = wall.document as WallDoc;

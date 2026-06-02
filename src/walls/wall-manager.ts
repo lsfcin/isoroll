@@ -55,15 +55,15 @@ export class WallManager {
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
   ): void {
-    // Skip updates we triggered via tile-move or anchor sync
-    if (options.isoroll === "wallMove" || options.isoroll === "anchorUpdate") return;
+    // Skip anchor-sync updates (would cause infinite loop)
+    if (options.isoroll === "anchorUpdate") return;
     const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
     if (!tileId) return;
     const tileObj = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(tileId);
     if (!tileObj) return;
 
     // User manually moved wall in Walls layer → recompute stored anchor
-    if (options.isoroll !== "wallEndpointDrag" && "c" in changes) {
+    if (options.isoroll !== "wallMove" && options.isoroll !== "wallEndpointDrag" && "c" in changes) {
       wrap(async () => {
         const c = (doc as unknown as { c: number[] }).c;
         await scene().updateEmbeddedDocuments("Wall",

@@ -23,6 +23,7 @@ function hudEl(): HTMLElement {
     ].join(";");
     el.innerHTML = '<i class="fas fa-cog"></i>';
     document.body.appendChild(el);
+    _hudEl = el;
     el.addEventListener("mouseenter", () => {
       if (_hideTimer) { clearTimeout(_hideTimer); _hideTimer = null; }
     });
@@ -87,7 +88,7 @@ function globalToCanvas(gx: number, gy: number): { x: number; y: number } {
 }
 
 export function addEndpointHandles(
-  ctr: PIXI.Container, c: number[], wallId: string, tileDoc: TileDocument, color: number, r = 4,
+  ctr: PIXI.Container, c: number[], wallId: string, tileDoc: TileDocument, color: number, r = 2,
 ): void {
   const midX = (c[0] + c[2]) / 2, midY = (c[1] + c[3]) / 2;
   for (const [ep, ix, iy] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
@@ -100,8 +101,8 @@ export function addEndpointHandles(
     h.x = c[ix]; h.y = c[iy];
     h.eventMode = "static"; h.cursor = "crosshair";
     const _ep = ep;
-    h.on("pointerover", () => showWallHud(wallId, midX, midY));
-    h.on("pointerout",  () => scheduleHideHud());
+    h.on("pointerover", () => { h.scale.set(2); showWallHud(wallId, midX, midY); });
+    h.on("pointerout",  () => { h.scale.set(1); scheduleHideHud(); });
     h.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
       e.stopPropagation();
       startEndpointDrag(wallId, _ep, tileDoc, ctr, color, r);
