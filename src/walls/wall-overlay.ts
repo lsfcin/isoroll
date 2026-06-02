@@ -143,7 +143,7 @@ export class WallOverlay {
       g.name      = `line-${id}`;
       g.eventMode = "static";
       // Black outline, then colored line on top
-      g.lineStyle(LINE_W + 2, 0x000000, 0.8);
+      g.lineStyle(LINE_W + 1.5, 0x000000, 0.8);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(LINE_W, color, 1);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
