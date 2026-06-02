@@ -65,13 +65,25 @@ export function getCachedPreset(key: string): IsorollPreset | undefined {
   return presetCache.get(key);
 }
 
+async function ensureBaseDir(): Promise<void> {
+  if (baseDirEnsured) return;
+  try { await fp().createDirectory("data", "isoroll", {}); } catch { /* exists */ }
+  try { await fp().createDirectory("data", BASE_DIR, {}); } catch { /* exists */ }
+  baseDirEnsured = true;
+}
+
 export async function preloadCache(): Promise<void> {
   try {
     const res = await fetch(INDEX_URL);
-    if (!res.ok) return;
+    if (!res.ok) {
+      await ensureBaseDir();
+      await writeIndex(); // create empty index so next session is clean
+      return;
+    }
     const index = await res.json() as Record<string, IsorollPreset>;
     for (const [k, v] of Object.entries(index)) presetCache.set(k, v);
-  } catch { /* first run — no index yet */ }
+    if (presetCache.size) console.log(`isoroll | ${presetCache.size} image preset(s) loaded`);
+  } catch (e) { console.warn("[isoroll:preset] preloadCache error:", e); }
 }
 
 export async function readPreset(key: string): Promise<IsorollPreset | null> {

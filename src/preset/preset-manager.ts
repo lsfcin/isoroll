@@ -1,4 +1,4 @@
-import { deriveKey, readPreset, writePreset, preloadCache } from "./preset-storage";
+import { deriveKey, readPreset, writePreset, preloadCache, getCachedPreset } from "./preset-storage";
 import {
   getSrc, docId, asSD, isPresetEnabled, gridSize,
   tileUpsertTimers, tokenUpsertTimers, bgUpsertTimers, debounced,
@@ -26,8 +26,13 @@ export class PresetManager {
       applyPresetToSource(doc, src);
     });
 
-    // ── create: fallback for cache miss ──────────────────────────────────────
-    Hooks.on("createTile",  (doc: unknown) => wrap(() => autoApplyTile(doc),  "tile auto-apply"));
+    // ── create: cache-miss fallback only — skip if preCreateTile already handled ──
+    Hooks.on("createTile", (doc: unknown) => {
+      const src = getSrc(doc); if (!src) return;
+      // Cache hit means preCreateTile already applied; redundant update causes redraw blink
+      if (getCachedPreset(deriveKey(src))) return;
+      wrap(() => autoApplyTile(doc), "tile auto-apply");
+    });
     Hooks.on("createToken", (doc: unknown) => wrap(() => autoApplyToken(doc), "token auto-apply"));
     Hooks.on("createScene", (scene: unknown) => wrap(() => autoApplyBackground(scene), "bg auto-apply"));
 
