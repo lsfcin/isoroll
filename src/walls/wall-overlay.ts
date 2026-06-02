@@ -20,16 +20,19 @@ const LINE_W = 1;
 export function wallColor(doc: WallDoc): number {
   if (doc.door === 2) return WALL_COLORS.secret;
   if (doc.door === 1) return WALL_COLORS.door;
-  // Ethereal: movement passes through (v14: move=20, older: move=2)
-  if ((doc.move ?? 0) > 1) return WALL_COLORS.ethereal;
+  const m = doc.move ?? 0;
   const s = doc.sense ?? 0;
-  // Terrain: DISTANCE=40/PROXIMITY=30 (v14) or TERRAIN=3/6 (older)
-  if (s >= 30 || s === 6 || s === 3) return WALL_COLORS.terrain;
-  // Window: LIMITED=10 (v14) or LIMITED=1 (older)
+  // Terrain: v14 DISTANCE=30/PROXIMITY=40, v13 TERRAIN=3/DISTANCE=6
+  if (s === 30 || s === 40 || s === 6 || s === 3) return WALL_COLORS.terrain;
+  // Window: v14 LIMITED=10, v13 LIMITED=1
   if (s === 10 || s === 1) return WALL_COLORS.window;
-  // Any other non-zero sight value: sight passes (invisible walls)
-  if (s > 1) return WALL_COLORS.invisible;
-  if ((doc.sound ?? 0) > 0) return WALL_COLORS.sound;
+  // Ethereal: movement passes through.
+  // v14: NORMAL=10 blocks; NONE=0 doesn't block (ethereal appearance).
+  // v13: NORMAL=1 blocks; ETHEREAL=2 doesn't block.
+  const moveBlocks = m === 1 || m >= 10;
+  if (!moveBlocks) return WALL_COLORS.ethereal;
+  // Invisible: movement blocks but sight passes (sense=NONE=0)
+  if (s === 0) return WALL_COLORS.invisible;
   return WALL_COLORS.normal;
 }
 
@@ -118,7 +121,7 @@ export class WallOverlay {
   }
 
   private static _drawDisplay(ctr: PIXI.Container, doc: TileDocument): void {
-    const r = WallOverlay._altMode ? 3 : 2;
+    const r = WallOverlay._altMode ? 5 : 2;
     for (const id of getLinkedWallIds(doc)) {
       const wall = wallsLayer().get(id);
       if (!wall) continue;
@@ -127,19 +130,25 @@ export class WallOverlay {
       const color = wallColor(wdoc);
       const g     = new PIXI.Graphics();
       g.name      = `line-${id}`;
-      g.eventMode = "auto";
+      g.eventMode = "static";
+      // Wide transparent hit area first (easier to hover)
+      g.lineStyle(10, 0x000000, 0.001);
+      g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
+      // Black outline, then colored line on top
+      g.lineStyle(LINE_W + 2, 0x000000, 0.8);
+      g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(LINE_W, color, 1);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
       ctr.addChild(g);
       addEndpointHandles(ctr, c, id, doc, color, r);
-      addLineHover(g, id, (c[0] + c[2]) / 2, (c[1] + c[3]) / 2);
+      addLineHover(g, id, ctr, (c[0] + c[2]) / 2, (c[1] + c[3]) / 2);
     }
   }
 
   private static _drawSelect(ctr: PIXI.Container, doc: TileDocument): void {
     const linked = new Set(getLinkedWallIds(doc));
-    const r      = WallOverlay._altMode ? 3 : 2;
+    const r      = WallOverlay._altMode ? 5 : 2;
     for (const wall of wallsLayer().placeables) {
       const id    = wall.document.id ?? "";
       const wdoc  = wall.document as WallDoc;
@@ -147,11 +156,15 @@ export class WallOverlay {
       const isLnk = linked.has(id);
       const col   = wallColor(wdoc);
       const g     = new PIXI.Graphics();
-      // Wall line
-      g.lineStyle(isLnk ? LINE_W + 1 : LINE_W, col, isLnk ? 1 : UNLINKED_ALPHA);
-      g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
-      // Wide invisible hit area
+      // Wide transparent hit area first
       g.lineStyle(16, 0x000000, 0.001);
+      g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
+      // Black outline, then colored line on top
+      const lw = isLnk ? LINE_W + 1 : LINE_W;
+      const la = isLnk ? 1 : UNLINKED_ALPHA;
+      g.lineStyle(lw + 2, 0x000000, la * 0.8);
+      g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
+      g.lineStyle(lw, col, la);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
       // Endpoint circles (visual only, matches Wall layer appearance)

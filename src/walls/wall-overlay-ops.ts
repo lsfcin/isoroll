@@ -64,11 +64,16 @@ export function hideWallHud(): void {
   _hudWallId = null;
 }
 
-// ── Wall line hover → show HUD ────────────────────────────────────────────────
+// ── Wall line hover → show HUD + scale endpoint circles ──────────────────────
 
-export function addLineHover(g: PIXI.Graphics, wallId: string, midX: number, midY: number): void {
-  g.on("pointerover", () => showWallHud(wallId, midX, midY));
-  g.on("pointerout",  () => scheduleHideHud());
+function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
+  (ctr.getChildByName(`ep-${wallId}-A`) as PIXI.Graphics | null)?.scale.set(s);
+  (ctr.getChildByName(`ep-${wallId}-B`) as PIXI.Graphics | null)?.scale.set(s);
+}
+
+export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Container, midX: number, midY: number): void {
+  g.on("pointerover", () => { scaleEndpoints(ctr, wallId, 2); showWallHud(wallId, midX, midY); });
+  g.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
 }
 
 // ── Endpoint drag handles (circles, same color as wall line) ──────────────────
@@ -101,8 +106,8 @@ export function addEndpointHandles(
     h.x = c[ix]; h.y = c[iy];
     h.eventMode = "static"; h.cursor = "crosshair";
     const _ep = ep;
-    h.on("pointerover", () => { h.scale.set(2); showWallHud(wallId, midX, midY); });
-    h.on("pointerout",  () => { h.scale.set(1); scheduleHideHud(); });
+    h.on("pointerover", () => { scaleEndpoints(ctr, wallId, 2); showWallHud(wallId, midX, midY); });
+    h.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
     h.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
       e.stopPropagation();
       startEndpointDrag(wallId, _ep, tileDoc, ctr, color, r);
