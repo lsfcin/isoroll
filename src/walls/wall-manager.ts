@@ -36,7 +36,11 @@ export class WallManager {
     wrap(() => deleteLinkedWalls(doc), "wall cascade delete");
   }
 
-  private static onDeleteWall(doc: WallDocument): void {
+  private static onDeleteWall(
+    doc: WallDocument, options: Record<string, unknown>,
+  ): void {
+    // Skip when deleteLinkedWalls bulk-deleted — it handles the flag clear directly
+    if (options.isoroll === "wallBulkDelete") return;
     const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
     if (!tileId) return;
     const tileObj = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(tileId);

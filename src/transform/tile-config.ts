@@ -17,15 +17,14 @@ export function registerTileConfigHook(): void {
     const wallSection = `
       <fieldset><legend>${t("ISOROLL.TileConfig.WallsHeading")}</legend>
         <div class="form-group">
-          <label>${t("ISOROLL.TileConfig.LinkedWalls")}</label>
-          <div class="form-fields"><b class="isoroll-wall-count">${wc}</b></div>
+          <label>${t("ISOROLL.TileConfig.LinkedWalls")}: <b class="isoroll-wall-count">${wc}</b></label>
+          <div class="form-fields" style="gap:4px">
+            <button type="button" class="isoroll-gen-walls-btn" title="${t("ISOROLL.WallManager.GenerateBase")}"><i class="fas fa-border-all"></i></button>
+            <button type="button" class="isoroll-select-walls-btn" title="${t("ISOROLL.WallManager.SelectWalls")}"><i class="fas fa-mouse-pointer"></i></button>
+            <button type="button" class="isoroll-unlink-walls-btn" title="${t("ISOROLL.WallManager.UnlinkAll")}"><i class="fas fa-unlink"></i></button>
+            <button type="button" class="isoroll-delete-walls-btn" title="${t("ISOROLL.WallManager.DeleteLinked")}"><i class="fas fa-trash-alt"></i></button>
+          </div>
         </div>
-        <div class="form-group"><div class="form-fields" style="gap:4px;flex-wrap:wrap">
-          <button type="button" class="isoroll-gen-walls-btn" title="${t("ISOROLL.WallManager.GenerateBase")}"><i class="fas fa-border-all"></i></button>
-          <button type="button" class="isoroll-select-walls-btn" title="${t("ISOROLL.WallManager.SelectWalls")}"><i class="fas fa-mouse-pointer"></i></button>
-          <button type="button" class="isoroll-unlink-walls-btn" title="${t("ISOROLL.WallManager.UnlinkAll")}"><i class="fas fa-unlink"></i></button>
-          <button type="button" class="isoroll-delete-walls-btn" title="${t("ISOROLL.WallManager.DeleteLinked")}"><i class="fas fa-trash-alt"></i></button>
-        </div></div>
       </fieldset>`;
 
     const doorSection = (() => {

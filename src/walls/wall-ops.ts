@@ -46,8 +46,9 @@ export async function createWallsFromDefs(doc: TileDocument, defs: WallDef[]): P
 
 export async function deleteLinkedWalls(doc: TileDocument): Promise<void> {
   const ids = getLinkedWallIds(doc).filter(id => wallsLayer().get(id));
-  if (!ids.length) return;
-  await scene().deleteEmbeddedDocuments("Wall", ids);
+  if (ids.length) await scene().deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete" });
+  // explicit clear so callers reading the flag immediately after see count = 0
+  await doc.unsetFlag(MODULE_ID, "linkedWallIds");
 }
 
 export async function updateLinkedWallPositions(doc: TileDocument): Promise<void> {

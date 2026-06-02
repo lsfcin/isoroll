@@ -3,17 +3,18 @@ import { getLinkedWallIds, wallsLayer } from "./wall-core";
 import type { WallDoc } from "./wall-core";
 import { addEndpointHandles, addMidHandle, addSelectInteraction } from "./wall-overlay-ops";
 
+// Match Foundry's Wall layer rendering colors exactly
 export const WALL_COLORS = {
-  normal:   0xFF6400,
-  terrain:  0x7CFC00,
-  invisible:0xFFB000,
-  ethereal: 0x00AAFF,
-  sound:    0x00BFFF,
-  door:     0xFF6400,
-  secret:   0x81AE2A,
+  normal:    0xFFFFBB,
+  terrain:   0x7CFC00,
+  invisible: 0x7777EE,
+  ethereal:  0x00AAFF,
+  sound:     0x00BFFF,
+  door:      0xFFCC00,
+  secret:    0x81AE2A,
 };
 const UNLINKED_ALPHA = 0.35;
-const LINE_W = 2;
+const LINE_W = 1;  // thin, matching Wall layer
 
 export function wallColor(doc: WallDoc): number {
   if (doc.door === 2) return WALL_COLORS.secret;
@@ -103,15 +104,17 @@ export class WallOverlay {
     for (const id of getLinkedWallIds(doc)) {
       const wall = wallsLayer().get(id);
       if (!wall) continue;
-      const wdoc = wall.document as WallDoc;
-      const c    = wdoc.c;
-      const g    = new PIXI.Graphics();
+      const wdoc  = wall.document as WallDoc;
+      const c     = wdoc.c;
+      const color = wallColor(wdoc);
+      const g     = new PIXI.Graphics();
+      g.name      = `line-${id}`;
       g.eventMode = "passive";
-      g.lineStyle(LINE_W, wallColor(wdoc), 1);
+      g.lineStyle(LINE_W, color, 1);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
       ctr.addChild(g);
-      addEndpointHandles(ctr, c, id, doc);
+      addEndpointHandles(ctr, c, id, doc, color);
       addMidHandle(ctr, (c[0] + c[2]) / 2, (c[1] + c[3]) / 2, id);
     }
   }
@@ -123,10 +126,10 @@ export class WallOverlay {
       const wdoc  = wall.document as WallDoc;
       const c     = wdoc.c;
       const isLnk = linked.has(id);
+      const col   = wallColor(wdoc);
       const g     = new PIXI.Graphics();
-      g.lineStyle(isLnk ? LINE_W + 1 : LINE_W, wallColor(wdoc), isLnk ? 1 : UNLINKED_ALPHA);
+      g.lineStyle(isLnk ? LINE_W + 1 : LINE_W, col, isLnk ? 1 : UNLINKED_ALPHA);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
-      // wide invisible hit area for easy clicking
       g.lineStyle(10, 0x000000, 0.001);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
