@@ -164,9 +164,11 @@ function startEndpointDrag(
     const bx = ep === "B" ? sx : startC[2], by = ep === "B" ? sy : startC[3];
     if (lineG) {
       lineG.clear();
+      lineG.lineStyle(2.5, 0x000000, 0.8);
+      lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
       lineG.lineStyle(1, color, 1);
       lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
-      // Refresh endpoint handles visual (clear + redraw the other endpoint)
+      lineG.lineStyle(0);
     }
     // Keep HUD visible at updated midpoint
     showWallHud(wallId, (ax + bx) / 2, (ay + by) / 2);
