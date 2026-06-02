@@ -1,3 +1,6 @@
+import type { WallDef } from "../walls/wall-types";
+export type { WallDef };
+
 export interface TilePreset {
   type: "tile";
   imageKey: string;
@@ -9,6 +12,7 @@ export interface TilePreset {
   imageOffset: { x: number; y: number };
   tileFlipped: boolean;
   foregroundTile: boolean;
+  walls?: WallDef[];   // linked wall definitions (normalized, for auto-create on placement)
   updatedAt: number;
 }
 

@@ -3,7 +3,7 @@ import {
   getSrc, docId, asSD, isPresetEnabled, gridSize,
   tileUpsertTimers, tokenUpsertTimers, bgUpsertTimers, debounced,
   applyTile, applyToken, applyBackground,
-  autoApplyTile, autoApplyToken, autoApplyBackground,
+  autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls,
   upsertTile, upsertToken, upsertBackground,
   changedFlagKeys, intersects, bgNativeChanged, tileNativeChanged,
   TILE_PRESET_KEYS, TOKEN_PRESET_KEYS, BG_PRESET_FLAG_KEYS,
@@ -26,11 +26,14 @@ export class PresetManager {
       applyPresetToSource(doc, src);
     });
 
-    // ── create: cache-miss fallback only — skip if preCreateTile already handled ──
+    // ── create: walls always; appearance only on cache miss ──────────────────
     Hooks.on("createTile", (doc: unknown) => {
       const src = getSrc(doc); if (!src) return;
-      // Cache hit means preCreateTile already applied; redundant update causes redraw blink
-      if (getCachedPreset(deriveKey(src))) return;
+      if (getCachedPreset(deriveKey(src))) {
+        // preCreateTile already applied appearance; only need walls from cache
+        wrap(() => autoApplyTileWalls(doc), "tile auto-apply walls");
+        return;
+      }
       wrap(() => autoApplyTile(doc), "tile auto-apply");
     });
     Hooks.on("createToken", (doc: unknown) => wrap(() => autoApplyToken(doc), "token auto-apply"));

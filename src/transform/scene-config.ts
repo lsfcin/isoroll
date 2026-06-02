@@ -1,4 +1,5 @@
 export { registerRulerPatch } from "./ruler-patch";
+export { registerTileConfigHook } from "./tile-config";
 import { MODULE_ID } from "../volume/flags";
 import { CanvasTransform } from "./canvas-transform";
 import { PROJECTION_TYPES } from "./constants";
@@ -8,7 +9,7 @@ const TAB = "isoroll";
 // AppV2 partial re-renders wipe nav <a> items but preserve injected tab content <div>s.
 // Guard on content div (persists); always re-inject nav item (wiped); bind events once.
 // All click handlers delegated from $html so they survive nav DOM replacement.
-function addIsorollTab(
+export function addIsorollTab(
   $html: JQuery,
   label: string,
   fieldsetContent: string,
@@ -51,7 +52,7 @@ function addIsorollTab(
   onFirstInject?.($html);
 }
 
-function cbGroup(flagKey: string, ns: string, checked: boolean): string {
+export function cbGroup(flagKey: string, ns: string, checked: boolean): string {
   const k = flagKey.charAt(0).toUpperCase() + flagKey.slice(1);
   const id = `isoroll-${flagKey}`;
   return `<div class="form-group"><label for="${id}">${game.i18n.localize(`ISOROLL.${ns}.${k}`)}</label><div class="form-fields"><input type="checkbox" id="${id}" name="flags.${MODULE_ID}.${flagKey}" ${checked ? "checked" : ""}></div><p class="hint">${game.i18n.localize(`ISOROLL.${ns}.${k}Hint`)}</p></div>`;
@@ -184,16 +185,3 @@ export function registerTokenConfigHook(): void {
   );
 }
 
-export function registerTileConfigHook(): void {
-  Hooks.on("renderTileConfig", (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
-    const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-    const d = app.document;
-    addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
-      `<legend>${game.i18n.localize("ISOROLL.TileConfig.Heading")}</legend>` +
-      cbGroup("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
-      cbGroup("transformTile",         "TileConfig", d.getFlag(MODULE_ID, "transformTile")          === true) +
-      cbGroup("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
-      cbGroup("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
-      cbGroup("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false));
-  });
-}

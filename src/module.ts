@@ -12,6 +12,7 @@ import { BackgroundGizmos } from "./volume/background-gizmos";
 import { ObjectTransform } from "./transform/object-transform";
 import { registerSceneConfigHook, registerTokenConfigHook, registerTileConfigHook, registerRulerPatch } from "./transform/scene-config";
 import { PresetManager } from "./preset/preset-manager";
+import { WallManager } from "./walls/wall-manager";
 
 Hooks.once("init", () => {
   registerVolumeSettings();
@@ -30,5 +31,6 @@ Hooks.once("init", () => {
   TokenVolumeGizmos.activate();
   Occluder.activate();
   PresetManager.activate();
+  WallManager.activate();
   console.log("isoroll | initialized");
 });

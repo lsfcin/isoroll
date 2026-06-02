@@ -36,7 +36,9 @@
       "ShowVolumeManipulation": "Show Volume Manipulation",
       "ShowVolumeManipulationHint": "Show the 3D bounding box and all volume handles (size, elevation, move) when the tile is selected.",
       "PresetEnabled": "Use Image Preset",
-      "PresetEnabledHint": "Automatically apply saved configuration when a tile with this image is placed, and update the preset when you edit this tile."
+      "PresetEnabledHint": "Automatically apply saved configuration when a tile with this image is placed, and update the preset when you edit this tile.",
+      "WallsHeading": "Walls",
+      "LinkedWalls": "Linked walls"
     },
     "Projection": {
       "Dimetric21": "Dimetric 2:1 (default)",
@@ -50,6 +52,14 @@
     },
     "VolumeGizmos": {
       "Flip": "Flip Tile (swap width/height)"
+    },
+    "WallManager": {
+      "GenerateBase": "Generate base walls (4 sides, full tile height)",
+      "LinkSelected": "Link selected walls to this tile",
+      "UnlinkAll": "Unlink all walls (keep walls, remove association)",
+      "DeleteLinked": "Delete all linked walls",
+      "LinkedN": "Linked {n} wall(s) to tile.",
+      "NoneSelected": "No walls selected. Select walls on the Walls layer first."
     },
     "Settings": {
       "DefaultTokenHeight": {

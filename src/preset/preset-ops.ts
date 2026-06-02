@@ -2,6 +2,7 @@
 import { MODULE_ID } from "../volume/flags";
 import { deriveKey, readPreset, writePreset, getCachedPreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
+import { extractWallDefs, applyWallDefs } from "../walls/wall-ops";
 
 // Typed shims
 export type TextureDoc = { texture?: { src?: string } };
@@ -44,11 +45,13 @@ export function debounced(timers: Map<string, ReturnType<typeof setTimeout>>, id
 
 // Extract
 function extractTile(doc: unknown, key: string): TilePreset {
+  const walls = extractWallDefs(doc as TileDocument);
   return { type: "tile", imageKey: key,
     gridWidth: tileGW(doc), gridHeight: tileGH(doc),
     boundHeight: getNum(doc, "boundHeight", 1), imageScale: getNum(doc, "imageScale", 1),
     imageYScale: getNum(doc, "imageYScale", 1), imageOffset: getOff(doc),
     tileFlipped: getBool(doc, "tileFlipped", false), foregroundTile: getBool(doc, "foregroundTile", true),
+    ...(walls.length ? { walls } : {}),
     updatedAt: Date.now() };
 }
 function extractToken(doc: unknown, key: string): TokenPreset {
@@ -96,6 +99,16 @@ export async function autoApplyTile(doc: unknown): Promise<void> {
   const p = await readPreset(deriveKey(src));
   if (!p || p.type !== "tile") return;
   await applyTile(doc, p);
+  if (p.walls?.length) await applyWallDefs(doc as TileDocument, p.walls);
+}
+
+/** Apply only the wall portion of a cached preset (called from createTile on cache-hit). */
+export async function autoApplyTileWalls(doc: unknown): Promise<void> {
+  if (!isPresetEnabled(doc)) return;
+  const src = getSrc(doc); if (!src) return;
+  const p = getCachedPreset(deriveKey(src));
+  if (!p || p.type !== "tile" || !p.walls?.length) return;
+  await applyWallDefs(doc as TileDocument, p.walls);
 }
 export async function autoApplyToken(doc: unknown): Promise<void> {
   if (!isPresetEnabled(doc)) return;
@@ -130,7 +143,7 @@ export async function upsertBackground(scene: unknown): Promise<void> {
 }
 
 // Changed-flag helpers
-export const TILE_PRESET_KEYS  = new Set(["boundHeight","imageScale","imageYScale","imageOffset","tileFlipped","foregroundTile"]);
+export const TILE_PRESET_KEYS  = new Set(["boundHeight","imageScale","imageYScale","imageOffset","tileFlipped","foregroundTile","linkedWallIds"]);
 export const TOKEN_PRESET_KEYS = new Set(["boundHeight","imageScale","imageYScale","imageOffset","tileFlipped"]);
 export const BG_PRESET_FLAG_KEYS = new Set(["backgroundYScale"]);
 
