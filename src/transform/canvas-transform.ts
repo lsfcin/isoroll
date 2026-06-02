@@ -159,12 +159,12 @@ export class CanvasTransform {
       this.rotation = proj.reverseRotation;
       (this.skew as PIXI.ObservablePoint).set(proj.reverseSkewX, proj.reverseSkewY);
       const bgYS = BackgroundGizmos.getTempYScale();
-      this.scale.set(sx * proj.counterFactor, sx * proj.ratio * proj.counterFactor * bgYS);
-      // center = position + R·S·(-tw/2,-th/2); skew=0 for all presets
       const cosR = Math.cos(proj.reverseRotation);
       const sinR = Math.sin(proj.reverseRotation);
       const scX = sx * proj.counterFactor;
-      const scY = sx * proj.ratio * proj.counterFactor;
+      const scY = sx * proj.ratio * proj.counterFactor * bgYS;
+      this.scale.set(scX, scY);
+      // center = position + R·S·(-tw/2,-th/2); skew=0 for all presets
       this.position.set(
         x + sx * tw * 0.5 + cosR * scX * (-tw * 0.5) - sinR * scY * (-th * 0.5),
         y + sy * th * 0.5 + sinR * scX * (-tw * 0.5) + cosR * scY * (-th * 0.5),

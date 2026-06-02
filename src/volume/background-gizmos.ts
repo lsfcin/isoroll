@@ -8,10 +8,13 @@ import { BgDrag, commitBgDrag } from "./background-gizmos-drag";
 type GCApp = { _processSubmitData?: (...a: unknown[]) => Promise<unknown> };
 
 export class BackgroundGizmos {
-  private static layer:       PIXI.Container | null = null;
+  private static layer:        PIXI.Container | null = null;
+  private static previewBg:    PIXI.Sprite | null = null;
   private static bgYScaleTemp: number | null = null;
-  private static currentHtml: HTMLElement | null = null;
-  private static drag:        BgDrag | null = null;
+  private static currentHtml:  HTMLElement | null = null;
+  private static drag:         BgDrag | null = null;
+  private static keyHandler:   ((e: KeyboardEvent) => void) | null = null;
+  private static wheelHandler: ((e: WheelEvent) => void) | null = null;
   private static readonly onMove = (e: PointerEvent) => BackgroundGizmos.handleMove(e);
   private static readonly onUp   = (e: PointerEvent) => BackgroundGizmos.handleUp(e);
 
@@ -36,6 +39,13 @@ export class BackgroundGizmos {
     BackgroundGizmos.currentHtml = html;
     const curYS = (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
     BackgroundGizmos.bgYScaleTemp = curYS;
+    // Cache preview bg BEFORE our layer exists — reverse-search would find our layer otherwise.
+    if (!BackgroundGizmos.previewBg) {
+      const kids = (canvas.app?.stage as unknown as { children: PIXI.Container[] }).children;
+      for (let i = kids.length - 1; i >= 0; i--) { const c = kids[i];
+        if (c instanceof PIXI.Container && c.constructor === PIXI.Container) { const bg = c.children[1]; if (bg instanceof PIXI.Sprite) BackgroundGizmos.previewBg = bg; break; }
+      }
+    }
     if (!html.querySelector('#isoroll-bg-yscale')) {
       html.querySelector('[name="scale"]')?.closest('.form-group')?.insertAdjacentHTML('afterend',
         `<div class="form-group"><label for="isoroll-bg-yscale">Vertical Scale</label>` +
@@ -54,12 +64,25 @@ export class BackgroundGizmos {
         if (ys !== null) await canvas.scene?.setFlag(MODULE_ID, "backgroundYScale", ys);
       };
     }
+    if (BackgroundGizmos.keyHandler) document.removeEventListener('keydown', BackgroundGizmos.keyHandler);
+    if (BackgroundGizmos.wheelHandler) document.removeEventListener('wheel', BackgroundGizmos.wheelHandler);
+    BackgroundGizmos.keyHandler = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || !["KeyW","ArrowUp","KeyS","ArrowDown"].includes(e.code)) return;
+      e.preventDefault(); e.stopPropagation();
+      BackgroundGizmos.scaleVerticalStep(["KeyW","ArrowUp"].includes(e.code) ? 1 : -1);
+    };
+    BackgroundGizmos.wheelHandler = (e: WheelEvent) => { if (!e.ctrlKey) return; e.preventDefault(); BackgroundGizmos.scaleVerticalStep(e.deltaY < 0 ? 1 : -1); };
+    document.addEventListener('keydown', BackgroundGizmos.keyHandler);
+    document.addEventListener('wheel', BackgroundGizmos.wheelHandler, { passive: false });
     html.addEventListener('change', () => requestAnimationFrame(() => BackgroundGizmos.show()));
     BackgroundGizmos.show();
   }
 
   private static onCloseGridConfig(): void {
-    BackgroundGizmos.bgYScaleTemp = null; BackgroundGizmos.currentHtml = null; BackgroundGizmos.clearAll();
+    if (BackgroundGizmos.keyHandler) { document.removeEventListener('keydown', BackgroundGizmos.keyHandler); BackgroundGizmos.keyHandler = null; }
+    if (BackgroundGizmos.wheelHandler) { document.removeEventListener('wheel', BackgroundGizmos.wheelHandler); BackgroundGizmos.wheelHandler = null; }
+    BackgroundGizmos.bgYScaleTemp = null; BackgroundGizmos.currentHtml = null;
+    BackgroundGizmos.previewBg = null; BackgroundGizmos.clearAll();
   }
 
   static show(): void {
@@ -69,16 +92,10 @@ export class BackgroundGizmos {
     const layer = BackgroundGizmos.ensureLayer();
     const proj  = getProjection(canvas.scene);
     const cosR  = Math.cos(proj.reverseRotation), sinR = Math.sin(proj.reverseRotation);
-    let texW = 1, texH = 1, bgX = 0, bgY = 0, bgW = 1;
-    const kids = (canvas.app?.stage as unknown as { children: PIXI.Container[] }).children;
-    for (let i = kids.length - 1; i >= 0; i--) {
-      const c = kids[i];
-      if (c instanceof PIXI.Container && c.constructor === PIXI.Container) {
-        const bg = c.children[1];
-        if (bg instanceof PIXI.Sprite && bg.texture?.width) { texW = bg.texture.width; texH = bg.texture.height; bgX = bg.x; bgY = bg.y; bgW = bg.width; }
-        break;
-      }
-    }
+    const previewBg = BackgroundGizmos.previewBg;
+    if (!previewBg) return;
+    const texW = previewBg.texture?.width || 1, texH = previewBg.texture?.height || 1;
+    const bgX = previewBg.x, bgY = previewBg.y, bgW = previewBg.width || 1;
     const sx   = bgW / texW;
     const bgYS = BackgroundGizmos.bgYScaleTemp ?? 1;
     const scX  = sx * proj.counterFactor;
@@ -109,6 +126,15 @@ export class BackgroundGizmos {
       layer.addChild(handle);
     }
     BackgroundGizmos.bringToTop();
+  }
+
+  private static scaleVerticalStep(delta: number): void {
+    const html = BackgroundGizmos.currentHtml; if (!html) return;
+    const newYS = Math.max(0.05, Math.min(5.0, Math.round(((BackgroundGizmos.bgYScaleTemp ?? 1) + delta * 0.01) * 1000) / 1000));
+    BackgroundGizmos.bgYScaleTemp = newYS;
+    const el = html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
+    if (el) el.value = newYS.toFixed(3);
+    BackgroundGizmos.show();
   }
 
   private static clearLayer(): void {
