@@ -38,7 +38,13 @@
       "PresetEnabled": "Use Image Preset",
       "PresetEnabledHint": "Automatically apply saved configuration when a tile with this image is placed, and update the preset when you edit this tile.",
       "WallsHeading": "Walls",
-      "LinkedWalls": "Linked walls"
+      "LinkedWalls": "Linked walls",
+      "DoorHeading": "Door Behavior",
+      "DoorMode": "When door opens",
+      "DoorModeNone": "No change",
+      "DoorModeHide": "Hide tile",
+      "DoorModeFade": "Fade tile",
+      "DoorFadeOpacity": "Fade opacity"
     },
     "Projection": {
       "Dimetric21": "Dimetric 2:1 (default)",
@@ -54,12 +60,17 @@
       "Flip": "Flip Tile (swap width/height)"
     },
     "WallManager": {
-      "GenerateBase": "Generate base walls (4 sides, full tile height)",
-      "LinkSelected": "Link selected walls to this tile",
-      "UnlinkAll": "Unlink all walls (keep walls, remove association)",
-      "DeleteLinked": "Delete all linked walls",
-      "LinkedN": "Linked {n} wall(s) to tile.",
-      "NoneSelected": "No walls selected. Select walls on the Walls layer first."
+      "GenerateBase":   "Generate base walls (4 sides, full tile height)",
+      "SelectWalls":    "Select walls to link — click walls on canvas to toggle",
+      "DoneSelecting":  "Done selecting walls",
+      "LinkSelected":   "Link selected walls to this tile",
+      "UnlinkAll":      "Unlink all walls (keep walls, remove association)",
+      "DeleteLinked":   "Delete all linked walls",
+      "LinkedN":        "Linked {n} wall(s) to tile.",
+      "NoneSelected":   "No walls selected. Switch to Walls layer first, or use Select Walls mode.",
+      "DoorNone":       "Door: tile unchanged when opened",
+      "DoorHide":       "Door: hide tile when opened",
+      "DoorFade":       "Door: fade tile when opened"
     },
     "Settings": {
       "DefaultTokenHeight": {

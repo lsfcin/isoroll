@@ -1,13 +1,23 @@
 // Foundry shims, coordinate helpers, and linked-wall flag accessors.
 import { MODULE_ID } from "../volume/flags";
-import type { WallDef, TileAnchor } from "./wall-types";
+import type { WallDef, TileAnchor, DoorBehavior } from "./wall-types";
 
 export type TileDoc = TileDocument & { x: number; y: number; width: number; height: number };
-export type WallDoc = WallDocument & { c: number[]; door?: number };
+export type WallDoc = WallDocument & {
+  c: number[];
+  ds: number;     // door state: 0=closed 1=open 2=locked
+  door: number;   // 0=none 1=door 2=secret
+  move: number;
+  sense: number;
+  light: number;
+  sound: number;
+  dir: number;
+};
 
 export type WallsCollection = {
   get(id: string): { document: WallDoc } | undefined;
   controlled: { document: WallDoc }[];
+  placeables: Array<{ document: WallDoc; id: string }>;
 };
 export type SceneEmbedded = {
   createEmbeddedDocuments(type: string, data: object[], opts?: object): Promise<{ id: string | null }[]>;
@@ -53,4 +63,21 @@ export async function pruneLinkedWalls(doc: TileDocument): Promise<void> {
   const ids = getLinkedWallIds(doc);
   const live = ids.filter(id => wallsLayer().get(id));
   if (live.length !== ids.length) await setLinkedWallIds(doc, live);
+}
+
+export function getDoorBehavior(doc: TileDocument): DoorBehavior {
+  const v = doc.getFlag(MODULE_ID, "doorBehavior");
+  if (v && typeof v === "object" && "mode" in v) return v as DoorBehavior;
+  return { mode: "none" };
+}
+
+export async function setDoorBehavior(doc: TileDocument, b: DoorBehavior): Promise<void> {
+  await doc.setFlag(MODULE_ID, "doorBehavior", b);
+}
+
+export function hasLinkedDoor(doc: TileDocument): boolean {
+  return getLinkedWallIds(doc).some(id => {
+    const w = wallsLayer().get(id);
+    return w && ((w.document as WallDoc).door ?? 0) > 0;
+  });
 }
