@@ -99,18 +99,27 @@ export class CanvasTransform {
     for (const token of canvas.tokens?.placeables ?? []) token.refresh();
     for (const tile of canvas.tiles?.placeables ?? []) tile.refresh();
   }
+  // #drawOutline() rect becomes a diamond through the stage transform — hide when bg is untransformed.
+  private static setOutlineVisible(v: boolean): void {
+    type CanvasIface = { interface?: PIXI.Container };
+    const outline = (canvas as unknown as CanvasIface).interface?.children.find((c): c is PIXI.Graphics => c instanceof PIXI.Graphics);
+    if (outline) outline.visible = v;
+  }
 
   private static applyCurrentState(): void {
     if (CanvasTransform.isEnabled()) {
       CanvasTransform.apply();
       if (!CanvasTransform.isBackgroundTransformEnabled()) {
         CanvasTransform.applyBackground();
+        CanvasTransform.setOutlineVisible(false);
       } else {
         CanvasTransform.resetBackground();
+        CanvasTransform.setOutlineVisible(true);
       }
     } else {
       CanvasTransform.reset();
       CanvasTransform.resetBackground();
+      CanvasTransform.setOutlineVisible(true);
     }
   }
 
