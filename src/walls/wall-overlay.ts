@@ -182,7 +182,7 @@ export class WallOverlay {
       g.lineStyle(0);
       // Endpoint circles (visual only, matches Wall layer appearance)
       for (const [ix, iy] of [[0,1],[2,3]] as [number,number][]) {
-        g.lineStyle(2, 0x000000, 0.8);
+        g.lineStyle(1.5, 0x000000, 0.8);
         g.beginFill(col, isLnk ? 1 : UNLINKED_ALPHA);
         g.drawCircle(c[ix], c[iy], r);
         g.endFill();
