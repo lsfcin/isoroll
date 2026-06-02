@@ -50,7 +50,7 @@ export class BackgroundGizmos {
       html.querySelector('[name="scale"]')?.closest('.form-group')?.insertAdjacentHTML('afterend',
         `<div class="form-group"><label for="isoroll-bg-yscale">Vertical Scale</label>` +
         `<div class="form-fields"><input type="number" id="isoroll-bg-yscale" ` +
-        `step="0.01" min="0.05" max="5.00" value="${curYS.toFixed(3)}"></div></div>`);
+        `step="0.001" min="0.05" max="5.00" value="${curYS.toFixed(3)}"></div></div>`);
       (html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null)?.addEventListener('change', (e) => {
         BackgroundGizmos.bgYScaleTemp = Math.max(0.05, Math.min(5, Number((e.target as HTMLInputElement).value) || 1));
         BackgroundGizmos.show();

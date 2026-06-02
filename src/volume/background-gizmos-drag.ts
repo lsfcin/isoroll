@@ -24,8 +24,8 @@ export function commitBgDrag(
   if (drag.type === "bgTranslate") {
     const det = m.a * m.d - m.b * m.c;
     const xe = el('shiftX'), ye = el('shiftY');
-    if (xe) xe.value = String(Math.round(drag.startShiftX + (dx * m.d - dy * m.c) / det));
-    if (ye) ye.value = String(Math.round(drag.startShiftY + (-dx * m.b + dy * m.a) / det));
+    if (xe) xe.value = String(Math.round(drag.startShiftX - (dx * m.d - dy * m.c) / det));
+    if (ye) ye.value = String(Math.round(drag.startShiftY - (-dx * m.b + dy * m.a) / det));
     fire('shiftX');
   } else if (drag.type === "bgScale") {
     const rx = drag.startGX - drag.startScreenCX, ry = drag.startGY - drag.startScreenCY;
