@@ -107,6 +107,13 @@
 - [x] AppV2 stale `tabGroups` bug: clicking native tab after custom tab was activated left content hidden; fixed by explicit `addClass("active")` in other-tab handler
 - [x] `imageOffset` stored in grid-relative units (divide on save, multiply by `gs` on apply/drag-start) — preserves offset across gridSize changes
 - [x] `foregroundTile` flag (default true): foreground tiles rescale `x/y/width/height` canvas px when scene gridSize changes (via `preUpdateScene`/`updateScene` hooks), preserving grid-unit footprint like tokens. Checkbox in TileConfig Iso tab.
+- [x] Background image handles in GridConfig Tool (when `transformBackground=false`):
+  - TC white square → `backgroundYScale` scene flag (Y-scale only); CTRL+Wheel/Arrow shortcuts (step 0.01)
+  - TR white square → `scale` native form field (uniform scale)
+  - BL white circle → `shiftX`/`shiftY` native form fields (translate)
+  - Dashed contour (white, screen-density-normalised via worldTransform scale factors); live update during Y-scale drag
+  - "Vertical Scale" numeric field injected into GridConfig form (step=0.001, min=0.05, max=5)
+  - `backgroundYScale` persisted via instance-level `_processSubmitData` patch (GridConfig native submit skips non-native fields)
 
 ### Phase 3 — Volume Handles (Gizmos) ✅ DONE (v2 — full redesign)
 
@@ -130,6 +137,7 @@
 - [x] Image handles (white), gated by `showImageManipulation`:
   - imgOffset (circle, BL corner) → imageOffset flag
   - imgScale (square, TR corner) → imageScale flag
+  - imgYScale (square, TC top-center) → imageYScale flag; Y-axis only; 12px screen-space snap to 1.0
   - swapSide (triangle button, BC edge) — swaps width↔height + tileFlipped in single `document.update()` (avoids mid-swap refreshTile with inconsistent state)
 - [x] 1/4 grid-unit snap; elevation snaps to integer feet
 - [x] Tile mesh displaced by elevation: `mesh.x/y = doc.x/y + hdx/hdy * E`
@@ -142,6 +150,7 @@
 - [x] Image handles (white), gated by `showImageManipulation`:
   - imgOffset (circle, BL corner) → imageOffset flag
   - imgScale (square, TR corner) → imageScale flag
+  - imgYScale (square, TC top-center) → imageYScale flag; Y-axis only; 12px screen-space snap to 1.0
 - [x] Volume handle (orange), gated by `showVolumeManipulation`:
   - Elevation (counter-transformed circle) — SE edge midpoint → token.document.elevation (with `{ animate: false }`)
 - [x] Doc-state cache (x, y, elevation, boundH) prevents 60fps PIXI rebuild during movement animation

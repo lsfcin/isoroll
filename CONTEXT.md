@@ -24,10 +24,12 @@
 | `src/volume/overlay-geometry.ts` | 3D box geometry: `computeVerts()` (tile), `computeTokenVerts()` (token), `drawBox()`, `drawAnchorLine()`, `drawDash()`, `BoxVerts` |
 | `src/volume/overlay.ts` | `VolumeOverlay` — 3D box + image contour on selected tiles; gated by showVolumeManipulation / showImageManipulation |
 | `src/volume/token-volume-overlay.ts` | `TokenVolumeOverlay` — 3D bounding box on selected tokens; doc-state cached to skip 60fps rebuilds during animation |
-| `src/volume/gizmos-drag.ts` | Pure drag math: `projectDrag()`, `handlePositions()`, `commitDrag()`, snap helpers |
-| `src/volume/gizmos-handles.ts` | PIXI factory functions for all handle shapes + `createRotateBlocker()` |
-| `src/volume/gizmos.ts` | `VolumeGizmos` — volume handles (width/height/boundH/elevation/scale/move) gated by showVolumeManipulation; image handles (imgOffset/imgScale/swapSide) gated by showImageManipulation |
-| `src/volume/token-gizmos.ts` | `TokenGizmos` — image offset (BL circle) + scale (TR square) handles for tokens; gated by showImageManipulation |
+| `src/volume/gizmos-drag.ts` | Pure drag math: `projectDrag()`, `handlePositions()`, `commitDrag()`, snap helpers, `imageTCCorner()` |
+| `src/volume/gizmos-handles.ts` | PIXI factory functions for all handle shapes + `createRotateBlocker()` + `bgCorner()` + `drawDashedContour()` |
+| `src/volume/gizmos.ts` | `VolumeGizmos` — volume handles (width/height/boundH/elevation/scale/move) gated by showVolumeManipulation; image handles (imgOffset/imgScale/imgYScale/swapSide) gated by showImageManipulation |
+| `src/volume/token-gizmos.ts` | `TokenGizmos` — image handles (BL circle: offset, TR square: scale, TC square: Y-scale) for tokens; gated by showImageManipulation |
+| `src/volume/background-gizmos.ts` | `BackgroundGizmos` — Y-scale/scale/translate handles + dashed contour on background image in GridConfig; injects Vertical Scale field; CTRL+Wheel/Arrow shortcuts |
+| `src/volume/background-gizmos-drag.ts` | `BgDrag` type + `commitBgDrag()` — drag math for all three background handle types |
 | `src/volume/token-overlay.ts` | `TokenOverlay` — dashed image contour on selected tokens; gated by showImageManipulation |
 | `src/volume/token-volume-gizmos.ts` | `TokenVolumeGizmos` — elevation handle (orange circle, SE edge midpoint) for tokens; doc-state cached |
 | `src/sorter/depth-sorter.ts` | Depth sort (dormant — not activated, see ROADMAP) |
@@ -59,7 +61,9 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | `flags.isoroll.transformTile` | boolean | tile | false | Apply isometric stage to tile sprite |
 | `flags.isoroll.boundHeight` | number | tile+token | tile:1 / token:2 | 3D volume height in grid units (token default from `defaultTokenHeight` setting) |
 | `flags.isoroll.imageOffset` | {x,y} | tile+token | {0,0} | Canvas-pixel offset of image from natural center |
-| `flags.isoroll.imageScale` | number | tile+token | 1 | Image scale multiplier |
+| `flags.isoroll.imageScale` | number | tile+token | 1 | Image uniform scale multiplier |
+| `flags.isoroll.imageYScale` | number | tile+token | 1 | Image Y-axis scale multiplier (for projection adaptation) |
+| `flags.isoroll.backgroundYScale` | number | scene | 1 | Background image Y-scale multiplier (set via GridConfig Vertical Scale field) |
 | `flags.isoroll.tileFlipped` | boolean | tile | false | Swap tile width↔height (mirror) |
 | `flags.isoroll.showImageManipulation` | boolean | tile+token | true | Show image contour + imgOffset/imgScale/swapSide handles on select |
 | `flags.isoroll.showVolumeManipulation` | boolean | tile+token | true | Show 3D box + elevation handle on select (tiles also: width/height/boundH/scale/move) |
@@ -73,6 +77,8 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - `mesh.scale.set()` (absolute) is safe on every refresh; only `*=` patterns need meshReset guard
 - `addIsorollTab` has no double-inject guard — if `renderSceneConfig` fires more than once for the same dialog (edge case), the Iso tab will appear twice; add `if ($html.find(\`a[data-tab="${TAB}"]\`).length) return;` at the top of `addIsorollTab` if this becomes a problem
 - AppV2 `stopPropagation` on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on the content section (see `scene-config.ts`)
+- **GridConfig `_processSubmitData`** only calls `super._processSubmitData` when one of 7 native fields changed (`width/height/padding/shiftX/shiftY/grid.size/grid.type`). Module-specific form fields are silently skipped. Workaround: instance-level patch on `app._processSubmitData` at `renderGridConfig` time.
+- **GridConfig `updateTransform` centering**: when overriding the bg sprite's `updateTransform`, `scY` in the position formula (the `R·S·(-tw/2,-th/2)` center offset) must include `bgYScale` — if only `scale.set()` uses it, the visual center shifts vertically instead of scaling around center.
 
 ## See Also
 
