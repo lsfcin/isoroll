@@ -1,5 +1,6 @@
 // Interactive handles + dashed contour for background image, shown only in GridConfig.
 import { getProjection } from "../transform/constants";
+import { CanvasTransform } from "../transform/canvas-transform";
 import { MODULE_ID } from "./flags";
 import { clientToGlobal } from "./gizmos-drag";
 import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "./gizmos-handles";
@@ -89,7 +90,8 @@ export class BackgroundGizmos {
     const html  = BackgroundGizmos.currentHtml;
     const layer = BackgroundGizmos.ensureLayer();
     const proj  = getProjection(canvas.scene);
-    const isoCT = canvas.scene?.getFlag(MODULE_ID, "enabled") === true && canvas.scene?.getFlag(MODULE_ID, "transformBackground") !== true;
+    const _po   = CanvasTransform.previewOverride;
+    const isoCT = (_po?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true)) && !(_po?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true));
     const cosR  = isoCT ? Math.cos(proj.reverseRotation) : 1;
     const sinR  = isoCT ? Math.sin(proj.reverseRotation) : 0;
     const previewBg = BackgroundGizmos.previewBg;
