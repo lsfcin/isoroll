@@ -99,10 +99,11 @@ export function addEndpointHandles(
   for (const [ep, ix, iy] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
     const h = new PIXI.Graphics();
     h.name = `ep-${wallId}-${ep}`;
-    h.lineStyle(0.5, 0x000000, 0.8);
+    h.lineStyle(2, 0x000000, 0.9);
     h.beginFill(color, 0.9);
     h.drawCircle(0, 0, r);
     h.endFill();
+    h.hitArea = new PIXI.Circle(0, 0, 6);
     h.x = c[ix]; h.y = c[iy];
     h.eventMode = "static"; h.cursor = "crosshair";
     const _ep = ep;

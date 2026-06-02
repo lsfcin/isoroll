@@ -5,10 +5,11 @@ import type { WallDef, TileAnchor, DoorBehavior } from "./wall-types";
 export type TileDoc = TileDocument & { x: number; y: number; width: number; height: number };
 export type WallDoc = WallDocument & {
   c: number[];
-  ds: number;     // door state: 0=closed 1=open 2=locked
-  door: number;   // 0=none 1=door 2=secret
+  ds: number;      // door state: 0=closed 1=open 2=locked
+  door: number;    // 0=none 1=door 2=secret
   move: number;
-  sense: number;
+  sight: number;   // v14+ field name (was "sense" in v12/v13)
+  sense: number;   // v12/v13 fallback
   light: number;
   sound: number;
   dir: number;

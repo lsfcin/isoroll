@@ -21,17 +21,17 @@ export function wallColor(doc: WallDoc): number {
   if (doc.door === 2) return WALL_COLORS.secret;
   if (doc.door === 1) return WALL_COLORS.door;
   const m = doc.move ?? 0;
-  const s = doc.sense ?? 0;
+  // v14 renamed "sense" → "sight"; fall back to sense for older versions
+  const s = doc.sight ?? doc.sense ?? 0;
   // Terrain: v14 DISTANCE=30/PROXIMITY=40, v13 TERRAIN=3/DISTANCE=6
   if (s === 30 || s === 40 || s === 6 || s === 3) return WALL_COLORS.terrain;
   // Window: v14 LIMITED=10, v13 LIMITED=1
   if (s === 10 || s === 1) return WALL_COLORS.window;
-  // Ethereal: movement passes through.
-  // v14: NORMAL=10 blocks; NONE=0 doesn't block (ethereal appearance).
-  // v13: NORMAL=1 blocks; ETHEREAL=2 doesn't block.
+  // Ethereal: movement passes through
+  // v14: NORMAL=10 blocks; NONE=0 doesn't (ethereal). v13: NORMAL=1 blocks; ETHEREAL=2 doesn't.
   const moveBlocks = m === 1 || m >= 10;
   if (!moveBlocks) return WALL_COLORS.ethereal;
-  // Invisible: movement blocks but sight passes (sense=NONE=0)
+  // Invisible: movement blocks, sight passes (NONE=0)
   if (s === 0) return WALL_COLORS.invisible;
   return WALL_COLORS.normal;
 }
@@ -41,6 +41,8 @@ export class WallOverlay {
   private static _boxes: Map<string, PIXI.Container> = new Map();
   private static _selectTile: string | null = null;
   private static _altMode = false;
+  private static _pendingRefresh: Set<string> = new Set();
+  private static _rafId: number | null = null;
 
   static activate(): void {
     Hooks.on("canvasReady", () => WallOverlay.clearAll());
@@ -56,13 +58,9 @@ export class WallOverlay {
     WallOverlay.hide(tile.id);
     const layer = WallOverlay._ensureLayer();
     const ctr   = new PIXI.Container();
-    if (WallOverlay._selectTile === tile.id) {
-      ctr.eventMode = "auto";
-      WallOverlay._drawSelect(ctr, tile.document);
-    } else {
-      ctr.eventMode = "auto";
-      WallOverlay._drawDisplay(ctr, tile.document);
-    }
+    ctr.eventMode = "auto";
+    if (WallOverlay._selectTile === tile.id) WallOverlay._drawSelect(ctr, tile.document);
+    else WallOverlay._drawDisplay(ctr, tile.document);
     layer.addChild(ctr);
     WallOverlay._boxes.set(tile.id, ctr);
     WallOverlay._bringToTop();
@@ -90,7 +88,20 @@ export class WallOverlay {
   static enterSelect(tile: Tile): void { WallOverlay._selectTile = tile.id; WallOverlay.show(tile); }
   static exitSelect(tile: Tile): void  { WallOverlay._selectTile = null;    WallOverlay.show(tile); }
   static isSelectMode(tileId: string): boolean { return WallOverlay._selectTile === tileId; }
-  static refresh(tile: Tile): void { if (WallOverlay._boxes.has(tile.id)) WallOverlay.show(tile); }
+  static refresh(tile: Tile): void {
+    if (!WallOverlay._boxes.has(tile.id)) return;
+    WallOverlay._pendingRefresh.add(tile.id);
+    if (WallOverlay._rafId !== null) return;
+    WallOverlay._rafId = requestAnimationFrame(() => {
+      WallOverlay._rafId = null;
+      for (const id of WallOverlay._pendingRefresh) {
+        if (!WallOverlay._boxes.has(id)) continue;
+        const t = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(id);
+        if (t) WallOverlay.show(t);
+      }
+      WallOverlay._pendingRefresh.clear();
+    });
+  }
 
   private static _setAltMode(active: boolean): void {
     if (WallOverlay._altMode === active) return;
@@ -131,15 +142,17 @@ export class WallOverlay {
       const g     = new PIXI.Graphics();
       g.name      = `line-${id}`;
       g.eventMode = "static";
-      // Wide transparent hit area first (easier to hover)
-      g.lineStyle(10, 0x000000, 0.001);
-      g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       // Black outline, then colored line on top
       g.lineStyle(LINE_W + 2, 0x000000, 0.8);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(LINE_W, color, 1);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
+      // Explicit hit area: rotated rectangle 8px wide around the line
+      { const dx = c[2]-c[0], dy = c[3]-c[1], l = Math.sqrt(dx*dx+dy*dy)||1;
+        const nx = (-dy/l)*5, ny = (dx/l)*5, ex = (dx/l)*4, ey = (dy/l)*4;
+        g.hitArea = new PIXI.Polygon([c[0]-ex+nx,c[1]-ey+ny, c[2]+ex+nx,c[3]+ey+ny,
+                                      c[2]+ex-nx,c[3]+ey-ny, c[0]-ex-nx,c[1]-ey-ny]); }
       ctr.addChild(g);
       addEndpointHandles(ctr, c, id, doc, color, r);
       addLineHover(g, id, ctr, (c[0] + c[2]) / 2, (c[1] + c[3]) / 2);
@@ -169,7 +182,7 @@ export class WallOverlay {
       g.lineStyle(0);
       // Endpoint circles (visual only, matches Wall layer appearance)
       for (const [ix, iy] of [[0,1],[2,3]] as [number,number][]) {
-        g.lineStyle(0.5, 0x000000, 0.6);
+        g.lineStyle(2, 0x000000, 0.8);
         g.beginFill(col, isLnk ? 1 : UNLINKED_ALPHA);
         g.drawCircle(c[ix], c[iy], r);
         g.endFill();
