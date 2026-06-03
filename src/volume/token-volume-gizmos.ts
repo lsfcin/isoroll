@@ -1,6 +1,6 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
 import { getProjection } from "../transform/constants";
-import { MODULE_ID, VolumeFlags } from "./flags";
+import { VolumeFlags } from "./flags";
 import { makeElevHandle } from "./gizmos-handles";
 import { clientToGlobal } from "./gizmos-drag";
 
@@ -27,10 +27,6 @@ export class TokenVolumeGizmos {
     Hooks.on("refreshToken", TokenVolumeGizmos.onRefreshToken);
   }
 
-  private static isEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
-  }
-
   private static onCanvasReady(): void { TokenVolumeGizmos.clearAll(); }
 
   private static onUpdateScene(scene: Scene): void {
@@ -39,13 +35,13 @@ export class TokenVolumeGizmos {
   }
 
   private static onControlToken(token: Token, controlled: boolean): void {
-    if (!TokenVolumeGizmos.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (controlled) TokenVolumeGizmos.show(token);
     else TokenVolumeGizmos.hide(token.id);
   }
 
   private static onRefreshToken(token: Token): void {
-    if (!TokenVolumeGizmos.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (!TokenVolumeGizmos.sets.has(token.id)) return;
     const x = token.document.x ?? 0, y = token.document.y ?? 0;
     const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;

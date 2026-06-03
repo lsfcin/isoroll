@@ -1,5 +1,5 @@
 // White dashed image contour drawn on selected tokens.
-import { MODULE_ID, VolumeFlags } from "./flags";
+import { VolumeFlags } from "./flags";
 import { BLACK, DASH_LEN, GAP_LEN, drawDash } from "./overlay-geometry";
 
 export class TokenOverlay {
@@ -13,10 +13,6 @@ export class TokenOverlay {
     Hooks.on("refreshToken", TokenOverlay.onRefreshToken);
   }
 
-  private static isEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
-  }
-
   private static onCanvasReady(): void { TokenOverlay.clearAll(); }
 
   private static onUpdateScene(scene: Scene): void {
@@ -25,13 +21,13 @@ export class TokenOverlay {
   }
 
   private static onControlToken(token: Token, controlled: boolean): void {
-    if (!TokenOverlay.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (controlled) TokenOverlay.show(token);
     else TokenOverlay.hide(token.id);
   }
 
   private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
-    if (!TokenOverlay.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (!TokenOverlay.boxes.has(token.id)) return;
     if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
     TokenOverlay.show(token);

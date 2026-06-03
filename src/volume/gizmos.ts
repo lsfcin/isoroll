@@ -22,10 +22,6 @@ export class VolumeGizmos {
     Hooks.on("refreshTile",   VolumeGizmos.onRefreshTile);
   }
 
-  private static isEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
-  }
-
   private static onCanvasReady(): void { VolumeGizmos.clearAll(); }
 
   private static onUpdateScene(scene: Scene): void {
@@ -34,13 +30,13 @@ export class VolumeGizmos {
   }
 
   private static onControlTile(tile: Tile, controlled: boolean): void {
-    if (!VolumeGizmos.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (controlled) { VolumeGizmos.show(tile); VolumeGizmos.suppressRotateHandle(tile); }
     else              { VolumeGizmos.hide(tile.id); }
   }
 
   private static onRefreshTile(tile: Tile): void {
-    if (!VolumeGizmos.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (!VolumeGizmos.sets.has(tile.id)) return;
     // Skip while drag-preview clone exists: server update fires refreshState on the original
     // tile (old doc position) before the clone is cleared, causing a 1-frame blink.

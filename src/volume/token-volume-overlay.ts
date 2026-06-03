@@ -1,5 +1,5 @@
 // 3D bounding box overlay drawn on selected tokens.
-import { MODULE_ID, VolumeFlags } from "./flags";
+import { VolumeFlags } from "./flags";
 import { computeTokenVerts, drawBox, drawAnchorLine } from "./overlay-geometry";
 
 type TokenVolumeState = { x: number; y: number; elev: number; boundH: number };
@@ -16,10 +16,6 @@ export class TokenVolumeOverlay {
     Hooks.on("refreshToken", TokenVolumeOverlay.onRefreshToken);
   }
 
-  private static isEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
-  }
-
   private static onCanvasReady(): void { TokenVolumeOverlay.clearAll(); }
 
   private static onUpdateScene(scene: Scene): void {
@@ -28,13 +24,13 @@ export class TokenVolumeOverlay {
   }
 
   private static onControlToken(token: Token, controlled: boolean): void {
-    if (!TokenVolumeOverlay.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (controlled) TokenVolumeOverlay.show(token);
     else TokenVolumeOverlay.hide(token.id);
   }
 
   private static onRefreshToken(token: Token): void {
-    if (!TokenVolumeOverlay.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (!TokenVolumeOverlay.boxes.has(token.id)) return;
     // The 3D box is positioned by document values (not animated mesh). During movement
     // animation the document is already at the destination, so skip redundant redraws.

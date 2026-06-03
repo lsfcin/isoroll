@@ -29,10 +29,6 @@ export class TokenGizmos {
     Hooks.on("refreshToken", TokenGizmos.onRefreshToken);
   }
 
-  private static isEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
-  }
-
   private static onCanvasReady(): void { TokenGizmos.clearAll(); }
 
   private static onUpdateScene(scene: Scene): void {
@@ -41,13 +37,13 @@ export class TokenGizmos {
   }
 
   private static onControlToken(token: Token, controlled: boolean): void {
-    if (!TokenGizmos.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (controlled) TokenGizmos.show(token);
     else TokenGizmos.hide(token.id);
   }
 
   private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
-    if (!TokenGizmos.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (!TokenGizmos.sets.has(token.id)) return;
     if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
     TokenGizmos.show(token);

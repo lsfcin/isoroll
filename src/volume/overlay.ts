@@ -1,5 +1,5 @@
 // Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer.
-import { MODULE_ID, VolumeFlags } from "./flags";
+import { VolumeFlags } from "./flags";
 import {
   BLACK, DASH_LEN, GAP_LEN,
   P, computeVerts, drawDash, drawBox, drawAnchorLine,
@@ -16,10 +16,6 @@ export class VolumeOverlay {
     Hooks.on("refreshTile",   VolumeOverlay.onRefreshTile);
   }
 
-  private static isEnabled(): boolean {
-    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
-  }
-
   private static onCanvasReady(): void { VolumeOverlay.clearAll(); }
 
   private static onUpdateScene(scene: Scene): void {
@@ -28,13 +24,13 @@ export class VolumeOverlay {
   }
 
   private static onControlTile(tile: Tile, controlled: boolean): void {
-    if (!VolumeOverlay.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (controlled) VolumeOverlay.show(tile);
     else VolumeOverlay.hide(tile.id);
   }
 
   private static onRefreshTile(tile: Tile): void {
-    if (!VolumeOverlay.isEnabled()) return;
+    if (!VolumeFlags.isSceneEnabled()) return;
     if (!VolumeOverlay.boxes.has(tile.id)) return;
     // Skip while drag-preview clone exists: server update fires refreshState on the original
     // tile (old doc position) before the clone is cleared, causing a 1-frame blink.
