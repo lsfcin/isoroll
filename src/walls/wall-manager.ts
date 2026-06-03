@@ -95,6 +95,10 @@ export class WallManager {
       return `<div class="control-icon isoroll-door-mode" data-tooltip="${tt("ISOROLL.WallManager." + key)}"><i class="fas ${icon}"></i></div>`;
     })() : "";
 
+    // Remove any existing isoroll buttons + handlers before re-adding (HUD may re-render in-place)
+    $html.find(".isoroll-gen-walls, .isoroll-select-walls, .isoroll-unlink-walls, .isoroll-delete-walls, .isoroll-door-mode").remove();
+    $html.off("click.isoroll");
+
     $html.find(".col.right").append(`
       <div class="control-icon isoroll-gen-walls" data-tooltip="${tt("ISOROLL.WallManager.GenerateBase")}">
         <i class="fas fa-border-all"></i>${wc > 0 ? `<span class="isoroll-wall-badge">${wc}</span>` : ""}
@@ -113,11 +117,11 @@ export class WallManager {
 
     const rerender = () => (hud as unknown as { render(): void }).render();
 
-    $html.on("click", ".isoroll-gen-walls",    () => wrap(async () => { await generateBaseWalls(doc); rerender(); }, "generate base walls"));
-    $html.on("click", ".isoroll-unlink-walls", () => wrap(async () => { await unlinkAllWalls(doc);    rerender(); }, "unlink walls"));
-    $html.on("click", ".isoroll-delete-walls", () => wrap(async () => { await deleteLinkedWalls(doc); rerender(); }, "delete walls"));
-    $html.on("click", ".isoroll-door-mode",    () => wrap(async () => { await cycleDoorBehavior(doc); rerender(); }, "cycle door behavior"));
-    $html.on("click", ".isoroll-select-walls", (e) => {
+    $html.on("click.isoroll", ".isoroll-gen-walls",    () => wrap(async () => { await generateBaseWalls(doc); rerender(); }, "generate base walls"));
+    $html.on("click.isoroll", ".isoroll-unlink-walls", () => wrap(async () => { await unlinkAllWalls(doc);    rerender(); }, "unlink walls"));
+    $html.on("click.isoroll", ".isoroll-delete-walls", () => wrap(async () => { await deleteLinkedWalls(doc); rerender(); }, "delete walls"));
+    $html.on("click.isoroll", ".isoroll-door-mode",    () => wrap(async () => { await cycleDoorBehavior(doc); rerender(); }, "cycle door behavior"));
+    $html.on("click.isoroll", ".isoroll-select-walls", (e) => {
       const $btn = $(e.currentTarget as HTMLElement);
       if (WallOverlay.isSelectMode(tile.id)) {
         WallOverlay.exitSelect(tile);
