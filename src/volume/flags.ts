@@ -72,4 +72,8 @@ export class VolumeFlags {
   static getPresetEnabled(doc: { getFlag(s: string, k: string): unknown }): boolean {
     return doc.getFlag(MODULE_ID, "presetEnabled") !== false;
   }
+
+  static isSceneEnabled(): boolean {
+    return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
+  }
 }
