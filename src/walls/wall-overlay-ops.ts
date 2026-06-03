@@ -103,11 +103,14 @@ export function addEndpointHandles(
     h.hitArea = new PIXI.Circle(0, 0, 6);
     h.x = c[ix]; h.y = c[iy];
     h.eventMode = "static"; h.cursor = "crosshair";
-    const _ep = ep;
+    const _ep = ep; let lastEp = 0;
     h.on("pointerover", () => { scaleEndpoints(ctr, wallId, 1.3); showWallHud(wallId, midX, midY); });
     h.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
     h.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
       e.stopPropagation();
+      const now = Date.now();
+      if (now - lastEp < 350) { lastEp = 0; (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true); return; }
+      lastEp = now;
       startEndpointDrag(wallId, _ep, tileDoc, ctr, color, r);
     });
     ctr.addChild(h);
