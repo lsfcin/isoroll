@@ -35,9 +35,11 @@ export class WallManager {
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
   ): void {
+    const wc = getLinkedWallIds(doc).length;
+    console.log(`isoroll|dbg onUpdateTile keys=${JSON.stringify(Object.keys(changes))} opts=${JSON.stringify(options)} linkedWalls=${wc}`);
     if (options.isoroll === "preset") return;
     const posOrSize = "x" in changes || "y" in changes || "width" in changes || "height" in changes;
-    if (!posOrSize || !getLinkedWallIds(doc).length) return;
+    if (!posOrSize || !wc) return;
     wrap(() => updateLinkedWallPositions(doc), "wall position update");
   }
 

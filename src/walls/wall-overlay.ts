@@ -47,6 +47,7 @@ export class WallOverlay {
   static activate(): void {
     Hooks.on("canvasReady", () => WallOverlay.clearAll());
     Hooks.on("controlTile", (tile: Tile, controlled: boolean) => {
+      console.log(`isoroll|dbg controlTile controlled=${controlled} tile=${tile.id}`);
       if (controlled) WallOverlay.show(tile);
       else { WallOverlay._selectTile = null; WallOverlay.hide(tile.id); }
     });
