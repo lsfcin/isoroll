@@ -70,9 +70,11 @@ export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Contain
 }
 
 export function addWallDblClick(g: PIXI.Graphics, wallId: string): void {
-  g.on("dblclick", () => {
-    const wall = wallsLayer().get(wallId);
-    (wall as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true);
+  let last = 0;
+  g.on("pointerdown", () => {
+    const now = Date.now();
+    if (now - last < 350) { last = 0; (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true); }
+    else last = now;
   });
 }
 
