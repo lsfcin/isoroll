@@ -13,14 +13,9 @@ function hudEl(): HTMLElement {
   if (!_hudEl) {
     const el = document.createElement("div");
     el.id = "isoroll-wall-hud";
-    el.style.cssText = [
-      "position:fixed", "display:none", "z-index:9999",
-      "cursor:pointer", "width:22px", "height:22px",
-      "background:rgba(0,0,0,0.65)", "border-radius:3px",
-      "border:1px solid rgba(255,255,255,0.3)",
-      "display:none", "align-items:center", "justify-content:center",
-      "color:#fff", "font-size:11px", "pointer-events:auto",
-    ].join(";");
+    el.style.cssText = "position:fixed;z-index:9999;display:none;cursor:pointer;width:22px;height:22px;" +
+      "background:rgba(0,0,0,0.65);border-radius:3px;border:1px solid rgba(255,255,255,0.3);" +
+      "align-items:center;justify-content:center;color:#fff;font-size:11px;pointer-events:auto";
     el.innerHTML = '<i class="fas fa-cog"></i>';
     document.body.appendChild(el);
     _hudEl = el;
@@ -64,8 +59,6 @@ export function hideWallHud(): void {
   _hudWallId = null;
 }
 
-// ── Wall line hover → show HUD + scale endpoint circles ──────────────────────
-
 function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
   (ctr.getChildByName(`ep-${wallId}-A`) as PIXI.Graphics | null)?.scale.set(s);
   (ctr.getChildByName(`ep-${wallId}-B`) as PIXI.Graphics | null)?.scale.set(s);
@@ -74,6 +67,17 @@ function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
 export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Container, midX: number, midY: number): void {
   g.on("pointerover", () => { scaleEndpoints(ctr, wallId, 1.3); showWallHud(wallId, midX, midY); });
   g.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
+}
+
+export function addLineToggle(g: PIXI.Graphics, wallId: string, doc: TileDocument, refresh: () => void): void {
+  g.cursor = "pointer";
+  g.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
+    e.stopPropagation();
+    const ne = (e as unknown as { nativeEvent?: Event }).nativeEvent;
+    ne?.stopPropagation?.(); ne?.stopImmediatePropagation?.();
+    const ids = getLinkedWallIds(doc);
+    setLinkedWallIds(doc, ids.filter(x => x !== wallId)).then(refresh).catch(console.warn);
+  });
 }
 
 // ── Endpoint drag handles (circles, same color as wall line) ──────────────────
@@ -86,10 +90,7 @@ function snapQuarter(x: number, y: number): { x: number; y: number } {
 function globalToCanvas(gx: number, gy: number): { x: number; y: number } {
   const m = (canvas.app as unknown as { stage: { worldTransform: PIXI.Matrix } }).stage.worldTransform;
   const det = m.a * m.d - m.b * m.c;
-  return {
-    x: (gx * m.d - gy * m.c - m.tx * m.d + m.ty * m.c) / det,
-    y: (-gx * m.b + gy * m.a + m.tx * m.b - m.ty * m.a) / det,
-  };
+  return { x: (gx*m.d - gy*m.c - m.tx*m.d + m.ty*m.c)/det, y: (-gx*m.b + gy*m.a + m.tx*m.b - m.ty*m.a)/det };
 }
 
 export function addEndpointHandles(
