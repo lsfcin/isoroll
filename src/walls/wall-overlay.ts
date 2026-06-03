@@ -169,9 +169,8 @@ export class WallOverlay {
       const isLnk = linked.has(id);
       const col   = wallColor(wdoc);
       const g     = new PIXI.Graphics();
-      // Wide transparent hit area first
-      g.lineStyle(16, 0x000000, 0.001);
-      g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
+      { const dx=c[2]-c[0], dy=c[3]-c[1], l=Math.sqrt(dx*dx+dy*dy)||1, nx=(-dy/l)*6, ny=(dx/l)*6, ex=(dx/l)*5, ey=(dy/l)*5;
+        g.hitArea = new PIXI.Polygon([c[0]-ex+nx,c[1]-ey+ny, c[2]+ex+nx,c[3]+ey+ny, c[2]+ex-nx,c[3]+ey-ny, c[0]-ex-nx,c[1]-ey-ny]); }
       const la = isLnk ? 1 : UNLINKED_ALPHA;
       g.lineStyle(LINE_W + 1.5, 0x000000, la);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
