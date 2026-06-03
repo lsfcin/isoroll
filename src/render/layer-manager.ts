@@ -1,0 +1,75 @@
+// Central PIXI layer registry: creation, z-order policy, and teardown for all overlay layers.
+
+const layers = new Map<string, PIXI.Container>();
+let zOrder: string[] = [];
+
+function stage(): PIXI.Container {
+  return canvas.stage as unknown as PIXI.Container;
+}
+
+export const LayerManager = {
+  // Get or create a named layer on canvas.stage. Recreates if detached.
+  ensureLayer(key: string): PIXI.Container {
+    let l = layers.get(key);
+    if (l && !l.parent) l = undefined;
+    if (!l) {
+      l = new PIXI.Container();
+      l.eventMode = "passive";
+      stage().addChild(l);
+      layers.set(key, l);
+    }
+    return l;
+  },
+
+  // Move layer to top of stage display list.
+  bringToTop(key: string): void {
+    const l = layers.get(key);
+    if (!l) return;
+    try { stage().removeChild(l); } catch { /* detached */ }
+    stage().addChild(l);
+  },
+
+  // Destroy a layer and all its children; remove from registry.
+  clearLayer(key: string): void {
+    const l = layers.get(key);
+    if (!l) return;
+    try { stage().removeChild(l); } catch { /* detached */ }
+    l.destroy({ children: true });
+    layers.delete(key);
+  },
+
+  // Destroy all registered layers.
+  clearAll(): void {
+    for (const key of [...layers.keys()]) LayerManager.clearLayer(key);
+  },
+
+  // Set the canonical z-order. Call from module.ts after all activate()s.
+  declareOrder(keys: string[]): void {
+    zOrder = [...keys];
+  },
+
+  // Re-sort all active layers to match the declared order.
+  // Call from the topmost layer's bringToTop to enforce order declaratively.
+  enforceOrder(): void {
+    if (!zOrder.length) return;
+    const s = stage();
+    for (const key of zOrder) {
+      const l = layers.get(key);
+      if (!l?.parent) continue;
+      try { s.removeChild(l); } catch { /* detached */ }
+      s.addChild(l);
+    }
+  },
+};
+
+// String keys for all overlay layers. Use these instead of raw strings.
+export const LAYER_KEYS = {
+  VOLUME_OVERLAY:       "volume-overlay",
+  VOLUME_GIZMOS:        "volume-gizmos",
+  TOKEN_OVERLAY:        "token-overlay",
+  TOKEN_VOLUME_OVERLAY: "token-volume-overlay",
+  TOKEN_GIZMOS:         "token-gizmos",
+  TOKEN_VOLUME_GIZMOS:  "token-volume-gizmos",
+  BG_GIZMOS:            "bg-gizmos",
+  WALL_OVERLAY:         "wall-overlay",
+} as const;
