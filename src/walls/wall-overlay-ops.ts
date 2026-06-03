@@ -69,6 +69,13 @@ export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Contain
   g.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
 }
 
+export function addWallDblClick(g: PIXI.Graphics, wallId: string): void {
+  g.on("dblclick", () => {
+    const wall = wallsLayer().get(wallId);
+    (wall as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true);
+  });
+}
+
 // ── Endpoint drag handles (circles, same color as wall line) ──────────────────
 
 function snapQuarter(x: number, y: number): { x: number; y: number } {
