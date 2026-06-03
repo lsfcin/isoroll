@@ -38,18 +38,22 @@ export function tileRect(doc: TileDoc): { left: number; top: number; w: number; 
   return { left: doc.x - doc.width / 2, top: doc.y - doc.height / 2, w: doc.width, h: doc.height };
 }
 
-// Anchors are normalized positions in image space (0=image-left, 1=image-right).
-// Image center = tile center + imageOffset; image size = footprint × imageScale.
-// At default imgOff=0 + imgScale=1 this collapses to the footprint formula.
+// Anchors are in S-normalized space: both axes share S = max(docW, docH, boundH_px) × imgScale.
+// Image center includes elevation offset; heightDir = {+1, -1} for all isoroll projections.
 export function imageRect(doc: TileDoc): { icx: number; icy: number; sw: number; sh: number } {
-  const gs = (canvas as unknown as { grid?: { size?: number } }).grid?.size ?? 100;
+  const gs  = (canvas as unknown as { grid?: { size?: number } }).grid?.size ?? 100;
+  const gd  = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
   const imgOff   = VolumeFlags.getImageOffset(doc);
   const imgScale = VolumeFlags.getImageScale(doc);
+  const elev     = (doc as unknown as { elevation?: number }).elevation ?? 0;
+  const E        = elev * gs / gd;
+  const boundH   = VolumeFlags.getTileHeight(doc) * gs;
+  const S        = Math.max(doc.width, doc.height, boundH) * imgScale;
   return {
-    icx: doc.x + imgOff.x * gs,
-    icy: doc.y + imgOff.y * gs,
-    sw:  doc.width  * imgScale,
-    sh:  doc.height * imgScale,
+    icx: doc.x + E + imgOff.x * gs,    // heightDir.x = +1
+    icy: doc.y - E + imgOff.y * gs,    // heightDir.y = -1
+    sw:  S,
+    sh:  S,
   };
 }
 

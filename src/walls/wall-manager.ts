@@ -37,16 +37,18 @@ export class WallManager {
   ): void {
     if (options.isoroll === "preset") return;
     if (!getLinkedWallIds(doc).length) return;
-    const posOrSize = "x" in changes || "y" in changes || "width" in changes || "height" in changes;
-    const isoFlags = (changes as Record<string, Record<string, unknown>>)?.flags?.[MODULE_ID] ?? {};
-    const tileFlippedChanged  = "tileFlipped"  in isoFlags;
-    const imagePropsChanged   = "imageOffset"  in isoFlags || "imageScale" in isoFlags;
+    const posOrSize   = "x" in changes || "y" in changes || "width" in changes || "height" in changes;
+    const elevChanged = "elevation" in changes;
+    const isoFlags    = (changes as Record<string, Record<string, unknown>>)?.flags?.[MODULE_ID] ?? {};
+    const tileFlippedChanged = "tileFlipped" in isoFlags;
+    const imagePropsChanged  = "imageOffset" in isoFlags || "imageScale" in isoFlags;
+    const boundHChanged      = "boundHeight" in isoFlags;
     if (tileFlippedChanged) {
       // swapSide changes width+height+tileFlipped in one update.
       // flipLinkedWallAnchorsX handles the full transform so skip updateLinkedWallPositions.
       const sizeSwapped = "width" in changes && "height" in changes;
       wrap(() => flipLinkedWallAnchorsX(doc, sizeSwapped), "wall flip");
-    } else if (posOrSize || imagePropsChanged) {
+    } else if (posOrSize || elevChanged || imagePropsChanged || boundHChanged) {
       wrap(() => updateLinkedWallPositions(doc), "wall position update");
     }
   }
