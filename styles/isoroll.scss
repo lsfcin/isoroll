@@ -12,6 +12,11 @@
   max-height: 55vh;
 }
 
+// Pointer cursor for all isoroll TileHUD buttons (divs don't inherit it)
+.control-icon[class*="isoroll-"] {
+  cursor: pointer;
+}
+
 // Wall count badge on TileHUD gen-walls button
 .control-icon.isoroll-gen-walls {
   position: relative;
