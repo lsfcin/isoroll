@@ -50,6 +50,11 @@ export class WallOverlay {
       if (controlled) WallOverlay.show(tile);
       else { WallOverlay._selectTile = null; WallOverlay.hide(tile.id); }
     });
+    // VolumeGizmos.bringToTop() runs on every refreshTile — stay above it by re-topping here.
+    // This handler registers after VolumeGizmos (WallManager activates last in module.ts).
+    Hooks.on("refreshTile", () => {
+      if (WallOverlay._boxes.size > 0) WallOverlay._bringToTop();
+    });
     window.addEventListener("keydown", e => { if (e.altKey) WallOverlay._setAltMode(true); });
     window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay._setAltMode(false); });
   }
