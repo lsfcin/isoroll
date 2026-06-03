@@ -36,6 +36,9 @@ export class VolumeOverlay {
   private static onRefreshTile(tile: Tile): void {
     if (!VolumeOverlay.isEnabled()) return;
     if (!VolumeOverlay.boxes.has(tile.id)) return;
+    // Skip while drag-preview clone exists: server update fires refreshState on the original
+    // tile (old doc position) before the clone is cleared, causing a 1-frame blink.
+    if ((tile as unknown as { hasPreview?: boolean }).hasPreview) return;
     VolumeOverlay.show(tile);
   }
 

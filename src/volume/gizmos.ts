@@ -42,6 +42,9 @@ export class VolumeGizmos {
   private static onRefreshTile(tile: Tile): void {
     if (!VolumeGizmos.isEnabled()) return;
     if (!VolumeGizmos.sets.has(tile.id)) return;
+    // Skip while drag-preview clone exists: server update fires refreshState on the original
+    // tile (old doc position) before the clone is cleared, causing a 1-frame blink.
+    if ((tile as unknown as { hasPreview?: boolean }).hasPreview) return;
     VolumeGizmos.show(tile);
     VolumeGizmos.suppressRotateHandle(tile);
   }
