@@ -1,5 +1,5 @@
 // Foundry shims, coordinate helpers, and linked-wall flag accessors.
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID, VolumeFlags } from "../volume/flags";
 import type { WallDef, TileAnchor, DoorBehavior } from "./wall-types";
 
 export type TileDoc = TileDocument & { x: number; y: number; width: number; height: number };
@@ -38,16 +38,39 @@ export function tileRect(doc: TileDoc): { left: number; top: number; w: number; 
   return { left: doc.x - doc.width / 2, top: doc.y - doc.height / 2, w: doc.width, h: doc.height };
 }
 
+// Anchors are normalized positions in image space (0=image-left, 1=image-right).
+// Image center = tile center + imageOffset; image size = footprint × imageScale.
+// At default imgOff=0 + imgScale=1 this collapses to the footprint formula.
+export function imageRect(doc: TileDoc): { icx: number; icy: number; sw: number; sh: number } {
+  const gs = (canvas as unknown as { grid?: { size?: number } }).grid?.size ?? 100;
+  const imgOff   = VolumeFlags.getImageOffset(doc);
+  const imgScale = VolumeFlags.getImageScale(doc);
+  return {
+    icx: doc.x + imgOff.x * gs,
+    icy: doc.y + imgOff.y * gs,
+    sw:  doc.width  * imgScale,
+    sh:  doc.height * imgScale,
+  };
+}
+
+export function anchorToCanvas(
+  icx: number, icy: number, sw: number, sh: number, a: TileAnchor,
+): [number, number, number, number] {
+  return [icx - sw/2 + a.ax * sw, icy - sh/2 + a.ay * sh,
+          icx - sw/2 + a.bx * sw, icy - sh/2 + a.by * sh];
+}
+
 export function defToCanvas(doc: TileDoc, def: WallDef): [number, number, number, number] {
-  const { left, top, w, h } = tileRect(doc);
-  return [left + def.ax * w, top + def.ay * h, left + def.bx * w, top + def.by * h];
+  const { icx, icy, sw, sh } = imageRect(doc);
+  return [icx - sw/2 + def.ax * sw, icy - sh/2 + def.ay * sh,
+          icx - sw/2 + def.bx * sw, icy - sh/2 + def.by * sh];
 }
 
 export function canvasToAnchor(doc: TileDoc, c: number[]): TileAnchor {
-  const { left, top, w, h } = tileRect(doc);
+  const { icx, icy, sw, sh } = imageRect(doc);
   return {
-    ax: (c[0] - left) / w, ay: (c[1] - top) / h,
-    bx: (c[2] - left) / w, by: (c[3] - top) / h,
+    ax: (c[0] - icx) / sw + 0.5, ay: (c[1] - icy) / sh + 0.5,
+    bx: (c[2] - icx) / sw + 0.5, by: (c[3] - icy) / sh + 0.5,
   };
 }
 

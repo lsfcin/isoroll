@@ -2,7 +2,7 @@ import { MODULE_ID, VolumeFlags } from "../volume/flags";
 import { WallHistory } from "./wall-history";
 import type { WallDef, WallConfig, DoorBehavior, TileAnchor } from "./wall-types";
 import {
-  wallsLayer, scene, tileRect, defToCanvas, canvasToAnchor,
+  wallsLayer, scene, tileRect, imageRect, anchorToCanvas, defToCanvas, canvasToAnchor,
   getLinkedWallIds, setLinkedWallIds,
   getDoorBehavior, setDoorBehavior, hasLinkedDoor,
   type TileDoc, type WallDoc,
@@ -58,15 +58,14 @@ export async function deleteLinkedWalls(doc: TileDocument, skipHistory = false):
 export async function updateLinkedWallPositions(doc: TileDocument): Promise<void> {
   const ids = getLinkedWallIds(doc);
   if (!ids.length) return;
-  const { left, top, w, h } = tileRect(doc as TileDoc);
+  const { icx, icy, sw, sh } = imageRect(doc as TileDoc);
   const updates: { _id: string; c: [number, number, number, number] }[] = [];
   for (const id of ids) {
     const wall = wallsLayer().get(id);
     if (!wall) continue;
     const anchor = wall.document.getFlag(MODULE_ID, "tileAnchor") as TileAnchor | undefined;
     if (!anchor) continue;
-    updates.push({ _id: id,
-      c: [left + anchor.ax * w, top + anchor.ay * h, left + anchor.bx * w, top + anchor.by * h] });
+    updates.push({ _id: id, c: anchorToCanvas(icx, icy, sw, sh, anchor) });
   }
   if (!updates.length) return;
   await scene().updateEmbeddedDocuments("Wall", updates, { isoroll: "wallMove" });
@@ -82,7 +81,7 @@ export async function updateLinkedWallPositions(doc: TileDocument): Promise<void
 export async function flipLinkedWallAnchorsX(doc: TileDocument, dimensionsSwapped: boolean): Promise<void> {
   const ids = getLinkedWallIds(doc);
   if (!ids.length) return;
-  const { left, top, w, h } = tileRect(doc as TileDoc);
+  const { icx, icy, sw, sh } = imageRect(doc as TileDoc);
   const updates: { _id: string; c: [number, number, number, number]; flags: object }[] = [];
   for (const id of ids) {
     const wall = wallsLayer().get(id);
@@ -94,7 +93,7 @@ export async function flipLinkedWallAnchorsX(doc: TileDocument, dimensionsSwappe
       : { ax: 1 - anchor.ax, ay: anchor.ay,       bx: 1 - anchor.bx, by: anchor.by };
     updates.push({
       _id: id,
-      c: [left + flipped.ax * w, top + flipped.ay * h, left + flipped.bx * w, top + flipped.by * h],
+      c: anchorToCanvas(icx, icy, sw, sh, flipped),
       flags: { [MODULE_ID]: { tileAnchor: flipped } },
     });
   }
