@@ -1,6 +1,7 @@
-// Geometry helpers for the 3D volume overlay: vertex computation, dashed-line drawing.
+// Geometry helpers for the 3D volume overlay: vertex computation and box drawing.
 import { getProjection } from "../transform/constants";
 import { VolumeFlags } from "./flags";
+export { drawDash } from "../draw/shapes";
 
 export const ORANGE   = 0xff9829;
 export const BLACK    = 0x000000;
@@ -27,25 +28,6 @@ export type P = { x: number; y: number };
 
 export function pt(x: number, y: number): P { return { x, y }; }
 
-// Manually draw a dashed line (PIXI.Graphics has no native dash support)
-export function drawDash(
-  g: PIXI.Graphics, x1: number, y1: number, x2: number, y2: number,
-  dashLen: number, gapLen: number,
-): void {
-  const dx = x2 - x1, dy = y2 - y1;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 0.5) return;
-  const ux = dx / len, uy = dy / len;
-  let pos = 0, drawing = true;
-  g.moveTo(x1, y1);
-  while (pos < len) {
-    const seg = Math.min(drawing ? dashLen : gapLen, len - pos);
-    pos += seg;
-    const ex = x1 + ux * pos, ey = y1 + uy * pos;
-    if (drawing) g.lineTo(ex, ey); else g.moveTo(ex, ey);
-    drawing = !drawing;
-  }
-}
 
 export function computeVerts(tile: Tile): BoxVerts {
   const tw = tile.document.width  ?? 0;

@@ -1,6 +1,7 @@
 // Handle factory functions for VolumeGizmos: diamond, screen-circle, face-parallelogram.
 import { getProjection } from "../transform/constants";
 import { HandleType } from "./gizmos-drag";
+export { drawDashedContour } from "../draw/shapes";
 
 export const HANDLE_SIZE = 10;
 export const HALF        = HANDLE_SIZE / 2;
@@ -157,23 +158,6 @@ export function bgCorner(
   return { x: cx + cosR * lx - sinR * ly, y: cy + sinR * lx + cosR * ly };
 }
 
-// Draw dashed polygon outline on a PIXI.Graphics in canvas space.
-export function drawDashedContour(g: PIXI.Graphics, pts: { x: number; y: number }[], dash: number, gap: number, dashAlt = dash, gapAlt = gap): void {
-  g.lineStyle(1.5, 0xffffff, 0.85);
-  for (let i = 0; i < pts.length; i++) {
-    const d = i % 2 === 0 ? dash : dashAlt, gp = i % 2 === 0 ? gap : gapAlt;
-    const a = pts[i], b = pts[(i + 1) % pts.length];
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    const nx = dx / len, ny = dy / len;
-    let t = 0, on = true;
-    while (t < len) {
-      const s = Math.min(on ? d : gp, len - t);
-      if (on) { g.moveTo(a.x + nx * t, a.y + ny * t); g.lineTo(a.x + nx * (t + s), a.y + ny * (t + s)); }
-      t += s; on = !on;
-    }
-  }
-}
 
 // Parallelogram that is a square in face-coordinate space (projected onto a box face).
 // uH/vH: half-vectors along the two face axes, in canvas pixels.
