@@ -1,18 +1,13 @@
 // PIXI overlay: shows linked walls when tile is selected, with select-mode picking.
-import { getLinkedWallIds, wallsLayer } from "./wall-core";
-import type { WallDoc } from "./wall-core";
+import { MODULE_ID } from "../volume/flags";
+import { getLinkedWallIds, wallsLayer, imageRect, anchorToCanvas } from "./wall-core";
+import type { WallDoc, TileDoc } from "./wall-core";
 import { addEndpointHandles, addLineHover, addSelectInteraction, addWallDblClick } from "./wall-overlay-ops";
 
 // Colors matching Foundry's Wall layer rendering exactly
 export const WALL_COLORS = {
-  normal:    0xFFFFBB,  // cream yellow
-  terrain:   0x81B90C,  // olive green
-  invisible: 0x77E7E8,  // cyan (sight passes)
-  ethereal:  0xC880FC,  // purple (movement passes)
-  sound:     0x00BFFF,  // sky blue (sound-only)
-  door:      0x6666EE,  // blue
-  secret:    0xA612D4,  // dark purple (secret door)
-  window:    0xC7D8FF,  // pale blue (limited sight)
+  normal: 0xFFFFBB, terrain: 0x81B90C, invisible: 0x77E7E8, ethereal: 0xC880FC,
+  sound: 0x00BFFF, door: 0x6666EE, secret: 0xA612D4, window: 0xC7D8FF,
 };
 const UNLINKED_ALPHA = 0.5;
 const LINE_W = 1;
@@ -52,20 +47,23 @@ export class WallOverlay {
     });
     // VolumeGizmos.bringToTop() runs on every refreshTile — stay above it by re-topping here.
     // This handler registers after VolumeGizmos (WallManager activates last in module.ts).
-    Hooks.on("refreshTile", () => {
+    Hooks.on("refreshTile", (rawTile: unknown) => {
       if (WallOverlay._boxes.size > 0) WallOverlay._bringToTop();
+      // Preview clone fires refreshTile with drag-updated doc.x/y — redraw walls at new position.
+      const t = rawTile as { id: string; hasPreview?: boolean; isPreview?: boolean };
+      if (WallOverlay._boxes.has(t.id) && !t.hasPreview && t.isPreview) WallOverlay.show(rawTile as any, true);
     });
     window.addEventListener("keydown", e => { if (e.altKey) WallOverlay._setAltMode(true); });
     window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay._setAltMode(false); });
   }
 
-  static show(tile: Tile): void {
+  static show(tile: Tile, isDrag = false): void {
     WallOverlay.hide(tile.id);
     const layer = WallOverlay._ensureLayer();
     const ctr   = new PIXI.Container();
     ctr.eventMode = "auto";
     if (WallOverlay._selectTile === tile.id) WallOverlay._drawSelect(ctr, tile.document);
-    else WallOverlay._drawDisplay(ctr, tile.document);
+    else WallOverlay._drawDisplay(ctr, tile.document, isDrag);
     layer.addChild(ctr);
     WallOverlay._boxes.set(tile.id, ctr);
     WallOverlay._bringToTop();
@@ -135,13 +133,15 @@ export class WallOverlay {
     s.addChild(l);
   }
 
-  private static _drawDisplay(ctr: PIXI.Container, doc: TileDocument): void {
+  private static _drawDisplay(ctr: PIXI.Container, doc: TileDocument, isDrag = false): void {
     const r = 2;
+    const rect = isDrag ? imageRect(doc as TileDoc) : null;
     for (const id of getLinkedWallIds(doc)) {
       const wall = wallsLayer().get(id);
       if (!wall) continue;
       const wdoc = wall.document as WallDoc;
-      const c = wdoc.c;
+      const a = isDrag && (wdoc.getFlag(MODULE_ID, "tileAnchor") as { ax: number; ay: number; bx: number; by: number } | undefined);
+      const c = (a && rect) ? anchorToCanvas(rect.icx, rect.icy, rect.sw, rect.sh, a) : wdoc.c as [number, number, number, number];
       const color = wallColor(wdoc);
       const g = new PIXI.Graphics();
       g.name = `line-${id}`;
