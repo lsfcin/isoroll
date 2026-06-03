@@ -16,7 +16,7 @@ export const HANDLE_COLOR: Record<HandleType, number> = {
   imgOffset: 0xffffff,  // overridden in makeHandleForType
   imgScale:  0xffffff,  // overridden in makeHandleForType
   imgYScale: 0xffffff,  // overridden in makeHandleForType
-  swapSide:  0xff0000,  // overridden in makeHandleForType
+  swapSide:  0xffffff,  // overridden in makeHandleForType
 };
 
 // Canvas-aligned square → appears as a diamond under the isometric stage transform.
@@ -129,7 +129,7 @@ export function makeSwapHandle(): PIXI.Container {
   const wrap = new PIXI.Container();
   wrap.rotation = proj.reverseRotation;
   wrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
-  const S = HANDLE_SIZE;
+  const S = HANDLE_SIZE * 0.7;
   const g = new PIXI.Graphics();
   g.lineStyle(0); g.beginFill(0xff0000, 0.01);
   g.drawRect(-S, -S, S * 2, S * 2); g.endFill();
@@ -138,7 +138,7 @@ export function makeSwapHandle(): PIXI.Container {
   for (const [ys, dir] of [[-ay, +1], [ay, -1]] as [number, 1|-1][]) {
     const tip  = dir * (-S * 0.7);
     const base = tip + dir * hl;
-    g.lineStyle(0.5, 0xffffff, 1); g.beginFill(0x000000, 1);
+    g.lineStyle(0.5, 0x000000, 1); g.beginFill(0xffffff, 1);
     g.drawPolygon([tip, ys,  base, ys - hh,  base, ys + hh]);
     g.endFill();
   }
