@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../volume/flags";
 import {
-  getLinkedWallIds, setLinkedWallIds, updateLinkedWallPositions,
+  getLinkedWallIds, setLinkedWallIds, updateLinkedWallPositions, flipLinkedWallAnchorsX,
   deleteLinkedWalls, generateBaseWalls, unlinkAllWalls,
   canvasToAnchor, hasLinkedDoor, getDoorBehavior, cycleDoorBehavior, applyDoorBehavior,
 } from "./wall-ops";
@@ -36,9 +36,18 @@ export class WallManager {
     options: Record<string, unknown>,
   ): void {
     if (options.isoroll === "preset") return;
+    if (!getLinkedWallIds(doc).length) return;
     const posOrSize = "x" in changes || "y" in changes || "width" in changes || "height" in changes;
-    if (!posOrSize || !getLinkedWallIds(doc).length) return;
-    wrap(() => updateLinkedWallPositions(doc), "wall position update");
+    const isoFlags = (changes as Record<string, Record<string, unknown>>)?.flags?.[MODULE_ID] ?? {};
+    const tileFlippedChanged = "tileFlipped" in isoFlags;
+    if (tileFlippedChanged) {
+      // swapSide changes width+height+tileFlipped in one update.
+      // flipLinkedWallAnchorsX handles the full transform so skip updateLinkedWallPositions.
+      const sizeSwapped = "width" in changes && "height" in changes;
+      wrap(() => flipLinkedWallAnchorsX(doc, sizeSwapped), "wall flip");
+    } else if (posOrSize) {
+      wrap(() => updateLinkedWallPositions(doc), "wall position update");
+    }
   }
 
   private static onDeleteTile(doc: TileDocument): void {
