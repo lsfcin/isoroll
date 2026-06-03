@@ -117,10 +117,17 @@ export class WallManager {
     $html.on("click", ".isoroll-unlink-walls", () => wrap(async () => { await unlinkAllWalls(doc);    rerender(); }, "unlink walls"));
     $html.on("click", ".isoroll-delete-walls", () => wrap(async () => { await deleteLinkedWalls(doc); rerender(); }, "delete walls"));
     $html.on("click", ".isoroll-door-mode",    () => wrap(async () => { await cycleDoorBehavior(doc); rerender(); }, "cycle door behavior"));
-    $html.on("click", ".isoroll-select-walls", () => {
-      if (WallOverlay.isSelectMode(tile.id)) WallOverlay.exitSelect(tile);
-      else WallOverlay.enterSelect(tile);
-      rerender();
+    $html.on("click", ".isoroll-select-walls", (e) => {
+      const $btn = $(e.currentTarget as HTMLElement);
+      if (WallOverlay.isSelectMode(tile.id)) {
+        WallOverlay.exitSelect(tile);
+        $btn.removeClass("active").attr("data-tooltip", tt("ISOROLL.WallManager.SelectWalls"));
+        $btn.find("i").attr("class", "fas fa-mouse-pointer");
+      } else {
+        WallOverlay.enterSelect(tile);
+        $btn.addClass("active").attr("data-tooltip", tt("ISOROLL.WallManager.DoneSelecting"));
+        $btn.find("i").attr("class", "fas fa-check");
+      }
     });
   }
 }
