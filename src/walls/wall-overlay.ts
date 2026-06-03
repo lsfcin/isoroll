@@ -1,7 +1,7 @@
 // PIXI overlay: shows linked walls when tile is selected, with select-mode picking.
 import { getLinkedWallIds, wallsLayer } from "./wall-core";
 import type { WallDoc } from "./wall-core";
-import { addEndpointHandles, addLineHover, addSelectInteraction, addWallDblClick, hideWallHud } from "./wall-overlay-ops";
+import { addEndpointHandles, addLineHover, addSelectInteraction, addWallDblClick } from "./wall-overlay-ops";
 
 // Colors matching Foundry's Wall layer rendering exactly
 export const WALL_COLORS = {
@@ -48,7 +48,7 @@ export class WallOverlay {
     Hooks.on("canvasReady", () => WallOverlay.clearAll());
     Hooks.on("controlTile", (tile: Tile, controlled: boolean) => {
       if (controlled) WallOverlay.show(tile);
-      else { WallOverlay._selectTile = null; hideWallHud(); WallOverlay.hide(tile.id); }
+      else { WallOverlay._selectTile = null; WallOverlay.hide(tile.id); }
     });
     window.addEventListener("keydown", e => { if (e.altKey) WallOverlay._setAltMode(true); });
     window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay._setAltMode(false); });
@@ -77,7 +77,6 @@ export class WallOverlay {
   static clearAll(): void {
     for (const id of [...WallOverlay._boxes.keys()]) WallOverlay.hide(id);
     WallOverlay._selectTile = null;
-    hideWallHud();
     if (WallOverlay._layer) {
       try { (canvas.stage as unknown as PIXI.Container).removeChild(WallOverlay._layer); } catch { /* ok */ }
       WallOverlay._layer.destroy({ children: true });
@@ -151,7 +150,7 @@ export class WallOverlay {
         g.hitArea = new PIXI.Polygon([c[0]-ex+nx,c[1]-ey+ny, c[2]+ex+nx,c[3]+ey+ny, c[2]+ex-nx,c[3]+ey-ny, c[0]-ex-nx,c[1]-ey-ny]); }
       ctr.addChild(g);
       addEndpointHandles(ctr, c, id, doc, color, r);
-      addLineHover(g, id, ctr, (c[0] + c[2]) / 2, (c[1] + c[3]) / 2);
+      addLineHover(g, id, ctr);
       addWallDblClick(g, id);
     }
   }

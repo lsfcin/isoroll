@@ -1,72 +1,16 @@
-// Interactive helpers: HTML HUD gear button, endpoint handles, drag, select toggle.
+// Interactive helpers: endpoint handles, drag, select toggle.
 import { MODULE_ID } from "../volume/flags";
 import { getLinkedWallIds, setLinkedWallIds, canvasToAnchor, wallsLayer, scene } from "./wall-core";
 import type { TileDoc } from "./wall-core";
-
-// ── HTML HUD gear button (screen-space, like TileHUD/TokenHUD) ────────────────
-
-let _hudEl: HTMLElement | null = null;
-let _hudWallId: string | null = null;
-let _hideTimer: ReturnType<typeof setTimeout> | null = null;
-
-function hudEl(): HTMLElement {
-  if (!_hudEl) {
-    const el = document.createElement("div");
-    el.id = "isoroll-wall-hud";
-    el.style.cssText = "position:fixed;z-index:9999;display:none;cursor:pointer;width:22px;height:22px;" +
-      "background:rgba(0,0,0,0.65);border-radius:3px;border:1px solid rgba(255,255,255,0.3);" +
-      "align-items:center;justify-content:center;color:#fff;font-size:11px;pointer-events:auto";
-    el.innerHTML = '<i class="fas fa-cog"></i>';
-    document.body.appendChild(el);
-    _hudEl = el;
-    el.addEventListener("mouseenter", () => {
-      if (_hideTimer) { clearTimeout(_hideTimer); _hideTimer = null; }
-    });
-    el.addEventListener("mouseleave", () => scheduleHideHud());
-    el.addEventListener("click", () => {
-      if (!_hudWallId) return;
-      const wall = wallsLayer().get(_hudWallId);
-      (wall as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true);
-    });
-  }
-  return _hudEl;
-}
-
-function canvasToScreenPos(cx: number, cy: number): { x: number; y: number } {
-  const m    = (canvas.app as unknown as { stage: { worldTransform: PIXI.Matrix } }).stage.worldTransform;
-  const rect = (canvas.app!.view as HTMLCanvasElement).getBoundingClientRect();
-  return { x: rect.left + m.a * cx + m.c * cy + m.tx,
-           y: rect.top  + m.b * cx + m.d * cy + m.ty };
-}
-
-function showWallHud(wallId: string, midCanvasX: number, midCanvasY: number): void {
-  if (_hideTimer) { clearTimeout(_hideTimer); _hideTimer = null; }
-  _hudWallId = wallId;
-  const pos = canvasToScreenPos(midCanvasX, midCanvasY);
-  const el  = hudEl();
-  el.style.left    = `${pos.x - 11}px`;
-  el.style.top     = `${pos.y + 10}px`;
-  el.style.display = "flex";
-}
-
-function scheduleHideHud(): void {
-  _hideTimer = setTimeout(() => { hudEl().style.display = "none"; _hudWallId = null; }, 120);
-}
-
-export function hideWallHud(): void {
-  if (_hideTimer) { clearTimeout(_hideTimer); _hideTimer = null; }
-  if (_hudEl) _hudEl.style.display = "none";
-  _hudWallId = null;
-}
 
 function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
   (ctr.getChildByName(`ep-${wallId}-A`) as PIXI.Graphics | null)?.scale.set(s);
   (ctr.getChildByName(`ep-${wallId}-B`) as PIXI.Graphics | null)?.scale.set(s);
 }
 
-export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Container, midX: number, midY: number): void {
-  g.on("pointerover", () => { scaleEndpoints(ctr, wallId, 1.3); showWallHud(wallId, midX, midY); });
-  g.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
+export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Container): void {
+  g.on("pointerover", () => scaleEndpoints(ctr, wallId, 1.3));
+  g.on("pointerout",  () => scaleEndpoints(ctr, wallId, 1));
 }
 
 export function addWallDblClick(g: PIXI.Graphics, wallId: string): void {
@@ -94,7 +38,6 @@ function globalToCanvas(gx: number, gy: number): { x: number; y: number } {
 export function addEndpointHandles(
   ctr: PIXI.Container, c: number[], wallId: string, tileDoc: TileDocument, color: number, r = 4,
 ): void {
-  const midX = (c[0] + c[2]) / 2, midY = (c[1] + c[3]) / 2;
   for (const [ep, ix, iy] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
     const h = new PIXI.Graphics();
     h.name = `ep-${wallId}-${ep}`;
@@ -104,8 +47,8 @@ export function addEndpointHandles(
     h.x = c[ix]; h.y = c[iy];
     h.eventMode = "static"; h.cursor = "crosshair";
     const _ep = ep; let lastEp = 0;
-    h.on("pointerover", () => { scaleEndpoints(ctr, wallId, 1.3); showWallHud(wallId, midX, midY); });
-    h.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
+    h.on("pointerover", () => scaleEndpoints(ctr, wallId, 1.3));
+    h.on("pointerout",  () => scaleEndpoints(ctr, wallId, 1));
     h.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
       e.stopPropagation();
       const now = Date.now();
@@ -170,8 +113,6 @@ function startEndpointDrag(
       lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
       lineG.lineStyle(0);
     }
-    // Keep HUD visible at updated midpoint
-    showWallHud(wallId, (ax + bx) / 2, (ay + by) / 2);
   };
 
   const toSnap = (e: PointerEvent) => {
