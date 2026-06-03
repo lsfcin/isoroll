@@ -64,7 +64,6 @@ export class WallManager {
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
   ): void {
-    console.log(`isoroll|dbg onUpdateWall id=${doc.id} keys=${JSON.stringify(Object.keys(changes))} opts=${JSON.stringify(options)}`);
     // Skip anchor-sync updates (would cause infinite loop)
     if (options.isoroll === "anchorUpdate") return;
     const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;

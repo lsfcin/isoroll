@@ -44,22 +44,17 @@ export class WallOverlay {
   private static _pendingRefresh: Set<string> = new Set();
   private static _rafId: number | null = null;
 
-  private static _dbgN = 0; private static _dbgTs = 0; // profiling counters
-
   static activate(): void {
     Hooks.on("canvasReady", () => WallOverlay.clearAll());
     Hooks.on("controlTile", (tile: Tile, controlled: boolean) => {
       if (controlled) WallOverlay.show(tile);
       else { WallOverlay._selectTile = null; WallOverlay.hide(tile.id); }
     });
-    window.addEventListener("keydown", e => { console.log(`isoroll|dbg keydown key=${e.key} alt=${e.altKey} ctrl=${e.ctrlKey} tgt=${(e.target as HTMLElement)?.tagName}`); if (e.altKey) WallOverlay._setAltMode(true); });
-    window.addEventListener("keyup",   e => { console.log(`isoroll|dbg keyup   key=${e.key} alt=${e.altKey}`); if (!e.altKey) WallOverlay._setAltMode(false); });
-    setInterval(() => console.log(`isoroll|dbg alive boxes=${WallOverlay._boxes.size}`), 500); // watchdog
+    window.addEventListener("keydown", e => { if (e.altKey) WallOverlay._setAltMode(true); });
+    window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay._setAltMode(false); });
   }
 
   static show(tile: Tile): void {
-    const now = Date.now(); if (now - WallOverlay._dbgTs > 1000) { WallOverlay._dbgN = 0; WallOverlay._dbgTs = now; }
-    console.log(`isoroll|dbg show #${++WallOverlay._dbgN} tile=${tile.id} sel=${WallOverlay._selectTile === tile.id}`);
     WallOverlay.hide(tile.id);
     const layer = WallOverlay._ensureLayer();
     const ctr   = new PIXI.Container();
@@ -110,7 +105,7 @@ export class WallOverlay {
   private static _setAltMode(active: boolean): void {
     if (WallOverlay._altMode === active) return;
     WallOverlay._altMode = active;
-    for (const [id] of WallOverlay._boxes) {
+    for (const id of [...WallOverlay._boxes.keys()]) { // snapshot: show() mutates _boxes
       const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(id);
       if (tile) WallOverlay.show(tile);
     }
