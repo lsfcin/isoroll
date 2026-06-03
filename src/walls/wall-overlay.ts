@@ -1,7 +1,7 @@
 // PIXI overlay: shows linked walls when tile is selected, with select-mode picking.
 import { getLinkedWallIds, wallsLayer } from "./wall-core";
 import type { WallDoc } from "./wall-core";
-import { addEndpointHandles, addLineHover, addSelectInteraction, addLineToggle, hideWallHud } from "./wall-overlay-ops";
+import { addEndpointHandles, addLineHover, addSelectInteraction, hideWallHud } from "./wall-overlay-ops";
 
 // Colors matching Foundry's Wall layer rendering exactly
 export const WALL_COLORS = {
@@ -152,10 +152,6 @@ export class WallOverlay {
       ctr.addChild(g);
       addEndpointHandles(ctr, c, id, doc, color, r);
       addLineHover(g, id, ctr, (c[0] + c[2]) / 2, (c[1] + c[3]) / 2);
-      addLineToggle(g, id, doc, () => {
-        const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(doc.id ?? "");
-        if (tile) WallOverlay.show(tile);
-      });
     }
   }
 

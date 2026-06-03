@@ -69,17 +69,6 @@ export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Contain
   g.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
 }
 
-export function addLineToggle(g: PIXI.Graphics, wallId: string, doc: TileDocument, refresh: () => void): void {
-  g.cursor = "pointer";
-  g.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
-    e.stopPropagation();
-    const ne = (e as unknown as { nativeEvent?: Event }).nativeEvent;
-    ne?.stopPropagation?.(); ne?.stopImmediatePropagation?.();
-    const ids = getLinkedWallIds(doc);
-    setLinkedWallIds(doc, ids.filter(x => x !== wallId)).then(refresh).catch(console.warn);
-  });
-}
-
 // ── Endpoint drag handles (circles, same color as wall line) ──────────────────
 
 function snapQuarter(x: number, y: number): { x: number; y: number } {
