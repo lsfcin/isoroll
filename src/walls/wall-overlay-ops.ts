@@ -2,6 +2,7 @@
 import { MODULE_ID } from "../volume/flags";
 import { getLinkedWallIds, setLinkedWallIds, canvasToAnchor, wallsLayer, scene } from "./wall-core";
 import type { TileDoc } from "./wall-core";
+import { WallHistory } from "./wall-history";
 
 function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
   (ctr.getChildByName(`ep-${wallId}-A`) as PIXI.Graphics | null)?.scale.set(s);
@@ -74,6 +75,7 @@ export function addSelectInteraction(
     ne?.stopImmediatePropagation?.();
     const ids      = getLinkedWallIds(doc);
     const isLinked = ids.includes(wallId);
+    WallHistory.push({ k: "toggle", tileId: doc.id ?? "", wallId, prevIds: ids, wasLinked: isLinked });
     if (isLinked) {
       setLinkedWallIds(doc, ids.filter(x => x !== wallId)).then(refresh).catch(console.warn);
     } else {
@@ -129,6 +131,7 @@ function startEndpointDrag(
     const c = [...startC];
     if (ep === "A") { c[0] = s.x; c[1] = s.y; }
     else            { c[2] = s.x; c[3] = s.y; }
+    WallHistory.push({ k: "move", wallId, prevC: startC });
     scene().updateEmbeddedDocuments("Wall",
       [{ _id: wallId, c, flags: { [MODULE_ID]: { tileAnchor: canvasToAnchor(tileDoc as TileDoc, c) } } }],
       { isoroll: "wallEndpointDrag" }

@@ -6,6 +6,7 @@ import {
 } from "./wall-ops";
 import { scene, type TileDoc } from "./wall-core";
 import { WallOverlay } from "./wall-overlay";
+import { WallHistory } from "./wall-history";
 
 function wrap(fn: () => Promise<void>, label: string): void {
   setTimeout(() => fn().catch(e => console.warn(`isoroll | ${label} failed`, e)), 0);
@@ -18,6 +19,14 @@ export class WallManager {
     Hooks.on("deleteWall",    WallManager.onDeleteWall);
     Hooks.on("updateWall",    WallManager.onUpdateWall);
     Hooks.on("renderTileHUD", WallManager.onRenderTileHUD);
+    Hooks.on("canvasReady",   () => WallHistory.clear());
+    window.addEventListener("keydown", (e) => {
+      if (!e.ctrlKey || e.key !== "z" || e.shiftKey) return;
+      if ((e.target as HTMLElement)?.matches?.("input,textarea,[contenteditable]")) return;
+      if (!WallHistory.size) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      WallHistory.undo().catch(console.warn);
+    });
     WallOverlay.activate();
   }
 

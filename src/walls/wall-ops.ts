@@ -1,4 +1,5 @@
 import { MODULE_ID, VolumeFlags } from "../volume/flags";
+import { WallHistory } from "./wall-history";
 import type { WallDef, WallConfig, DoorBehavior, TileAnchor } from "./wall-types";
 import {
   wallsLayer, scene, tileRect, defToCanvas, canvasToAnchor,
@@ -44,10 +45,13 @@ export async function createWallsFromDefs(doc: TileDocument, defs: WallDef[]): P
   return created.map(w => w.id ?? "").filter(Boolean);
 }
 
-export async function deleteLinkedWalls(doc: TileDocument): Promise<void> {
+export async function deleteLinkedWalls(doc: TileDocument, skipHistory = false): Promise<void> {
   const ids = getLinkedWallIds(doc).filter(id => wallsLayer().get(id));
+  if (!skipHistory && ids.length) {
+    const prevData = ids.map(id => (wallsLayer().get(id)!.document as any).toObject());
+    WallHistory.push({ k: "delete", tileId: doc.id ?? "", prevData });
+  }
   if (ids.length) await scene().deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete" });
-  // explicit clear so callers reading the flag immediately after see count = 0
   await doc.unsetFlag(MODULE_ID, "linkedWallIds");
 }
 
@@ -94,6 +98,7 @@ export async function linkSelectedWalls(doc: TileDocument): Promise<number> {
 
 export async function unlinkAllWalls(doc: TileDocument): Promise<void> {
   const ids = getLinkedWallIds(doc).filter(id => wallsLayer().get(id));
+  WallHistory.push({ k: "unlink-all", tileId: doc.id ?? "", prevIds: ids });
   if (ids.length) {
     await scene().updateEmbeddedDocuments("Wall", ids.map(id => ({
       _id: id, flags: { [MODULE_ID]: { parentTileId: null, tileAnchor: null } },
@@ -103,8 +108,12 @@ export async function unlinkAllWalls(doc: TileDocument): Promise<void> {
 }
 
 export async function generateBaseWalls(doc: TileDocument): Promise<void> {
-  await deleteLinkedWalls(doc);
-  await setLinkedWallIds(doc, await createWallsFromDefs(doc, generateBaseWallDefs(doc)));
+  const prevData = getLinkedWallIds(doc).filter(id => wallsLayer().get(id))
+    .map(id => (wallsLayer().get(id)!.document as any).toObject());
+  await deleteLinkedWalls(doc, true);
+  const newIds = await createWallsFromDefs(doc, generateBaseWallDefs(doc));
+  await setLinkedWallIds(doc, newIds);
+  WallHistory.push({ k: "create", tileId: doc.id ?? "", newIds, prevData });
 }
 
 export function extractWallDefs(doc: TileDocument): WallDef[] {
