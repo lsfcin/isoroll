@@ -72,7 +72,7 @@ function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
 }
 
 export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Container, midX: number, midY: number): void {
-  g.on("pointerover", () => { scaleEndpoints(ctr, wallId, 2); showWallHud(wallId, midX, midY); });
+  g.on("pointerover", () => { scaleEndpoints(ctr, wallId, 1.3); showWallHud(wallId, midX, midY); });
   g.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
 }
 
@@ -93,21 +93,19 @@ function globalToCanvas(gx: number, gy: number): { x: number; y: number } {
 }
 
 export function addEndpointHandles(
-  ctr: PIXI.Container, c: number[], wallId: string, tileDoc: TileDocument, color: number, r = 2,
+  ctr: PIXI.Container, c: number[], wallId: string, tileDoc: TileDocument, color: number, r = 4,
 ): void {
   const midX = (c[0] + c[2]) / 2, midY = (c[1] + c[3]) / 2;
   for (const [ep, ix, iy] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
     const h = new PIXI.Graphics();
     h.name = `ep-${wallId}-${ep}`;
-    h.lineStyle(1.5, 0x000000, 0.9);
-    h.beginFill(color, 0.9);
-    h.drawCircle(0, 0, r);
-    h.endFill();
+    h.lineStyle(0); h.beginFill(0x000000, 1); h.drawCircle(0, 0, r+1); h.endFill();
+    h.beginFill(color, 0.9); h.drawCircle(0, 0, r); h.endFill();
     h.hitArea = new PIXI.Circle(0, 0, 6);
     h.x = c[ix]; h.y = c[iy];
     h.eventMode = "static"; h.cursor = "crosshair";
     const _ep = ep;
-    h.on("pointerover", () => { scaleEndpoints(ctr, wallId, 2); showWallHud(wallId, midX, midY); });
+    h.on("pointerover", () => { scaleEndpoints(ctr, wallId, 1.3); showWallHud(wallId, midX, midY); });
     h.on("pointerout",  () => { scaleEndpoints(ctr, wallId, 1); scheduleHideHud(); });
     h.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
       e.stopPropagation();

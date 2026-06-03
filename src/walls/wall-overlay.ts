@@ -14,7 +14,7 @@ export const WALL_COLORS = {
   secret:    0xA612D4,  // dark purple (secret door)
   window:    0xC7D8FF,  // pale blue (limited sight)
 };
-const UNLINKED_ALPHA = 0.7;
+const UNLINKED_ALPHA = 0.5;
 const LINE_W = 1;
 
 export function wallColor(doc: WallDoc): number {
@@ -24,9 +24,9 @@ export function wallColor(doc: WallDoc): number {
   // v14 renamed "sense" → "sight"; fall back to sense for older versions
   const s = doc.sight ?? doc.sense ?? 0;
   // Terrain: v14 DISTANCE=30/PROXIMITY=40, v13 TERRAIN=3/DISTANCE=6
-  if (s === 30 || s === 40 || s === 6 || s === 3) return WALL_COLORS.terrain;
+  if (s === 10 || s === 1) return WALL_COLORS.terrain;
   // Window: v14 LIMITED=10, v13 LIMITED=1
-  if (s === 10 || s === 1) return WALL_COLORS.window;
+  if (s === 30 || s === 40 || s === 6 || s === 3) return WALL_COLORS.window;
   // Ethereal: movement passes through
   // v14: NORMAL=10 blocks; NONE=0 doesn't (ethereal). v13: NORMAL=1 blocks; ETHEREAL=2 doesn't.
   const moveBlocks = m === 1 || m >= 10;
@@ -132,27 +132,23 @@ export class WallOverlay {
   }
 
   private static _drawDisplay(ctr: PIXI.Container, doc: TileDocument): void {
-    const r = WallOverlay._altMode ? 5 : 2;
+    const r = 2;
     for (const id of getLinkedWallIds(doc)) {
       const wall = wallsLayer().get(id);
       if (!wall) continue;
-      const wdoc  = wall.document as WallDoc;
-      const c     = wdoc.c;
+      const wdoc = wall.document as WallDoc;
+      const c = wdoc.c;
       const color = wallColor(wdoc);
-      const g     = new PIXI.Graphics();
-      g.name      = `line-${id}`;
+      const g = new PIXI.Graphics();
+      g.name = `line-${id}`;
       g.eventMode = "static";
-      // Black outline, then colored line on top
-      g.lineStyle(LINE_W + 1.5, 0x000000, 0.8);
+      g.lineStyle(LINE_W + 1.5, 0x000000, 1.0);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(LINE_W, color, 1);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
-      // Explicit hit area: rotated rectangle 8px wide around the line
-      { const dx = c[2]-c[0], dy = c[3]-c[1], l = Math.sqrt(dx*dx+dy*dy)||1;
-        const nx = (-dy/l)*5, ny = (dx/l)*5, ex = (dx/l)*4, ey = (dy/l)*4;
-        g.hitArea = new PIXI.Polygon([c[0]-ex+nx,c[1]-ey+ny, c[2]+ex+nx,c[3]+ey+ny,
-                                      c[2]+ex-nx,c[3]+ey-ny, c[0]-ex-nx,c[1]-ey-ny]); }
+      { const dx=c[2]-c[0], dy=c[3]-c[1], l=Math.sqrt(dx*dx+dy*dy)||1, nx=(-dy/l)*5, ny=(dx/l)*5, ex=(dx/l)*4, ey=(dy/l)*4;
+        g.hitArea = new PIXI.Polygon([c[0]-ex+nx,c[1]-ey+ny, c[2]+ex+nx,c[3]+ey+ny, c[2]+ex-nx,c[3]+ey-ny, c[0]-ex-nx,c[1]-ey-ny]); }
       ctr.addChild(g);
       addEndpointHandles(ctr, c, id, doc, color, r);
       addLineHover(g, id, ctr, (c[0] + c[2]) / 2, (c[1] + c[3]) / 2);
@@ -161,7 +157,7 @@ export class WallOverlay {
 
   private static _drawSelect(ctr: PIXI.Container, doc: TileDocument): void {
     const linked = new Set(getLinkedWallIds(doc));
-    const r      = WallOverlay._altMode ? 5 : 2;
+    const r = 2;
     for (const wall of wallsLayer().placeables) {
       const id    = wall.document.id ?? "";
       const wdoc  = wall.document as WallDoc;
@@ -172,21 +168,17 @@ export class WallOverlay {
       // Wide transparent hit area first
       g.lineStyle(16, 0x000000, 0.001);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
-      // Black outline, then colored line on top
-      const lw = isLnk ? LINE_W + 1 : LINE_W;
       const la = isLnk ? 1 : UNLINKED_ALPHA;
-      g.lineStyle(lw + 2, 0x000000, la * 0.8);
+      g.lineStyle(LINE_W + 1.5, 0x000000, la);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
-      g.lineStyle(lw, col, la);
+      g.lineStyle(LINE_W, col, la);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
       // Endpoint circles (visual only, matches Wall layer appearance)
       for (const [ix, iy] of [[0,1],[2,3]] as [number,number][]) {
-        g.lineStyle(1.5, 0x000000, 0.8);
-        g.beginFill(col, isLnk ? 1 : UNLINKED_ALPHA);
-        g.drawCircle(c[ix], c[iy], r);
-        g.endFill();
-        g.lineStyle(0);
+        const a = isLnk ? 1 : UNLINKED_ALPHA;
+        g.lineStyle(0); g.beginFill(0x000000, a); g.drawCircle(c[ix], c[iy], r+1); g.endFill();
+        g.beginFill(col, a); g.drawCircle(c[ix], c[iy], r); g.endFill();
       }
       addSelectInteraction(g, doc, id, c, () => {
         const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(doc.id ?? "");
