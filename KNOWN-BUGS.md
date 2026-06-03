@@ -45,17 +45,20 @@ base rectangle as computed by `imageRect()`.
 
 ---
 
-## B4 — Background gizmo handles mispositioned in isometric + transformed-background scene (POSSIBLE REGRESSION — under investigation)
+## B4 — SceneConfig Iso tab: tiles and tokens don't transform live on "Enable Isometric" toggle
 
-**Symptom:** In GridConfig on an isometric scene where `transformBackground = true`,
-the translate/scale handles appear at the grid center instead of at the background
-image corners. The dashed contour outline appears at the correct position.
-Non-isometric scenes and untransformed-background scenes are unaffected.
+**Symptom:** In the SceneConfig popup → Iso tab, toggling the "Enable Isometric" checkbox
+triggers an immediate live preview for the grid and background (correct behavior). However,
+tiles and tokens do NOT counter-transform until "Save Changes" is clicked and the scene
+reloads. Expected: tiles and tokens should react instantly, the same way the grid and
+background do.
 
-**Status:** Reproducible on `feature-full-refactor`, not on `main`. Investigating
-whether this is a stale dist/ artifact from branch switching or a real code regression.
-No code changes in `background-gizmos.ts` or `canvas-transform.ts` were made on this
-branch. Only real code change near this area: `gizmos-handles.ts` baseline visual tweak
-(affects `makeSwapHandle` only, which BackgroundGizmos does not call).
+**Affected:** `CanvasTransform.previewOverride` triggers the stage transform preview,
+but `ObjectTransform` hooks (`refreshTile`, `refreshToken`) are not re-fired during the
+preview — they only run on actual scene update (after Save). Likely needs an explicit
+`canvas.tiles.placeables.forEach(t => t.refresh())` call when the preview override changes.
 
-**Action:** Retest after `npm run build` (clean build, not watch mode).
+---
+
+> ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
+> from branch switching, not a code regression).
