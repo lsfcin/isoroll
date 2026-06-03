@@ -45,7 +45,7 @@ export function addEndpointHandles(
     h.beginFill(color, 0.9); h.drawCircle(0, 0, r); h.endFill();
     h.hitArea = new PIXI.Circle(0, 0, 6);
     h.x = c[ix]; h.y = c[iy];
-    h.eventMode = "static"; h.cursor = "crosshair";
+    h.eventMode = "static"; h.cursor = "pointer";
     const _ep = ep; let lastEp = 0;
     h.on("pointerover", () => scaleEndpoints(ctr, wallId, 1.3));
     h.on("pointerout",  () => scaleEndpoints(ctr, wallId, 1));

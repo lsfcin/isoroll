@@ -140,7 +140,7 @@ export class WallOverlay {
       const color = wallColor(wdoc);
       const g = new PIXI.Graphics();
       g.name = `line-${id}`;
-      g.eventMode = "static";
+      g.eventMode = "static"; g.cursor = "pointer";
       g.lineStyle(LINE_W + 1.5, 0x000000, 1.0);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(LINE_W, color, 1);
