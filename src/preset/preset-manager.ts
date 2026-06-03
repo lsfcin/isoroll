@@ -12,10 +12,9 @@ import {
 } from "./preset-ops";
 import type { TilePreset, TokenPreset } from "./preset-types";
 import { MODULE_ID } from "../volume/flags";
+import { scheduleWrap } from "../util";
 
-function wrap(fn: () => Promise<void>, label: string): void {
-  setTimeout(() => fn().catch(e => console.warn(`isoroll | ${label} failed`, e)), 50);
-}
+const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 50);
 
 export class PresetManager {
   static activate(): void {

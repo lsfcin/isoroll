@@ -7,10 +7,9 @@ import {
 import { scene, type TileDoc } from "./wall-core";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
+import { scheduleWrap } from "../util";
 
-function wrap(fn: () => Promise<void>, label: string): void {
-  setTimeout(() => fn().catch(e => console.warn(`isoroll | ${label} failed`, e)), 0);
-}
+const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 0);
 
 export class WallManager {
   static activate(): void {
