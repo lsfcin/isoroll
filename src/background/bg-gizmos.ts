@@ -7,6 +7,9 @@ import { clientToGlobal } from "../gizmos/mesh-corners";
 import { startPointerDrag } from "../util";
 import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
 import { drawDashedContour } from "../draw/shapes";
+import { BgDrag, commitBgDrag } from "./bg-drag";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
+import { BgHtml } from "./bg-html";
 
 function bgCorner(
   fx: number, fy: number, cx: number, cy: number,
@@ -15,87 +18,26 @@ function bgCorner(
   const lx = fx * texW * scX, ly = fy * texH * scY;
   return { x: cx + cosR * lx - sinR * ly, y: cy + sinR * lx + cosR * ly };
 }
-import { BgDrag, commitBgDrag } from "./bg-drag";
-import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
-
-type GCApp = { _processSubmitData?: (...a: unknown[]) => Promise<unknown> };
 
 export class BackgroundGizmos {
-  private static previewBg:    PIXI.Sprite | null = null;
-  private static currentHtml:  HTMLElement | null = null;
-  private static keyHandler:   ((e: KeyboardEvent) => void) | null = null;
-  private static wheelHandler: ((e: WheelEvent) => void) | null = null;
-
   static activate(): void {
-    Hooks.on("renderGridConfig", BackgroundGizmos.onRenderGridConfig);
-    Hooks.on("closeGridConfig",  BackgroundGizmos.onCloseGridConfig);
-    Hooks.on("canvasReady",      BackgroundGizmos.clearAll);
+    BgHtml.activate(() => BackgroundGizmos.show(), () => BackgroundGizmos.clearAll());
+    Hooks.on("canvasReady", BackgroundGizmos.clearAll);
   }
 
   private static isEnabled(): boolean { return canvas.scene != null; }
 
-  private static onRenderGridConfig(app: GCApp, html: HTMLElement): void {
-    if (!BackgroundGizmos.isEnabled()) return;
-    BackgroundGizmos.currentHtml = html;
-    const curYS = (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
-    setBgYScaleOverride(curYS);
-    // Cache preview bg BEFORE our layer exists — reverse-search would find our layer otherwise.
-    if (!BackgroundGizmos.previewBg) {
-      const kids = (canvas.app?.stage as unknown as { children: PIXI.Container[] }).children;
-      for (let i = kids.length - 1; i >= 0; i--) { const c = kids[i];
-        if (c instanceof PIXI.Container && c.constructor === PIXI.Container) { const bg = c.children[1]; if (bg instanceof PIXI.Sprite) BackgroundGizmos.previewBg = bg; break; }
-      }
-    }
-    if (!html.querySelector('#isoroll-bg-yscale')) {
-      html.querySelector('[name="scale"]')?.closest('.form-group')?.insertAdjacentHTML('afterend',
-        `<div class="form-group"><label for="isoroll-bg-yscale">Vertical Scale</label>` +
-        `<div class="form-fields"><input type="number" id="isoroll-bg-yscale" ` +
-        `step="0.001" min="0.05" max="5.00" value="${curYS.toFixed(3)}"></div>` +
-        `<p class="hint">Use CTRL+Mousewheel or CTRL+Up Arrow and CTRL+Down Arrow to adjust the vertical scale.</p></div>`);
-      (html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null)?.addEventListener('change', (e) => {
-        setBgYScaleOverride(Math.max(0.05, Math.min(5, Number((e.target as HTMLInputElement).value) || 1)));
-        BackgroundGizmos.show();
-      });
-    }
-    if (typeof app._processSubmitData === 'function') {
-      const orig = app._processSubmitData.bind(app);
-      app._processSubmitData = async (...a: unknown[]) => {
-        await orig(...a);
-        await canvas.scene?.setFlag(MODULE_ID, "backgroundYScale", getBgYScale());
-      };
-    }
-    if (BackgroundGizmos.keyHandler) document.removeEventListener('keydown', BackgroundGizmos.keyHandler);
-    if (BackgroundGizmos.wheelHandler) document.removeEventListener('wheel', BackgroundGizmos.wheelHandler);
-    BackgroundGizmos.keyHandler = (e: KeyboardEvent) => {
-      if (!e.ctrlKey || !["KeyW","ArrowUp","KeyS","ArrowDown"].includes(e.code)) return;
-      e.preventDefault(); e.stopPropagation();
-      BackgroundGizmos.scaleVerticalStep(["KeyW","ArrowUp"].includes(e.code) ? 1 : -1);
-    };
-    BackgroundGizmos.wheelHandler = (e: WheelEvent) => { if (!e.ctrlKey) return; e.preventDefault(); BackgroundGizmos.scaleVerticalStep(e.deltaY < 0 ? 1 : -1); };
-    document.addEventListener('keydown', BackgroundGizmos.keyHandler);
-    document.addEventListener('wheel', BackgroundGizmos.wheelHandler, { passive: false });
-    html.addEventListener('change', () => requestAnimationFrame(() => BackgroundGizmos.show()));
-    BackgroundGizmos.show();
-  }
-
-  private static onCloseGridConfig(): void {
-    if (BackgroundGizmos.keyHandler) { document.removeEventListener('keydown', BackgroundGizmos.keyHandler); BackgroundGizmos.keyHandler = null; }
-    if (BackgroundGizmos.wheelHandler) { document.removeEventListener('wheel', BackgroundGizmos.wheelHandler); BackgroundGizmos.wheelHandler = null; }
-    setBgYScaleOverride(null); BackgroundGizmos.currentHtml = null;
-    BackgroundGizmos.previewBg = null; BackgroundGizmos.clearAll();
-  }
-
   static show(): void {
     BackgroundGizmos.clearLayer();
-    if (!BackgroundGizmos.isEnabled() || !BackgroundGizmos.currentHtml) return;
-    const html  = BackgroundGizmos.currentHtml;
+    if (!BackgroundGizmos.isEnabled() || !BgHtml.currentHtml) return;
+    const html  = BgHtml.currentHtml;
     const layer = LayerManager.ensureLayer(LAYER_KEYS.BG_GIZMOS);
     const proj  = currentProjection();
     const _po   = CanvasTransform.previewOverride;
     const isoCT = (_po?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true)) && !(_po?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true));
     const cosR  = isoCT ? Math.cos(proj.reverseRotation) : 1;
     const sinR  = isoCT ? Math.sin(proj.reverseRotation) : 0;
-    const previewBg = BackgroundGizmos.previewBg;
+    const previewBg = BgHtml.previewBg;
     if (!previewBg) return;
     const texW = previewBg.texture?.width || 1, texH = previewBg.texture?.height || 1;
     const bgX = previewBg.x, bgY = previewBg.y, bgW = previewBg.width || 1;
@@ -120,7 +62,7 @@ export class BackgroundGizmos {
     const sCX    = wt.a * cx + wt.c * cy + wt.tx, sCY = wt.b * cx + wt.d * cy + wt.ty;
     const defs: [PIXI.Container, BgDrag["type"], { x: number; y: number }][] = [
       [makeSquareCounterHandle(0xffffff, "nwse-resize"), "bgScale",     tr],
-      [makeCircleHandle(0xffffff, "move"),                 "bgTranslate", bl],
+      [makeCircleHandle(0xffffff, "move"),               "bgTranslate", bl],
     ];
     if (isoCT) defs.splice(1, 0, [makeSquareCounterHandle(0xffffff, "ns-resize"), "bgYScale", tc]);
     for (const [handle, type, pos] of defs) {
@@ -131,14 +73,6 @@ export class BackgroundGizmos {
     LayerManager.bringToTop(LAYER_KEYS.BG_GIZMOS);
   }
 
-  private static scaleVerticalStep(delta: number): void {
-    const html = BackgroundGizmos.currentHtml; if (!html) return;
-    const newYS = Math.max(0.05, Math.min(5.0, Math.round((getBgYScale() + delta * 0.01) * 1000) / 1000));
-    setBgYScaleOverride(newYS);
-    const input = html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
-    if (input) input.value = newYS.toFixed(3);
-    BackgroundGizmos.show();
-  }
   private static clearLayer(): void {
     const l = LayerManager.ensureLayer(LAYER_KEYS.BG_GIZMOS);
     l.removeChildren().forEach(c => (c as PIXI.Container).destroy({ children: true }));
@@ -161,12 +95,10 @@ export class BackgroundGizmos {
   }
 
   private static commit(drag: BgDrag, gx: number, gy: number): void {
-    commitBgDrag(drag, gx, gy, BackgroundGizmos.currentHtml, (ys) => {
+    commitBgDrag(drag, gx, gy, BgHtml.currentHtml, (ys) => {
       setBgYScaleOverride(ys);
-      const ye = document.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
-      if (ye) ye.value = ys.toFixed(3);
+      BgHtml.syncYScaleInput(ys);
       BackgroundGizmos.show();
     });
   }
-
 }
