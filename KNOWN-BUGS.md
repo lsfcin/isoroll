@@ -74,20 +74,6 @@ The gizmos don't re-register after the reset because no `controlTile`/selection 
 
 ---
 
-## B7 — SceneConfig Iso tab has excess height, Save Changes floats in empty space
-
-**Symptom:** The Iso tab in the Scene Configuration popup (AppV2) has too much vertical space
-at the bottom. The "Save Changes" button floats in the middle of that empty space instead of
-sitting at the bottom of the form content.
-
-**Root cause hypothesis:** AppV2 tab content height is not being constrained — the tab panel
-expands to a fixed dialog height rather than wrapping its content. Likely a missing
-`overflow`, `height`, or `flex` CSS rule on the injected tab content container.
-
-**Affected:** `src/transform/scene-config.ts` — tab injection / CSS for the Iso tab panel.
-
----
-
 ## B5 — Module overlays, gizmos, and walls visible inside GridConfig tool
 
 **Symptom:** Opening the Grid Configuration Tool does not hide isoroll overlays, volume gizmo
@@ -178,29 +164,6 @@ may work correctly — this is specific to token elevation.
 `update` calls made from the elevation drag handler.
 
 **Affected:** `TokenVolumeGizmos` elevation drag handler → `token.document.update`.
-
----
-
-## B8 — TileConfig Iso tab has extra wrapping container not present in other tabs
-
-**Symptom:** The Iso tab content in the Tile config popup (AppV2) is visually wrapped in an
-extra bordered/outlined div. Other tabs (Position, Appearance, Overhead) render their fields
-directly without this outer container. The extra wrapper causes a visual indent/border that
-breaks consistency with native Foundry tab layout.
-
-**Affected:** `src/transform/tile-config.ts` (or wherever the Iso tab HTML is injected) —
-likely an extra `<div class="form-group">` or `<fieldset>` wrapping the entire tab content.
-
----
-
-## B9 — TileConfig Iso tab: "Volume Manipulation" label wraps to two lines
-
-**Symptom:** The label "Volume Manipulation" in the Iso tab renders as two lines ("Volume" /
-"Manipulation") while "Image Manipulation" renders correctly on one line. Both should be
-single-line bold labels.
-
-**Affected:** Same injection site as B8 — likely a missing `white-space: nowrap` or a CSS
-width constraint forcing the wrap, possibly related to the extra wrapper from B8.
 
 ---
 

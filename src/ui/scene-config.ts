@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../flags";
 import { CanvasTransform } from "../transform/stage-transform";
-import { PROJECTION_TYPES } from "../transform/constants";
+import { getProjection, PROJECTION_TYPES } from "../transform/constants";
 import { addIsorollTab } from "./tab-helpers";
 
 function projectionOptions(currentKey: string): string {
@@ -103,14 +103,31 @@ export function registerSceneConfigHook(): void {
           $h.on("change", ".isoroll-projection-select", (event) => {
             $h.find(".isoroll-custom-fields").toggle((event.target as HTMLSelectElement).value === "custom");
           });
+          const num = (name: string): number | undefined => {
+            const v = parseFloat($h.find(`input[name="flags.${MODULE_ID}.${name}"]`).val() as string);
+            return isNaN(v) ? undefined : v;
+          };
           const sync = () => {
+            const projKey = ($h.find(".isoroll-projection-select").val() as string) || "dimetric_2_1";
+            CanvasTransform.previewProjection = getProjection({
+              getFlag: (_m: string, k: string): unknown => {
+                if (k === "projection")     return projKey;
+                if (k === "customRotation") return num("customRotation");
+                if (k === "customSkewX")    return num("customSkewX");
+                if (k === "customSkewY")    return num("customSkewY");
+                if (k === "customRatio")    return num("customRatio");
+                return undefined;
+              },
+            });
             CanvasTransform.previewOverride = {
               enabled: $h.find(`input[name="flags.${MODULE_ID}.enabled"]`).is(':checked'),
               transformBg: $h.find(`input[name="flags.${MODULE_ID}.transformBackground"]`).is(':checked'),
             };
             CanvasTransform.applyCurrentState(); CanvasTransform.refresh();
           };
-          $h.on("change", `input[name="flags.${MODULE_ID}.enabled"], input[name="flags.${MODULE_ID}.transformBackground"]`, sync);
+          $h.on("change",
+            `input[name="flags.${MODULE_ID}.enabled"], input[name="flags.${MODULE_ID}.transformBackground"], .isoroll-projection-select, input[name="flags.${MODULE_ID}.customRotation"], input[name="flags.${MODULE_ID}.customSkewX"], input[name="flags.${MODULE_ID}.customSkewY"], input[name="flags.${MODULE_ID}.customRatio"]`,
+            sync);
         },
       );
     },

@@ -1,10 +1,11 @@
 // Stage isometric transform coordinator: rotation/skew, preview override, object refresh.
-import { currentProjection } from "./constants";
+import { currentProjection, IsoProjection } from "./constants";
 import { MODULE_ID } from "../flags";
 import { BackgroundTransform } from "./bg-transform";
 
 export class CanvasTransform {
   static previewOverride: { enabled: boolean; transformBg: boolean } | null = null;
+  static previewProjection: IsoProjection | null = null;
 
   static activate(): void {
     Hooks.on("canvasReady",      CanvasTransform.onCanvasReady);
@@ -25,7 +26,7 @@ export class CanvasTransform {
   private static applyStage(): void {
     const stage = canvas.app?.stage;
     if (!stage) return;
-    const proj = currentProjection();
+    const proj = CanvasTransform.previewProjection ?? currentProjection();
     stage.rotation = proj.rotation;
     stage.skew.set(proj.skewX, proj.skewY);
   }
@@ -85,8 +86,9 @@ export class CanvasTransform {
   }
 
   private static onCloseSceneConfig(): void {
-    if (!CanvasTransform.previewOverride) return;
+    if (!CanvasTransform.previewOverride && !CanvasTransform.previewProjection) return;
     CanvasTransform.previewOverride = null;
+    CanvasTransform.previewProjection = null;
     CanvasTransform.applyCurrentState();
     CanvasTransform.refresh();
   }
