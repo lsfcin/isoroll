@@ -6,7 +6,7 @@ import {
   HandleType, DragState, handleTypeMap,
   handlePositions, imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, commitDrag,
 } from "./tile-drag";
-import { makeHandleForType, createRotateBlocker } from "../volume/gizmos-handles";
+import { makeHandleForType, createRotateBlocker } from "../gizmos/handle-factories";
 
 export class VolumeGizmos {
   private static sets: Map<string, PIXI.Container> = new Map();

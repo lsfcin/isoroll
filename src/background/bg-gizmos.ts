@@ -3,7 +3,7 @@ import { getProjection } from "../transform/constants";
 import { CanvasTransform } from "../transform/stage-transform";
 import { MODULE_ID } from "../volume/flags";
 import { clientToGlobal } from "../tiles/tile-drag";
-import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../volume/gizmos-handles";
+import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../gizmos/handle-factories";
 import { BgDrag, commitBgDrag } from "./bg-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
