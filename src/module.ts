@@ -12,6 +12,7 @@ import { BackgroundGizmos } from "./volume/background-gizmos";
 import { ObjectTransform } from "./transform/object-transform";
 import { registerSceneConfigHook, registerTileConfigHook, registerRulerPatch } from "./transform/scene-config";
 import { registerTokenConfigHook } from "./ui/token-config";
+import { HudPatches } from "./hud/hud-patches";
 import { PresetManager } from "./preset/preset-manager";
 import { WallManager } from "./walls/wall-manager";
 
@@ -23,6 +24,7 @@ Hooks.once("init", () => {
   registerRulerPatch();
   CanvasTransform.activate();
   BackgroundGizmos.activate();
+  HudPatches.activate();
   ObjectTransform.activate();
   VolumeOverlay.activate();
   VolumeGizmos.activate();

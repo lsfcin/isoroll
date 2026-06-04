@@ -44,7 +44,6 @@ export class ObjectTransform {
   static activate(): void {
     Hooks.on("refreshToken",      ObjectTransform.onRefreshToken);
     Hooks.on("refreshTile",       ObjectTransform.onRefreshTile);
-    Hooks.on("renderTokenHUD",    ObjectTransform.onRenderTokenHUD);
     Hooks.on("renderTileHUD",     ObjectTransform.onRenderTileHUD);
     Hooks.on("preUpdateScene",    ObjectTransform.onPreUpdateScene);
     Hooks.on("updateScene",       ObjectTransform.onUpdateSceneGridRescale);
@@ -95,23 +94,6 @@ export class ObjectTransform {
     const imgOff = VolumeFlags.getImageOffset(token.document);
     mesh.x = base.x + hdx * E + imgOff.x * gs;
     mesh.y = base.y + hdy * E + imgOff.y * gs;
-  }
-
-  // Reposition the TokenHUD to track the token under the isometric stage transform.
-  private static onRenderTokenHUD(hud: { object: unknown }, html: JQuery | HTMLElement): void {
-    if (!ObjectTransform.isSceneEnabled()) return;
-    const token = hud.object as Token;
-    if (token.document.getFlag(MODULE_ID, "transformToken") === true) return;
-    requestAnimationFrame(() => {
-      const center = (token.center ?? { x: token.x, y: token.y }) as { x: number; y: number };
-      const m = canvas.app?.stage?.worldTransform;
-      const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
-      if (!m) return;
-      const L = (m.a * center.x + m.c * center.y) / zoom;
-      const T = (m.b * center.x + m.d * center.y) / zoom;
-      const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      $html.css({ left: `${L}px`, top: `${T}px`, transform: "translate(-50%, -50%)" });
-    });
   }
 
   private static onRenderTileHUD(_hud: unknown, _html: unknown): void { /* handled by _updatePosition patch */ }
