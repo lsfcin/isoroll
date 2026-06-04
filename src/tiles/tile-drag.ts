@@ -5,7 +5,6 @@ import { snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
 import { canvasZoom, gridDistance, elevToCanvas, screenToCanvas } from "../util";
 import { projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos/img-drag";
 export { IMG_YSCALE_SNAP_PX } from "../gizmos/img-drag";
-export { imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
 
 export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale" | "imgYScale" | "swapSide";
 

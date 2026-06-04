@@ -5,8 +5,6 @@ import {
   HALF, makeHandle, makeCircleHandle, makeSquareCounterHandle,
   makeMoveHandle, makeSwapHandle, makeFaceHandle,
 } from "./handle-draw";
-export { makeCircleHandle, makeSquareCounterHandle, drawDashedContour } from "./handle-draw";
-
 export const HANDLE_COLOR: Record<HandleType, number> = {
   width:     0xff9829,
   height:    0xff9829,

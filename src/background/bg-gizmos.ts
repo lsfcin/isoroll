@@ -3,8 +3,9 @@ import { getProjection } from "../transform/constants";
 import { CanvasTransform } from "../transform/stage-transform";
 import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
 import { MODULE_ID } from "../flags";
-import { clientToGlobal } from "../tiles/tile-drag";
-import { makeCircleHandle, makeSquareCounterHandle, drawDashedContour } from "../gizmos/handle-draw";
+import { clientToGlobal } from "../gizmos/mesh-corners";
+import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
+import { drawDashedContour } from "../draw/shapes";
 
 function bgCorner(
   fx: number, fy: number, cx: number, cy: number,

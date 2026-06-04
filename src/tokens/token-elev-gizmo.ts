@@ -2,7 +2,7 @@
 import { getProjection } from "../transform/constants";
 import { VolumeFlags } from "../flags";
 import { makeCircleHandle } from "../gizmos/handle-draw";
-import { clientToGlobal } from "../tiles/tile-drag";
+import { clientToGlobal } from "../gizmos/mesh-corners";
 import { canvasZoom, gridDistance, elevToCanvas } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 

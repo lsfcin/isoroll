@@ -3,10 +3,8 @@ import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
 import { gridDistance, elevToCanvas } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
-import {
-  HandleType, DragState, handleTypeMap,
-  handlePositions, imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, commitDrag,
-} from "./tile-drag";
+import { HandleType, DragState, handleTypeMap, handlePositions, commitDrag } from "./tile-drag";
+import { imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal } from "../gizmos/mesh-corners";
 import { makeHandleForType, createRotateBlocker } from "../gizmos/handle-factories";
 
 export class VolumeGizmos {

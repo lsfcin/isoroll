@@ -1,8 +1,6 @@
 // PIXI drawing primitives for gizmo handles.
 import { getProjection } from "../transform/constants";
 import { BLACK } from "../draw/constants";
-export { drawDashedContour } from "../draw/shapes";
-
 export const HANDLE_SIZE = 10;
 export const HALF        = HANDLE_SIZE / 2;
 
