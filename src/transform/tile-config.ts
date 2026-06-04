@@ -1,9 +1,7 @@
 import { MODULE_ID } from "../flags";
 import { addIsorollTab, flagCheckbox } from "../ui/tab-helpers";
-import {
-  getLinkedWallIds, generateBaseWalls, unlinkAllWalls, deleteLinkedWalls,
-  hasLinkedDoor, getDoorBehavior, setDoorBehavior,
-} from "../walls/wall-ops";
+import { getLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "../walls/wall-flags";
+import { generateBaseWalls, unlinkAllWalls, deleteLinkedWalls } from "../walls/wall-crud";
 import type { DoorBehavior } from "../walls/wall-types";
 import { WallOverlay } from "../walls/wall-overlay";
 

@@ -1,10 +1,9 @@
 import { MODULE_ID } from "../flags";
-import {
-  getLinkedWallIds, setLinkedWallIds, updateLinkedWallPositions, flipLinkedWallAnchorsX,
-  deleteLinkedWalls, generateBaseWalls, unlinkAllWalls,
-  canvasToAnchor, hasLinkedDoor, getDoorBehavior, cycleDoorBehavior, applyDoorBehavior,
-} from "./wall-ops";
-import { scene, type TileDoc } from "./wall-core";
+import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior } from "./wall-flags";
+import { updateLinkedWallPositions, flipLinkedWallAnchorsX } from "./wall-sync";
+import { deleteLinkedWalls, generateBaseWalls, unlinkAllWalls } from "./wall-crud";
+import { canvasToAnchor, scene, type TileDoc } from "./wall-coords";
+import { cycleDoorBehavior, applyDoorBehavior } from "./wall-door";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
 import { scheduleWrap } from "../util";

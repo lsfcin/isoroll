@@ -1,7 +1,7 @@
 // Interactive helpers: endpoint handles, drag, select toggle.
 import { MODULE_ID } from "../flags";
-import { getLinkedWallIds, setLinkedWallIds, canvasToAnchor, wallsLayer, scene } from "./wall-core";
-import type { TileDoc } from "./wall-core";
+import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
+import { canvasToAnchor, wallsLayer, scene, type TileDoc } from "./wall-coords";
 import { WallHistory } from "./wall-history";
 
 function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {

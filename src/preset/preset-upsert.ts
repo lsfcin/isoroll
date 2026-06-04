@@ -2,7 +2,7 @@
 import { MODULE_ID } from "../flags";
 import { deriveKey, writePreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
-import { extractWallDefs } from "../walls/wall-ops";
+import { extractWallDefs } from "../walls/wall-crud";
 import { getSrc, isPresetEnabled, toScene, asFD, asTDp, gridSize } from "./preset-ops";
 
 const getNum  = (d: unknown, k: string, def: number) => (asFD(d).getFlag(MODULE_ID, k) as number | undefined) ?? def;

@@ -2,7 +2,7 @@
 import { MODULE_ID } from "../flags";
 import { deriveKey, readPreset, getCachedPreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
-import { applyWallDefs } from "../walls/wall-ops";
+import { applyWallDefs } from "../walls/wall-crud";
 import { getSrc, isPresetEnabled, toScene, asUD, asTDp, gridSize } from "./preset-ops";
 
 export function tilePresetData(preset: TilePreset): object {

@@ -1,7 +1,7 @@
 // PIXI overlay: shows linked walls when tile is selected, with select-mode picking.
 import { MODULE_ID } from "../flags";
-import { getLinkedWallIds, wallsLayer, imageRect, anchorToCanvas } from "./wall-core";
-import type { WallDoc, TileDoc } from "./wall-core";
+import { getLinkedWallIds } from "./wall-flags";
+import { wallsLayer, imageRect, anchorToCanvas, type WallDoc, type TileDoc } from "./wall-coords";
 import { addEndpointHandles, addLineHover, addSelectInteraction, addWallDblClick } from "./wall-overlay-ops";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
