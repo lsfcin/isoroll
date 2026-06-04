@@ -2,7 +2,13 @@
 // Also patches the GridConfig preview sprite's updateTransform for live GridConfig handles.
 import { getProjection } from "./constants";
 import { MODULE_ID } from "../flags";
-import { BackgroundGizmos } from "../background/bg-gizmos";
+
+// Transient Y-scale override during GridConfig session. Set by BackgroundGizmos; null = use scene flag.
+let bgYScaleOverride: number | null = null;
+export function getBgYScale(): number {
+  return bgYScaleOverride ?? (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
+}
+export function setBgYScaleOverride(v: number | null): void { bgYScaleOverride = v; }
 
 type BgState = {
   rotation: number; skewX: number; skewY: number;
@@ -44,7 +50,7 @@ export class BackgroundTransform {
     const { reverseRotation, reverseSkewX, reverseSkewY, ratio, counterFactor } = proj;
     // Use canvas.dimensions.sceneX/Y so position tracks scene offset (scene flags are static)
     const dims = canvas.dimensions as unknown as { sceneX: number; sceneY: number; sceneWidth: number; sceneHeight: number };
-    const bgYS = (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
+    const bgYS = getBgYScale();
     bg.anchor?.set(0.5, 0.5);
     bg.rotation = reverseRotation;
     bg.skew.set(reverseSkewX, reverseSkewY);
@@ -116,7 +122,7 @@ export class BackgroundTransform {
       (this.anchor as PIXI.ObservablePoint).set(0, 0);
       this.rotation = proj.reverseRotation;
       (this.skew as PIXI.ObservablePoint).set(proj.reverseSkewX, proj.reverseSkewY);
-      const bgYS = BackgroundGizmos.getTempYScale();
+      const bgYS = getBgYScale();
       const cosR = Math.cos(proj.reverseRotation);
       const sinR = Math.sin(proj.reverseRotation);
       const scX = sx * proj.counterFactor;

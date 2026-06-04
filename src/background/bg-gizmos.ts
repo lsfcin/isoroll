@@ -1,6 +1,7 @@
 // Interactive handles + dashed contour for background image, shown only in GridConfig.
 import { getProjection } from "../transform/constants";
 import { CanvasTransform } from "../transform/stage-transform";
+import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
 import { MODULE_ID } from "../flags";
 import { clientToGlobal } from "../tiles/tile-drag";
 import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../gizmos/handle-factories";
@@ -11,7 +12,6 @@ type GCApp = { _processSubmitData?: (...a: unknown[]) => Promise<unknown> };
 
 export class BackgroundGizmos {
   private static previewBg:    PIXI.Sprite | null = null;
-  private static bgYScaleTemp: number | null = null;
   private static currentHtml:  HTMLElement | null = null;
   private static drag:         BgDrag | null = null;
   private static keyHandler:   ((e: KeyboardEvent) => void) | null = null;
@@ -25,18 +25,13 @@ export class BackgroundGizmos {
     Hooks.on("canvasReady",      BackgroundGizmos.clearAll);
   }
 
-  static getTempYScale(): number {
-    return BackgroundGizmos.bgYScaleTemp
-      ?? (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
-  }
-
   private static isEnabled(): boolean { return canvas.scene != null; }
 
   private static onRenderGridConfig(app: GCApp, html: HTMLElement): void {
     if (!BackgroundGizmos.isEnabled()) return;
     BackgroundGizmos.currentHtml = html;
     const curYS = (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
-    BackgroundGizmos.bgYScaleTemp = curYS;
+    setBgYScaleOverride(curYS);
     // Cache preview bg BEFORE our layer exists — reverse-search would find our layer otherwise.
     if (!BackgroundGizmos.previewBg) {
       const kids = (canvas.app?.stage as unknown as { children: PIXI.Container[] }).children;
@@ -51,7 +46,7 @@ export class BackgroundGizmos {
         `step="0.001" min="0.05" max="5.00" value="${curYS.toFixed(3)}"></div>` +
         `<p class="hint">Use CTRL+Mousewheel or CTRL+Up Arrow and CTRL+Down Arrow to adjust the vertical scale.</p></div>`);
       (html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null)?.addEventListener('change', (e) => {
-        BackgroundGizmos.bgYScaleTemp = Math.max(0.05, Math.min(5, Number((e.target as HTMLInputElement).value) || 1));
+        setBgYScaleOverride(Math.max(0.05, Math.min(5, Number((e.target as HTMLInputElement).value) || 1)));
         BackgroundGizmos.show();
       });
     }
@@ -59,8 +54,7 @@ export class BackgroundGizmos {
       const orig = app._processSubmitData.bind(app);
       app._processSubmitData = async (...a: unknown[]) => {
         await orig(...a);
-        const ys = BackgroundGizmos.bgYScaleTemp;
-        if (ys !== null) await canvas.scene?.setFlag(MODULE_ID, "backgroundYScale", ys);
+        await canvas.scene?.setFlag(MODULE_ID, "backgroundYScale", getBgYScale());
       };
     }
     if (BackgroundGizmos.keyHandler) document.removeEventListener('keydown', BackgroundGizmos.keyHandler);
@@ -80,7 +74,7 @@ export class BackgroundGizmos {
   private static onCloseGridConfig(): void {
     if (BackgroundGizmos.keyHandler) { document.removeEventListener('keydown', BackgroundGizmos.keyHandler); BackgroundGizmos.keyHandler = null; }
     if (BackgroundGizmos.wheelHandler) { document.removeEventListener('wheel', BackgroundGizmos.wheelHandler); BackgroundGizmos.wheelHandler = null; }
-    BackgroundGizmos.bgYScaleTemp = null; BackgroundGizmos.currentHtml = null;
+    setBgYScaleOverride(null); BackgroundGizmos.currentHtml = null;
     BackgroundGizmos.previewBg = null; BackgroundGizmos.clearAll();
   }
 
@@ -99,7 +93,7 @@ export class BackgroundGizmos {
     const texW = previewBg.texture?.width || 1, texH = previewBg.texture?.height || 1;
     const bgX = previewBg.x, bgY = previewBg.y, bgW = previewBg.width || 1;
     const sx   = bgW / texW;
-    const bgYS = BackgroundGizmos.bgYScaleTemp ?? 1;
+    const bgYS = getBgYScale();
     const scX  = isoCT ? sx * proj.counterFactor : sx;
     const scY  = isoCT ? sx * proj.ratio * proj.counterFactor * bgYS : sx;
     const cx   = bgX + bgW / 2, cy = bgY + texH * sx / 2;
@@ -132,9 +126,10 @@ export class BackgroundGizmos {
 
   private static scaleVerticalStep(delta: number): void {
     const html = BackgroundGizmos.currentHtml; if (!html) return;
-    BackgroundGizmos.bgYScaleTemp = Math.max(0.05, Math.min(5.0, Math.round(((BackgroundGizmos.bgYScaleTemp ?? 1) + delta * 0.01) * 1000) / 1000));
+    const newYS = Math.max(0.05, Math.min(5.0, Math.round((getBgYScale() + delta * 0.01) * 1000) / 1000));
+    setBgYScaleOverride(newYS);
     const el = html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
-    if (el) el.value = BackgroundGizmos.bgYScaleTemp.toFixed(3);
+    if (el) el.value = newYS.toFixed(3);
     BackgroundGizmos.show();
   }
   private static clearLayer(): void {
@@ -158,7 +153,7 @@ export class BackgroundGizmos {
 
   private static commit(drag: BgDrag, gx: number, gy: number): void {
     commitBgDrag(drag, gx, gy, BackgroundGizmos.currentHtml, (ys) => {
-      BackgroundGizmos.bgYScaleTemp = ys;
+      setBgYScaleOverride(ys);
       const ye = document.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
       if (ye) ye.value = ys.toFixed(3);
       BackgroundGizmos.show();

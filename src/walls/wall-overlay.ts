@@ -33,26 +33,26 @@ export function wallColor(doc: WallDoc): number {
 }
 
 export class WallOverlay {
-  private static _boxes: Map<string, PIXI.Container> = new Map();
-  private static _selectTile: string | null = null;
-  private static _altMode = false;
-  private static _pendingRefresh: Set<string> = new Set();
-  private static _rafId: number | null = null;
+  private static boxes: Map<string, PIXI.Container> = new Map();
+  private static selectTile: string | null = null;
+  private static altMode = false;
+  private static pendingRefresh: Set<string> = new Set();
+  private static rafId: number | null = null;
 
   static activate(): void {
     Hooks.on("canvasReady", () => WallOverlay.clearAll());
     Hooks.on("controlTile", (tile: Tile, controlled: boolean) => {
       if (controlled) WallOverlay.show(tile);
-      else { WallOverlay._selectTile = null; WallOverlay.hide(tile.id); }
+      else { WallOverlay.selectTile = null; WallOverlay.hide(tile.id); }
     });
     Hooks.on("refreshTile", (rawTile: unknown) => {
-      if (WallOverlay._boxes.size > 0) LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
+      if (WallOverlay.boxes.size > 0) LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
       // Preview clone fires refreshTile with drag-updated doc.x/y — redraw walls at new position.
       const t = rawTile as { id: string; hasPreview?: boolean; isPreview?: boolean };
-      if (WallOverlay._boxes.has(t.id) && !t.hasPreview && t.isPreview) WallOverlay.show(rawTile as any, true);
+      if (WallOverlay.boxes.has(t.id) && !t.hasPreview && t.isPreview) WallOverlay.show(rawTile as any, true);
     });
-    window.addEventListener("keydown", e => { if (e.altKey) WallOverlay._setAltMode(true); });
-    window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay._setAltMode(false); });
+    window.addEventListener("keydown", e => { if (e.altKey) WallOverlay.setAltMode(true); });
+    window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay.setAltMode(false); });
   }
 
   static show(tile: Tile, isDrag = false): void {
@@ -60,55 +60,55 @@ export class WallOverlay {
     const layer = LayerManager.ensureLayer(LAYER_KEYS.WALL_OVERLAY);
     const ctr   = new PIXI.Container();
     ctr.eventMode = "auto";
-    if (WallOverlay._selectTile === tile.id) WallOverlay._drawSelect(ctr, tile.document);
-    else WallOverlay._drawDisplay(ctr, tile.document, isDrag);
+    if (WallOverlay.selectTile === tile.id) WallOverlay.drawSelect(ctr, tile.document);
+    else WallOverlay.drawDisplay(ctr, tile.document, isDrag);
     layer.addChild(ctr);
-    WallOverlay._boxes.set(tile.id, ctr);
+    WallOverlay.boxes.set(tile.id, ctr);
     LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
   }
 
   static hide(tileId: string): void {
-    const ctr = WallOverlay._boxes.get(tileId);
+    const ctr = WallOverlay.boxes.get(tileId);
     if (!ctr) return;
     ctr.parent?.removeChild(ctr);
     ctr.destroy({ children: true });
-    WallOverlay._boxes.delete(tileId);
+    WallOverlay.boxes.delete(tileId);
   }
 
   static clearAll(): void {
-    for (const id of [...WallOverlay._boxes.keys()]) WallOverlay.hide(id);
-    WallOverlay._selectTile = null;
+    for (const id of [...WallOverlay.boxes.keys()]) WallOverlay.hide(id);
+    WallOverlay.selectTile = null;
     LayerManager.clearLayer(LAYER_KEYS.WALL_OVERLAY);
   }
 
-  static enterSelect(tile: Tile): void { WallOverlay._selectTile = tile.id; WallOverlay.show(tile); }
-  static exitSelect(tile: Tile): void  { WallOverlay._selectTile = null;    WallOverlay.show(tile); }
-  static isSelectMode(tileId: string): boolean { return WallOverlay._selectTile === tileId; }
+  static enterSelect(tile: Tile): void { WallOverlay.selectTile = tile.id; WallOverlay.show(tile); }
+  static exitSelect(tile: Tile): void  { WallOverlay.selectTile = null;    WallOverlay.show(tile); }
+  static isSelectMode(tileId: string): boolean { return WallOverlay.selectTile === tileId; }
   static refresh(tile: Tile): void {
-    if (!WallOverlay._boxes.has(tile.id)) return;
-    WallOverlay._pendingRefresh.add(tile.id);
-    if (WallOverlay._rafId !== null) return;
-    WallOverlay._rafId = requestAnimationFrame(() => {
-      WallOverlay._rafId = null;
-      for (const id of WallOverlay._pendingRefresh) {
-        if (!WallOverlay._boxes.has(id)) continue;
+    if (!WallOverlay.boxes.has(tile.id)) return;
+    WallOverlay.pendingRefresh.add(tile.id);
+    if (WallOverlay.rafId !== null) return;
+    WallOverlay.rafId = requestAnimationFrame(() => {
+      WallOverlay.rafId = null;
+      for (const id of WallOverlay.pendingRefresh) {
+        if (!WallOverlay.boxes.has(id)) continue;
         const t = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(id);
         if (t) WallOverlay.show(t);
       }
-      WallOverlay._pendingRefresh.clear();
+      WallOverlay.pendingRefresh.clear();
     });
   }
 
-  private static _setAltMode(active: boolean): void {
-    if (WallOverlay._altMode === active) return;
-    WallOverlay._altMode = active;
-    for (const id of [...WallOverlay._boxes.keys()]) { // snapshot: show() mutates _boxes
+  private static setAltMode(active: boolean): void {
+    if (WallOverlay.altMode === active) return;
+    WallOverlay.altMode = active;
+    for (const id of [...WallOverlay.boxes.keys()]) { // snapshot: show() mutates _boxes
       const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(id);
       if (tile) WallOverlay.show(tile);
     }
   }
 
-  private static _drawDisplay(ctr: PIXI.Container, doc: TileDocument, isDrag = false): void {
+  private static drawDisplay(ctr: PIXI.Container, doc: TileDocument, isDrag = false): void {
     const r = 2;
     const rect = isDrag ? imageRect(doc as TileDoc) : null;
     for (const id of getLinkedWallIds(doc)) {
@@ -135,7 +135,7 @@ export class WallOverlay {
     }
   }
 
-  private static _drawSelect(ctr: PIXI.Container, doc: TileDocument): void {
+  private static drawSelect(ctr: PIXI.Container, doc: TileDocument): void {
     const linked = new Set(getLinkedWallIds(doc));
     const r = 2;
     for (const wall of wallsLayer().placeables) {
