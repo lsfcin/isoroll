@@ -1,11 +1,11 @@
 // 3D bounding box overlay drawn on selected tokens.
 import { VolumeFlags } from "./flags";
 import { computeTokenVerts, drawBox, drawAnchorLine } from "./overlay-geometry";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 type TokenVolumeState = { x: number; y: number; elev: number; boundH: number };
 
 export class TokenVolumeOverlay {
-  private static layer: PIXI.Container | null = null;
   private static boxes: Map<string, PIXI.Graphics> = new Map();
   private static lastState: Map<string, TokenVolumeState> = new Map();
 
@@ -46,7 +46,7 @@ export class TokenVolumeOverlay {
   static show(token: Token): void {
     TokenVolumeOverlay.hide(token.id);
     if (!VolumeFlags.getShowVolumeManipulation(token.document, true)) return;
-    const layer = TokenVolumeOverlay.ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_OVERLAY);
     const g = new PIXI.Graphics();
     g.eventMode = "passive";
     const v = computeTokenVerts(token);
@@ -55,13 +55,13 @@ export class TokenVolumeOverlay {
     if (v.elevation < 0) drawAnchorLine(g, v);
     layer.addChild(g);
     TokenVolumeOverlay.boxes.set(token.id, g);
-    TokenVolumeOverlay.bringToTop();
+    LayerManager.bringToTop(LAYER_KEYS.TOKEN_VOLUME_OVERLAY);
   }
 
   static hide(tokenId: string): void {
     const g = TokenVolumeOverlay.boxes.get(tokenId);
     if (!g) return;
-    TokenVolumeOverlay.layer?.removeChild(g);
+    g.parent?.removeChild(g);
     g.destroy();
     TokenVolumeOverlay.boxes.delete(tokenId);
     TokenVolumeOverlay.lastState.delete(tokenId);
@@ -70,28 +70,6 @@ export class TokenVolumeOverlay {
   static clearAll(): void {
     for (const id of Array.from(TokenVolumeOverlay.boxes.keys())) TokenVolumeOverlay.hide(id);
     TokenVolumeOverlay.lastState.clear();
-    if (TokenVolumeOverlay.layer) {
-      try { (canvas.stage as unknown as PIXI.Container).removeChild(TokenVolumeOverlay.layer!); } catch { /* ok */ }
-      TokenVolumeOverlay.layer.destroy({ children: true });
-      TokenVolumeOverlay.layer = null;
-    }
-  }
-
-  private static ensureLayer(): PIXI.Container {
-    if (TokenVolumeOverlay.layer && !TokenVolumeOverlay.layer.parent) TokenVolumeOverlay.layer = null;
-    if (TokenVolumeOverlay.layer) return TokenVolumeOverlay.layer;
-    const layer = new PIXI.Container();
-    layer.eventMode = "passive";
-    (canvas.stage as unknown as PIXI.Container).addChild(layer);
-    TokenVolumeOverlay.layer = layer;
-    return layer;
-  }
-
-  private static bringToTop(): void {
-    if (TokenVolumeOverlay.layer && !TokenVolumeOverlay.layer.parent) TokenVolumeOverlay.layer = null;
-    if (!TokenVolumeOverlay.layer) return;
-    const stage = canvas.stage as unknown as PIXI.Container;
-    try { stage.removeChild(TokenVolumeOverlay.layer); } catch { /* ok */ }
-    stage.addChild(TokenVolumeOverlay.layer);
+    LayerManager.clearLayer(LAYER_KEYS.TOKEN_VOLUME_OVERLAY);
   }
 }
