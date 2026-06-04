@@ -1,6 +1,6 @@
 import "../styles/isoroll.scss";
 import { registerVolumeSettings } from "./volume/settings";
-import { VolumeOverlay } from "./volume/overlay";
+import { VolumeOverlay } from "./tiles/tile-overlay";
 import { VolumeGizmos } from "./volume/gizmos";
 import { TokenOverlay } from "./tokens/token-overlay";
 import { TokenGizmos } from "./tokens/token-gizmos";

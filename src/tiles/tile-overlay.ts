@@ -1,6 +1,6 @@
 // Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer.
-import { VolumeFlags } from "./flags";
-import { P, computeVerts, drawBox, drawAnchorLine } from "./overlay-geometry";
+import { VolumeFlags } from "../volume/flags";
+import { P, computeVerts, drawBox, drawAnchorLine } from "../volume/overlay-geometry";
 import { drawMeshContour, MeshLike } from "../draw/contour";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
