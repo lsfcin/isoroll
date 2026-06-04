@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../volume/flags";
-import { addIsorollTab, cbGroup } from "./scene-config";
+import { addIsorollTab, flagCheckbox } from "../ui/tab-helpers";
 import {
   getLinkedWallIds, generateBaseWalls, unlinkAllWalls, deleteLinkedWalls,
   hasLinkedDoor, getDoorBehavior, setDoorBehavior,
@@ -51,11 +51,11 @@ export function registerTileConfigHook(): void {
     })();
 
     addIsorollTab($html, t("ISOROLL.TabLabel"),
-      cbGroup("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
-      cbGroup("transformTile",         "TileConfig", d.getFlag(MODULE_ID, "transformTile")          === true) +
-      cbGroup("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
-      cbGroup("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
-      cbGroup("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +
+      flagCheckbox("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
+      flagCheckbox("transformTile",         "TileConfig", d.getFlag(MODULE_ID, "transformTile")          === true) +
+      flagCheckbox("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
+      flagCheckbox("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
+      flagCheckbox("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +
       wallSection + doorSection,
       ($h) => {
         const refresh  = () => $h.find(".isoroll-wall-count").text(getLinkedWallIds(d).length);
