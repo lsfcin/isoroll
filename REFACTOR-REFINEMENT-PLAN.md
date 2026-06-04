@@ -175,10 +175,8 @@ Dependencies shown as arrows. Do in this order within each group.
 
 ### Group C — Structural pattern (higher impact, requires care)
 
-| Step | What | Risk | Files changed | Gain |
-|------|------|------|---------------|------|
-| C1 | I6: Add `startPointerDrag<T>` to `util.ts`; refactor `VolumeGizmos`, `TokenGizmos`, `TokenElevGizmo`, `BackgroundGizmos` to use it | 🔴 | `util.ts` + 4 files | Eliminate ~80 lines drag boilerplate |
-| C2 | I13: Extract `background/bg-html.ts` from `bg-gizmos.ts` | 🟡 | 2 files | bg-gizmos 185 → ~125 lines |
+<!-- C1 DONE (f2f3afd) — startPointerDrag<T> added to util.ts; drag boilerplate removed from VolumeGizmos, TokenGizmos, TokenElevGizmo, BackgroundGizmos (~56 lines eliminated) -->
+<!-- C2 DONE (a01f10d) — bg-html.ts extracted from bg-gizmos.ts; bg-gizmos 172 → 104 lines -->
 
 ### Group D — Deferred / optional
 
