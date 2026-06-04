@@ -315,18 +315,30 @@ available).
 
 ---
 
-## B23 — TileHUD intermittently not appearing on right-click
+## B23 — TileHUD / TokenHUD blocked by stale PIXI pointer capture
 
-**Symptom:** Occasionally, right-clicking a tile does not show the TileHUD. The tile is
-clickable but the HUD does not appear. Ceases after some further interactions (e.g.
-deselect/reselect, switching layers, other canvas events). Pattern not yet identified.
+**Symptom:** Right-clicking a tile or token does not show the HUD. The object is selectable
+but the context-menu / HUD never appears. Becomes reproducible after certain interactions.
+**Repro:** Opens reliably after generating base walls / manipulating gizmos; clears only
+after opening GridConfig and dragging the background with the white-circle handle
+(all steps required). Suggests `BackgroundGizmos` drag releases stale global pointer state.
 
-**Root cause hypothesis:** Unknown. May be a focus/event-capture issue where a stale
-isoroll overlay or gizmo intercepts or swallows the pointer event before Foundry's tile
-control handler. Could also be a Foundry-native issue surfacing intermittently.
+**Root cause hypothesis:** A PIXI container with `eventMode = "static"` (likely a gizmo or
+overlay layer) retains implicit pointer capture after a drag, silently swallowing subsequent
+right-click events on tiles/tokens underneath. The BackgroundGizmos `bgTranslate` drag (white
+circle) apparently resets this state as a side effect. Foundry's right-click HUD path depends
+on the pointer event reaching the tile mesh — a capturing ancestor blocks it.
 
-**Affected:** Unknown — likely `VolumeGizmos`, `WallOverlay`, or any PIXI container with
-`eventMode = "static"` that could be sitting on top of the tile.
+**Fix direction:**
+- Audit `startPointerDrag` in `util.ts`: ensure `pointerup` handler calls
+  `e.target.releasePointerCapture(e.pointerId)` (or uses `{ capture: false }` listeners)
+  so no container retains capture after drag end.
+- Alternatively: ensure all overlay/gizmo `PIXI.Container` instances call
+  `container.eventMode = "none"` (not `"static"`) when not actively showing handles,
+  so they don't intercept events when idle.
+
+**Affected:** `startPointerDrag` in `src/util.ts`; all gizmo/overlay `activate()` paths
+that set `eventMode = "static"` on layer containers.
 
 ---
 

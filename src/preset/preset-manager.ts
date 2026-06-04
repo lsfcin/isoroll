@@ -1,5 +1,5 @@
 import { deriveKey, readPreset, writePreset, preloadCache, getCachedPreset } from "./preset-storage";
-import { getSrc, docId, toScene, isPresetEnabled, gridSize, type TextureDoc, type SceneDoc } from "./preset-ops";
+import { getSrc, docId, toScene, isPresetEnabled, gridSize, getSceneBg, type TextureDoc, type SceneDoc } from "./preset-ops";
 import { applyTile, applyToken, applyBackground, autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls, applyPresetToSource, tilePresetData } from "./preset-apply";
 import { tileUpsertTimers, tokenUpsertTimers, bgUpsertTimers, debounced, upsertTile, upsertToken, upsertBackground } from "./preset-upsert";
 import {
@@ -107,7 +107,7 @@ export class PresetManager {
           save: async () => {
             const scene = canvas.scene;
             if (!scene) { console.warn("isoroll | no active scene"); return; }
-            const src = toScene(scene).background?.src;
+            const src = getSceneBg(scene)?.src;
             if (!src) { console.warn("isoroll | no background"); return; }
             await upsertBackground(scene);
           },

@@ -3,7 +3,7 @@ import { MODULE_ID } from "../flags";
 import { deriveKey, writePreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
 import { extractWallDefs } from "../walls/wall-crud";
-import { getSrc, isPresetEnabled, toScene, asFD, asTDp, gridSize } from "./preset-ops";
+import { getSrc, isPresetEnabled, toScene, asFD, asTDp, gridSize, getSceneBg } from "./preset-ops";
 
 const getNum  = (d: unknown, k: string, def: number) => (asFD(d).getFlag(MODULE_ID, k) as number | undefined) ?? def;
 const getBool = (d: unknown, k: string, def: boolean) => { const v = asFD(d).getFlag(MODULE_ID, k); return v !== undefined && v !== null ? (v as boolean) : def; };
@@ -39,10 +39,10 @@ function extractToken(doc: unknown, key: string): TokenPreset {
     updatedAt: Date.now() };
 }
 function extractBackground(scene: unknown, key: string): BackgroundPreset {
-  const s = toScene(scene);
+  const bg = getSceneBg(scene);
   return { type: "background", imageKey: key,
-    scaleX: s.background?.scaleX ?? 1, offsetX: s.background?.offsetX ?? 0,
-    offsetY: s.background?.offsetY ?? 0, gridSize: s.grid?.size ?? 100,
+    scaleX: bg?.scaleX ?? 1, offsetX: bg?.offsetX ?? 0,
+    offsetY: bg?.offsetY ?? 0, gridSize: toScene(scene).grid?.size ?? 100,
     backgroundYScale: (asFD(scene).getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1,
     updatedAt: Date.now() };
 }
@@ -59,6 +59,6 @@ export async function upsertToken(doc: unknown): Promise<void> {
 }
 export async function upsertBackground(scene: unknown): Promise<void> {
   if (!isPresetEnabled(scene)) return;
-  const src = toScene(scene).background?.src; if (!src) return;
+  const src = getSceneBg(scene)?.src; if (!src) return;
   await writePreset(extractBackground(scene, deriveKey(src)));
 }

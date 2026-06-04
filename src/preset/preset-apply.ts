@@ -3,7 +3,7 @@ import { MODULE_ID } from "../flags";
 import { deriveKey, readPreset, getCachedPreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
 import { applyWallDefs } from "../walls/wall-crud";
-import { getSrc, isPresetEnabled, toScene, asUD, asTDp, gridSize } from "./preset-ops";
+import { getSrc, isPresetEnabled, toScene, asUD, asTDp, gridSize, getSceneBg } from "./preset-ops";
 
 export function tilePresetData(preset: TilePreset): object {
   const gs = gridSize();
@@ -52,7 +52,7 @@ export async function autoApplyToken(doc: unknown): Promise<void> {
 }
 export async function autoApplyBackground(scene: unknown): Promise<void> {
   if (!isPresetEnabled(scene)) return;
-  const src = toScene(scene).background?.src; if (!src) return;
+  const src = getSceneBg(scene)?.src; if (!src) return;
   const p = await readPreset(deriveKey(src));
   if (!p || p.type !== "background") return;
   await applyBackground(scene, p);
