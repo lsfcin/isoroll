@@ -2,9 +2,9 @@
 import { VolumeFlags } from "./flags";
 import { P, computeVerts, drawBox, drawAnchorLine } from "./overlay-geometry";
 import { drawMeshContour, MeshLike } from "../draw/contour";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 export class VolumeOverlay {
-  private static layer: PIXI.Container | null = null;
   private static boxes: Map<string, PIXI.Graphics> = new Map();
 
   static activate(): void {
@@ -38,54 +38,26 @@ export class VolumeOverlay {
 
   static show(tile: Tile): void {
     VolumeOverlay.hide(tile.id);
-    const layer = VolumeOverlay.ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_OVERLAY);
     const g = new PIXI.Graphics();
     g.eventMode = "passive";
     VolumeOverlay.draw(g, tile);
     layer.addChild(g);
     VolumeOverlay.boxes.set(tile.id, g);
-    VolumeOverlay.bringToTop();
+    LayerManager.bringToTop(LAYER_KEYS.VOLUME_OVERLAY);
   }
 
   static hide(tileId: string): void {
     const g = VolumeOverlay.boxes.get(tileId);
     if (!g) return;
-    VolumeOverlay.layer?.removeChild(g);
+    g.parent?.removeChild(g);
     g.destroy();
     VolumeOverlay.boxes.delete(tileId);
   }
 
   static clearAll(): void {
     for (const id of Array.from(VolumeOverlay.boxes.keys())) VolumeOverlay.hide(id);
-    if (VolumeOverlay.layer) {
-      try { (canvas.stage as unknown as PIXI.Container).removeChild(VolumeOverlay.layer!); } catch { /* ok */ }
-      VolumeOverlay.layer.destroy({ children: true });
-      VolumeOverlay.layer = null;
-    }
-  }
-
-  private static getLayer(): PIXI.Container | null {
-    if (VolumeOverlay.layer && !VolumeOverlay.layer.parent) VolumeOverlay.layer = null;
-    return VolumeOverlay.layer;
-  }
-
-  private static ensureLayer(): PIXI.Container {
-    const existing = VolumeOverlay.getLayer();
-    if (existing) return existing;
-    const layer = new PIXI.Container();
-    layer.eventMode = "passive";
-    (canvas.stage as unknown as PIXI.Container).addChild(layer);
-    VolumeOverlay.layer = layer;
-    return layer;
-  }
-
-  private static bringToTop(): void {
-    const layer = VolumeOverlay.getLayer();
-    if (!layer) return;
-    const stage = canvas.stage as unknown as PIXI.Container;
-    if (!stage) return;
-    try { stage.removeChild(layer); } catch { /* ok */ }
-    stage.addChild(layer);
+    LayerManager.clearLayer(LAYER_KEYS.VOLUME_OVERLAY);
   }
 
   private static draw(g: PIXI.Graphics, tile: Tile): void {
