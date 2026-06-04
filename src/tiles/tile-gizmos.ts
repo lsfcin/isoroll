@@ -1,12 +1,12 @@
 // Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button.
 import { getProjection } from "../transform/constants";
-import { MODULE_ID, VolumeFlags } from "./flags";
+import { MODULE_ID, VolumeFlags } from "../volume/flags";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 import {
   HandleType, DragState, handleTypeMap,
   handlePositions, imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, commitDrag,
-} from "./gizmos-drag";
-import { makeHandleForType, createRotateBlocker } from "./gizmos-handles";
+} from "../volume/gizmos-drag";
+import { makeHandleForType, createRotateBlocker } from "../volume/gizmos-handles";
 
 export class VolumeGizmos {
   private static sets: Map<string, PIXI.Container> = new Map();
