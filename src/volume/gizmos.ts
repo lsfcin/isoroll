@@ -1,6 +1,7 @@
 // Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button.
 import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 import {
   HandleType, DragState, handleTypeMap,
   handlePositions, imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, commitDrag,
@@ -8,7 +9,6 @@ import {
 import { makeHandleForType, createRotateBlocker } from "./gizmos-handles";
 
 export class VolumeGizmos {
-  private static layer: PIXI.Container | null = null;
   private static sets: Map<string, PIXI.Container> = new Map();
   private static blockers: Map<string, PIXI.Graphics> = new Map();
   private static drag: DragState | null = null;
@@ -48,7 +48,7 @@ export class VolumeGizmos {
   private static suppressRotateHandle(tile: Tile): void {
     const old = VolumeGizmos.blockers.get(tile.id);
     if (old) { old.parent?.removeChild(old); old.destroy(); VolumeGizmos.blockers.delete(tile.id); }
-    const layer = VolumeGizmos.ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_GIZMOS);
     const blocker = createRotateBlocker(tile, layer as unknown as PIXI.Container);
     if (!blocker) return;
     layer.addChild(blocker);
@@ -57,7 +57,7 @@ export class VolumeGizmos {
 
   static show(tile: Tile): void {
     VolumeGizmos.hide(tile.id);
-    const layer = VolumeGizmos.ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_GIZMOS);
     const tw = tile.document.width  ?? 0;
     const th = tile.document.height ?? 0;
     const tx = (tile.document.x ?? 0) - tw / 2;
@@ -105,48 +105,19 @@ export class VolumeGizmos {
     }
     layer.addChild(container);
     VolumeGizmos.sets.set(tile.id, container);
-    VolumeGizmos.bringToTop();
+    LayerManager.bringToTop(LAYER_KEYS.VOLUME_GIZMOS);
   }
 
   static hide(tileId: string): void {
     const c = VolumeGizmos.sets.get(tileId);
-    if (c) { VolumeGizmos.layer?.removeChild(c); c.destroy({ children: true }); VolumeGizmos.sets.delete(tileId); }
+    if (c) { c.parent?.removeChild(c); c.destroy({ children: true }); VolumeGizmos.sets.delete(tileId); }
     const b = VolumeGizmos.blockers.get(tileId);
     if (b) { b.parent?.removeChild(b); b.destroy(); VolumeGizmos.blockers.delete(tileId); }
   }
 
   static clearAll(): void {
     for (const id of Array.from(VolumeGizmos.sets.keys())) VolumeGizmos.hide(id);
-    if (VolumeGizmos.layer) {
-      try { (canvas.stage as unknown as PIXI.Container).removeChild(VolumeGizmos.layer); } catch { /* ok */ }
-      VolumeGizmos.layer.destroy({ children: true });
-      VolumeGizmos.layer = null;
-    }
-  }
-
-
-  private static getLayer(): PIXI.Container | null {
-    if (VolumeGizmos.layer && !VolumeGizmos.layer.parent) VolumeGizmos.layer = null;
-    return VolumeGizmos.layer;
-  }
-
-  private static ensureLayer(): PIXI.Container {
-    const existing = VolumeGizmos.getLayer();
-    if (existing) return existing;
-    const layer = new PIXI.Container();
-    layer.eventMode = "passive";
-    (canvas.stage as unknown as PIXI.Container).addChild(layer);
-    VolumeGizmos.layer = layer;
-    return layer;
-  }
-
-  private static bringToTop(): void {
-    const layer = VolumeGizmos.getLayer();
-    if (!layer) return;
-    const stage = canvas.stage as unknown as PIXI.Container;
-    if (!stage) return;
-    try { stage.removeChild(layer); } catch { /* ok */ }
-    stage.addChild(layer);
+    LayerManager.clearLayer(LAYER_KEYS.VOLUME_GIZMOS);
   }
 
   private static swapSide(tile: Tile): void {
