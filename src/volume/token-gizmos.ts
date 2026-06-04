@@ -1,8 +1,8 @@
 // Image offset + scale handles for tokens (bottom-left circle, top-right square).
-import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "./gizmos-drag";
 import { makeElevHandle, makeSquareCounterHandle } from "./gizmos-handles";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 interface TkDrag {
   type: "imgOffset" | "imgScale" | "imgYScale";
@@ -16,7 +16,6 @@ interface TkDrag {
 }
 
 export class TokenGizmos {
-  private static layer: PIXI.Container | null = null;
   private static sets: Map<string, PIXI.Container> = new Map();
   private static drag: TkDrag | null = null;
   private static readonly onMove = (e: PointerEvent): void => TokenGizmos.handleMove(e);
@@ -52,7 +51,7 @@ export class TokenGizmos {
   static show(token: Token): void {
     TokenGizmos.hide(token.id);
     if (!VolumeFlags.getShowImageManipulation(token.document, true)) return;
-    const layer  = TokenGizmos.ensureLayer();
+    const layer  = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_GIZMOS);
     const bl      = imageBottomLeft(token);
     const tr      = imageTopRight(token);
     const tc      = imageTopCenter(token);
@@ -85,42 +84,20 @@ export class TokenGizmos {
     }
     layer.addChild(container);
     TokenGizmos.sets.set(token.id, container);
-    TokenGizmos.bringToTop();
+    LayerManager.bringToTop(LAYER_KEYS.TOKEN_GIZMOS);
   }
 
   static hide(tokenId: string): void {
     const c = TokenGizmos.sets.get(tokenId);
     if (!c) return;
-    TokenGizmos.layer?.removeChild(c);
+    c.parent?.removeChild(c);
     c.destroy({ children: true });
     TokenGizmos.sets.delete(tokenId);
   }
 
   static clearAll(): void {
     for (const id of Array.from(TokenGizmos.sets.keys())) TokenGizmos.hide(id);
-    if (TokenGizmos.layer) {
-      try { (canvas.stage as unknown as PIXI.Container).removeChild(TokenGizmos.layer!); } catch { /* ok */ }
-      TokenGizmos.layer.destroy({ children: true });
-      TokenGizmos.layer = null;
-    }
-  }
-
-  private static ensureLayer(): PIXI.Container {
-    if (TokenGizmos.layer && !TokenGizmos.layer.parent) TokenGizmos.layer = null;
-    if (TokenGizmos.layer) return TokenGizmos.layer;
-    const layer = new PIXI.Container();
-    layer.eventMode = "passive";
-    (canvas.stage as unknown as PIXI.Container).addChild(layer);
-    TokenGizmos.layer = layer;
-    return layer;
-  }
-
-  private static bringToTop(): void {
-    if (TokenGizmos.layer && !TokenGizmos.layer.parent) TokenGizmos.layer = null;
-    if (!TokenGizmos.layer) return;
-    const stage = canvas.stage as unknown as PIXI.Container;
-    try { stage.removeChild(TokenGizmos.layer); } catch { /* ok */ }
-    stage.addChild(TokenGizmos.layer);
+    LayerManager.clearLayer(LAYER_KEYS.TOKEN_GIZMOS);
   }
 
   private static beginDrag(
