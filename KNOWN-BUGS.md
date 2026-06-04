@@ -311,5 +311,36 @@ change to the tile sprite.
 
 ---
 
+## B22 — GridConfig arrow keys move background in projected grid axes, not screen axes
+
+**Symptom:** In the Grid Configuration Tool with Iso enabled, the arrow keys (which control
+Scene Offset / `shiftX` / `shiftY`) move the background along projected grid axes (diagonal
+in screen space) instead of visually left/right/up/down. E.g. pressing ← moves the image
+diagonally. The behaviour is disorienting because the user's mental model is screen-space
+movement.
+
+**Related UX question:** The displayed X and Y offset values are in grid coordinate units.
+Under iso transform these map to diagonal screen directions, so the numbers don't match
+visual intuition. Showing offsets in screen pixels (or suppressing the native field and
+replacing it with a screen-space pair) may be more readable — worth deciding before fixing
+the key behaviour.
+
+**Strategy:**
+- Intercept bare arrow key events inside `onRenderGridConfig` (same site as the existing
+  CTRL+wheel handler in `bg-gizmos.ts` / future `bg-html.ts`).
+- For each arrow key, compute the required `(ΔshiftX, ΔshiftY)` in grid coords that
+  produces a pure screen-space movement. `screenToCanvas` in `src/util.ts` already inverts
+  the world transform; feed it `(±step, 0)` for left/right and `(0, ±step)` for up/down.
+- Write the resulting deltas into the `shiftX` / `shiftY` inputs and trigger `change` so
+  the preview redraws.
+- Decide whether to also replace the displayed values with screen-px equivalents (a separate
+  read-only "Screen offset" row, keeping native fields hidden, is one option).
+
+**Affected:** `BackgroundGizmos.onRenderGridConfig` (currently `background/bg-gizmos.ts`,
+will become `background/bg-html.ts` after C2); `screenToCanvas` in `src/util.ts` (already
+available).
+
+---
+
 > ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
 > from branch switching, not a code regression).

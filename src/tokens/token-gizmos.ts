@@ -4,7 +4,7 @@ import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "
 import { projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos/img-drag";
 import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
 import { MeshLike } from "../draw/contour";
-import { canvasZoom } from "../util";
+import { canvasZoom, startPointerDrag } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 interface TkDrag {
@@ -20,9 +20,6 @@ interface TkDrag {
 
 export class TokenGizmos {
   private static sets: Map<string, PIXI.Container> = new Map();
-  private static drag: TkDrag | null = null;
-  private static readonly onMove = (e: PointerEvent): void => TokenGizmos.handleMove(e);
-  private static readonly onUp   = (e: PointerEvent): void => TokenGizmos.handleUp(e);
 
   static activate(): void {
     Hooks.on("canvasReady",  TokenGizmos.onCanvasReady);
@@ -107,9 +104,11 @@ export class TokenGizmos {
     gx: number, gy: number, imgOffX: number, imgOffY: number, imgScale: number,
     imgYScale = 1, imgHalfH = 100, meshCX = 0, meshCY = 0,
   ): void {
-    TokenGizmos.drag = { type, token, startGX: gx, startGY: gy, startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale, startImgYScale: imgYScale, startImgHalfH: imgHalfH, startMeshCX: meshCX, startMeshCY: meshCY };
-    window.addEventListener("pointermove", TokenGizmos.onMove);
-    window.addEventListener("pointerup",   TokenGizmos.onUp, { once: true });
+    const drag: TkDrag = { type, token, startGX: gx, startGY: gy, startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale, startImgYScale: imgYScale, startImgHalfH: imgHalfH, startMeshCX: meshCX, startMeshCY: meshCY };
+    startPointerDrag(drag,
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); TokenGizmos.commit(d, x, y); },
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); TokenGizmos.commit(d, x, y); },
+    );
   }
 
   private static commit(drag: TkDrag, gx: number, gy: number): void {
@@ -128,19 +127,4 @@ export class TokenGizmos {
     }
   }
 
-  private static handleMove(e: PointerEvent): void {
-    if (!TokenGizmos.drag) return;
-    e.preventDefault();
-    const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
-    TokenGizmos.commit(TokenGizmos.drag, gx, gy);
-  }
-
-  private static handleUp(e: PointerEvent): void {
-    window.removeEventListener("pointermove", TokenGizmos.onMove);
-    const drag = TokenGizmos.drag;
-    TokenGizmos.drag = null;
-    if (!drag) return;
-    const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
-    TokenGizmos.commit(drag, gx, gy);
-  }
 }

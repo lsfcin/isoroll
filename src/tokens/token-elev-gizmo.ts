@@ -3,7 +3,7 @@ import { currentProjection } from "../transform/constants";
 import { VolumeFlags } from "../flags";
 import { makeCircleHandle } from "../gizmos/handle-draw";
 import { clientToGlobal } from "../gizmos/mesh-corners";
-import { canvasZoom, gridDistance, elevToCanvas } from "../util";
+import { canvasZoom, gridDistance, elevToCanvas, startPointerDrag } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 interface TokenElevDrag {
@@ -17,9 +17,6 @@ type ElevHandleState = { x: number; y: number; elev: number; boundH: number };
 export class TokenElevGizmo {
   private static sets: Map<string, PIXI.Container> = new Map();
   private static lastState: Map<string, ElevHandleState> = new Map();
-  private static drag: TokenElevDrag | null = null;
-  private static readonly onMove = (e: PointerEvent): void => TokenElevGizmo.handleMove(e);
-  private static readonly onUp   = (e: PointerEvent): void => TokenElevGizmo.handleUp(e);
 
   static activate(): void {
     Hooks.on("canvasReady",  TokenElevGizmo.onCanvasReady);
@@ -107,9 +104,11 @@ export class TokenElevGizmo {
   }
 
   private static beginDrag(token: Token, gx: number, gy: number, elev: number): void {
-    TokenElevGizmo.drag = { token, startGX: gx, startGY: gy, startElev: elev };
-    window.addEventListener("pointermove", TokenElevGizmo.onMove);
-    window.addEventListener("pointerup",   TokenElevGizmo.onUp, { once: true });
+    const drag: TokenElevDrag = { token, startGX: gx, startGY: gy, startElev: elev };
+    startPointerDrag(drag,
+      (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); TokenElevGizmo.commit(d, y); },
+      (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); TokenElevGizmo.commit(d, y); },
+    );
   }
 
   private static commit(drag: TokenElevDrag, gy: number): void {
@@ -122,19 +121,4 @@ export class TokenElevGizmo {
       .update({ elevation: elev }, { animate: false });
   }
 
-  private static handleMove(e: PointerEvent): void {
-    if (!TokenElevGizmo.drag) return;
-    e.preventDefault();
-    const { y: gy } = clientToGlobal(e.clientX, e.clientY);
-    TokenElevGizmo.commit(TokenElevGizmo.drag, gy);
-  }
-
-  private static handleUp(e: PointerEvent): void {
-    window.removeEventListener("pointermove", TokenElevGizmo.onMove);
-    const drag = TokenElevGizmo.drag;
-    TokenElevGizmo.drag = null;
-    if (!drag) return;
-    const { y: gy } = clientToGlobal(e.clientX, e.clientY);
-    TokenElevGizmo.commit(drag, gy);
-  }
 }

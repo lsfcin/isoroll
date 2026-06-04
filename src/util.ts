@@ -22,3 +22,17 @@ export function screenToCanvas(
   const det = wt.a * wt.d - wt.b * wt.c;
   return { x: (dx * wt.d - dy * wt.c) / det, y: (-dx * wt.b + dy * wt.a) / det };
 }
+
+export function startPointerDrag<T>(
+  drag: T,
+  onMove: (drag: T, e: PointerEvent) => void,
+  onUp:   (drag: T, e: PointerEvent) => void,
+): void {
+  const handleMove = (e: PointerEvent) => { e.preventDefault(); onMove(drag, e); };
+  const handleUp   = (e: PointerEvent) => {
+    window.removeEventListener("pointermove", handleMove);
+    onUp(drag, e);
+  };
+  window.addEventListener("pointermove", handleMove);
+  window.addEventListener("pointerup",   handleUp, { once: true });
+}

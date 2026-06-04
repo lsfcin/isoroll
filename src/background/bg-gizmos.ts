@@ -4,6 +4,7 @@ import { CanvasTransform } from "../transform/stage-transform";
 import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
 import { MODULE_ID } from "../flags";
 import { clientToGlobal } from "../gizmos/mesh-corners";
+import { startPointerDrag } from "../util";
 import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
 import { drawDashedContour } from "../draw/shapes";
 
@@ -22,11 +23,8 @@ type GCApp = { _processSubmitData?: (...a: unknown[]) => Promise<unknown> };
 export class BackgroundGizmos {
   private static previewBg:    PIXI.Sprite | null = null;
   private static currentHtml:  HTMLElement | null = null;
-  private static drag:         BgDrag | null = null;
   private static keyHandler:   ((e: KeyboardEvent) => void) | null = null;
   private static wheelHandler: ((e: WheelEvent) => void) | null = null;
-  private static readonly onMove = (e: PointerEvent) => BackgroundGizmos.handleMove(e);
-  private static readonly onUp   = (e: PointerEvent) => BackgroundGizmos.handleUp(e);
 
   static activate(): void {
     Hooks.on("renderGridConfig", BackgroundGizmos.onRenderGridConfig);
@@ -155,9 +153,11 @@ export class BackgroundGizmos {
     startScale: number, sCX: number, sCY: number,
     startBgYS: number, startBgH: number, startSX: number, startSY: number,
   ): void {
-    BackgroundGizmos.drag = { type, startGX: gx, startGY: gy, startScale, startScreenCX: sCX, startScreenCY: sCY, startBgYScale: startBgYS, startBgHalfH: startBgH, startShiftX: startSX, startShiftY: startSY };
-    window.addEventListener("pointermove", BackgroundGizmos.onMove);
-    window.addEventListener("pointerup",   BackgroundGizmos.onUp, { once: true });
+    const drag: BgDrag = { type, startGX: gx, startGY: gy, startScale, startScreenCX: sCX, startScreenCY: sCY, startBgYScale: startBgYS, startBgHalfH: startBgH, startShiftX: startSX, startShiftY: startSY };
+    startPointerDrag(drag,
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); BackgroundGizmos.commit(d, x, y); },
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); BackgroundGizmos.commit(d, x, y); },
+    );
   }
 
   private static commit(drag: BgDrag, gx: number, gy: number): void {
@@ -169,18 +169,4 @@ export class BackgroundGizmos {
     });
   }
 
-  private static handleMove(e: PointerEvent): void {
-    if (!BackgroundGizmos.drag) return;
-    e.preventDefault();
-    const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
-    BackgroundGizmos.commit(BackgroundGizmos.drag, gx, gy);
-  }
-
-  private static handleUp(e: PointerEvent): void {
-    window.removeEventListener("pointermove", BackgroundGizmos.onMove);
-    const drag = BackgroundGizmos.drag; BackgroundGizmos.drag = null;
-    if (!drag) return;
-    const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
-    BackgroundGizmos.commit(drag, gx, gy);
-  }
 }

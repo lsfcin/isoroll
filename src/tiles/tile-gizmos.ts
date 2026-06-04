@@ -1,7 +1,7 @@
 // Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button.
 import { currentProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
-import { gridDistance, elevToCanvas } from "../util";
+import { gridDistance, elevToCanvas, startPointerDrag } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 import { HandleType, DragState, handleTypeMap, handlePositions, commitDrag } from "./tile-drag";
 import { imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal } from "../gizmos/mesh-corners";
@@ -10,9 +10,6 @@ import { makeHandleForType, createRotateBlocker } from "../gizmos/handle-factori
 export class VolumeGizmos {
   private static sets: Map<string, PIXI.Container> = new Map();
   private static blockers: Map<string, PIXI.Graphics> = new Map();
-  private static drag: DragState | null = null;
-  private static readonly onMove = (e: PointerEvent): void => VolumeGizmos.handleMove(e);
-  private static readonly onUp   = (e: PointerEvent): void => VolumeGizmos.handleUp(e);
 
   static activate(): void {
     Hooks.on("canvasReady",   VolumeGizmos.onCanvasReady);
@@ -133,30 +130,16 @@ export class VolumeGizmos {
     boundH: number, elev: number, docX: number, docY: number,
     imgOffX = 0, imgOffY = 0, imgScale = 1, imgYScale = 1, imgHalfH = 100,
   ): void {
-    VolumeGizmos.drag = {
+    const drag: DragState = {
       type, tile, startGX: gx, startGY: gy, startX: tx, startY: ty,
       startW: tw, startH: th, startBoundH: boundH, startElev: elev,
       startDocX: docX, startDocY: docY,
       startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale,
       startImgYScale: imgYScale, startImgHalfH: imgHalfH,
     };
-    window.addEventListener("pointermove", VolumeGizmos.onMove);
-    window.addEventListener("pointerup",   VolumeGizmos.onUp, { once: true });
-  }
-
-  private static handleMove(e: PointerEvent): void {
-    if (!VolumeGizmos.drag) return;
-    e.preventDefault();
-    const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
-    commitDrag(VolumeGizmos.drag, gx, gy);
-  }
-
-  private static handleUp(e: PointerEvent): void {
-    window.removeEventListener("pointermove", VolumeGizmos.onMove);
-    const drag = VolumeGizmos.drag;
-    VolumeGizmos.drag = null;
-    if (!drag) return;
-    const { x: gx, y: gy } = clientToGlobal(e.clientX, e.clientY);
-    commitDrag(drag, gx, gy);
+    startPointerDrag(drag,
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); commitDrag(d, x, y); },
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); commitDrag(d, x, y); },
+    );
   }
 }
