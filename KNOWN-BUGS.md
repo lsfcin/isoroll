@@ -103,6 +103,76 @@ hook and call `clearAll()` on all overlays/gizmos.
 
 ---
 
+## B11 — imgScale handle cursor shows wrong diagonal direction
+
+**Symptom:** The white square handle for image scale (tiles, tokens, background) uses the
+`nwse-resize` cursor (↖↘, top-left/bottom-right diagonal). The handle sits at the top-right
+corner of the image, so the correct cursor is `nesw-resize` (↗↙, top-right/bottom-left).
+
+**Affected:** `makeSquareCounterHandle(0xffffff, "nwse-resize")` calls in `gizmos-handles.ts`
+and any equivalent in `background-gizmos.ts`.
+
+---
+
+## B12 — Token elevation label renders as black square (intermittent)
+
+**Symptom:** When changing token elevation via the orange circle elevation handle, the
+elevation label on the grid (the "1 ft" text Foundry renders near the token) occasionally
+appears as a solid black square instead of readable text. Intermittent — not reproducible via
+elevation changes through other means (only observed via the drag handle).
+
+**Root cause hypothesis:** Rapid successive `setFlag` calls during drag may cause a race
+condition in Foundry's label rendering or texture cache.
+
+**Affected:** `TokenVolumeGizmos` elevation drag → `token.document.update({ elevation })`.
+
+---
+
+## B13 — Native Foundry tile corner scale does not scale the 3D volume height
+
+**Symptom:** Resizing a tile using Foundry's native corner scale handle (orange square in the
+tile controls) changes width/height but does not proportionally adjust `boundHeight`. The 3D
+volume box becomes incorrect (too tall or too short relative to the new tile size).
+
+**Expected:** When tile dimensions change via native scale, `boundHeight` should rescale
+proportionally so the visual volume maintains its aspect ratio.
+
+**Affected:** `onUpdateTile` in `wall-manager.ts` / `VolumeGizmos` — no handler currently
+adjusts `boundHeight` in response to a pure width/height change from native controls.
+
+---
+
+## B14 — Undo stacks every intermediate drag step, not just the drop
+
+**Symptom:** Ctrl+Z after dragging a handle (width, height, move, imgOffset, etc.) requires
+multiple presses to undo the single drag action — one press per intermediate update fired
+during the drag. The undo stack should record only the final committed value (on pointer-up),
+not every frame.
+
+**Root cause hypothesis:** `commitDrag` / equivalent is called on every `pointermove` event,
+and each call fires a `document.update` / `setFlag` which Foundry records as a separate undo
+entry. Fix: only call the final commit on `pointerup`; during drag, either use a local
+preview or throttle without persisting.
+
+**Affected:** `VolumeGizmos.commitDrag`, `TokenGizmos.commit`, `TokenVolumeGizmos` — all
+call document updates on every move event.
+
+---
+
+## B15 — Undo does not revert token elevation changes made via elevation handle
+
+**Symptom:** After changing a token's elevation using the orange circle elevation handle,
+Ctrl+Z does not restore the previous elevation value. Other handle types (imgOffset, etc.)
+may work correctly — this is specific to token elevation.
+
+**Root cause hypothesis:** Token elevation updates may bypass the `WallHistory` undo system
+(which tracks tile-linked operations) and Foundry's own undo may not capture `setFlag` /
+`update` calls made from the elevation drag handler.
+
+**Affected:** `TokenVolumeGizmos` elevation drag handler → `token.document.update`.
+
+---
+
 ## B8 — TileConfig Iso tab has extra wrapping container not present in other tabs
 
 **Symptom:** The Iso tab content in the Tile config popup (AppV2) is visually wrapped in an
