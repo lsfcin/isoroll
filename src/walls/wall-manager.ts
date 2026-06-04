@@ -2,7 +2,7 @@ import { MODULE_ID } from "../flags";
 import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "./wall-flags";
 import { updateLinkedWallPositions, flipLinkedWallAnchorsX } from "./wall-sync";
 import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls } from "./wall-crud";
-import { canvasToAnchor, scene, type TileDoc } from "./wall-coords";
+import { canvasToAnchor, scene, wallsLayer, type TileDoc } from "./wall-coords";
 import { applyDoorBehavior, cycleDoorBehavior as _cycleDoorBehavior } from "./wall-door";
 import type { DoorBehavior } from "./wall-types";
 import { WallOverlay } from "./wall-overlay";
@@ -53,7 +53,11 @@ export class WallManager {
   }
 
   private static onDeleteTile(doc: TileDocument): void {
-    wrap(() => _deleteLinkedWalls(doc), "wall cascade delete");
+    // Skip unsetFlag — tile doc is already removed from the collection.
+    wrap(async () => {
+      const ids = getLinkedWallIds(doc).filter(id => !!wallsLayer().get(id));
+      if (ids.length) await scene().deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete" });
+    }, "wall cascade delete");
   }
 
   private static onDeleteWall(
