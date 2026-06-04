@@ -270,19 +270,17 @@ anchor position on `"c"` changes; does not call preset upsert on type/flag chang
 
 ---
 
-## B20 — Door behavior cycling updates HUD icon but tile image does not change visibility
+## B20 — Door "hide" mode does not make tile invisible on Token layer
 
-**Symptom:** Clicking the door-mode button in the Tile HUD cycles the icon correctly
-(eye / eye-slash / adjust). However, the actual tile image does not change transparency or
-visibility to reflect the door state (hidden/faded/visible). The visual effect of the door
-behavior is never applied to the tile.
+**Status update:** `fade` mode now works correctly (tile becomes semi-transparent when door
+is opened). `hide` mode is still broken: the tile does not become invisible on the Token
+layer when opened; the Tile layer shows semi-transparent visual feedback for the open state
+instead of fully hiding it. `none` mode untested.
 
-**Expected:** Switching to "hide" mode should make the tile image invisible (or greatly
-reduced opacity); "fade" should partially fade it; "none" should restore full visibility.
+**Expected:** `hide` mode — tile invisible when door is open. `fade` mode — ✓ working.
 
-**Affected:** `applyDoorBehavior` in `wall-door.ts` — the function likely updates the flag
-but does not follow through with a canvas object refresh that applies the opacity/visibility
-change to the tile sprite.
+**Affected:** `applyDoorBehavior` in `wall-door.ts` — the `hide` branch likely sets opacity
+instead of `visible = false`, or the layer-visibility logic targets the wrong layer.
 
 ---
 
