@@ -1,7 +1,7 @@
 // Image offset + scale handles for tokens (bottom-left circle, top-right square).
 import { MODULE_ID, VolumeFlags } from "../flags";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "../tiles/tile-drag";
-import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-factories";
+import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 interface TkDrag {

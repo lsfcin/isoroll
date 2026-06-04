@@ -1,7 +1,7 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
 import { getProjection } from "../transform/constants";
 import { VolumeFlags } from "../flags";
-import { makeCircleHandle } from "../gizmos/handle-factories";
+import { makeCircleHandle } from "../gizmos/handle-draw";
 import { clientToGlobal } from "../tiles/tile-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 

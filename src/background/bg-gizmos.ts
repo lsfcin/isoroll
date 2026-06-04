@@ -4,7 +4,15 @@ import { CanvasTransform } from "../transform/stage-transform";
 import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
 import { MODULE_ID } from "../flags";
 import { clientToGlobal } from "../tiles/tile-drag";
-import { makeCircleHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../gizmos/handle-factories";
+import { makeCircleHandle, makeSquareCounterHandle, drawDashedContour } from "../gizmos/handle-draw";
+
+function bgCorner(
+  fx: number, fy: number, cx: number, cy: number,
+  texW: number, texH: number, scX: number, scY: number, cosR: number, sinR: number,
+): { x: number; y: number } {
+  const lx = fx * texW * scX, ly = fy * texH * scY;
+  return { x: cx + cosR * lx - sinR * ly, y: cy + sinR * lx + cosR * ly };
+}
 import { BgDrag, commitBgDrag } from "./bg-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
