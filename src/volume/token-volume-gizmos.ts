@@ -3,6 +3,7 @@ import { getProjection } from "../transform/constants";
 import { VolumeFlags } from "./flags";
 import { makeElevHandle } from "./gizmos-handles";
 import { clientToGlobal } from "./gizmos-drag";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 interface TokenElevDrag {
   token: Token;
@@ -13,7 +14,6 @@ interface TokenElevDrag {
 type ElevHandleState = { x: number; y: number; elev: number; boundH: number };
 
 export class TokenVolumeGizmos {
-  private static layer: PIXI.Container | null = null;
   private static sets: Map<string, PIXI.Container> = new Map();
   private static lastState: Map<string, ElevHandleState> = new Map();
   private static drag: TokenElevDrag | null = null;
@@ -73,7 +73,7 @@ export class TokenVolumeGizmos {
     const seMidX = tx + tw + hdx * (E + EH) / 2;
     const seMidY = ty + th + hdy * (E + EH) / 2;
 
-    const layer = TokenVolumeGizmos.ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
     const handle = makeElevHandle(0xff9829);
     handle.x = seMidX;
     handle.y = seMidY;
@@ -87,13 +87,13 @@ export class TokenVolumeGizmos {
     container.addChild(handle);
     layer.addChild(container);
     TokenVolumeGizmos.sets.set(token.id, container);
-    TokenVolumeGizmos.bringToTop();
+    LayerManager.bringToTop(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
   }
 
   static hide(tokenId: string): void {
     const c = TokenVolumeGizmos.sets.get(tokenId);
     if (!c) return;
-    TokenVolumeGizmos.layer?.removeChild(c);
+    c.parent?.removeChild(c);
     c.destroy({ children: true });
     TokenVolumeGizmos.sets.delete(tokenId);
     TokenVolumeGizmos.lastState.delete(tokenId);
@@ -102,29 +102,7 @@ export class TokenVolumeGizmos {
   static clearAll(): void {
     for (const id of Array.from(TokenVolumeGizmos.sets.keys())) TokenVolumeGizmos.hide(id);
     TokenVolumeGizmos.lastState.clear();
-    if (TokenVolumeGizmos.layer) {
-      try { (canvas.stage as unknown as PIXI.Container).removeChild(TokenVolumeGizmos.layer!); } catch { /* ok */ }
-      TokenVolumeGizmos.layer.destroy({ children: true });
-      TokenVolumeGizmos.layer = null;
-    }
-  }
-
-  private static ensureLayer(): PIXI.Container {
-    if (TokenVolumeGizmos.layer && !TokenVolumeGizmos.layer.parent) TokenVolumeGizmos.layer = null;
-    if (TokenVolumeGizmos.layer) return TokenVolumeGizmos.layer;
-    const layer = new PIXI.Container();
-    layer.eventMode = "passive";
-    (canvas.stage as unknown as PIXI.Container).addChild(layer);
-    TokenVolumeGizmos.layer = layer;
-    return layer;
-  }
-
-  private static bringToTop(): void {
-    if (TokenVolumeGizmos.layer && !TokenVolumeGizmos.layer.parent) TokenVolumeGizmos.layer = null;
-    if (!TokenVolumeGizmos.layer) return;
-    const stage = canvas.stage as unknown as PIXI.Container;
-    try { stage.removeChild(TokenVolumeGizmos.layer); } catch { /* ok */ }
-    stage.addChild(TokenVolumeGizmos.layer);
+    LayerManager.clearLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
   }
 
   private static beginDrag(token: Token, gx: number, gy: number, elev: number): void {
