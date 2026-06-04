@@ -1,7 +1,7 @@
 import { MODULE_ID } from "../flags";
-import { CanvasTransform } from "./stage-transform";
-import { PROJECTION_TYPES } from "./constants";
-import { addIsorollTab } from "../ui/tab-helpers";
+import { CanvasTransform } from "../transform/stage-transform";
+import { PROJECTION_TYPES } from "../transform/constants";
+import { addIsorollTab } from "./tab-helpers";
 
 function projectionOptions(currentKey: string): string {
   const labels: Record<string, string> = {
@@ -114,4 +114,3 @@ export function registerSceneConfigHook(): void {
     },
   );
 }
-

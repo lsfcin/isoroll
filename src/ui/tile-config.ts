@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../flags";
-import { addIsorollTab, flagCheckbox } from "../ui/tab-helpers";
+import { addIsorollTab, flagCheckbox } from "./tab-helpers";
 import type { DoorBehavior } from "../walls/wall-types";
 import { WallManager } from "../walls/wall-manager";
 
