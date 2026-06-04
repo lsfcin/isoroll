@@ -1,3 +1,4 @@
+// Tile counter-transform: refreshTile hook + grid-rescale scene update handlers.
 import { getProjection } from "./constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
 

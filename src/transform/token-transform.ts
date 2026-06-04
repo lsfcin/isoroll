@@ -1,3 +1,4 @@
+// Token counter-transform: refreshToken hook handler.
 import { getProjection } from "./constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
 
