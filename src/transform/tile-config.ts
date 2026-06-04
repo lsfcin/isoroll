@@ -1,16 +1,14 @@
 import { MODULE_ID } from "../flags";
 import { addIsorollTab, flagCheckbox } from "../ui/tab-helpers";
-import { getLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "../walls/wall-flags";
-import { generateBaseWalls, unlinkAllWalls, deleteLinkedWalls } from "../walls/wall-crud";
 import type { DoorBehavior } from "../walls/wall-types";
-import { WallOverlay } from "../walls/wall-overlay";
+import { WallManager } from "../walls/wall-manager";
 
 export function registerTileConfigHook(): void {
   Hooks.on("renderTileConfig", (app: { document: TileDocument }, html: JQuery) => {
     const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
     const d  = app.document;
     const t  = (k: string) => game.i18n.localize(k);
-    const wallCount = getLinkedWallIds(d).length;
+    const wallCount = WallManager.getLinkedWallIds(d).length;
 
     const wallSection = `
       <fieldset><legend>${t("ISOROLL.TileConfig.WallsHeading")}</legend>
@@ -26,8 +24,8 @@ export function registerTileConfigHook(): void {
       </fieldset>`;
 
     const doorSection = (() => {
-      if (!hasLinkedDoor(d)) return "";
-      const beh = getDoorBehavior(d);
+      if (!WallManager.hasLinkedDoor(d)) return "";
+      const beh = WallManager.getDoorBehavior(d);
       const fo  = beh.mode === "fade" ? beh.opacity : 0.2;
       return `
         <fieldset><legend>${t("ISOROLL.TileConfig.DoorHeading")}</legend>
@@ -56,28 +54,28 @@ export function registerTileConfigHook(): void {
       flagCheckbox("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +
       wallSection + doorSection,
       ($h) => {
-        const refresh  = () => $h.find(".isoroll-wall-count").text(getLinkedWallIds(d).length);
+        const refresh  = () => $h.find(".isoroll-wall-count").text(WallManager.getLinkedWallIds(d).length);
         const getTile  = () => (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(d.id ?? "");
 
-        $h.on("click", ".isoroll-gen-walls-btn",    () => generateBaseWalls(d).then(refresh).catch(console.warn));
-        $h.on("click", ".isoroll-unlink-walls-btn", () => unlinkAllWalls(d).then(refresh).catch(console.warn));
-        $h.on("click", ".isoroll-delete-walls-btn", () => deleteLinkedWalls(d).then(refresh).catch(console.warn));
+        $h.on("click", ".isoroll-gen-walls-btn",    () => WallManager.generateBaseWalls(d).then(refresh).catch(console.warn));
+        $h.on("click", ".isoroll-unlink-walls-btn", () => WallManager.unlinkAllWalls(d).then(refresh).catch(console.warn));
+        $h.on("click", ".isoroll-delete-walls-btn", () => WallManager.deleteLinkedWalls(d).then(refresh).catch(console.warn));
         $h.on("click", ".isoroll-select-walls-btn", () => {
           const tile = getTile();
           if (!tile) return;
-          if (WallOverlay.isSelectMode(tile.id)) WallOverlay.exitSelect(tile);
-          else WallOverlay.enterSelect(tile);
+          if (WallManager.isSelectMode(tile.id)) WallManager.exitSelect(tile);
+          else WallManager.enterSelect(tile);
         });
         $h.on("change", ".isoroll-door-mode-sel", (e) => {
           const mode = (e.target as HTMLSelectElement).value as "none" | "hide" | "fade";
           $h.find(".isoroll-fade-grp").toggle(mode === "fade");
           const opacity = parseFloat($h.find(".isoroll-fade-opacity").val() as string) || 0.2;
           const beh: DoorBehavior = mode === "fade" ? { mode, opacity } : { mode };
-          setDoorBehavior(d, beh).catch(console.warn);
+          WallManager.setDoorBehavior(d, beh).catch(console.warn);
         });
         $h.on("change", ".isoroll-fade-opacity", (e) => {
           const opacity = parseFloat((e.target as HTMLInputElement).value) || 0.2;
-          setDoorBehavior(d, { mode: "fade", opacity }).catch(console.warn);
+          WallManager.setDoorBehavior(d, { mode: "fade", opacity }).catch(console.warn);
         });
       });
   });

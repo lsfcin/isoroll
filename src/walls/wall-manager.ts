@@ -1,9 +1,10 @@
 import { MODULE_ID } from "../flags";
-import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
+import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "./wall-flags";
 import { updateLinkedWallPositions, flipLinkedWallAnchorsX } from "./wall-sync";
-import { deleteLinkedWalls } from "./wall-crud";
+import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls } from "./wall-crud";
 import { canvasToAnchor, scene, type TileDoc } from "./wall-coords";
-import { applyDoorBehavior } from "./wall-door";
+import { applyDoorBehavior, cycleDoorBehavior as _cycleDoorBehavior } from "./wall-door";
+import type { DoorBehavior } from "./wall-types";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
 import { scheduleWrap } from "../util";
@@ -95,6 +96,45 @@ export class WallManager {
     if ("ds" in changes) {
       wrap(() => applyDoorBehavior(tileObj.document, (changes.ds as number) > 0), "door behavior");
     }
+  }
+
+  // ── Public façade ────────────────────────────────────────────────────────
+
+  // Reads — delegate to wall-flags / WallOverlay
+  static getLinkedWallIds(doc: TileDocument): string[]      { return getLinkedWallIds(doc); }
+  static hasLinkedDoor(doc: TileDocument): boolean          { return hasLinkedDoor(doc); }
+  static getDoorBehavior(doc: TileDocument): DoorBehavior   { return getDoorBehavior(doc); }
+  static isSelectMode(tileId: string): boolean              { return WallOverlay.isSelectMode(tileId); }
+  static enterSelect(tile: Tile): void                      { WallOverlay.enterSelect(tile); }
+  static exitSelect(tile: Tile): void                       { WallOverlay.exitSelect(tile); }
+
+  // Mutations — run op then refresh overlay
+  static async generateBaseWalls(doc: TileDocument): Promise<void> {
+    await generateBaseWalls(doc);
+    WallManager._refreshByDoc(doc);
+  }
+
+  static async deleteLinkedWalls(doc: TileDocument): Promise<void> {
+    await _deleteLinkedWalls(doc);
+    WallManager._refreshByDoc(doc);
+  }
+
+  static async unlinkAllWalls(doc: TileDocument): Promise<void> {
+    await _unlinkAllWalls(doc);
+    WallManager._refreshByDoc(doc);
+  }
+
+  static async cycleDoorBehavior(doc: TileDocument): Promise<DoorBehavior> {
+    return _cycleDoorBehavior(doc);
+  }
+
+  static async setDoorBehavior(doc: TileDocument, b: DoorBehavior): Promise<void> {
+    await setDoorBehavior(doc, b);
+  }
+
+  private static _refreshByDoc(doc: TileDocument): void {
+    const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(doc.id!);
+    if (tile) WallOverlay.refresh(tile);
   }
 
 }
