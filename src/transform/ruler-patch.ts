@@ -15,9 +15,9 @@ function patchRulerProto(proto: RulerProto | undefined): void {
     const ctx = orig.apply(this, args);
     if (!ctx || !canvas.scene?.getFlag(MODULE_ID, "enabled")) return ctx;
     const { x, y } = ctx.position;
-    const m = canvas.app!.stage.worldTransform;
+    const wt = canvas.app!.stage.worldTransform;
     const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
-    ctx.position = { x: (m.a * x + m.c * y) / zoom, y: (m.b * x + m.d * y) / zoom };
+    ctx.position = { x: (wt.a * x + wt.c * y) / zoom, y: (wt.b * x + wt.d * y) / zoom };
     return ctx;
   };
 }
@@ -41,18 +41,18 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
     if (!tile?.document) return pos;
     if (!canvas.scene?.getFlag(MODULE_ID, "enabled")) return pos;
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return pos;
-    const m = canvas.app?.stage?.worldTransform;
+    const wt = canvas.app?.stage?.worldTransform;
     const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
-    if (!m) return pos;
+    if (!wt) return pos;
     const s  = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
     const cx = tile.document.x ?? 0, cy = tile.document.y ?? 0;
     const docW = tile.document.width ?? 0, docH = tile.document.height ?? 0;
     // Isometric-projected CSS width of the tile footprint (canvas px → CSS px)
-    const cosA = m.a / zoom, cosC = m.c / zoom;
+    const cosA = wt.a / zoom, cosC = wt.c / zoom;
     const visualCssW = cosA * docW + cosC * docH;
     // Visual center of the tile in CSS/HUD space (pan tx/ty absorbed by #hud)
-    const L = (m.a * cx + m.c * cy) / zoom;
-    const T = (m.b * cx + m.d * cy) / zoom;
+    const L = (wt.a * cx + wt.c * cy) / zoom;
+    const T = (wt.b * cx + wt.d * cy) / zoom;
     // AppV2 uses transform-origin: top-left, so visual_left = CSS_left.
     // Set CSS left = tile visual left edge = L - visualCssW/2.
     // top = T - visualCssW/4 (= T - sinB*(W+H)/2) = tile visual top, invariant to swap

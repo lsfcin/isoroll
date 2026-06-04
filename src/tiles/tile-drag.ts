@@ -55,7 +55,7 @@ export function handlePositions(
 }
 
 // Project screen delta onto the resize/elevation axis, snap, return new values.
-// m = canvas.app.stage.worldTransform (rotation+skew only); zoom separate.
+// wt = canvas.app.stage.worldTransform (rotation+skew only); zoom separate.
 // Screen-pixel snap zone for imgYScale to restore original proportion (1:1).
 const IMG_YSCALE_SNAP_PX = 12;
 
@@ -63,7 +63,7 @@ export function projectDrag(
   drag: DragState, gx: number, gy: number,
 ): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number; imgOffX: number; imgOffY: number; imgScale: number; imgYScale: number } {
   const dx = gx - drag.startGX, dy = gy - drag.startGY;
-  const m    = canvas.app!.stage.worldTransform;
+  const wt    = canvas.app!.stage.worldTransform;
   const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
   const gs   = canvas.grid?.size ?? 100;
   const gd   = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
@@ -75,12 +75,12 @@ export function projectDrag(
   let imgYScale = drag.startImgYScale;
   switch (drag.type) {
     case "width": {
-      const d = (dx * m.a + dy * m.b) / zoom;
+      const d = (dx * wt.a + dy * wt.b) / zoom;
       tw = Math.max(gs * 0.25, snapQuarterPx(drag.startW - d, gs));
       break;
     }
     case "height": {
-      const d = (dx * m.c + dy * m.d) / zoom;
+      const d = (dx * wt.c + dy * wt.d) / zoom;
       th = Math.max(gs * 0.25, snapQuarterPx(drag.startH + d, gs));
       break;
     }
@@ -98,24 +98,24 @@ export function projectDrag(
     case "scale": {
       // Project screen delta onto the canvas diagonal (+1,+1) — the SE direction.
       // Positive = dragging toward SE = growing. Scale both width and height proportionally.
-      const d = (dx * m.a + dy * m.b + dx * m.c + dy * m.d) / (2 * zoom);
+      const d = (dx * wt.a + dy * wt.b + dx * wt.c + dy * wt.d) / (2 * zoom);
       const ratio = drag.startH > 0 ? drag.startW / drag.startH : 1;
       tw = Math.max(gs * 0.25, snapQuarterPx(drag.startW + d, gs));
       th = Math.max(gs * 0.25, snapQuarterPx(tw / ratio, gs));
       break;
     }
     case "move": {
-      const det = m.a * m.d - m.b * m.c;
-      const cdx = (dx * m.d - dy * m.c) / det;
-      const cdy = (-dx * m.b + dy * m.a) / det;
+      const det = wt.a * wt.d - wt.b * wt.c;
+      const cdx = (dx * wt.d - dy * wt.c) / det;
+      const cdy = (-dx * wt.b + dy * wt.a) / det;
       docX = snapQuarterPx(drag.startDocX + cdx, gs);
       docY = snapQuarterPx(drag.startDocY + cdy, gs);
       break;
     }
     case "imgOffset": {
-      const det = m.a * m.d - m.b * m.c;
-      imgOffX = drag.startImgOffX + (dx * m.d - dy * m.c) / det;
-      imgOffY = drag.startImgOffY + (-dx * m.b + dy * m.a) / det;
+      const det = wt.a * wt.d - wt.b * wt.c;
+      imgOffX = drag.startImgOffX + (dx * wt.d - dy * wt.c) / det;
+      imgOffY = drag.startImgOffY + (-dx * wt.b + dy * wt.a) / det;
       break;
     }
     case "imgScale": {
@@ -124,7 +124,7 @@ export function projectDrag(
       const E2 = drag.startElev * gs / gd;
       const cx = drag.startDocX + hdx * E2 + drag.startImgOffX;
       const cy = drag.startDocY + hdy * E2 + drag.startImgOffY;
-      const csx = m.a * cx + m.c * cy + m.tx, csy = m.b * cx + m.d * cy + m.ty;
+      const csx = wt.a * cx + wt.c * cy + wt.tx, csy = wt.b * cx + wt.d * cy + wt.ty;
       const dxRef = drag.startGX - csx, dyRef = drag.startGY - csy;
       const distRef = Math.sqrt(dxRef*dxRef + dyRef*dyRef);
       if (distRef > 0) {
@@ -135,8 +135,8 @@ export function projectDrag(
     }
     case "imgYScale": {
       // Project screen delta onto canvas-Y axis via inverse matrix
-      const det = m.a * m.d - m.b * m.c;
-      const canvasDY = (-dx * m.b + dy * m.a) / det;
+      const det = wt.a * wt.d - wt.b * wt.c;
+      const canvasDY = (-dx * wt.b + dy * wt.a) / det;
       // Top-center handle: drag up (canvasDY < 0) = top moves up = image taller
       const baseHalfH = drag.startImgHalfH;
       const newHalfH = baseHalfH * drag.startImgYScale - canvasDY;

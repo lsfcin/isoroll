@@ -1,6 +1,6 @@
 import { deriveKey, readPreset, writePreset, preloadCache, getCachedPreset } from "./preset-storage";
 import {
-  getSrc, docId, asSD, isPresetEnabled, gridSize,
+  getSrc, docId, toScene, isPresetEnabled, gridSize,
   tileUpsertTimers, tokenUpsertTimers, bgUpsertTimers, debounced,
   applyTile, applyToken, applyBackground,
   autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls,
@@ -62,7 +62,7 @@ export class PresetManager {
       if (!!(changes as unknown as SceneDoc).background?.src) { wrap(() => autoApplyBackground(scene), "bg auto-apply"); return; }
       const cf = changedFlagKeys(changes);
       if (bgNativeChanged(changes) || intersects(cf, BG_PRESET_FLAG_KEYS))
-        debounced(bgUpsertTimers, asSD(scene).id ?? "", () => upsertBackground(scene));
+        debounced(bgUpsertTimers, toScene(scene).id ?? "", () => upsertBackground(scene));
     });
 
     // ── ready: preload cache + console API ───────────────────────────────────
@@ -111,7 +111,7 @@ export class PresetManager {
           save: async () => {
             const scene = canvas.scene;
             if (!scene) { console.warn("isoroll | no active scene"); return; }
-            const src = asSD(scene).background?.src;
+            const src = toScene(scene).background?.src;
             if (!src) { console.warn("isoroll | no background"); return; }
             await upsertBackground(scene);
           },

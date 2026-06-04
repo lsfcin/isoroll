@@ -12,12 +12,12 @@ export function registerTileConfigHook(): void {
     const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
     const d  = app.document;
     const t  = (k: string) => game.i18n.localize(k);
-    const wc = getLinkedWallIds(d).length;
+    const wallCount = getLinkedWallIds(d).length;
 
     const wallSection = `
       <fieldset><legend>${t("ISOROLL.TileConfig.WallsHeading")}</legend>
         <div class="form-group">
-          <label>${t("ISOROLL.TileConfig.LinkedWalls")}: <b class="isoroll-wall-count">${wc}</b></label>
+          <label>${t("ISOROLL.TileConfig.LinkedWalls")}: <b class="isoroll-wall-count">${wallCount}</b></label>
           <div class="form-fields" style="gap:4px">
             <button type="button" class="isoroll-gen-walls-btn" title="${t("ISOROLL.WallManager.GenerateBase")}"><i class="fas fa-border-all"></i></button>
             <button type="button" class="isoroll-select-walls-btn" title="${t("ISOROLL.WallManager.SelectWalls")}"><i class="fas fa-mouse-pointer"></i></button>

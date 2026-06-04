@@ -1,7 +1,7 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
 import { getProjection } from "../transform/constants";
 import { VolumeFlags } from "../flags";
-import { makeElevHandle } from "../gizmos/handle-factories";
+import { makeCircleHandle } from "../gizmos/handle-factories";
 import { clientToGlobal } from "../tiles/tile-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
@@ -74,7 +74,7 @@ export class TokenElevGizmo {
     const seMidY = ty + th + hdy * (E + EH) / 2;
 
     const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
-    const handle = makeElevHandle(0xff9829);
+    const handle = makeCircleHandle(0xff9829);
     handle.x = seMidX;
     handle.y = seMidY;
 

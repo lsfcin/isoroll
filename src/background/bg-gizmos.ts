@@ -4,7 +4,7 @@ import { CanvasTransform } from "../transform/stage-transform";
 import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
 import { MODULE_ID } from "../flags";
 import { clientToGlobal } from "../tiles/tile-drag";
-import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../gizmos/handle-factories";
+import { makeCircleHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../gizmos/handle-factories";
 import { BgDrag, commitBgDrag } from "./bg-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
@@ -100,9 +100,9 @@ export class BackgroundGizmos {
     const baseH = Math.max(1, texH * sx * proj.ratio * proj.counterFactor / 2);
     const [tr, tc, bl, tl, br] = [[.5,-.5],[0,-.5],[-.5,.5],[-.5,-.5],[.5,.5]]
       .map(([fx,fy]) => bgCorner(fx, fy, cx, cy, texW, texH, scX, scY, cosR, sinR));
-    const m      = canvas.app!.stage.worldTransform;
-    const topSc  = Math.hypot(m.a*cosR + m.c*sinR, m.b*cosR + m.d*sinR);
-    const leftSc = Math.hypot(-m.a*sinR + m.c*cosR, -m.b*sinR + m.d*cosR);
+    const wt      = canvas.app!.stage.worldTransform;
+    const topSc  = Math.hypot(wt.a*cosR + wt.c*sinR, wt.b*cosR + wt.d*sinR);
+    const leftSc = Math.hypot(-wt.a*sinR + wt.c*cosR, -wt.b*sinR + wt.d*cosR);
     const g = new PIXI.Graphics();
     drawDashedContour(g, [tl, tr, br, bl], 8, 5, leftSc > 0 ? 8*topSc/leftSc : 8, leftSc > 0 ? 5*topSc/leftSc : 5); layer.addChild(g);
     const form   = (html.closest('form') ?? html.querySelector('form')) as HTMLFormElement | null;
@@ -110,10 +110,10 @@ export class BackgroundGizmos {
     const shiftX = Number(getEl('shiftX')?.value) || 0;
     const shiftY = Number(getEl('shiftY')?.value) || 0;
     const scale  = Number(getEl('scale')?.value) || sx;
-    const sCX    = m.a * cx + m.c * cy + m.tx, sCY = m.b * cx + m.d * cy + m.ty;
+    const sCX    = wt.a * cx + wt.c * cy + wt.tx, sCY = wt.b * cx + wt.d * cy + wt.ty;
     const defs: [PIXI.Container, BgDrag["type"], { x: number; y: number }][] = [
       [makeSquareCounterHandle(0xffffff, "nwse-resize"), "bgScale",     tr],
-      [makeElevHandle(0xffffff, "move"),                 "bgTranslate", bl],
+      [makeCircleHandle(0xffffff, "move"),                 "bgTranslate", bl],
     ];
     if (isoCT) defs.splice(1, 0, [makeSquareCounterHandle(0xffffff, "ns-resize"), "bgYScale", tc]);
     for (const [handle, type, pos] of defs) {
@@ -128,8 +128,8 @@ export class BackgroundGizmos {
     const html = BackgroundGizmos.currentHtml; if (!html) return;
     const newYS = Math.max(0.05, Math.min(5.0, Math.round((getBgYScale() + delta * 0.01) * 1000) / 1000));
     setBgYScaleOverride(newYS);
-    const el = html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
-    if (el) el.value = newYS.toFixed(3);
+    const input = html.querySelector('#isoroll-bg-yscale') as HTMLInputElement | null;
+    if (input) input.value = newYS.toFixed(3);
     BackgroundGizmos.show();
   }
   private static clearLayer(): void {

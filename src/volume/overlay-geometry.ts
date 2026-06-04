@@ -26,7 +26,7 @@ export interface BoxVerts {
 
 export type P = { x: number; y: number };
 
-export function pt(x: number, y: number): P { return { x, y }; }
+export function point(x: number, y: number): P { return { x, y }; }
 
 
 export function computeVerts(tile: Tile): BoxVerts {
@@ -47,17 +47,17 @@ export function computeVerts(tile: Tile): BoxVerts {
   const ex = proj.heightDir.x, ey = proj.heightDir.y;
 
   return {
-    NW_base: pt(tx + ex * E,       ty + ey * E),
-    NE_base: pt(tx + tw + ex * E,  ty + ey * E),
-    SW_base: pt(tx + ex * E,       ty + th + ey * E),
-    SE_base: pt(tx + tw + ex * E,  ty + th + ey * E),
-    NW_top:  pt(tx + ex * EH,      ty + ey * EH),
-    NE_top:  pt(tx + tw + ex * EH, ty + ey * EH),
-    SW_top:  pt(tx + ex * EH,      ty + th + ey * EH),
-    SE_top:  pt(tx + tw + ex * EH, ty + th + ey * EH),
-    ground:     pt(tx + tw / 2,           ty + th / 2),
-    baseCenter: pt(tx + tw / 2 + ex * E,  ty + th / 2 + ey * E),
-    topCenter:  pt(tx + tw / 2 + ex * EH, ty + th / 2 + ey * EH),
+    NW_base: point(tx + ex * E,       ty + ey * E),
+    NE_base: point(tx + tw + ex * E,  ty + ey * E),
+    SW_base: point(tx + ex * E,       ty + th + ey * E),
+    SE_base: point(tx + tw + ex * E,  ty + th + ey * E),
+    NW_top:  point(tx + ex * EH,      ty + ey * EH),
+    NE_top:  point(tx + tw + ex * EH, ty + ey * EH),
+    SW_top:  point(tx + ex * EH,      ty + th + ey * EH),
+    SE_top:  point(tx + tw + ex * EH, ty + th + ey * EH),
+    ground:     point(tx + tw / 2,           ty + th / 2),
+    baseCenter: point(tx + tw / 2 + ex * E,  ty + th / 2 + ey * E),
+    topCenter:  point(tx + tw / 2 + ex * EH, ty + th / 2 + ey * EH),
     elevation,
   };
 }
@@ -81,17 +81,17 @@ export function computeTokenVerts(token: Token): BoxVerts {
   const ex = proj.heightDir.x, ey = proj.heightDir.y;
 
   return {
-    NW_base: pt(tx + ex * E,       ty + ey * E),
-    NE_base: pt(tx + tw + ex * E,  ty + ey * E),
-    SW_base: pt(tx + ex * E,       ty + th + ey * E),
-    SE_base: pt(tx + tw + ex * E,  ty + th + ey * E),
-    NW_top:  pt(tx + ex * EH,      ty + ey * EH),
-    NE_top:  pt(tx + tw + ex * EH, ty + ey * EH),
-    SW_top:  pt(tx + ex * EH,      ty + th + ey * EH),
-    SE_top:  pt(tx + tw + ex * EH, ty + th + ey * EH),
-    ground:     pt(tx + tw / 2,           ty + th / 2),
-    baseCenter: pt(tx + tw / 2 + ex * E,  ty + th / 2 + ey * E),
-    topCenter:  pt(tx + tw / 2 + ex * EH, ty + th / 2 + ey * EH),
+    NW_base: point(tx + ex * E,       ty + ey * E),
+    NE_base: point(tx + tw + ex * E,  ty + ey * E),
+    SW_base: point(tx + ex * E,       ty + th + ey * E),
+    SE_base: point(tx + tw + ex * E,  ty + th + ey * E),
+    NW_top:  point(tx + ex * EH,      ty + ey * EH),
+    NE_top:  point(tx + tw + ex * EH, ty + ey * EH),
+    SW_top:  point(tx + ex * EH,      ty + th + ey * EH),
+    SE_top:  point(tx + tw + ex * EH, ty + th + ey * EH),
+    ground:     point(tx + tw / 2,           ty + th / 2),
+    baseCenter: point(tx + tw / 2 + ex * E,  ty + th / 2 + ey * E),
+    topCenter:  point(tx + tw / 2 + ex * EH, ty + th / 2 + ey * EH),
     elevation,
   };
 }

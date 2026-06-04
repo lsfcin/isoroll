@@ -147,10 +147,10 @@ export class WallOverlay {
       const g     = new PIXI.Graphics();
       { const dx=c[2]-c[0], dy=c[3]-c[1], l=Math.sqrt(dx*dx+dy*dy)||1, nx=(-dy/l)*6, ny=(dx/l)*6, ex=(dx/l)*5, ey=(dy/l)*5;
         g.hitArea = new PIXI.Polygon([c[0]-ex+nx,c[1]-ey+ny, c[2]+ex+nx,c[3]+ey+ny, c[2]+ex-nx,c[3]+ey-ny, c[0]-ex-nx,c[1]-ey-ny]); }
-      const la = isLnk ? 1 : UNLINKED_ALPHA;
-      g.lineStyle(LINE_W + 1.5, 0x000000, la);
+      const alpha = isLnk ? 1 : UNLINKED_ALPHA;
+      g.lineStyle(LINE_W + 1.5, 0x000000, alpha);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
-      g.lineStyle(LINE_W, col, la);
+      g.lineStyle(LINE_W, col, alpha);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
       // Endpoint circles (visual only, matches Wall layer appearance)

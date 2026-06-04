@@ -1,7 +1,7 @@
 // Image offset + scale handles for tokens (bottom-left circle, top-right square).
 import { MODULE_ID, VolumeFlags } from "../flags";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "../tiles/tile-drag";
-import { makeElevHandle, makeSquareCounterHandle } from "../gizmos/handle-factories";
+import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-factories";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 interface TkDrag {
@@ -70,7 +70,7 @@ export class TokenGizmos {
     const tkImgHalfH = Math.max(1, tkTexH * Math.abs(tkScaleY) / (2 * Math.max(0.01, Math.abs(imgYScl))));
 
     const defs: Array<[PIXI.Container, "imgOffset" | "imgScale" | "imgYScale", { x: number; y: number } | null]> = [
-      [makeElevHandle(0xffffff, "move"),                "imgOffset", bl],
+      [makeCircleHandle(0xffffff, "move"),                "imgOffset", bl],
       [makeSquareCounterHandle(0xffffff, "nwse-resize"), "imgScale",  tr],
       [makeSquareCounterHandle(0xffffff, "ns-resize"),   "imgYScale", tc],
     ];
@@ -112,18 +112,18 @@ export class TokenGizmos {
 
   private static commit(drag: TkDrag, gx: number, gy: number): void {
     const dx = gx - drag.startGX, dy = gy - drag.startGY;
-    const m = canvas.app!.stage.worldTransform;
+    const wt = canvas.app!.stage.worldTransform;
     if (drag.type === "imgOffset") {
-      const det = m.a * m.d - m.b * m.c;
+      const det = wt.a * wt.d - wt.b * wt.c;
       const gs  = canvas.grid?.size ?? 100;
       void drag.token.document.setFlag(MODULE_ID, "imageOffset", {
-        x: (drag.startImgOffX + (dx * m.d - dy * m.c) / det) / gs,
-        y: (drag.startImgOffY + (-dx * m.b + dy * m.a) / det) / gs,
+        x: (drag.startImgOffX + (dx * wt.d - dy * wt.c) / det) / gs,
+        y: (drag.startImgOffY + (-dx * wt.b + dy * wt.a) / det) / gs,
       });
     } else if (drag.type === "imgYScale") {
-      const det = m.a * m.d - m.b * m.c;
+      const det = wt.a * wt.d - wt.b * wt.c;
       const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
-      const canvasDY = (-dx * m.b + dy * m.a) / det;
+      const canvasDY = (-dx * wt.b + dy * wt.a) / det;
       const baseHalfH = drag.startImgHalfH;
       const newHalfH = baseHalfH * drag.startImgYScale - canvasDY;
       let newImgYScale = Math.max(0.05, newHalfH / baseHalfH);
@@ -132,7 +132,7 @@ export class TokenGizmos {
     } else {
       const cx  = drag.startMeshCX;
       const cy  = drag.startMeshCY;
-      const csx = m.a*cx + m.c*cy + m.tx, csy = m.b*cx + m.d*cy + m.ty;
+      const csx = wt.a*cx + wt.c*cy + wt.tx, csy = wt.b*cx + wt.d*cy + wt.ty;
       const rxRef = drag.startGX - csx, ryRef = drag.startGY - csy;
       const distRef = Math.sqrt(rxRef*rxRef + ryRef*ryRef);
       if (distRef > 0) {

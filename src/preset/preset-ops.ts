@@ -18,7 +18,7 @@ export type SceneDoc = {
 
 export const asTD  = (d: unknown) => d as unknown as TextureDoc;
 const        asUD  = (d: unknown) => d as unknown as UpdateDoc;
-export const asSD  = (d: unknown) => d as unknown as SceneDoc;
+export const toScene  = (d: unknown) => d as unknown as SceneDoc;
 const        asFD  = (d: unknown) => d as unknown as FlagDoc;
 const        asTDp = (d: unknown) => d as unknown as TileDocP;
 
@@ -62,7 +62,7 @@ function extractToken(doc: unknown, key: string): TokenPreset {
     updatedAt: Date.now() };
 }
 function extractBackground(scene: unknown, key: string): BackgroundPreset {
-  const s = asSD(scene);
+  const s = toScene(scene);
   return { type: "background", imageKey: key,
     scaleX: s.background?.scaleX ?? 1, offsetX: s.background?.offsetX ?? 0,
     offsetY: s.background?.offsetY ?? 0, gridSize: s.grid?.size ?? 100,
@@ -87,7 +87,7 @@ export async function applyToken(doc: unknown, preset: TokenPreset): Promise<voi
     imageOffset: preset.imageOffset, tileFlipped: preset.tileFlipped } } }, { isoroll: "preset" });
 }
 export async function applyBackground(scene: unknown, preset: BackgroundPreset): Promise<void> {
-  await asSD(scene).update({ "background.scaleX": preset.scaleX, "background.offsetX": preset.offsetX,
+  await toScene(scene).update({ "background.scaleX": preset.scaleX, "background.offsetX": preset.offsetX,
     "background.offsetY": preset.offsetY, "grid.size": preset.gridSize,
     [`flags.${MODULE_ID}.backgroundYScale`]: preset.backgroundYScale }, { isoroll: "preset" });
 }
@@ -119,7 +119,7 @@ export async function autoApplyToken(doc: unknown): Promise<void> {
 }
 export async function autoApplyBackground(scene: unknown): Promise<void> {
   if (!isPresetEnabled(scene)) return;
-  const src = asSD(scene).background?.src; if (!src) return;
+  const src = toScene(scene).background?.src; if (!src) return;
   const p = await readPreset(deriveKey(src));
   if (!p || p.type !== "background") return;
   await applyBackground(scene, p);
@@ -138,7 +138,7 @@ export async function upsertToken(doc: unknown): Promise<void> {
 }
 export async function upsertBackground(scene: unknown): Promise<void> {
   if (!isPresetEnabled(scene)) return;
-  const src = asSD(scene).background?.src; if (!src) return;
+  const src = toScene(scene).background?.src; if (!src) return;
   await writePreset(extractBackground(scene, deriveKey(src)));
 }
 

@@ -31,9 +31,9 @@ function snapQuarter(x: number, y: number): { x: number; y: number } {
 }
 
 function globalToCanvas(gx: number, gy: number): { x: number; y: number } {
-  const m = (canvas.app as unknown as { stage: { worldTransform: PIXI.Matrix } }).stage.worldTransform;
-  const det = m.a * m.d - m.b * m.c;
-  return { x: (gx*m.d - gy*m.c - m.tx*m.d + m.ty*m.c)/det, y: (-gx*m.b + gy*m.a + m.tx*m.b - m.ty*m.a)/det };
+  const wt = (canvas.app as unknown as { stage: { worldTransform: PIXI.Matrix } }).stage.worldTransform;
+  const det = wt.a * wt.d - wt.b * wt.c;
+  return { x: (gx*wt.d - gy*wt.c - wt.tx*wt.d + wt.ty*wt.c)/det, y: (-gx*wt.b + gy*wt.a + wt.tx*wt.b - wt.ty*wt.a)/det };
 }
 
 export function addEndpointHandles(

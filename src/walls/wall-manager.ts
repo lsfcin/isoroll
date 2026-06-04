@@ -104,15 +104,15 @@ export class WallManager {
     if (!tile?.document) return;
     const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
     const doc   = tile.document;
-    const wc    = getLinkedWallIds(doc).length;
-    const tt    = (k: string) => game.i18n?.localize(k) ?? k;
+    const wallCount    = getLinkedWallIds(doc).length;
+    const loc   = (k: string) => game.i18n?.localize(k) ?? k;
     const inSel = WallOverlay.isSelectMode(tile.id);
 
     const doorBtn = hasLinkedDoor(doc) ? (() => {
       const beh  = getDoorBehavior(doc);
       const icon = { none: "fa-eye", hide: "fa-eye-slash", fade: "fa-adjust" }[beh.mode] ?? "fa-eye";
       const key  = { none: "DoorNone", hide: "DoorHide", fade: "DoorFade" }[beh.mode] ?? "DoorNone";
-      return `<div class="control-icon isoroll-door-mode" data-tooltip="${tt("ISOROLL.WallManager." + key)}"><i class="fas ${icon}"></i></div>`;
+      return `<div class="control-icon isoroll-door-mode" data-tooltip="${loc("ISOROLL.WallManager." + key)}"><i class="fas ${icon}"></i></div>`;
     })() : "";
 
     // Remove any existing isoroll buttons + handlers before re-adding (HUD may re-render in-place)
@@ -120,16 +120,16 @@ export class WallManager {
     $html.off("click.isoroll");
 
     $html.find(".col.right").append(`
-      <div class="control-icon isoroll-gen-walls" data-tooltip="${tt("ISOROLL.WallManager.GenerateBase")}">
-        <i class="fas fa-border-all"></i>${wc > 0 ? `<span class="isoroll-wall-badge">${wc}</span>` : ""}
+      <div class="control-icon isoroll-gen-walls" data-tooltip="${loc("ISOROLL.WallManager.GenerateBase")}">
+        <i class="fas fa-border-all"></i>${wallCount > 0 ? `<span class="isoroll-wall-badge">${wallCount}</span>` : ""}
       </div>
-      <div class="control-icon isoroll-select-walls${inSel ? " active" : ""}" data-tooltip="${tt(inSel ? "ISOROLL.WallManager.DoneSelecting" : "ISOROLL.WallManager.SelectWalls")}">
+      <div class="control-icon isoroll-select-walls${inSel ? " active" : ""}" data-tooltip="${loc(inSel ? "ISOROLL.WallManager.DoneSelecting" : "ISOROLL.WallManager.SelectWalls")}">
         <i class="fas ${inSel ? "fa-check" : "fa-mouse-pointer"}"></i>
       </div>
-      <div class="control-icon isoroll-unlink-walls" data-tooltip="${tt("ISOROLL.WallManager.UnlinkAll")}">
+      <div class="control-icon isoroll-unlink-walls" data-tooltip="${loc("ISOROLL.WallManager.UnlinkAll")}">
         <i class="fas fa-unlink"></i>
       </div>
-      <div class="control-icon isoroll-delete-walls" data-tooltip="${tt("ISOROLL.WallManager.DeleteLinked")}">
+      <div class="control-icon isoroll-delete-walls" data-tooltip="${loc("ISOROLL.WallManager.DeleteLinked")}">
         <i class="fas fa-trash-alt"></i>
       </div>
       ${doorBtn}
@@ -145,11 +145,11 @@ export class WallManager {
       const $btn = $(e.currentTarget as HTMLElement);
       if (WallOverlay.isSelectMode(tile.id)) {
         WallOverlay.exitSelect(tile);
-        $btn.removeClass("active").attr("data-tooltip", tt("ISOROLL.WallManager.SelectWalls"));
+        $btn.removeClass("active").attr("data-tooltip", loc("ISOROLL.WallManager.SelectWalls"));
         $btn.find("i").attr("class", "fas fa-mouse-pointer");
       } else {
         WallOverlay.enterSelect(tile);
-        $btn.addClass("active").attr("data-tooltip", tt("ISOROLL.WallManager.DoneSelecting"));
+        $btn.addClass("active").attr("data-tooltip", loc("ISOROLL.WallManager.DoneSelecting"));
         $btn.find("i").attr("class", "fas fa-check");
       }
     });

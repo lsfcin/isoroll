@@ -33,7 +33,7 @@ export function makeHandle(color: number): PIXI.Graphics {
 }
 
 // Full tile counter-transform applied → appears as a true circle in screen space.
-export function makeElevHandle(color: number, cursor = "n-resize"): PIXI.Container {
+export function makeCircleHandle(color: number, cursor = "n-resize"): PIXI.Container {
   const proj = getProjection(canvas.scene);
   const wrap = new PIXI.Container();
   wrap.rotation = proj.reverseRotation;
@@ -83,8 +83,8 @@ export function makeHandleForType(
   type: HandleType, hdx: number, hdy: number,
 ): PIXI.Container | PIXI.Graphics {
   const color = HANDLE_COLOR[type];
-  if (type === "elevation") return makeElevHandle(color);
-  if (type === "imgOffset") return makeElevHandle(0xffffff, "move");
+  if (type === "elevation") return makeCircleHandle(color);
+  if (type === "imgOffset") return makeCircleHandle(0xffffff, "move");
   if (type === "imgScale")  return makeSquareCounterHandle(0xffffff, "nwse-resize");
   if (type === "imgYScale") return makeSquareCounterHandle(0xffffff, "ns-resize");
   if (type === "swapSide")  return makeSwapHandle();
