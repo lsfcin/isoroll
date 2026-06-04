@@ -3,19 +3,22 @@ import { MODULE_ID, VolumeFlags } from "../flags";
 import { WallHistory } from "./wall-history";
 import type { WallDef, WallConfig, TileAnchor } from "./wall-types";
 import {
-  wallsLayer, scene, defToCanvas, anchorToCanvas, imageRect, canvasToAnchor,
+  wallsLayer, scene, defToCanvas, anchorToCanvas, imageRect, canvasToAnchor, tileRect,
   type TileDoc, type WallDoc,
 } from "./wall-coords";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
 
 export function generateBaseWallDefs(doc: TileDocument): WallDef[] {
+  const tDoc      = doc as TileDoc;
+  const { left, top, w, h } = tileRect(tDoc);
   const topOffset = VolumeFlags.getTileHeight(doc);
-  return [
-    { ax: 0, ay: 0, bx: 1, by: 0, topOffset, bottomOffset: 0, config: {} }, // N
-    { ax: 1, ay: 0, bx: 1, by: 1, topOffset, bottomOffset: 0, config: {} }, // E
-    { ax: 1, ay: 1, bx: 0, by: 1, topOffset, bottomOffset: 0, config: {} }, // S
-    { ax: 0, ay: 1, bx: 0, by: 0, topOffset, bottomOffset: 0, config: {} }, // W
+  const corners: [number, number, number, number][] = [
+    [left,     top,     left + w, top    ],  // N
+    [left + w, top,     left + w, top + h],  // E
+    [left + w, top + h, left,     top + h],  // S
+    [left,     top + h, left,     top    ],  // W
   ];
+  return corners.map(c => ({ ...canvasToAnchor(tDoc, c), topOffset, bottomOffset: 0, config: {} }));
 }
 
 export async function createWallsFromDefs(doc: TileDocument, defs: WallDef[]): Promise<string[]> {

@@ -53,7 +53,7 @@ export class WallManager {
   }
 
   private static onDeleteTile(doc: TileDocument): void {
-    wrap(() => deleteLinkedWalls(doc), "wall cascade delete");
+    wrap(() => _deleteLinkedWalls(doc), "wall cascade delete");
   }
 
   private static onDeleteWall(

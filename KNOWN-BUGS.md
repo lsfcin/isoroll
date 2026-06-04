@@ -315,5 +315,20 @@ available).
 
 ---
 
+## B23 — TileHUD intermittently not appearing on right-click
+
+**Symptom:** Occasionally, right-clicking a tile does not show the TileHUD. The tile is
+clickable but the HUD does not appear. Ceases after some further interactions (e.g.
+deselect/reselect, switching layers, other canvas events). Pattern not yet identified.
+
+**Root cause hypothesis:** Unknown. May be a focus/event-capture issue where a stale
+isoroll overlay or gizmo intercepts or swallows the pointer event before Foundry's tile
+control handler. Could also be a Foundry-native issue surfacing intermittently.
+
+**Affected:** Unknown — likely `VolumeGizmos`, `WallOverlay`, or any PIXI container with
+`eventMode = "static"` that could be sitting on top of the tile.
+
+---
+
 > ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
 > from branch switching, not a code regression).
