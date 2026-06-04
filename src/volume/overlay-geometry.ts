@@ -22,6 +22,27 @@ export type P = { x: number; y: number };
 export function point(x: number, y: number): P { return { x, y }; }
 
 
+function buildBoxVerts(
+  tx: number, ty: number, tw: number, th: number,
+  E: number, EH: number, ex: number, ey: number,
+  elevation: number,
+): BoxVerts {
+  return {
+    NW_base: point(tx + ex * E,       ty + ey * E),
+    NE_base: point(tx + tw + ex * E,  ty + ey * E),
+    SW_base: point(tx + ex * E,       ty + th + ey * E),
+    SE_base: point(tx + tw + ex * E,  ty + th + ey * E),
+    NW_top:  point(tx + ex * EH,      ty + ey * EH),
+    NE_top:  point(tx + tw + ex * EH, ty + ey * EH),
+    SW_top:  point(tx + ex * EH,      ty + th + ey * EH),
+    SE_top:  point(tx + tw + ex * EH, ty + th + ey * EH),
+    ground:     point(tx + tw / 2,           ty + th / 2),
+    baseCenter: point(tx + tw / 2 + ex * E,  ty + th / 2 + ey * E),
+    topCenter:  point(tx + tw / 2 + ex * EH, ty + th / 2 + ey * EH),
+    elevation,
+  };
+}
+
 export function computeVerts(tile: Tile): BoxVerts {
   const tw = tile.document.width  ?? 0;
   const th = tile.document.height ?? 0;
@@ -39,20 +60,7 @@ export function computeVerts(tile: Tile): BoxVerts {
   const EH = E + boundH * gridSize;
   const ex = proj.heightDir.x, ey = proj.heightDir.y;
 
-  return {
-    NW_base: point(tx + ex * E,       ty + ey * E),
-    NE_base: point(tx + tw + ex * E,  ty + ey * E),
-    SW_base: point(tx + ex * E,       ty + th + ey * E),
-    SE_base: point(tx + tw + ex * E,  ty + th + ey * E),
-    NW_top:  point(tx + ex * EH,      ty + ey * EH),
-    NE_top:  point(tx + tw + ex * EH, ty + ey * EH),
-    SW_top:  point(tx + ex * EH,      ty + th + ey * EH),
-    SE_top:  point(tx + tw + ex * EH, ty + th + ey * EH),
-    ground:     point(tx + tw / 2,           ty + th / 2),
-    baseCenter: point(tx + tw / 2 + ex * E,  ty + th / 2 + ey * E),
-    topCenter:  point(tx + tw / 2 + ex * EH, ty + th / 2 + ey * EH),
-    elevation,
-  };
+  return buildBoxVerts(tx, ty, tw, th, E, EH, ex, ey, elevation);
 }
 
 // token.document.x/y = top-left (unlike tiles where it = center)
@@ -73,20 +81,7 @@ export function computeTokenVerts(token: Token): BoxVerts {
   const EH = E + boundH * gridSize;
   const ex = proj.heightDir.x, ey = proj.heightDir.y;
 
-  return {
-    NW_base: point(tx + ex * E,       ty + ey * E),
-    NE_base: point(tx + tw + ex * E,  ty + ey * E),
-    SW_base: point(tx + ex * E,       ty + th + ey * E),
-    SE_base: point(tx + tw + ex * E,  ty + th + ey * E),
-    NW_top:  point(tx + ex * EH,      ty + ey * EH),
-    NE_top:  point(tx + tw + ex * EH, ty + ey * EH),
-    SW_top:  point(tx + ex * EH,      ty + th + ey * EH),
-    SE_top:  point(tx + tw + ex * EH, ty + th + ey * EH),
-    ground:     point(tx + tw / 2,           ty + th / 2),
-    baseCenter: point(tx + tw / 2 + ex * E,  ty + th / 2 + ey * E),
-    topCenter:  point(tx + tw / 2 + ex * EH, ty + th / 2 + ey * EH),
-    elevation,
-  };
+  return buildBoxVerts(tx, ty, tw, th, E, EH, ex, ey, elevation);
 }
 
 export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {
