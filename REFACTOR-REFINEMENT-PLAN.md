@@ -29,45 +29,10 @@ Files still above 150-line warning threshold (all under 200 hard limit):
 
 ## Issues catalogue
 
-<!-- I1–I7 DONE (A1–A4, committed 76808e3 + 71272a2) -->
+<!-- I1–I9 DONE (A1–A6) -->
+<!-- I15 DONE (A7, 4226b71) — mesh-corners passthrough + drawDashedContour chain + handle-factories unused re-exports all removed -->
+<!-- I16 DONE (A8, c355ff2) — barrel re-exports removed from scene-config.ts -->
 <!-- Extra (unplanned, agreed): helpers moved to gizmos/img-drag.ts — no tile/token hierarchy -->
-
----
-
-### I8 — `computeVerts` and `computeTokenVerts` share 35-line identical body
-
-Both functions in `overlay-geometry.ts` preprocess inputs differently (tile uses center
-coords + canvas px; token uses top-left + grid units) then produce identical output via
-the same 35-line formula block. The formula block is copy-pasted verbatim.
-
-**Fix:** Extract `buildBoxVerts(tx, ty, tw, th, E, EH, ex, ey, elevation): BoxVerts`
-as a private function in `overlay-geometry.ts`. Both public functions call it after
-computing their entity-specific inputs.
-
----
-
-### I9 — Barrel files `wall-core.ts` and `wall-ops.ts` are dead weight
-
-Both files exist only as backward-compat re-export barrels:
-
-```ts
-// wall-core.ts
-export * from "./wall-coords";
-export * from "./wall-flags";
-
-// wall-ops.ts
-export * from "./wall-crud";
-export * from "./wall-sync";
-export * from "./wall-door";
-export { getLinkedWallIds, setLinkedWallIds, pruneLinkedWalls, canvasToAnchor } from "./wall-core";
-export { getDoorBehavior, setDoorBehavior, hasLinkedDoor } from "./wall-core";
-```
-
-`wall-manager.ts` imports from both. Keeping these alive adds an indirection layer
-and signals to readers that `wall-ops.ts` is a coherent module when it isn't.
-
-**Fix:** Update `wall-manager.ts` (and any other importer) to import directly from
-`wall-coords`, `wall-flags`, `wall-crud`, `wall-sync`, `wall-door`. Delete both barrels.
 
 ---
 
@@ -156,59 +121,9 @@ if either grows past 150 during future bug fixes.
 
 ---
 
-### I15 — Re-export chains obscure true module boundaries
+<!-- I15 DONE (A7, 4226b71) -->
 
-Three layered re-export chains mislead readers about where symbols live:
-
-**Chain 1 — `mesh-corners` symbols tunnelled through `tile-drag`:**
-`tile-drag.ts` re-exports `imageBottomLeft`, `imageTopRight`, `imageBottomCenter`,
-`imageTopCenter`, `clientToGlobal`, `snapQuarterPx`, `snapQuarterUnits` from
-`../gizmos/mesh-corners`. Consumers (`tile-gizmos.ts`, `token-gizmos.ts`,
-`token-elev-gizmo.ts`, `bg-gizmos.ts`) import these as if they were drag logic.
-`clientToGlobal` is particularly misplaced — it is a generic coordinate helper with
-no tile-drag semantics.
-
-**Chain 2 — `drawDashedContour` tunnelled through `handle-draw` then `handle-factories`:**
-`draw/shapes.ts` defines `drawDashedContour`. `handle-draw.ts` re-exports it.
-`handle-factories.ts` re-exports it again (from `handle-draw`). `bg-gizmos.ts`
-imports it from `handle-draw` — a handle-primitives file — rather than from
-`draw/shapes` where it belongs.
-
-**Chain 3 — `handle-factories.ts` backward-compat re-exports now unused:**
-`handle-factories.ts` re-exports `makeCircleHandle`, `makeSquareCounterHandle`,
-`drawDashedContour` "for backward compat" but no file currently imports these
-FROM `handle-factories` (they all import from `handle-draw` directly).
-
-**Fix:**
-- Remove the `export { imageBottomLeft, … } from "../gizmos/mesh-corners"` line
-  from `tile-drag.ts`. Update `tile-gizmos.ts`, `token-gizmos.ts`,
-  `token-elev-gizmo.ts`, `bg-gizmos.ts` to import those symbols from
-  `../gizmos/mesh-corners` directly.
-- Remove `export { drawDashedContour } from "../draw/shapes"` from `handle-draw.ts`.
-  Update `bg-gizmos.ts` to import `drawDashedContour` from `../draw/shapes`.
-- Remove the three backward-compat re-exports from `handle-factories.ts`.
-
----
-
-### I16 — `scene-config.ts` acts as barrel in addition to its own hook
-
-`transform/scene-config.ts` contains the real `registerSceneConfigHook` function
-AND re-exports from three other modules:
-```ts
-export { registerRulerPatch }    from "./ruler-patch";
-export { registerTileConfigHook } from "./tile-config";
-export { registerTokenConfigHook } from "../ui/token-config";
-```
-`module.ts` imports all four registrations from this one file. This is the same
-barrel anti-pattern as I9 (wall-core, wall-ops): adds indirection and hides the
-actual location of each symbol.
-
-**Fix:** Remove the three re-export lines from `scene-config.ts`. Update `module.ts`
-to import each registration function directly from its source file:
-- `registerRulerPatch` from `./transform/ruler-patch`
-- `registerTileConfigHook` from `./transform/tile-config`  
-- `registerTokenConfigHook` from `./ui/token-config`
-Risk: 🟢 (import-path-only change in module.ts).
+<!-- I16 DONE (A8, c355ff2) -->
 
 ---
 
@@ -245,14 +160,11 @@ Dependencies shown as arrows. Do in this order within each group.
 
 ### Group A — Eliminating duplication (no behavior change, low risk)
 
-<!-- A1–A4 DONE -->
-
-| Step | What | Risk | Files changed | Gain |
-|------|------|------|---------------|------|
-| A5 | I8: Extract `buildBoxVerts` in `overlay-geometry.ts` | 🟢 | 1 file | Eliminate 35 lines of duplication |
-| A6 | I9: Update `wall-manager.ts` imports to direct paths; delete `wall-core.ts` + `wall-ops.ts` | 🟢 | 2 files deleted + 1 updated | Remove 2 barrel files |
-| A7 | I15: Remove re-export chains — strip mesh-corners passthrough from `tile-drag.ts`; strip `drawDashedContour` from `handle-draw.ts`; strip unused backward-compat re-exports from `handle-factories.ts`; update all consumers to import from true source | 🟢 | ~6 files | Import paths reflect real module boundaries |
-| A8 | I16: Remove barrel re-exports from `scene-config.ts`; update `module.ts` to import each registration from its source file | 🟢 | 2 files | Remove hidden indirection barrel |
+<!-- A1–A8 DONE -->
+<!-- A5: buildBoxVerts extracted in overlay-geometry.ts (3cfdd15) -->
+<!-- A6: wall-core.ts + wall-ops.ts deleted; all importers rewired to direct sources (fa83421) -->
+<!-- A7: mesh-corners passthrough removed from tile-drag.ts; drawDashedContour re-export removed from handle-draw.ts; unused backward-compat re-exports removed from handle-factories.ts (4226b71) -->
+<!-- A8: barrel re-exports removed from scene-config.ts; module.ts imports direct (c355ff2) -->
 
 ### Group B — Cohesion fixes (moderate restructuring, low-medium risk)
 
@@ -304,8 +216,8 @@ All remaining files drop under 150 or stay well under it.
 - `volume/overlay-geometry.ts` → replaced by `draw/volume-box.ts`
 - `volume/settings.ts` → replaced by `src/settings.ts`
 - `volume/` folder (empty after above)
-- `walls/wall-core.ts` (barrel, I9)
-- `walls/wall-ops.ts` (barrel, I9)
+- ~~`walls/wall-core.ts` (barrel, I9)~~ — deleted (A6)
+- ~~`walls/wall-ops.ts` (barrel, I9)~~ — deleted (A6)
 
 ## Files to move after this plan
 
