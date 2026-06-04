@@ -248,6 +248,25 @@ inside the volume box.
 
 ---
 
+## B21 — SceneConfig Iso tab: projection dropdown does not preview live (only checkboxes do)
+
+**Symptom:** In the SceneConfig popup → Iso tab, the "Enable Isometric" and "Transform
+Background" checkboxes trigger an immediate live preview of the stage transform (correct).
+The "Projection" dropdown does NOT — changing it only takes effect after "Save Changes".
+
+**Expected:** Selecting a different projection should immediately update the canvas transform
+preview, the same way the checkboxes do.
+
+**Root cause:** The `sync` callback in `registerSceneConfigHook` only reads the two checkbox
+values and writes `CanvasTransform.previewOverride`. It does not read the projection dropdown
+or pass the selected projection key to `applyCurrentState`. The `change` listener is also
+only wired to the two checkbox inputs, not to `.isoroll-projection-select`.
+
+**Affected:** `registerSceneConfigHook` in `transform/scene-config.ts` — extend `sync` to
+also read the projection select and wire its `change` event.
+
+---
+
 ## B18 — Changing a linked wall's type does not trigger tile preset update
 
 **Symptom:** When the user changes a wall's type (e.g. normal → ethereal) in the Walls
