@@ -1,6 +1,7 @@
-// White dashed image contour drawn on selected tokens.
-import { VolumeFlags } from "./flags";
+// Image contour and 3D volume box overlay for selected tokens (merged from two classes).
+import { VolumeFlags } from "../volume/flags";
 import { drawMeshContour, MeshLike } from "../draw/contour";
+import { computeTokenVerts, drawBox, drawAnchorLine } from "../volume/overlay-geometry";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 export class TokenOverlay {
@@ -29,17 +30,26 @@ export class TokenOverlay {
   private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
     if (!VolumeFlags.isSceneEnabled()) return;
     if (!TokenOverlay.boxes.has(token.id)) return;
+    // Skip pure animation frames: mesh moves but document position unchanged.
     if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
     TokenOverlay.show(token);
   }
 
   static show(token: Token): void {
     TokenOverlay.hide(token.id);
-    if (!VolumeFlags.getShowImageManipulation(token.document, true)) return;
+    const showImg = VolumeFlags.getShowImageManipulation(token.document, true);
+    const showVol = VolumeFlags.getShowVolumeManipulation(token.document, true);
+    if (!showImg && !showVol) return;
     const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_OVERLAY);
     const g = new PIXI.Graphics();
     g.eventMode = "passive";
-    drawMeshContour(g, token.mesh as unknown as MeshLike);
+    if (showImg) drawMeshContour(g, token.mesh as unknown as MeshLike);
+    if (showVol) {
+      const v = computeTokenVerts(token);
+      if (v.elevation > 0) drawAnchorLine(g, v);
+      drawBox(g, v);
+      if (v.elevation < 0) drawAnchorLine(g, v);
+    }
     layer.addChild(g);
     TokenOverlay.boxes.set(token.id, g);
     LayerManager.bringToTop(LAYER_KEYS.TOKEN_OVERLAY);
@@ -57,5 +67,4 @@ export class TokenOverlay {
     for (const id of Array.from(TokenOverlay.boxes.keys())) TokenOverlay.hide(id);
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_OVERLAY);
   }
-
 }

@@ -2,9 +2,8 @@ import "../styles/isoroll.scss";
 import { registerVolumeSettings } from "./volume/settings";
 import { VolumeOverlay } from "./volume/overlay";
 import { VolumeGizmos } from "./volume/gizmos";
-import { TokenOverlay } from "./volume/token-overlay";
+import { TokenOverlay } from "./tokens/token-overlay";
 import { TokenGizmos } from "./volume/token-gizmos";
-import { TokenVolumeOverlay } from "./volume/token-volume-overlay";
 import { TokenVolumeGizmos } from "./volume/token-volume-gizmos";
 import { Occluder } from "./occluder/occluder";
 import { CanvasTransform } from "./transform/stage-transform";
@@ -31,14 +30,13 @@ Hooks.once("init", () => {
   VolumeGizmos.activate();
   TokenOverlay.activate();
   TokenGizmos.activate();
-  TokenVolumeOverlay.activate();
   TokenVolumeGizmos.activate();
   Occluder.activate();
   PresetManager.activate();
   WallManager.activate();
   LayerManager.declareOrder([
     LAYER_KEYS.VOLUME_OVERLAY, LAYER_KEYS.VOLUME_GIZMOS,
-    LAYER_KEYS.TOKEN_OVERLAY,  LAYER_KEYS.TOKEN_VOLUME_OVERLAY,
+    LAYER_KEYS.TOKEN_OVERLAY,
     LAYER_KEYS.TOKEN_GIZMOS,   LAYER_KEYS.TOKEN_VOLUME_GIZMOS,
     LAYER_KEYS.BG_GIZMOS,
     LAYER_KEYS.WALL_OVERLAY,
