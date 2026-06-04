@@ -15,10 +15,10 @@ function meshCorner(h: MeshHolder, lxSign: number, lySign: number): { x: number;
   return { x: mesh.x + cr*(lx*sx) - sr*(ly*sy), y: mesh.y + sr*(lx*sx) + cr*(ly*sy) };
 }
 
-export function imageBLCorner(h: MeshHolder) { return meshCorner(h, -1, +1); }
-export function imageTRCorner(h: MeshHolder) { return meshCorner(h, +1, -1); }
-export function imageBCCorner(h: MeshHolder) { return meshCorner(h,  0, +1); }
-export function imageTCCorner(h: MeshHolder) { return meshCorner(h,  0, -1); }
+export function imageBottomLeft(h: MeshHolder)   { return meshCorner(h, -1, +1); }
+export function imageTopRight(h: MeshHolder)     { return meshCorner(h, +1, -1); }
+export function imageBottomCenter(h: MeshHolder) { return meshCorner(h,  0, +1); }
+export function imageTopCenter(h: MeshHolder)    { return meshCorner(h,  0, -1); }
 
 export function snapQuarterPx(canvasPx: number, gridSize: number): number {
   const q = gridSize * 0.25;

@@ -3,7 +3,7 @@ import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import {
   HandleType, DragState, handleTypeMap,
-  handlePositions, imageBLCorner, imageTRCorner, imageBCCorner, imageTCCorner, clientToGlobal, commitDrag,
+  handlePositions, imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, commitDrag,
 } from "./gizmos-drag";
 import { makeHandleForType, createRotateBlocker } from "./gizmos-handles";
 
@@ -70,13 +70,13 @@ export class VolumeGizmos {
     const E      = elev * gs / gd;
     const EH     = E + boundH * gs;
     const { x: hdx, y: hdy } = proj.heightDir;
-    const imgBL = imageBLCorner(tile), imgTR = imageTRCorner(tile), imgBC = imageBCCorner(tile);
+    const imgBL = imageBottomLeft(tile), imgTR = imageTopRight(tile), imgBC = imageBottomCenter(tile);
     const imgOff    = VolumeFlags.getImageOffset(tile.document);
     const imgScale  = VolumeFlags.getImageScale(tile.document);
     const imgYScale = VolumeFlags.getImageYScale(tile.document);
     const showVolManip = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImgManip = VolumeFlags.getShowImageManipulation(tile.document, true);
-    const imgTC = imageTCCorner(tile);
+    const imgTC = imageTopCenter(tile);
     const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy, imgBL, imgTR, imgBC, imgTC);
     // baseHalfH: canvas-px half image height when imgYScale=1 — used for snap in projectDrag
     type MeshSnap = { scale: { y: number }; texture?: { height: number } };

@@ -2,7 +2,7 @@
 import { getProjection } from "../transform/constants";
 import { MODULE_ID } from "./flags";
 import { snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
-export { imageBLCorner, imageTRCorner, imageBCCorner, imageTCCorner, clientToGlobal, snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
+export { imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
 
 export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale" | "imgYScale" | "swapSide";
 

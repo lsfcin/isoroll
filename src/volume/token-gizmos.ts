@@ -1,7 +1,7 @@
 // Image offset + scale handles for tokens (BL circle, TR square).
 import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
-import { imageBLCorner, imageTRCorner, imageTCCorner, clientToGlobal } from "./gizmos-drag";
+import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "./gizmos-drag";
 import { makeElevHandle, makeSquareCounterHandle } from "./gizmos-handles";
 
 interface TkDrag {
@@ -53,9 +53,9 @@ export class TokenGizmos {
     TokenGizmos.hide(token.id);
     if (!VolumeFlags.getShowImageManipulation(token.document, true)) return;
     const layer  = TokenGizmos.ensureLayer();
-    const bl      = imageBLCorner(token);
-    const tr      = imageTRCorner(token);
-    const tc      = imageTCCorner(token);
+    const bl      = imageBottomLeft(token);
+    const tr      = imageTopRight(token);
+    const tc      = imageTopCenter(token);
     const gs      = canvas.grid?.size ?? 100;
     const imgOff  = VolumeFlags.getImageOffset(token.document);
     const imgScl  = VolumeFlags.getImageScale(token.document);
