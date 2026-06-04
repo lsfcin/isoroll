@@ -1,10 +1,10 @@
 // Mesh corner, snap, and client-to-canvas coordinate helpers for gizmo placement.
+import { MeshLike } from "../draw/contour";
 
 export type MeshHolder = { mesh: unknown };
 
 function meshCorner(h: MeshHolder, lxSign: number, lySign: number): { x: number; y: number } | null {
-  type M = { x: number; y: number; rotation: number; scale: { x: number; y: number }; texture?: { width: number; height: number }; anchor?: { x: number; y: number } };
-  const mesh = h.mesh as M | null | undefined;
+  const mesh = h.mesh as MeshLike | null | undefined;
   if (!mesh?.texture) return null;
   const texW = mesh.texture.width, texH = mesh.texture.height;
   const ax = mesh.anchor?.x ?? 0.5, ay = mesh.anchor?.y ?? 0.5;

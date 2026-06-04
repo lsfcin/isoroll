@@ -1,5 +1,6 @@
 // Handle dispatch and tile-specific factories.
 import { HandleType } from "../tiles/tile-drag";
+import { canvasZoom } from "../util";
 import {
   HALF, makeHandle, makeCircleHandle, makeSquareCounterHandle,
   makeMoveHandle, makeSwapHandle, makeFaceHandle,
@@ -51,7 +52,7 @@ export function createRotateBlocker(tile: Tile, layer: PIXI.Container): PIXI.Gra
   const lp  = layer.toLocal(gp);
   const tw  = tile.document.width ?? 0;
   const bounds = handle.getBounds?.();
-  const zoom   = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
+  const zoom   = canvasZoom();
   const r      = bounds ? Math.max(bounds.width, bounds.height) * 0.5 * 1.03 / zoom : 20;
   const g = new PIXI.Graphics();
   g.lineStyle(0);

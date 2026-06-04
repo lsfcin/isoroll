@@ -1,8 +1,9 @@
 // Tile counter-transform: refreshTile hook + grid-rescale scene update handlers.
 import { getProjection } from "./constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
+import { gridDistance, elevToCanvas } from "../util";
 
-type MeshLike = {
+export type MutMutMeshLike = {
   x: number;
   y: number;
   rotation: number;
@@ -12,11 +13,11 @@ type MeshLike = {
   texture?: { width: number; height: number };
 };
 
-const EPS = 1e-6;
+export const EPS = 1e-6;
 let pendingGridRescale: { sceneId: string; ratio: number } | null = null;
 
 function applyTileCounter(
-  mesh: MeshLike,
+  mesh: MutMeshLike,
   docRotationDeg: number,
   docW: number,
   docH: number,
@@ -76,7 +77,7 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   if (tile.document.getFlag(MODULE_ID, "transformTile") === true) {
     // Mesh may carry stale counter-transform values (flag just toggled, or drag-drop with
     // position-only refresh). Detect by comparing mesh.rotation to the native (un-offset) value.
-    const mesh0 = tile.mesh as unknown as MeshLike | null | undefined;
+    const mesh0 = tile.mesh as unknown as MutMeshLike | null | undefined;
     if (mesh0) {
       const nativeRot = ((tile.document.rotation ?? 0) * Math.PI) / 180;
       if (Math.abs(mesh0.rotation - nativeRot) > EPS) {
@@ -90,13 +91,13 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
     }
     return;
   }
-  const mesh = tile.mesh as unknown as MeshLike | null | undefined;
+  const mesh = tile.mesh as unknown as MutMeshLike | null | undefined;
   if (!mesh) return;
   const gs      = canvas.grid?.size ?? 100;
-  const gd      = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+  const gd      = gridDistance();
   const elev    = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
   const boundH  = VolumeFlags.getTileHeight(tile.document) * gs;
-  const E       = elev * gs / gd;
+  const E       = elevToCanvas(elev, gs, gd);
   const proj    = getProjection(canvas.scene);
   const { x: hdx, y: hdy } = proj.heightDir;
   const imgScale   = VolumeFlags.getImageScale(tile.document);

@@ -1,6 +1,7 @@
 // Canvas coordinate helpers and Foundry shims for the walls system.
 import { VolumeFlags } from "../flags";
 import type { WallDef, TileAnchor } from "./wall-types";
+import { gridDistance, elevToCanvas } from "../util";
 
 export type TileDoc = TileDocument & { x: number; y: number; width: number; height: number };
 export type WallDoc = WallDocument & {
@@ -42,11 +43,11 @@ export function tileRect(doc: TileDoc): { left: number; top: number; w: number; 
 // Image center includes elevation offset; heightDir = {+1, -1} for all isoroll projections.
 export function imageRect(doc: TileDoc): { icx: number; icy: number; sw: number; sh: number } {
   const gs  = (canvas as unknown as { grid?: { size?: number } }).grid?.size ?? 100;
-  const gd  = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+  const gd  = gridDistance();
   const imgOff   = VolumeFlags.getImageOffset(doc);
   const imgScale = VolumeFlags.getImageScale(doc);
   const elev     = (doc as unknown as { elevation?: number }).elevation ?? 0;
-  const E        = elev * gs / gd;
+  const E        = elevToCanvas(elev, gs, gd);
   const boundH   = VolumeFlags.getTileHeight(doc) * gs;
   const S        = Math.max(doc.width, doc.height, boundH) * imgScale;
   return {

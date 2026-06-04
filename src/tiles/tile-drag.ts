@@ -2,6 +2,7 @@
 import { getProjection } from "../transform/constants";
 import { MODULE_ID } from "../flags";
 import { snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
+import { canvasZoom, gridDistance, elevToCanvas, screenToCanvas } from "../util";
 export { imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
 
 export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale" | "imgYScale" | "swapSide";
@@ -57,16 +58,48 @@ export function handlePositions(
 // Project screen delta onto the resize/elevation axis, snap, return new values.
 // wt = canvas.app.stage.worldTransform (rotation+skew only); zoom separate.
 // Screen-pixel snap zone for imgYScale to restore original proportion (1:1).
-const IMG_YSCALE_SNAP_PX = 12;
+export const IMG_YSCALE_SNAP_PX = 12;
+
+type WT4 = { a: number; b: number; c: number; d: number };
+type WT6 = WT4 & { tx: number; ty: number };
+
+export function projectImgOffset(
+  dx: number, dy: number, wt: WT4, startX: number, startY: number,
+): { x: number; y: number } {
+  const { x: cdx, y: cdy } = screenToCanvas(dx, dy, wt);
+  return { x: startX + cdx, y: startY + cdy };
+}
+
+export function projectImgYScale(
+  dx: number, dy: number, wt: WT4, zoom: number, startYScale: number, halfH: number,
+): number {
+  const canvasDY = screenToCanvas(dx, dy, wt).y;
+  const newHalfH = halfH * startYScale - canvasDY;
+  let ys = Math.max(0.05, newHalfH / halfH);
+  if (Math.abs(ys - 1.0) * halfH * zoom < IMG_YSCALE_SNAP_PX) ys = 1.0;
+  return ys;
+}
+
+export function projectImgScale(
+  gx: number, gy: number, startGX: number, startGY: number,
+  startScale: number, cx: number, cy: number, wt: WT6,
+): number {
+  const csx = wt.a * cx + wt.c * cy + wt.tx, csy = wt.b * cx + wt.d * cy + wt.ty;
+  const dxRef = startGX - csx, dyRef = startGY - csy;
+  const distRef = Math.sqrt(dxRef * dxRef + dyRef * dyRef);
+  if (distRef <= 0) return startScale;
+  const curDist = ((gx - csx) * dxRef + (gy - csy) * dyRef) / distRef;
+  return Math.max(0.05, startScale * (curDist / distRef));
+}
 
 export function projectDrag(
   drag: DragState, gx: number, gy: number,
 ): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number; imgOffX: number; imgOffY: number; imgScale: number; imgYScale: number } {
   const dx = gx - drag.startGX, dy = gy - drag.startGY;
   const wt    = canvas.app!.stage.worldTransform;
-  const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
+  const zoom = canvasZoom();
   const gs   = canvas.grid?.size ?? 100;
-  const gd   = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+  const gd   = gridDistance();
 
   let tw = drag.startW, th = drag.startH, boundH = drag.startBoundH, elev = drag.startElev;
   let docX = drag.startDocX, docY = drag.startDocY;
@@ -105,44 +138,25 @@ export function projectDrag(
       break;
     }
     case "move": {
-      const det = wt.a * wt.d - wt.b * wt.c;
-      const cdx = (dx * wt.d - dy * wt.c) / det;
-      const cdy = (-dx * wt.b + dy * wt.a) / det;
+      const { x: cdx, y: cdy } = screenToCanvas(dx, dy, wt);
       docX = snapQuarterPx(drag.startDocX + cdx, gs);
       docY = snapQuarterPx(drag.startDocY + cdy, gs);
       break;
     }
     case "imgOffset": {
-      const det = wt.a * wt.d - wt.b * wt.c;
-      imgOffX = drag.startImgOffX + (dx * wt.d - dy * wt.c) / det;
-      imgOffY = drag.startImgOffY + (-dx * wt.b + dy * wt.a) / det;
+      ({ x: imgOffX, y: imgOffY } = projectImgOffset(dx, dy, wt, drag.startImgOffX, drag.startImgOffY));
       break;
     }
     case "imgScale": {
-      // Mesh center in canvas space; convert to screen to get reference direction
       const { x: hdx, y: hdy } = getProjection(canvas.scene).heightDir;
-      const E2 = drag.startElev * gs / gd;
+      const E2 = elevToCanvas(drag.startElev, gs, gd);
       const cx = drag.startDocX + hdx * E2 + drag.startImgOffX;
       const cy = drag.startDocY + hdy * E2 + drag.startImgOffY;
-      const csx = wt.a * cx + wt.c * cy + wt.tx, csy = wt.b * cx + wt.d * cy + wt.ty;
-      const dxRef = drag.startGX - csx, dyRef = drag.startGY - csy;
-      const distRef = Math.sqrt(dxRef*dxRef + dyRef*dyRef);
-      if (distRef > 0) {
-        const curDist = ((gx - csx) * dxRef + (gy - csy) * dyRef) / distRef;
-        imgScale = Math.max(0.05, drag.startImgScale * (curDist / distRef));
-      }
+      imgScale = projectImgScale(gx, gy, drag.startGX, drag.startGY, drag.startImgScale, cx, cy, wt);
       break;
     }
     case "imgYScale": {
-      // Project screen delta onto canvas-Y axis via inverse matrix
-      const det = wt.a * wt.d - wt.b * wt.c;
-      const canvasDY = (-dx * wt.b + dy * wt.a) / det;
-      // Top-center handle: drag up (canvasDY < 0) = top moves up = image taller
-      const baseHalfH = drag.startImgHalfH;
-      const newHalfH = baseHalfH * drag.startImgYScale - canvasDY;
-      imgYScale = Math.max(0.05, newHalfH / baseHalfH);
-      // Snap to 1.0 when handle is within IMG_YSCALE_SNAP_PX screen pixels of original proportion
-      if (Math.abs(imgYScale - 1.0) * baseHalfH * zoom < IMG_YSCALE_SNAP_PX) imgYScale = 1.0;
+      imgYScale = projectImgYScale(dx, dy, wt, zoom, drag.startImgYScale, drag.startImgHalfH);
       break;
     }
   }

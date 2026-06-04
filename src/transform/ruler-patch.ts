@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../flags";
+import { canvasZoom } from "../util";
 
 // ── Ruler / TokenRuler label position ────────────────────────────────────────
 // Both classes set context.position in canvas px, used as CSS left/top in
@@ -16,7 +17,7 @@ function patchRulerProto(proto: RulerProto | undefined): void {
     if (!ctx || !canvas.scene?.getFlag(MODULE_ID, "enabled")) return ctx;
     const { x, y } = ctx.position;
     const wt = canvas.app!.stage.worldTransform;
-    const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
+    const zoom = canvasZoom();
     ctx.position = { x: (wt.a * x + wt.c * y) / zoom, y: (wt.b * x + wt.d * y) / zoom };
     return ctx;
   };
@@ -42,7 +43,7 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
     if (!canvas.scene?.getFlag(MODULE_ID, "enabled")) return pos;
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return pos;
     const wt = canvas.app?.stage?.worldTransform;
-    const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
+    const zoom = canvasZoom();
     if (!wt) return pos;
     const s  = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
     const cx = tile.document.x ?? 0, cy = tile.document.y ?? 0;

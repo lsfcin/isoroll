@@ -1,18 +1,8 @@
 // Token counter-transform: refreshToken hook handler.
 import { getProjection } from "./constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
-
-type MeshLike = {
-  x: number;
-  y: number;
-  rotation: number;
-  skew?: { x: number; y: number; set(x: number, y: number): void };
-  scale: { x: number; y: number; set(x: number, y: number): void };
-  anchor?: { x: number; y: number; set(x: number, y: number): void };
-  texture?: { width: number; height: number };
-};
-
-const EPS = 1e-6;
+import { MutMeshLike as MeshLike, EPS } from "./tile-transform";
+import { gridDistance, elevToCanvas } from "../util";
 const tokenBase = new WeakMap<object, { x: number; y: number }>();
 
 export function onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
@@ -50,9 +40,9 @@ export function onRefreshToken(token: Token, flags?: Record<string, boolean>): v
     tokenBase.set(token, { x: mesh.x, y: mesh.y });
   }
   const base  = tokenBase.get(token) ?? { x: mesh.x, y: mesh.y };
-  const gd    = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+  const gd    = gridDistance();
   const elev  = (token.document as unknown as { elevation?: number }).elevation ?? 0;
-  const E     = elev * gs / gd;
+  const E     = elevToCanvas(elev, gs, gd);
   const imgOff = VolumeFlags.getImageOffset(token.document);
   mesh.x = base.x + hdx * E + imgOff.x * gs;
   mesh.y = base.y + hdy * E + imgOff.y * gs;

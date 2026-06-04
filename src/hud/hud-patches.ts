@@ -1,5 +1,6 @@
 // TokenHUD repositioning under isometric stage transform.
 import { MODULE_ID } from "../flags";
+import { canvasZoom } from "../util";
 
 export class HudPatches {
   static activate(): void {
@@ -14,7 +15,7 @@ export class HudPatches {
     requestAnimationFrame(() => {
       const center = (token.center ?? { x: token.x, y: token.y }) as { x: number; y: number };
       const wt = canvas.app?.stage?.worldTransform;
-      const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
+      const zoom = canvasZoom();
       if (!wt) return;
       const L = (wt.a * center.x + wt.c * center.y) / zoom;
       const T = (wt.b * center.x + wt.d * center.y) / zoom;

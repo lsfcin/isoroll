@@ -1,7 +1,12 @@
 // Image offset + scale handles for tokens (bottom-left circle, top-right square).
 import { MODULE_ID, VolumeFlags } from "../flags";
-import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "../tiles/tile-drag";
+import {
+  imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal,
+  projectImgOffset, projectImgYScale, projectImgScale,
+} from "../tiles/tile-drag";
 import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
+import { MeshLike } from "../draw/contour";
+import { canvasZoom } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 interface TkDrag {
@@ -61,8 +66,7 @@ export class TokenGizmos {
     const imgYScl = VolumeFlags.getImageYScale(token.document);
     const container = new PIXI.Container();
 
-    type M = { x: number; y: number; scale?: { y: number }; texture?: { height: number } };
-    const tkMesh  = token.mesh as unknown as M | null | undefined;
+    const tkMesh  = token.mesh as unknown as MeshLike | null | undefined;
     const meshCX  = tkMesh?.x ?? (token.document.x ?? 0);
     const meshCY  = tkMesh?.y ?? (token.document.y ?? 0);
     const tkTexH  = tkMesh?.texture?.height ?? 100;
@@ -114,31 +118,15 @@ export class TokenGizmos {
     const dx = gx - drag.startGX, dy = gy - drag.startGY;
     const wt = canvas.app!.stage.worldTransform;
     if (drag.type === "imgOffset") {
-      const det = wt.a * wt.d - wt.b * wt.c;
-      const gs  = canvas.grid?.size ?? 100;
-      void drag.token.document.setFlag(MODULE_ID, "imageOffset", {
-        x: (drag.startImgOffX + (dx * wt.d - dy * wt.c) / det) / gs,
-        y: (drag.startImgOffY + (-dx * wt.b + dy * wt.a) / det) / gs,
-      });
+      const gs = canvas.grid?.size ?? 100;
+      const { x, y } = projectImgOffset(dx, dy, wt, drag.startImgOffX, drag.startImgOffY);
+      void drag.token.document.setFlag(MODULE_ID, "imageOffset", { x: x / gs, y: y / gs });
     } else if (drag.type === "imgYScale") {
-      const det = wt.a * wt.d - wt.b * wt.c;
-      const zoom = (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
-      const canvasDY = (-dx * wt.b + dy * wt.a) / det;
-      const baseHalfH = drag.startImgHalfH;
-      const newHalfH = baseHalfH * drag.startImgYScale - canvasDY;
-      let newImgYScale = Math.max(0.05, newHalfH / baseHalfH);
-      if (Math.abs(newImgYScale - 1.0) * baseHalfH * zoom < 12) newImgYScale = 1.0;
-      void drag.token.document.setFlag(MODULE_ID, "imageYScale", newImgYScale);
+      void drag.token.document.setFlag(MODULE_ID, "imageYScale",
+        projectImgYScale(dx, dy, wt, canvasZoom(), drag.startImgYScale, drag.startImgHalfH));
     } else {
-      const cx  = drag.startMeshCX;
-      const cy  = drag.startMeshCY;
-      const csx = wt.a*cx + wt.c*cy + wt.tx, csy = wt.b*cx + wt.d*cy + wt.ty;
-      const rxRef = drag.startGX - csx, ryRef = drag.startGY - csy;
-      const distRef = Math.sqrt(rxRef*rxRef + ryRef*ryRef);
-      if (distRef > 0) {
-        const cur = ((gx-csx)*rxRef + (gy-csy)*ryRef) / distRef;
-        void drag.token.document.setFlag(MODULE_ID, "imageScale", Math.max(0.05, drag.startImgScale * (cur / distRef)));
-      }
+      void drag.token.document.setFlag(MODULE_ID, "imageScale",
+        projectImgScale(gx, gy, drag.startGX, drag.startGY, drag.startImgScale, drag.startMeshCX, drag.startMeshCY, wt));
     }
   }
 

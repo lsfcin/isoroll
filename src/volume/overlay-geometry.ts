@@ -1,19 +1,12 @@
 // Geometry helpers for the 3D volume overlay: vertex computation and box drawing.
 import { getProjection } from "../transform/constants";
 import { VolumeFlags } from "../flags";
+import { gridDistance, elevToCanvas } from "../util";
+import {
+  ORANGE, BLACK, DASH_LEN, GAP_LEN, ANCHOR_DASH, ANCHOR_GAP,
+  ALPHA_FRONT_OUTLINE, ALPHA_FRONT_FILL, ALPHA_BACK_OUTLINE, ALPHA_BACK_FILL,
+} from "../draw/constants";
 export { drawDash } from "../draw/shapes";
-
-export const ORANGE   = 0xff9829;
-export const BLACK    = 0x000000;
-export const DASH_LEN = 4;
-export const GAP_LEN  = 10;
-export const ANCHOR_DASH = 2;
-export const ANCHOR_GAP  = 9;
-
-export const ALPHA_FRONT_OUTLINE = 0.45;
-export const ALPHA_FRONT_FILL    = 0.85;
-export const ALPHA_BACK_OUTLINE  = 0.18;
-export const ALPHA_BACK_FILL     = 0.35;
 
 export interface BoxVerts {
   NW_base: P; NE_base: P; SW_base: P; SE_base: P;
@@ -38,11 +31,11 @@ export function computeVerts(tile: Tile): BoxVerts {
 
   const proj      = getProjection(canvas.scene);
   const gridSize  = canvas.grid?.size ?? 100;
-  const gridDist  = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+  const gridDist  = gridDistance();
   const elevation = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
   const boundH    = VolumeFlags.getTileHeight(tile.document);
 
-  const E  = elevation * gridSize / gridDist;
+  const E  = elevToCanvas(elevation, gridSize, gridDist);
   const EH = E + boundH * gridSize;
   const ex = proj.heightDir.x, ey = proj.heightDir.y;
 
@@ -66,7 +59,7 @@ export function computeVerts(tile: Tile): BoxVerts {
 // token.document.width/height = grid units (tiles use canvas pixels)
 export function computeTokenVerts(token: Token): BoxVerts {
   const gridSize  = canvas.grid?.size ?? 100;
-  const gridDist  = (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+  const gridDist  = gridDistance();
   const tw = (token.document.width  ?? 1) * gridSize;
   const th = (token.document.height ?? 1) * gridSize;
   const tx = token.document.x ?? 0;
@@ -76,7 +69,7 @@ export function computeTokenVerts(token: Token): BoxVerts {
   const elevation = (token.document as unknown as { elevation?: number }).elevation ?? 0;
   const boundH    = VolumeFlags.getTokenHeight(token.document);
 
-  const E  = elevation * gridSize / gridDist;
+  const E  = elevToCanvas(elevation, gridSize, gridDist);
   const EH = E + boundH * gridSize;
   const ex = proj.heightDir.x, ey = proj.heightDir.y;
 
