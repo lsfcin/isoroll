@@ -1,9 +1,9 @@
 import { MODULE_ID } from "../flags";
-import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior } from "./wall-flags";
+import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
 import { updateLinkedWallPositions, flipLinkedWallAnchorsX } from "./wall-sync";
-import { deleteLinkedWalls, generateBaseWalls, unlinkAllWalls } from "./wall-crud";
+import { deleteLinkedWalls } from "./wall-crud";
 import { canvasToAnchor, scene, type TileDoc } from "./wall-coords";
-import { cycleDoorBehavior, applyDoorBehavior } from "./wall-door";
+import { applyDoorBehavior } from "./wall-door";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
 import { scheduleWrap } from "../util";
@@ -16,7 +16,6 @@ export class WallManager {
     Hooks.on("deleteTile",    WallManager.onDeleteTile);
     Hooks.on("deleteWall",    WallManager.onDeleteWall);
     Hooks.on("updateWall",    WallManager.onUpdateWall);
-    Hooks.on("renderTileHUD", WallManager.onRenderTileHUD);
     Hooks.on("canvasReady",   () => WallHistory.clear());
     window.addEventListener("keydown", (e) => {
       if (!e.ctrlKey || e.key !== "z" || e.shiftKey) return;
@@ -98,59 +97,4 @@ export class WallManager {
     }
   }
 
-  private static onRenderTileHUD(hud: { object: Tile }, html: JQuery | HTMLElement): void {
-    const tile = hud.object;
-    if (!tile?.document) return;
-    const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-    const doc   = tile.document;
-    const wallCount    = getLinkedWallIds(doc).length;
-    const loc   = (k: string) => game.i18n?.localize(k) ?? k;
-    const inSel = WallOverlay.isSelectMode(tile.id);
-
-    const doorBtn = hasLinkedDoor(doc) ? (() => {
-      const beh  = getDoorBehavior(doc);
-      const icon = { none: "fa-eye", hide: "fa-eye-slash", fade: "fa-adjust" }[beh.mode] ?? "fa-eye";
-      const key  = { none: "DoorNone", hide: "DoorHide", fade: "DoorFade" }[beh.mode] ?? "DoorNone";
-      return `<div class="control-icon isoroll-door-mode" data-tooltip="${loc("ISOROLL.WallManager." + key)}"><i class="fas ${icon}"></i></div>`;
-    })() : "";
-
-    // Remove any existing isoroll buttons + handlers before re-adding (HUD may re-render in-place)
-    $html.find(".isoroll-gen-walls, .isoroll-select-walls, .isoroll-unlink-walls, .isoroll-delete-walls, .isoroll-door-mode").remove();
-    $html.off("click.isoroll");
-
-    $html.find(".col.right").append(`
-      <div class="control-icon isoroll-gen-walls" data-tooltip="${loc("ISOROLL.WallManager.GenerateBase")}">
-        <i class="fas fa-border-all"></i>${wallCount > 0 ? `<span class="isoroll-wall-badge">${wallCount}</span>` : ""}
-      </div>
-      <div class="control-icon isoroll-select-walls${inSel ? " active" : ""}" data-tooltip="${loc(inSel ? "ISOROLL.WallManager.DoneSelecting" : "ISOROLL.WallManager.SelectWalls")}">
-        <i class="fas ${inSel ? "fa-check" : "fa-mouse-pointer"}"></i>
-      </div>
-      <div class="control-icon isoroll-unlink-walls" data-tooltip="${loc("ISOROLL.WallManager.UnlinkAll")}">
-        <i class="fas fa-unlink"></i>
-      </div>
-      <div class="control-icon isoroll-delete-walls" data-tooltip="${loc("ISOROLL.WallManager.DeleteLinked")}">
-        <i class="fas fa-trash-alt"></i>
-      </div>
-      ${doorBtn}
-    `);
-
-    const rerender = () => (hud as unknown as { render(): void }).render();
-
-    $html.on("click.isoroll", ".isoroll-gen-walls",    () => wrap(async () => { await generateBaseWalls(doc); rerender(); }, "generate base walls"));
-    $html.on("click.isoroll", ".isoroll-unlink-walls", () => wrap(async () => { await unlinkAllWalls(doc);    rerender(); }, "unlink walls"));
-    $html.on("click.isoroll", ".isoroll-delete-walls", () => wrap(async () => { await deleteLinkedWalls(doc); rerender(); }, "delete walls"));
-    $html.on("click.isoroll", ".isoroll-door-mode",    () => wrap(async () => { await cycleDoorBehavior(doc); rerender(); }, "cycle door behavior"));
-    $html.on("click.isoroll", ".isoroll-select-walls", (e) => {
-      const $btn = $(e.currentTarget as HTMLElement);
-      if (WallOverlay.isSelectMode(tile.id)) {
-        WallOverlay.exitSelect(tile);
-        $btn.removeClass("active").attr("data-tooltip", loc("ISOROLL.WallManager.SelectWalls"));
-        $btn.find("i").attr("class", "fas fa-mouse-pointer");
-      } else {
-        WallOverlay.enterSelect(tile);
-        $btn.addClass("active").attr("data-tooltip", loc("ISOROLL.WallManager.DoneSelecting"));
-        $btn.find("i").attr("class", "fas fa-check");
-      }
-    });
-  }
 }
