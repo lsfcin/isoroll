@@ -29,125 +29,8 @@ Files still above 150-line warning threshold (all under 200 hard limit):
 
 ## Issues catalogue
 
-### I1 — `overlay-geometry.ts` fully duplicates `draw/constants.ts`
-
-`volume/overlay-geometry.ts` redeclares all 10 constants already in `draw/constants.ts`
-(`ORANGE`, `BLACK`, `DASH_LEN`, `GAP_LEN`, `ANCHOR_DASH`, `ANCHOR_GAP`,
-`ALPHA_FRONT_OUTLINE/FILL`, `ALPHA_BACK_OUTLINE/FILL`) with identical values.
-`draw/constants.ts` was created in Phase 0.3 but `overlay-geometry.ts` was never updated
-to import from it. Consumers of overlay-geometry that re-export these constants are
-silently working on local copies.
-
-**Fix:** Remove the 10 constant declarations from `overlay-geometry.ts`; add
-`import { ... } from "../draw/constants"`.
-
----
-
-### I2 — `MeshLike` type defined in 5 places
-
-| File | Name | Shape |
-|------|------|-------|
-| `draw/contour.ts` | `MeshLike` (exported) | read-only 6-field |
-| `gizmos/mesh-corners.ts` | local `M` in `meshCorner` | read-only 6-field, same |
-| `tiles/tile-transform.ts` | local `MeshLike` | mutable 8-field (has `skew.set`, `scale.set`, `anchor.set`) |
-| `tokens/token-transform.ts` | local `MeshLike` | same mutable 8-field |
-| `tokens/token-gizmos.ts` | local `M` | 4-field read-only partial |
-
-Two distinct shapes are needed:
-- **ReadMeshLike** — for drawing/corner calculations (read-only). `draw/contour.ts` already exports this.
-- **MutMeshLike** — for transform application (needs set() methods). Duplicated across tile-transform + token-transform.
-
-**Fix:**
-- `gizmos/mesh-corners.ts` local `M` → import `MeshLike` from `draw/contour.ts`.
-- `tokens/token-gizmos.ts` local `M` → import `MeshLike` from `draw/contour.ts`.
-- Export `MutMeshLike` (the mutable 8-field shape) + `EPS = 1e-6` from
-  `tiles/tile-transform.ts`; import both in `tokens/token-transform.ts`.
-  This also repairs the judgment error in Phase 9 that contradicted the plan's
-  "stays unified" note by at minimum sharing the duplicated types.
-
----
-
-### I3 — `zoom` accessor copied 8 times
-
-```ts
-(canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1
-```
-
-Appears in: `bg-drag.ts`, `handle-factories.ts`, `hud-patches.ts`, `tile-drag.ts`,
-`token-gizmos.ts`, `token-elev-gizmo.ts`, `ruler-patch.ts` (×2). One call per file = 8
-copies of an ugly 52-character cast.
-
-**Fix:** Add `canvasZoom(): number` to `src/util.ts`. All 8 sites replace with `canvasZoom()`.
-
----
-
-### I4 — `gd` (grid distance) accessor copied 9 times
-
-```ts
-(canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1
-```
-
-Appears in: `tile-drag.ts`, `tile-gizmos.ts`, `token-elev-gizmo.ts` (×2),
-`token-transform.ts`, `tile-transform.ts`, `overlay-geometry.ts` (×2), `wall-coords.ts`.
-
-**Fix:** Add `gridDistance(): number` to `src/util.ts`.
-
----
-
-### I5 — `E = elev * gs / gd` elevation conversion not extracted
-
-Appears as inline computation in: `tile-transform.ts`, `token-transform.ts`,
-`tile-gizmos.ts`, `token-elev-gizmo.ts`, `overlay-geometry.ts` (×2).
-A named `elevToCanvas(elev, gs, gd)` makes the formula auditable and the call
-sites self-documenting.
-
-**Fix:** Add `elevToCanvas(elev: number, gs: number, gd: number): number` to `src/util.ts`.
-
----
-
-### I6 — Drag lifecycle boilerplate repeated across 4 classes
-
-`VolumeGizmos`, `TokenGizmos`, `TokenElevGizmo`, `BackgroundGizmos` each implement
-the identical 20-line pointer-drag lifecycle:
-
-```ts
-private static drag: SomeDragState | null = null;
-private static readonly onMove = (e: PointerEvent) => This.handleMove(e);
-private static readonly onUp   = (e: PointerEvent) => This.handleUp(e);
-// beginDrag: window.addEventListener x2
-// handleMove: guard + commit
-// handleUp: window.removeEventListener + guard + commit
-```
-
-~20 lines × 4 classes = 80 lines of structural duplication.
-
-**Fix:** Export `startPointerDrag<T>(state: T, onCommit: (s: T, gx: number, gy: number) => void, yOnly?: boolean): void` from `src/util.ts`. It:
-1. Calls the commit callback immediately (optional: on first move only).
-2. Adds pointermove listener → calls commit with current position.
-3. Adds pointerup listener (once) → removes pointermove, calls commit.
-
-`yOnly` flag supports `TokenElevGizmo` which only needs `gy`.
-
-Each class drops its `onMove` / `onUp` statics and its `handleMove` / `handleUp`
-methods; `beginDrag` becomes a single `startPointerDrag(state, commitFn)` call.
-
----
-
-### I7 — Token drag math duplicates tile-drag.ts
-
-`TokenGizmos.commit()` implements `imgOffset`, `imgYScale`, `imgScale` drag math
-from scratch (~30 lines), identical in logic to the corresponding `case` blocks in
-`tile-drag.ts`'s `projectDrag`. Magic constant `12` appears hardcoded in
-`token-gizmos.ts:130` — same value as `IMG_YSCALE_SNAP_PX = 12` in `tile-drag.ts`
-but not imported.
-
-**Fix:**
-- Export `IMG_YSCALE_SNAP_PX` from `tile-drag.ts`.
-- Extract three pure math helpers from `tile-drag.ts`'s switch into named functions:
-  `projectImgOffset(dx, dy, wt, startX, startY)`,
-  `projectImgYScale(dx, dy, wt, zoom, startYScale, halfH)`,
-  `projectImgScale(gx, gy, startGX, startGY, startScale, cx, cy, wt)`.
-- `TokenGizmos.commit()` calls these helpers instead of re-implementing the math.
+<!-- I1–I7 DONE (A1–A4, committed 76808e3 + 71272a2) -->
+<!-- Extra (unplanned, agreed): helpers moved to gizmos/img-drag.ts — no tile/token hierarchy -->
 
 ---
 
@@ -273,20 +156,103 @@ if either grows past 150 during future bug fixes.
 
 ---
 
+### I15 — Re-export chains obscure true module boundaries
+
+Three layered re-export chains mislead readers about where symbols live:
+
+**Chain 1 — `mesh-corners` symbols tunnelled through `tile-drag`:**
+`tile-drag.ts` re-exports `imageBottomLeft`, `imageTopRight`, `imageBottomCenter`,
+`imageTopCenter`, `clientToGlobal`, `snapQuarterPx`, `snapQuarterUnits` from
+`../gizmos/mesh-corners`. Consumers (`tile-gizmos.ts`, `token-gizmos.ts`,
+`token-elev-gizmo.ts`, `bg-gizmos.ts`) import these as if they were drag logic.
+`clientToGlobal` is particularly misplaced — it is a generic coordinate helper with
+no tile-drag semantics.
+
+**Chain 2 — `drawDashedContour` tunnelled through `handle-draw` then `handle-factories`:**
+`draw/shapes.ts` defines `drawDashedContour`. `handle-draw.ts` re-exports it.
+`handle-factories.ts` re-exports it again (from `handle-draw`). `bg-gizmos.ts`
+imports it from `handle-draw` — a handle-primitives file — rather than from
+`draw/shapes` where it belongs.
+
+**Chain 3 — `handle-factories.ts` backward-compat re-exports now unused:**
+`handle-factories.ts` re-exports `makeCircleHandle`, `makeSquareCounterHandle`,
+`drawDashedContour` "for backward compat" but no file currently imports these
+FROM `handle-factories` (they all import from `handle-draw` directly).
+
+**Fix:**
+- Remove the `export { imageBottomLeft, … } from "../gizmos/mesh-corners"` line
+  from `tile-drag.ts`. Update `tile-gizmos.ts`, `token-gizmos.ts`,
+  `token-elev-gizmo.ts`, `bg-gizmos.ts` to import those symbols from
+  `../gizmos/mesh-corners` directly.
+- Remove `export { drawDashedContour } from "../draw/shapes"` from `handle-draw.ts`.
+  Update `bg-gizmos.ts` to import `drawDashedContour` from `../draw/shapes`.
+- Remove the three backward-compat re-exports from `handle-factories.ts`.
+
+---
+
+### I16 — `scene-config.ts` acts as barrel in addition to its own hook
+
+`transform/scene-config.ts` contains the real `registerSceneConfigHook` function
+AND re-exports from three other modules:
+```ts
+export { registerRulerPatch }    from "./ruler-patch";
+export { registerTileConfigHook } from "./tile-config";
+export { registerTokenConfigHook } from "../ui/token-config";
+```
+`module.ts` imports all four registrations from this one file. This is the same
+barrel anti-pattern as I9 (wall-core, wall-ops): adds indirection and hides the
+actual location of each symbol.
+
+**Fix:** Remove the three re-export lines from `scene-config.ts`. Update `module.ts`
+to import each registration function directly from its source file:
+- `registerRulerPatch` from `./transform/ruler-patch`
+- `registerTileConfigHook` from `./transform/tile-config`  
+- `registerTokenConfigHook` from `./ui/token-config`
+Risk: 🟢 (import-path-only change in module.ts).
+
+---
+
+### I17 — `scene-config.ts` and `tile-config.ts` are UI code in `transform/`
+
+`transform/scene-config.ts`: AppV2 tab injection into SceneConfig. Reads projection
+flags to build a dropdown; injects HTML form fields; wires change events.
+
+`transform/tile-config.ts`: AppV2 tab injection into TileConfig. Same pattern.
+
+Both are form-injection UI code. `ui/` already holds `token-config.ts` (same
+pattern) and `tab-helpers.ts`. The asymmetry — token config in `ui/`, scene/tile
+config in `transform/` — is a cohesion failure: `transform/` should contain
+coordinate and rendering math, not DOM form code.
+
+**Fix:**
+- Move `transform/scene-config.ts` → `ui/scene-config.ts`.
+- Move `transform/tile-config.ts` → `ui/tile-config.ts`.
+- Update `module.ts` imports (already cleaned up by I16, now points to `./ui/scene-config` etc.).
+- Relative imports inside scene-config.ts that reference `./stage-transform` or
+  `./constants` will need updating to `../transform/stage-transform` etc.
+- `ruler-patch.ts` stays in `transform/` — it patches coordinate transform behaviour,
+  not UI. Only the config form files move.
+
+---
+
+<!-- I18 DONE (folded into A3) -->
+
+---
+
 ## Priority + sequencing
 
 Dependencies shown as arrows. Do in this order within each group.
 
 ### Group A — Eliminating duplication (no behavior change, low risk)
 
+<!-- A1–A4 DONE -->
+
 | Step | What | Risk | Files changed | Gain |
 |------|------|------|---------------|------|
-| A1 | I1: Remove duplicate constants from `overlay-geometry.ts`; import from `draw/constants` | 🟢 | 1 file | Eliminate 10 duplicate declarations |
-| A2 | I2: Export `MutMeshLike` + `EPS` from `tile-transform.ts`; import in `token-transform.ts`. Import `MeshLike` from `draw/contour.ts` in `mesh-corners.ts` + `token-gizmos.ts` | 🟢 | 4 files | 3 fewer type definitions |
-| A3 | I3 + I4 + I5: Add `canvasZoom()`, `gridDistance()`, `elevToCanvas()` to `util.ts`; replace all 8+9+6 call sites | 🟢 | `util.ts` + ~12 files | Eliminate 23 verbose casts |
-| A4 | I7: Extract `IMG_YSCALE_SNAP_PX` export from `tile-drag.ts`; extract 3 shared img-drag math helpers; `token-gizmos.ts` uses them | 🟡 | 2 files | Eliminate 30 lines of math duplication |
 | A5 | I8: Extract `buildBoxVerts` in `overlay-geometry.ts` | 🟢 | 1 file | Eliminate 35 lines of duplication |
 | A6 | I9: Update `wall-manager.ts` imports to direct paths; delete `wall-core.ts` + `wall-ops.ts` | 🟢 | 2 files deleted + 1 updated | Remove 2 barrel files |
+| A7 | I15: Remove re-export chains — strip mesh-corners passthrough from `tile-drag.ts`; strip `drawDashedContour` from `handle-draw.ts`; strip unused backward-compat re-exports from `handle-factories.ts`; update all consumers to import from true source | 🟢 | ~6 files | Import paths reflect real module boundaries |
+| A8 | I16: Remove barrel re-exports from `scene-config.ts`; update `module.ts` to import each registration from its source file | 🟢 | 2 files | Remove hidden indirection barrel |
 
 ### Group B — Cohesion fixes (moderate restructuring, low-medium risk)
 
@@ -295,6 +261,7 @@ Dependencies shown as arrows. Do in this order within each group.
 | B1 | I10: Move `onRenderTileHUD` from `wall-manager.ts` → `hud/hud-patches.ts` | 🟡 | 2 files | Correct responsibility |
 | B2 | I11: Add `currentProjection()` to `constants.ts`; update all in-canvas call sites | 🟢 | ~10 files | Readability at every call site |
 | B3 | I12: Move `overlay-geometry.ts` → `draw/volume-box.ts`; move `volume/settings.ts` → `src/settings.ts`; delete `volume/` folder | 🟡 | ~5 importers + module.ts | Remove misleading folder |
+| B4 | I17: Move `transform/scene-config.ts` → `ui/scene-config.ts`; move `transform/tile-config.ts` → `ui/tile-config.ts`; fix relative imports inside both files | 🟡 | 2 files moved + module.ts | `transform/` = math only; `ui/` = all config forms |
 
 ### Group C — Structural pattern (higher impact, requires care)
 
@@ -318,10 +285,12 @@ Dependencies shown as arrows. Do in this order within each group.
 | `overlay-geometry.ts` → `draw/volume-box.ts` | 139 | ~100 (I1 + I8) |
 | `wall-manager.ts` | 157 | ~100 (I10) |
 | `bg-gizmos.ts` | 185 | ~125 (I13) |
-| `tiles/tile-drag.ts` | 167 | ~145 (I7) |
-| `tokens/token-gizmos.ts` | 160 | ~130 (I6 + I7) |
+| `tiles/tile-drag.ts` | 167 | ~140 (I7 + I15 removes re-exports) |
+| `tokens/token-gizmos.ts` | 160 | ~125 (I6 + I7) |
 | `hud/hud-patches.ts` | 25 | ~80 (I10) |
-| `util.ts` | 4 | ~30 (I3+I4+I5+I6) |
+| `util.ts` | 4 | ~40 (I3+I4+I5+I6+I18) |
+| `transform/scene-config.ts` → `ui/scene-config.ts` | 122 | ~115 (I16 removes barrel lines; I17 moves file) |
+| `gizmos/handle-factories.ts` | 66 | ~52 (I15 removes unused re-exports) |
 | `background/bg-html.ts` | — | ~60 (I13) |
 | `draw/volume-box.ts` | — | ~100 (I12) |
 | `src/settings.ts` | — | 23 (I12) |
@@ -337,3 +306,22 @@ All remaining files drop under 150 or stay well under it.
 - `volume/` folder (empty after above)
 - `walls/wall-core.ts` (barrel, I9)
 - `walls/wall-ops.ts` (barrel, I9)
+
+## Files to move after this plan
+
+- `transform/scene-config.ts` → `ui/scene-config.ts` (I17)
+- `transform/tile-config.ts` → `ui/tile-config.ts` (I17)
+
+## Math centralization — final state
+
+After all A–C steps the canonical location for each class of pure math:
+
+| Math | Location |
+|------|----------|
+| Projection constants + `getProjection` + `currentProjection` | `transform/constants.ts` |
+| `canvasZoom`, `gridDistance`, `elevToCanvas`, `screenToCanvas` | `src/util.ts` |
+| Box vertex geometry (`buildBoxVerts`) | `draw/volume-box.ts` (private) |
+| Tile drag projection (`projectDrag`) | `tiles/tile-drag.ts` |
+| Token/tile shared image-drag math (after I7) | `tiles/tile-drag.ts` (shared helpers) |
+| Background drag math (`commitBgDrag`) | `background/bg-drag.ts` |
+| Snap helpers (`snapQuarterPx`, `snapQuarterUnits`) | `gizmos/mesh-corners.ts` |
