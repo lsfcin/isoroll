@@ -1,4 +1,4 @@
-// Image offset + scale handles for tokens (BL circle, TR square).
+// Image offset + scale handles for tokens (bottom-left circle, top-right square).
 import { getProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "./flags";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "./gizmos-drag";
