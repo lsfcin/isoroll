@@ -1,9 +1,9 @@
 // White dashed image contour drawn on selected tokens.
 import { VolumeFlags } from "./flags";
 import { drawMeshContour, MeshLike } from "../draw/contour";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 export class TokenOverlay {
-  private static layer: PIXI.Container | null = null;
   private static boxes: Map<string, PIXI.Graphics> = new Map();
 
   static activate(): void {
@@ -36,48 +36,26 @@ export class TokenOverlay {
   static show(token: Token): void {
     TokenOverlay.hide(token.id);
     if (!VolumeFlags.getShowImageManipulation(token.document, true)) return;
-    const layer = TokenOverlay.ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_OVERLAY);
     const g = new PIXI.Graphics();
     g.eventMode = "passive";
     drawMeshContour(g, token.mesh as unknown as MeshLike);
     layer.addChild(g);
     TokenOverlay.boxes.set(token.id, g);
-    TokenOverlay.bringToTop();
+    LayerManager.bringToTop(LAYER_KEYS.TOKEN_OVERLAY);
   }
 
   static hide(tokenId: string): void {
     const g = TokenOverlay.boxes.get(tokenId);
     if (!g) return;
-    TokenOverlay.layer?.removeChild(g);
+    g.parent?.removeChild(g);
     g.destroy();
     TokenOverlay.boxes.delete(tokenId);
   }
 
   static clearAll(): void {
     for (const id of Array.from(TokenOverlay.boxes.keys())) TokenOverlay.hide(id);
-    if (TokenOverlay.layer) {
-      try { (canvas.stage as unknown as PIXI.Container).removeChild(TokenOverlay.layer!); } catch { /* ok */ }
-      TokenOverlay.layer.destroy({ children: true });
-      TokenOverlay.layer = null;
-    }
-  }
-
-  private static ensureLayer(): PIXI.Container {
-    if (TokenOverlay.layer && !TokenOverlay.layer.parent) TokenOverlay.layer = null;
-    if (TokenOverlay.layer) return TokenOverlay.layer;
-    const layer = new PIXI.Container();
-    layer.eventMode = "passive";
-    (canvas.stage as unknown as PIXI.Container).addChild(layer);
-    TokenOverlay.layer = layer;
-    return layer;
-  }
-
-  private static bringToTop(): void {
-    if (TokenOverlay.layer && !TokenOverlay.layer.parent) TokenOverlay.layer = null;
-    if (!TokenOverlay.layer) return;
-    const stage = canvas.stage as unknown as PIXI.Container;
-    try { stage.removeChild(TokenOverlay.layer); } catch { /* ok */ }
-    stage.addChild(TokenOverlay.layer);
+    LayerManager.clearLayer(LAYER_KEYS.TOKEN_OVERLAY);
   }
 
 }
