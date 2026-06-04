@@ -8,6 +8,7 @@ import type { DoorBehavior } from "./wall-types";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
 import { scheduleWrap } from "../util";
+import { upsertTile, debounced, tileUpsertTimers } from "../preset/preset-upsert";
 
 const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 0);
 
@@ -92,6 +93,7 @@ export class WallManager {
     }
 
     WallOverlay.refresh(tileObj);
+    debounced(tileUpsertTimers, tileId, () => upsertTile(tileObj.document));
 
     if ("ds" in changes) {
       wrap(() => applyDoorBehavior(tileObj.document, (changes.ds as number) > 0), "door behavior");
