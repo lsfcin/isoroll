@@ -1,4 +1,4 @@
-import { MODULE_ID, VolumeFlags } from "../volume/flags";
+import { MODULE_ID, VolumeFlags } from "../flags";
 
 export class Occluder {
   static activate(): void {

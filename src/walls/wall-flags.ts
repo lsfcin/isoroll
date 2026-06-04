@@ -1,5 +1,5 @@
 // Linked-wall and door-behavior flag accessors for tile documents.
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import type { DoorBehavior } from "./wall-types";
 import { wallsLayer, type WallDoc } from "./wall-coords";
 

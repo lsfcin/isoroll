@@ -1,6 +1,6 @@
 // Geometry helpers for the 3D volume overlay: vertex computation and box drawing.
 import { getProjection } from "../transform/constants";
-import { VolumeFlags } from "./flags";
+import { VolumeFlags } from "../flags";
 export { drawDash } from "../draw/shapes";
 
 export const ORANGE   = 0xff9829;

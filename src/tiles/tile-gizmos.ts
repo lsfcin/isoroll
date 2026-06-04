@@ -1,6 +1,6 @@
 // Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button.
 import { getProjection } from "../transform/constants";
-import { MODULE_ID, VolumeFlags } from "../volume/flags";
+import { MODULE_ID, VolumeFlags } from "../flags";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 import {
   HandleType, DragState, handleTypeMap,

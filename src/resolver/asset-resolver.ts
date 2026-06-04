@@ -5,7 +5,7 @@
  * Future: accept facing parameter driven by token movement direction.
  */
 
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 
 export type Facing = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" | "TOP";
 export type Stance =

@@ -1,5 +1,5 @@
 // Image contour and 3D volume box overlay for selected tokens (merged from two classes).
-import { VolumeFlags } from "../volume/flags";
+import { VolumeFlags } from "../flags";
 import { drawMeshContour, MeshLike } from "../draw/contour";
 import { computeTokenVerts, drawBox, drawAnchorLine } from "../volume/overlay-geometry";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";

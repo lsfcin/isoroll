@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import { addIsorollTab, flagCheckbox } from "../ui/tab-helpers";
 import {
   getLinkedWallIds, generateBaseWalls, unlinkAllWalls, deleteLinkedWalls,

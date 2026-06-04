@@ -1,7 +1,7 @@
 // Background sprite counter-transform: undistorted background while stage is isometric.
 // Also patches the GridConfig preview sprite's updateTransform for live GridConfig handles.
 import { getProjection } from "./constants";
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import { BackgroundGizmos } from "../background/bg-gizmos";
 
 type BgState = {

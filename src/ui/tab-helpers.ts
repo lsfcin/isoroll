@@ -1,5 +1,5 @@
 // AppV2 tab injection and flag checkbox builder shared across TileConfig, TokenConfig, SceneConfig.
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 
 const TAB = "isoroll";
 

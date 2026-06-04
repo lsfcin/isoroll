@@ -1,5 +1,5 @@
 // Shared helpers, extract, apply, auto-apply, and upsert for all preset types.
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import { deriveKey, readPreset, writePreset, getCachedPreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
 import { extractWallDefs, applyWallDefs } from "../walls/wall-ops";

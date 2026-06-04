@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import {
   getLinkedWallIds, setLinkedWallIds, updateLinkedWallPositions, flipLinkedWallAnchorsX,
   deleteLinkedWalls, generateBaseWalls, unlinkAllWalls,

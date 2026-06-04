@@ -1,5 +1,5 @@
 // Canvas coordinate helpers and Foundry shims for the walls system.
-import { VolumeFlags } from "../volume/flags";
+import { VolumeFlags } from "../flags";
 import type { WallDef, TileAnchor } from "./wall-types";
 
 export type TileDoc = TileDocument & { x: number; y: number; width: number; height: number };

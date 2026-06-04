@@ -1,7 +1,7 @@
 // Interactive handles + dashed contour for background image, shown only in GridConfig.
 import { getProjection } from "../transform/constants";
 import { CanvasTransform } from "../transform/stage-transform";
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import { clientToGlobal } from "../tiles/tile-drag";
 import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../gizmos/handle-factories";
 import { BgDrag, commitBgDrag } from "./bg-drag";

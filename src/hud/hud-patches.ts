@@ -1,5 +1,5 @@
 // TokenHUD repositioning under isometric stage transform.
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 
 export class HudPatches {
   static activate(): void {

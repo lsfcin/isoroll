@@ -11,7 +11,7 @@ import {
   type TextureDoc, type SceneDoc,
 } from "./preset-ops";
 import type { TilePreset, TokenPreset } from "./preset-types";
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import { scheduleWrap } from "../util";
 
 const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 50);

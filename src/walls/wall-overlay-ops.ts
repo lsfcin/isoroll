@@ -1,5 +1,5 @@
 // Interactive helpers: endpoint handles, drag, select toggle.
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import { getLinkedWallIds, setLinkedWallIds, canvasToAnchor, wallsLayer, scene } from "./wall-core";
 import type { TileDoc } from "./wall-core";
 import { WallHistory } from "./wall-history";

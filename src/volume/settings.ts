@@ -1,4 +1,4 @@
-import { MODULE_ID } from "./flags";
+import { MODULE_ID } from "../flags";
 
 export function registerVolumeSettings(): void {
   game.settings.register(MODULE_ID, "defaultTokenHeight", {

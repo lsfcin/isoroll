@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 
 // ── Ruler / TokenRuler label position ────────────────────────────────────────
 // Both classes set context.position in canvas px, used as CSS left/top in

@@ -1,6 +1,6 @@
 // Stage isometric transform coordinator: rotation/skew, preview override, object refresh.
 import { getProjection } from "./constants";
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 import { BackgroundTransform } from "./bg-transform";
 
 export class CanvasTransform {

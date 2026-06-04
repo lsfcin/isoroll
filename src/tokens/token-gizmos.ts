@@ -1,5 +1,5 @@
 // Image offset + scale handles for tokens (bottom-left circle, top-right square).
-import { MODULE_ID, VolumeFlags } from "../volume/flags";
+import { MODULE_ID, VolumeFlags } from "../flags";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "../tiles/tile-drag";
 import { makeElevHandle, makeSquareCounterHandle } from "../gizmos/handle-factories";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";

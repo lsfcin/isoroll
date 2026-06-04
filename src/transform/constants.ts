@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 
 const rad = (d: number): number => (d * Math.PI) / 180;
 

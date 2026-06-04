@@ -1,5 +1,5 @@
 import { getProjection } from "./constants";
-import { MODULE_ID, VolumeFlags } from "../volume/flags";
+import { MODULE_ID, VolumeFlags } from "../flags";
 
 type MeshLike = {
   x: number;
