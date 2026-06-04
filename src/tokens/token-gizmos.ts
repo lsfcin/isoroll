@@ -70,7 +70,7 @@ export class TokenGizmos {
 
     const defs: Array<[PIXI.Container, "imgOffset" | "imgScale" | "imgYScale", { x: number; y: number } | null]> = [
       [makeCircleHandle(0xffffff, "move"),                "imgOffset", bl],
-      [makeSquareCounterHandle(0xffffff, "nwse-resize"), "imgScale",  tr],
+      [makeSquareCounterHandle(0xffffff, "nesw-resize"), "imgScale",  tr],
       [makeSquareCounterHandle(0xffffff, "ns-resize"),   "imgYScale", tc],
     ];
     for (const [handle, type, pos] of defs) {

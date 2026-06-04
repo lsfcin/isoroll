@@ -122,17 +122,6 @@ check whether it reads the updated flag value after a token document save.
 
 ---
 
-## B11 — imgScale handle cursor shows wrong diagonal direction
-
-**Symptom:** The white square handle for image scale (tiles, tokens, background) uses the
-`nwse-resize` cursor (↖↘, top-left/bottom-right diagonal). The handle sits at the top-right
-corner of the image, so the correct cursor is `nesw-resize` (↗↙, top-right/bottom-left).
-
-**Affected:** `makeSquareCounterHandle(0xffffff, "nwse-resize")` calls in `gizmos-handles.ts`
-and any equivalent in `background-gizmos.ts`.
-
----
-
 ## B12 — Token elevation label renders as black square (intermittent)
 
 **Symptom:** When changing token elevation via the orange circle elevation handle, the

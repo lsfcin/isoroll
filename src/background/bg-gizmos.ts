@@ -61,7 +61,7 @@ export class BackgroundGizmos {
     const scale  = Number(getEl('scale')?.value) || sx;
     const sCX    = wt.a * cx + wt.c * cy + wt.tx, sCY = wt.b * cx + wt.d * cy + wt.ty;
     const defs: [PIXI.Container, BgDrag["type"], { x: number; y: number }][] = [
-      [makeSquareCounterHandle(0xffffff, "nwse-resize"), "bgScale",     tr],
+      [makeSquareCounterHandle(0xffffff, "nesw-resize"), "bgScale",     tr],
       [makeCircleHandle(0xffffff, "move"),               "bgTranslate", bl],
     ];
     if (isoCT) defs.splice(1, 0, [makeSquareCounterHandle(0xffffff, "ns-resize"), "bgYScale", tc]);

@@ -25,7 +25,7 @@ export function makeHandleForType(
   const color = HANDLE_COLOR[type];
   if (type === "elevation") return makeCircleHandle(color);
   if (type === "imgOffset") return makeCircleHandle(0xffffff, "move");
-  if (type === "imgScale")  return makeSquareCounterHandle(0xffffff, "nwse-resize");
+  if (type === "imgScale")  return makeSquareCounterHandle(0xffffff, "nesw-resize");
   if (type === "imgYScale") return makeSquareCounterHandle(0xffffff, "ns-resize");
   if (type === "swapSide")  return makeSwapHandle();
   if (type === "move")      return makeMoveHandle(color);
