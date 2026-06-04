@@ -3,6 +3,8 @@ import { getProjection } from "../transform/constants";
 import { MODULE_ID } from "../flags";
 import { snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
 import { canvasZoom, gridDistance, elevToCanvas, screenToCanvas } from "../util";
+import { projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos/img-drag";
+export { IMG_YSCALE_SNAP_PX } from "../gizmos/img-drag";
 export { imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
 
 export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale" | "imgYScale" | "swapSide";
@@ -56,42 +58,7 @@ export function handlePositions(
 }
 
 // Project screen delta onto the resize/elevation axis, snap, return new values.
-// wt = canvas.app.stage.worldTransform (rotation+skew only); zoom separate.
-// Screen-pixel snap zone for imgYScale to restore original proportion (1:1).
-export const IMG_YSCALE_SNAP_PX = 12;
-
-type WT4 = { a: number; b: number; c: number; d: number };
-type WT6 = WT4 & { tx: number; ty: number };
-
-export function projectImgOffset(
-  dx: number, dy: number, wt: WT4, startX: number, startY: number,
-): { x: number; y: number } {
-  const { x: cdx, y: cdy } = screenToCanvas(dx, dy, wt);
-  return { x: startX + cdx, y: startY + cdy };
-}
-
-export function projectImgYScale(
-  dx: number, dy: number, wt: WT4, zoom: number, startYScale: number, halfH: number,
-): number {
-  const canvasDY = screenToCanvas(dx, dy, wt).y;
-  const newHalfH = halfH * startYScale - canvasDY;
-  let ys = Math.max(0.05, newHalfH / halfH);
-  if (Math.abs(ys - 1.0) * halfH * zoom < IMG_YSCALE_SNAP_PX) ys = 1.0;
-  return ys;
-}
-
-export function projectImgScale(
-  gx: number, gy: number, startGX: number, startGY: number,
-  startScale: number, cx: number, cy: number, wt: WT6,
-): number {
-  const csx = wt.a * cx + wt.c * cy + wt.tx, csy = wt.b * cx + wt.d * cy + wt.ty;
-  const dxRef = startGX - csx, dyRef = startGY - csy;
-  const distRef = Math.sqrt(dxRef * dxRef + dyRef * dyRef);
-  if (distRef <= 0) return startScale;
-  const curDist = ((gx - csx) * dxRef + (gy - csy) * dyRef) / distRef;
-  return Math.max(0.05, startScale * (curDist / distRef));
-}
-
+// wt = canvas.app.stage.worldTransform; zoom = canvasZoom() (separate so callers can reuse).
 export function projectDrag(
   drag: DragState, gx: number, gy: number,
 ): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number; imgOffX: number; imgOffY: number; imgScale: number; imgYScale: number } {

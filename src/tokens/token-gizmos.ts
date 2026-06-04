@@ -1,9 +1,7 @@
 // Image offset + scale handles for tokens (bottom-left circle, top-right square).
 import { MODULE_ID, VolumeFlags } from "../flags";
-import {
-  imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal,
-  projectImgOffset, projectImgYScale, projectImgScale,
-} from "../tiles/tile-drag";
+import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "../tiles/tile-drag";
+import { projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos/img-drag";
 import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
 import { MeshLike } from "../draw/contour";
 import { canvasZoom } from "../util";
