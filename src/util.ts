@@ -23,6 +23,18 @@ export function screenToCanvas(
   return { x: (dx * wt.d - dy * wt.c) / det, y: (-dx * wt.b + dy * wt.a) / det };
 }
 
+// Full inverse-affine: converts an absolute screen point to canvas coordinates.
+export function screenPointToCanvas(
+  sx: number, sy: number,
+  wt: { a: number; b: number; c: number; d: number; tx: number; ty: number },
+): { x: number; y: number } {
+  const det = wt.a * wt.d - wt.b * wt.c;
+  return {
+    x: ( (sx - wt.tx) * wt.d - (sy - wt.ty) * wt.c) / det,
+    y: (-(sx - wt.tx) * wt.b + (sy - wt.ty) * wt.a) / det,
+  };
+}
+
 export function startPointerDrag<T>(
   drag: T,
   onMove: (drag: T, e: PointerEvent) => void,

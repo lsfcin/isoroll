@@ -3,10 +3,17 @@ import { MODULE_ID } from "../flags";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
 import { canvasToAnchor, wallsLayer, scene, type TileDoc } from "./wall-coords";
 import { WallHistory } from "./wall-history";
+import { startPointerDrag, screenPointToCanvas } from "../util";
 
 function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
   (ctr.getChildByName(`ep-${wallId}-A`) as PIXI.Graphics | null)?.scale.set(s);
   (ctr.getChildByName(`ep-${wallId}-B`) as PIXI.Graphics | null)?.scale.set(s);
+}
+
+function dblClick(wallId: string, last: { t: number }): void {
+  const now = Date.now();
+  if (now - last.t < 350) { last.t = 0; (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true); }
+  else last.t = now;
 }
 
 export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Container): void {
@@ -15,26 +22,23 @@ export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Contain
 }
 
 export function addWallDblClick(g: PIXI.Graphics, wallId: string): void {
-  let last = 0;
-  g.on("pointerdown", () => {
-    const now = Date.now();
-    if (now - last < 350) { last = 0; (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true); }
-    else last = now;
-  });
+  const last = { t: 0 };
+  g.on("pointerdown", () => dblClick(wallId, last));
 }
-
-// ── Endpoint drag handles (circles, same color as wall line) ──────────────────
 
 function snapQuarter(x: number, y: number): { x: number; y: number } {
   const q = ((canvas.grid as unknown as { size?: number })?.size ?? 100) / 4;
   return { x: Math.round(x / q) * q, y: Math.round(y / q) * q };
 }
 
-function globalToCanvas(gx: number, gy: number): { x: number; y: number } {
-  const wt = (canvas.app as unknown as { stage: { worldTransform: PIXI.Matrix } }).stage.worldTransform;
-  const det = wt.a * wt.d - wt.b * wt.c;
-  return { x: (gx*wt.d - gy*wt.c - wt.tx*wt.d + wt.ty*wt.c)/det, y: (-gx*wt.b + gy*wt.a + wt.tx*wt.b - wt.ty*wt.a)/det };
+function toSnapCanvas(e: PointerEvent): { x: number; y: number } {
+  const wt   = (canvas.app as unknown as { stage: { worldTransform: PIXI.Matrix } }).stage.worldTransform;
+  const rect = (canvas.app!.view as HTMLCanvasElement).getBoundingClientRect();
+  const raw  = screenPointToCanvas(e.clientX - rect.left, e.clientY - rect.top, wt);
+  return snapQuarter(raw.x, raw.y);
 }
+
+// ── Endpoint drag handles (circles, same color as wall line) ──────────────────
 
 export function addEndpointHandles(
   ctr: PIXI.Container, c: number[], wallId: string, tileDoc: TileDocument, color: number, r = 4,
@@ -47,15 +51,18 @@ export function addEndpointHandles(
     h.hitArea = new PIXI.Circle(0, 0, 6);
     h.x = c[ix]; h.y = c[iy];
     h.eventMode = "static"; h.cursor = "pointer";
-    const _ep = ep; let lastEp = 0;
+    const last = { t: 0 };
     h.on("pointerover", () => scaleEndpoints(ctr, wallId, 1.3));
     h.on("pointerout",  () => scaleEndpoints(ctr, wallId, 1));
     h.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
       e.stopPropagation();
-      const now = Date.now();
-      if (now - lastEp < 350) { lastEp = 0; (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true); return; }
-      lastEp = now;
-      startEndpointDrag(wallId, _ep, tileDoc, ctr, color, r);
+      if (Date.now() - last.t < 350 && last.t !== 0) {
+        last.t = 0;
+        (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true);
+        return;
+      }
+      last.t = Date.now();
+      startEndpointDrag(wallId, ep, tileDoc, ctr, color, r);
     });
     ctr.addChild(h);
   }
@@ -91,53 +98,43 @@ export function addSelectInteraction(
 
 // ── Endpoint drag with live snap preview ─────────────────────────────────────
 
+interface EpDrag { wallId: string; ep: "A"|"B"; startC: number[]; tileDoc: TileDocument; ctr: PIXI.Container; color: number; r: number; }
+
 function startEndpointDrag(
   wallId: string, ep: "A"|"B", tileDoc: TileDocument, ctr: PIXI.Container, color: number, r: number,
 ): void {
   const wall = wallsLayer().get(wallId);
   if (!wall) return;
-  const startC = [...wall.document.c];
+  const drag: EpDrag = { wallId, ep, startC: [...wall.document.c], tileDoc, ctr, color, r };
+  startPointerDrag(drag,
+    (d, e) => { const s = toSnapCanvas(e); updatePreview(d, s.x, s.y); },
+    (d, e) => { const s = toSnapCanvas(e); commitEndpointDrag(d, s.x, s.y); },
+  );
+}
 
-  const lineG = ctr.getChildByName(`line-${wallId}`) as PIXI.Graphics | null;
-  const epA   = ctr.getChildByName(`ep-${wallId}-A`) as PIXI.Graphics | null;
-  const epB   = ctr.getChildByName(`ep-${wallId}-B`) as PIXI.Graphics | null;
+function updatePreview(d: EpDrag, sx: number, sy: number): void {
+  const epA = d.ctr.getChildByName(`ep-${d.wallId}-A`) as PIXI.Graphics | null;
+  const epB = d.ctr.getChildByName(`ep-${d.wallId}-B`) as PIXI.Graphics | null;
+  if (d.ep === "A" && epA) { epA.x = sx; epA.y = sy; }
+  if (d.ep === "B" && epB) { epB.x = sx; epB.y = sy; }
+  const ax = d.ep === "A" ? sx : d.startC[0], ay = d.ep === "A" ? sy : d.startC[1];
+  const bx = d.ep === "B" ? sx : d.startC[2], by = d.ep === "B" ? sy : d.startC[3];
+  const lineG = d.ctr.getChildByName(`line-${d.wallId}`) as PIXI.Graphics | null;
+  if (lineG) {
+    lineG.clear();
+    lineG.lineStyle(2.5, 0x000000, 0.8); lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
+    lineG.lineStyle(1, d.color, 1);      lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
+    lineG.lineStyle(0);
+  }
+}
 
-  const update = (sx: number, sy: number) => {
-    if (ep === "A" && epA) { epA.x = sx; epA.y = sy; }
-    if (ep === "B" && epB) { epB.x = sx; epB.y = sy; }
-    const ax = ep === "A" ? sx : startC[0], ay = ep === "A" ? sy : startC[1];
-    const bx = ep === "B" ? sx : startC[2], by = ep === "B" ? sy : startC[3];
-    if (lineG) {
-      lineG.clear();
-      lineG.lineStyle(2.5, 0x000000, 0.8);
-      lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
-      lineG.lineStyle(1, color, 1);
-      lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
-      lineG.lineStyle(0);
-    }
-  };
-
-  const toSnap = (e: PointerEvent) => {
-    const rect = (canvas.app!.view as HTMLCanvasElement).getBoundingClientRect();
-    const raw  = globalToCanvas(e.clientX - rect.left, e.clientY - rect.top);
-    return snapQuarter(raw.x, raw.y);
-  };
-
-  const onMove = (e: PointerEvent) => { const s = toSnap(e); update(s.x, s.y); };
-  const onUp = (e: PointerEvent) => {
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup",   onUp);
-    const s = toSnap(e);
-    const c = [...startC];
-    if (ep === "A") { c[0] = s.x; c[1] = s.y; }
-    else            { c[2] = s.x; c[3] = s.y; }
-    WallHistory.push({ k: "move", wallId, prevC: startC });
-    scene().updateEmbeddedDocuments("Wall",
-      [{ _id: wallId, c, flags: { [MODULE_ID]: { tileAnchor: canvasToAnchor(tileDoc as TileDoc, c) } } }],
-      { isoroll: "wallEndpointDrag" }
-    ).catch(console.warn);
-  };
-
-  window.addEventListener("pointermove", onMove);
-  window.addEventListener("pointerup",   onUp);
+function commitEndpointDrag(d: EpDrag, sx: number, sy: number): void {
+  const c = [...d.startC];
+  if (d.ep === "A") { c[0] = sx; c[1] = sy; }
+  else              { c[2] = sx; c[3] = sy; }
+  WallHistory.push({ k: "move", wallId: d.wallId, prevC: d.startC });
+  scene().updateEmbeddedDocuments("Wall",
+    [{ _id: d.wallId, c, flags: { [MODULE_ID]: { tileAnchor: canvasToAnchor(d.tileDoc as TileDoc, c) } } }],
+    { isoroll: "wallEndpointDrag" }
+  ).catch(console.warn);
 }
