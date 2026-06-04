@@ -10,7 +10,8 @@ import { Occluder } from "./occluder/occluder";
 import { CanvasTransform } from "./transform/canvas-transform";
 import { BackgroundGizmos } from "./volume/background-gizmos";
 import { ObjectTransform } from "./transform/object-transform";
-import { registerSceneConfigHook, registerTokenConfigHook, registerTileConfigHook, registerRulerPatch } from "./transform/scene-config";
+import { registerSceneConfigHook, registerTileConfigHook, registerRulerPatch } from "./transform/scene-config";
+import { registerTokenConfigHook } from "./ui/token-config";
 import { PresetManager } from "./preset/preset-manager";
 import { WallManager } from "./walls/wall-manager";
 
