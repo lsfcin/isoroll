@@ -2,7 +2,7 @@
 import { getProjection } from "../transform/constants";
 import { CanvasTransform } from "../transform/stage-transform";
 import { MODULE_ID } from "../volume/flags";
-import { clientToGlobal } from "../volume/gizmos-drag";
+import { clientToGlobal } from "../tiles/tile-drag";
 import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../volume/gizmos-handles";
 import { BgDrag, commitBgDrag } from "./bg-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";

@@ -5,7 +5,7 @@ import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 import {
   HandleType, DragState, handleTypeMap,
   handlePositions, imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, commitDrag,
-} from "../volume/gizmos-drag";
+} from "./tile-drag";
 import { makeHandleForType, createRotateBlocker } from "../volume/gizmos-handles";
 
 export class VolumeGizmos {

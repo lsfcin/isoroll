@@ -1,6 +1,6 @@
 // Handle factory functions for VolumeGizmos: diamond, screen-circle, face-parallelogram.
 import { getProjection } from "../transform/constants";
-import { HandleType } from "./gizmos-drag";
+import { HandleType } from "../tiles/tile-drag";
 export { drawDashedContour } from "../draw/shapes";
 
 export const HANDLE_SIZE = 10;
