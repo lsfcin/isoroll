@@ -1,5 +1,5 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
-import { getProjection } from "../transform/constants";
+import { currentProjection } from "../transform/constants";
 import { VolumeFlags } from "../flags";
 import { makeCircleHandle } from "../gizmos/handle-draw";
 import { clientToGlobal } from "../gizmos/mesh-corners";
@@ -63,7 +63,7 @@ export class TokenElevGizmo {
     const th   = (token.document.height ?? 1) * gs;
     const tx   = token.document.x ?? 0;
     const ty   = token.document.y ?? 0;
-    const proj = getProjection(canvas.scene);
+    const proj = currentProjection();
     const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
     const boundH = VolumeFlags.getTokenHeight(token.document);
     const E    = elevToCanvas(elev, gs, gd);

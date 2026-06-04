@@ -1,6 +1,6 @@
 // Background sprite counter-transform: undistorted background while stage is isometric.
 // Also patches the GridConfig preview sprite's updateTransform for live GridConfig handles.
-import { getProjection } from "./constants";
+import { currentProjection } from "./constants";
 import { MODULE_ID } from "../flags";
 
 // Transient Y-scale override during GridConfig session. Set by BackgroundGizmos; null = use scene flag.
@@ -46,7 +46,7 @@ export class BackgroundTransform {
     const bg = BackgroundTransform.getSprite();
     const orig = BackgroundTransform.originalBg;
     if (!bg || !orig) return;
-    const proj = getProjection(canvas.scene);
+    const proj = currentProjection();
     const { reverseRotation, reverseSkewX, reverseSkewY, ratio, counterFactor } = proj;
     // Use canvas.dimensions.sceneX/Y so position tracks scene offset (scene flags are static)
     const dims = canvas.dimensions as unknown as { sceneX: number; sceneY: number; sceneWidth: number; sceneHeight: number };
@@ -104,7 +104,7 @@ export class BackgroundTransform {
     if (!previewContainer) return;
     const bg = previewContainer.children[1];
     if (!(bg instanceof PIXI.Sprite)) return;
-    const proj = getProjection(canvas.scene);
+    const proj = currentProjection();
     BackgroundTransform.patchedSprite = bg;
     BackgroundTransform.savedUpdateTransform = bg.updateTransform.bind(bg);
     const origUpdate = BackgroundTransform.savedUpdateTransform;

@@ -1,5 +1,5 @@
 // Interactive handles + dashed contour for background image, shown only in GridConfig.
-import { getProjection } from "../transform/constants";
+import { currentProjection } from "../transform/constants";
 import { CanvasTransform } from "../transform/stage-transform";
 import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
 import { MODULE_ID } from "../flags";
@@ -92,7 +92,7 @@ export class BackgroundGizmos {
     if (!BackgroundGizmos.isEnabled() || !BackgroundGizmos.currentHtml) return;
     const html  = BackgroundGizmos.currentHtml;
     const layer = LayerManager.ensureLayer(LAYER_KEYS.BG_GIZMOS);
-    const proj  = getProjection(canvas.scene);
+    const proj  = currentProjection();
     const _po   = CanvasTransform.previewOverride;
     const isoCT = (_po?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true)) && !(_po?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true));
     const cosR  = isoCT ? Math.cos(proj.reverseRotation) : 1;

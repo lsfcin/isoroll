@@ -1,5 +1,5 @@
 // Pure drag-math helpers for VolumeGizmos: axis projection, snapping, handle positions.
-import { getProjection } from "../transform/constants";
+import { currentProjection } from "../transform/constants";
 import { MODULE_ID } from "../flags";
 import { snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
 import { canvasZoom, gridDistance, elevToCanvas, screenToCanvas } from "../util";
@@ -114,7 +114,7 @@ export function projectDrag(
       break;
     }
     case "imgScale": {
-      const { x: hdx, y: hdy } = getProjection(canvas.scene).heightDir;
+      const { x: hdx, y: hdy } = currentProjection().heightDir;
       const E2 = elevToCanvas(drag.startElev, gs, gd);
       const cx = drag.startDocX + hdx * E2 + drag.startImgOffX;
       const cy = drag.startDocY + hdy * E2 + drag.startImgOffY;

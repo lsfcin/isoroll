@@ -1,5 +1,5 @@
 // Geometry helpers for the 3D volume overlay: vertex computation and box drawing.
-import { getProjection } from "../transform/constants";
+import { currentProjection } from "../transform/constants";
 import { VolumeFlags } from "../flags";
 import { gridDistance, elevToCanvas } from "../util";
 import {
@@ -50,7 +50,7 @@ export function computeVerts(tile: Tile): BoxVerts {
   const tx = (tile.document.x ?? 0) - tw / 2;
   const ty = (tile.document.y ?? 0) - th / 2;
 
-  const proj      = getProjection(canvas.scene);
+  const proj      = currentProjection();
   const gridSize  = canvas.grid?.size ?? 100;
   const gridDist  = gridDistance();
   const elevation = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
@@ -73,7 +73,7 @@ export function computeTokenVerts(token: Token): BoxVerts {
   const tx = token.document.x ?? 0;
   const ty = token.document.y ?? 0;
 
-  const proj      = getProjection(canvas.scene);
+  const proj      = currentProjection();
   const elevation = (token.document as unknown as { elevation?: number }).elevation ?? 0;
   const boundH    = VolumeFlags.getTokenHeight(token.document);
 

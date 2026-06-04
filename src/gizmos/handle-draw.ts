@@ -1,5 +1,5 @@
 // PIXI drawing primitives for gizmo handles.
-import { getProjection } from "../transform/constants";
+import { currentProjection } from "../transform/constants";
 import { BLACK } from "../draw/constants";
 export const HANDLE_SIZE = 10;
 export const HALF        = HANDLE_SIZE / 2;
@@ -18,7 +18,7 @@ export function makeHandle(color: number): PIXI.Graphics {
 
 // Full tile counter-transform applied → appears as a true circle in screen space.
 export function makeCircleHandle(color: number, cursor = "n-resize"): PIXI.Container {
-  const proj = getProjection(canvas.scene);
+  const proj = currentProjection();
   const wrap = new PIXI.Container();
   wrap.rotation = proj.reverseRotation;
   wrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
@@ -35,7 +35,7 @@ export function makeCircleHandle(color: number, cursor = "n-resize"): PIXI.Conta
 
 // Counter-transform applied → square appears as a true square in screen space.
 export function makeSquareCounterHandle(color: number, cursor = "pointer"): PIXI.Container {
-  const proj = getProjection(canvas.scene);
+  const proj = currentProjection();
   const wrap = new PIXI.Container();
   wrap.rotation = proj.reverseRotation;
   wrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
@@ -64,7 +64,7 @@ export function makeMoveHandle(color: number): PIXI.Graphics {
 
 // Counter-transformed square with two swap triangles (◀/▶) for the mirror-tile action.
 export function makeSwapHandle(): PIXI.Container {
-  const proj = getProjection(canvas.scene);
+  const proj = currentProjection();
   const wrap = new PIXI.Container();
   wrap.rotation = proj.reverseRotation;
   wrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);

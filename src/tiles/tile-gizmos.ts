@@ -1,5 +1,5 @@
 // Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button.
-import { getProjection } from "../transform/constants";
+import { currentProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
 import { gridDistance, elevToCanvas } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
@@ -61,7 +61,7 @@ export class VolumeGizmos {
     const th = tile.document.height ?? 0;
     const tx = (tile.document.x ?? 0) - tw / 2;
     const ty = (tile.document.y ?? 0) - th / 2;
-    const proj   = getProjection(canvas.scene);
+    const proj   = currentProjection();
     const gs     = canvas.grid?.size ?? 100;
     const gd     = gridDistance();
     const elev   = (tile.document as unknown as { elevation?: number }).elevation ?? 0;

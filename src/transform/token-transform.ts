@@ -1,5 +1,5 @@
 // Token counter-transform: refreshToken hook handler.
-import { getProjection } from "./constants";
+import { currentProjection } from "./constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
 import { MutMeshLike as MeshLike, EPS } from "./tile-transform";
 import { gridDistance, elevToCanvas } from "../util";
@@ -11,7 +11,7 @@ export function onRefreshToken(token: Token, flags?: Record<string, boolean>): v
   const mesh = token.mesh as unknown as MeshLike | null | undefined;
   if (!mesh) return;
   const gs   = canvas.grid?.size ?? 100;
-  const proj = getProjection(canvas.scene);
+  const proj = currentProjection();
   const { reverseRotation, ratio, counterFactor, heightDir: { x: hdx, y: hdy } } = proj;
   const docW = (token.document.width  ?? 1) * gs;
   const docH = (token.document.height ?? 1) * gs;

@@ -1,5 +1,5 @@
 // Stage isometric transform coordinator: rotation/skew, preview override, object refresh.
-import { getProjection } from "./constants";
+import { currentProjection } from "./constants";
 import { MODULE_ID } from "../flags";
 import { BackgroundTransform } from "./bg-transform";
 
@@ -25,7 +25,7 @@ export class CanvasTransform {
   private static applyStage(): void {
     const stage = canvas.app?.stage;
     if (!stage) return;
-    const proj = getProjection(canvas.scene);
+    const proj = currentProjection();
     stage.rotation = proj.rotation;
     stage.skew.set(proj.skewX, proj.skewY);
   }
