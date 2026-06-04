@@ -270,20 +270,6 @@ anchor position on `"c"` changes; does not call preset upsert on type/flag chang
 
 ---
 
-## B19 — Delete linked walls: walls remain on overlay until tile is deselected
-
-**Symptom:** Clicking "Delete Linked Walls" removes the wall documents from the scene, but
-the wall lines and endpoint handles remain visible in the isoroll wall overlay. The overlay
-only clears after the tile is deselected and reselected.
-
-**Expected:** `WallOverlay.refresh(tile)` (or `clear()`) should be called immediately after
-the delete completes so the overlay reflects the empty wall list.
-
-**Affected:** `deleteLinkedWalls` in `wall-crud.ts` / `WallManager.onDeleteTile` — the
-overlay refresh is not triggered after a HUD-initiated bulk delete.
-
----
-
 ## B20 — Door behavior cycling updates HUD icon but tile image does not change visibility
 
 **Symptom:** Clicking the door-mode button in the Tile HUD cycles the icon correctly

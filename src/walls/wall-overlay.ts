@@ -84,6 +84,10 @@ export class WallOverlay {
   static enterSelect(tile: Tile): void { WallOverlay.selectTile = tile.id; WallOverlay.show(tile); }
   static exitSelect(tile: Tile): void  { WallOverlay.selectTile = null;    WallOverlay.show(tile); }
   static isSelectMode(tileId: string): boolean { return WallOverlay.selectTile === tileId; }
+  // Direct (non-deferred) show — use after mutations so RAF timing can't race with controlTile.
+  static showIfActive(tile: Tile): void {
+    if (WallOverlay.boxes.has(tile.id)) WallOverlay.show(tile);
+  }
   static refresh(tile: Tile): void {
     if (!WallOverlay.boxes.has(tile.id)) return;
     WallOverlay.pendingRefresh.add(tile.id);

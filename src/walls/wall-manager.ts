@@ -134,7 +134,7 @@ export class WallManager {
 
   private static _refreshByDoc(doc: TileDocument): void {
     const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(doc.id!);
-    if (tile) WallOverlay.refresh(tile);
+    if (tile) WallOverlay.showIfActive(tile);
   }
 
 }
