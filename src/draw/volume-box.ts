@@ -3,10 +3,9 @@ import { currentProjection } from "../transform/constants";
 import { VolumeFlags } from "../flags";
 import { gridDistance, elevToCanvas } from "../util";
 import {
-  ORANGE, BLACK, DASH_LEN, GAP_LEN, ANCHOR_DASH, ANCHOR_GAP,
+  ORANGE, BLACK,
   ALPHA_FRONT_OUTLINE, ALPHA_FRONT_FILL, ALPHA_BACK_OUTLINE, ALPHA_BACK_FILL,
-} from "../draw/constants";
-export { drawDash } from "../draw/shapes";
+} from "./constants";
 
 export interface BoxVerts {
   NW_base: P; NE_base: P; SW_base: P; SE_base: P;
