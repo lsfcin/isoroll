@@ -168,12 +168,10 @@ Dependencies shown as arrows. Do in this order within each group.
 
 ### Group B — Cohesion fixes (moderate restructuring, low-medium risk)
 
-| Step | What | Risk | Files changed | Gain |
-|------|------|------|---------------|------|
-| B1 | I10: Move `onRenderTileHUD` from `wall-manager.ts` → `hud/hud-patches.ts` | 🟡 | 2 files | Correct responsibility |
-| B2 | I11: Add `currentProjection()` to `constants.ts`; update all in-canvas call sites | 🟢 | ~10 files | Readability at every call site |
-| B3 | I12: Move `overlay-geometry.ts` → `draw/volume-box.ts`; move `volume/settings.ts` → `src/settings.ts`; delete `volume/` folder | 🟡 | ~5 importers + module.ts | Remove misleading folder |
-| B4 | I17: Move `transform/scene-config.ts` → `ui/scene-config.ts`; move `transform/tile-config.ts` → `ui/tile-config.ts`; fix relative imports inside both files | 🟡 | 2 files moved + module.ts | `transform/` = math only; `ui/` = all config forms |
+<!-- B1 DONE (6d8c13f + 0d3b844) — onRenderTileHUD moved to hud/; HudPatches split into TileHud/TokenHud/HudUtils; WallManager public façade added -->
+<!-- B2 DONE (2692922) — currentProjection() added; 15 call sites updated -->
+<!-- B3 DONE (d059969) — overlay-geometry → draw/volume-box; volume/settings → src/settings; volume/ deleted -->
+<!-- B4 DONE (d2a3800) — scene-config + tile-config moved from transform/ to ui/ -->
 
 ### Group C — Structural pattern (higher impact, requires care)
 
