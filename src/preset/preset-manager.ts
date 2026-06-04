@@ -1,15 +1,11 @@
 import { deriveKey, readPreset, writePreset, preloadCache, getCachedPreset } from "./preset-storage";
+import { getSrc, docId, toScene, isPresetEnabled, gridSize, type TextureDoc, type SceneDoc } from "./preset-ops";
+import { applyTile, applyToken, applyBackground, autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls, applyPresetToSource, tilePresetData } from "./preset-apply";
+import { tileUpsertTimers, tokenUpsertTimers, bgUpsertTimers, debounced, upsertTile, upsertToken, upsertBackground } from "./preset-upsert";
 import {
-  getSrc, docId, toScene, isPresetEnabled, gridSize,
-  tileUpsertTimers, tokenUpsertTimers, bgUpsertTimers, debounced,
-  applyTile, applyToken, applyBackground,
-  autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls,
-  upsertTile, upsertToken, upsertBackground,
   changedFlagKeys, intersects, bgNativeChanged, tileNativeChanged,
   TILE_PRESET_KEYS, TOKEN_PRESET_KEYS, BG_PRESET_FLAG_KEYS,
-  applyPresetToSource, tilePresetData,
-  type TextureDoc, type SceneDoc,
-} from "./preset-ops";
+} from "./preset-diff";
 import type { TilePreset, TokenPreset } from "./preset-types";
 import { MODULE_ID } from "../flags";
 import { scheduleWrap } from "../util";
