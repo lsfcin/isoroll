@@ -15,6 +15,7 @@ import { registerTokenConfigHook } from "./ui/token-config";
 import { HudPatches } from "./hud/hud-patches";
 import { PresetManager } from "./preset/preset-manager";
 import { WallManager } from "./walls/wall-manager";
+import { LayerManager, LAYER_KEYS } from "./render/layer-manager";
 
 Hooks.once("init", () => {
   registerVolumeSettings();
@@ -35,5 +36,12 @@ Hooks.once("init", () => {
   Occluder.activate();
   PresetManager.activate();
   WallManager.activate();
+  LayerManager.declareOrder([
+    LAYER_KEYS.VOLUME_OVERLAY, LAYER_KEYS.VOLUME_GIZMOS,
+    LAYER_KEYS.TOKEN_OVERLAY,  LAYER_KEYS.TOKEN_VOLUME_OVERLAY,
+    LAYER_KEYS.TOKEN_GIZMOS,   LAYER_KEYS.TOKEN_VOLUME_GIZMOS,
+    LAYER_KEYS.BG_GIZMOS,
+    LAYER_KEYS.WALL_OVERLAY,
+  ]);
   console.log("isoroll | initialized");
 });

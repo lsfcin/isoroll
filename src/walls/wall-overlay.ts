@@ -3,6 +3,7 @@ import { MODULE_ID } from "../volume/flags";
 import { getLinkedWallIds, wallsLayer, imageRect, anchorToCanvas } from "./wall-core";
 import type { WallDoc, TileDoc } from "./wall-core";
 import { addEndpointHandles, addLineHover, addSelectInteraction, addWallDblClick } from "./wall-overlay-ops";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 // Colors matching Foundry's Wall layer rendering exactly
 export const WALL_COLORS = {
@@ -32,7 +33,6 @@ export function wallColor(doc: WallDoc): number {
 }
 
 export class WallOverlay {
-  private static _layer: PIXI.Container | null = null;
   private static _boxes: Map<string, PIXI.Container> = new Map();
   private static _selectTile: string | null = null;
   private static _altMode = false;
@@ -45,10 +45,8 @@ export class WallOverlay {
       if (controlled) WallOverlay.show(tile);
       else { WallOverlay._selectTile = null; WallOverlay.hide(tile.id); }
     });
-    // VolumeGizmos.bringToTop() runs on every refreshTile — stay above it by re-topping here.
-    // This handler registers after VolumeGizmos (WallManager activates last in module.ts).
     Hooks.on("refreshTile", (rawTile: unknown) => {
-      if (WallOverlay._boxes.size > 0) WallOverlay._bringToTop();
+      if (WallOverlay._boxes.size > 0) LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
       // Preview clone fires refreshTile with drag-updated doc.x/y — redraw walls at new position.
       const t = rawTile as { id: string; hasPreview?: boolean; isPreview?: boolean };
       if (WallOverlay._boxes.has(t.id) && !t.hasPreview && t.isPreview) WallOverlay.show(rawTile as any, true);
@@ -59,20 +57,20 @@ export class WallOverlay {
 
   static show(tile: Tile, isDrag = false): void {
     WallOverlay.hide(tile.id);
-    const layer = WallOverlay._ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.WALL_OVERLAY);
     const ctr   = new PIXI.Container();
     ctr.eventMode = "auto";
     if (WallOverlay._selectTile === tile.id) WallOverlay._drawSelect(ctr, tile.document);
     else WallOverlay._drawDisplay(ctr, tile.document, isDrag);
     layer.addChild(ctr);
     WallOverlay._boxes.set(tile.id, ctr);
-    WallOverlay._bringToTop();
+    LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
   }
 
   static hide(tileId: string): void {
     const ctr = WallOverlay._boxes.get(tileId);
     if (!ctr) return;
-    WallOverlay._layer?.removeChild(ctr);
+    ctr.parent?.removeChild(ctr);
     ctr.destroy({ children: true });
     WallOverlay._boxes.delete(tileId);
   }
@@ -80,11 +78,7 @@ export class WallOverlay {
   static clearAll(): void {
     for (const id of [...WallOverlay._boxes.keys()]) WallOverlay.hide(id);
     WallOverlay._selectTile = null;
-    if (WallOverlay._layer) {
-      try { (canvas.stage as unknown as PIXI.Container).removeChild(WallOverlay._layer); } catch { /* ok */ }
-      WallOverlay._layer.destroy({ children: true });
-      WallOverlay._layer = null;
-    }
+    LayerManager.clearLayer(LAYER_KEYS.WALL_OVERLAY);
   }
 
   static enterSelect(tile: Tile): void { WallOverlay._selectTile = tile.id; WallOverlay.show(tile); }
@@ -112,25 +106,6 @@ export class WallOverlay {
       const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(id);
       if (tile) WallOverlay.show(tile);
     }
-  }
-
-  private static _ensureLayer(): PIXI.Container {
-    if (WallOverlay._layer && !WallOverlay._layer.parent) WallOverlay._layer = null;
-    if (!WallOverlay._layer) {
-      const l = new PIXI.Container();
-      l.eventMode = "passive";
-      (canvas.stage as unknown as PIXI.Container).addChild(l);
-      WallOverlay._layer = l;
-    }
-    return WallOverlay._layer;
-  }
-
-  private static _bringToTop(): void {
-    const l = WallOverlay._layer;
-    if (!l) return;
-    const s = canvas.stage as unknown as PIXI.Container;
-    try { s.removeChild(l); } catch { /* ok */ }
-    s.addChild(l);
   }
 
   private static _drawDisplay(ctr: PIXI.Container, doc: TileDocument, isDrag = false): void {

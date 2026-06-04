@@ -21,12 +21,13 @@ export const LayerManager = {
     return l;
   },
 
-  // Move layer to top of stage display list.
+  // Move layer to top of stage display list, then enforce declared z-order if set.
   bringToTop(key: string): void {
     const l = layers.get(key);
     if (!l) return;
     try { stage().removeChild(l); } catch { /* detached */ }
     stage().addChild(l);
+    if (zOrder.length) LayerManager.enforceOrder();
   },
 
   // Destroy a layer and all its children; remove from registry.
@@ -49,7 +50,6 @@ export const LayerManager = {
   },
 
   // Re-sort all active layers to match the declared order.
-  // Call from the topmost layer's bringToTop to enforce order declaratively.
   enforceOrder(): void {
     if (!zOrder.length) return;
     const s = stage();
