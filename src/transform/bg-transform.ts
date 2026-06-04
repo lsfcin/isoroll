@@ -2,7 +2,7 @@
 // Also patches the GridConfig preview sprite's updateTransform for live GridConfig handles.
 import { getProjection } from "./constants";
 import { MODULE_ID } from "../volume/flags";
-import { BackgroundGizmos } from "../volume/background-gizmos";
+import { BackgroundGizmos } from "../background/bg-gizmos";
 
 type BgState = {
   rotation: number; skewX: number; skewY: number;

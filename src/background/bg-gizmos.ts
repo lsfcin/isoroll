@@ -1,10 +1,10 @@
 // Interactive handles + dashed contour for background image, shown only in GridConfig.
 import { getProjection } from "../transform/constants";
 import { CanvasTransform } from "../transform/stage-transform";
-import { MODULE_ID } from "./flags";
-import { clientToGlobal } from "./gizmos-drag";
-import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "./gizmos-handles";
-import { BgDrag, commitBgDrag } from "./background-gizmos-drag";
+import { MODULE_ID } from "../volume/flags";
+import { clientToGlobal } from "../volume/gizmos-drag";
+import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "../volume/gizmos-handles";
+import { BgDrag, commitBgDrag } from "./bg-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 type GCApp = { _processSubmitData?: (...a: unknown[]) => Promise<unknown> };
