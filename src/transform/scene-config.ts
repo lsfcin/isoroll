@@ -2,7 +2,7 @@ export { registerRulerPatch } from "./ruler-patch";
 export { registerTileConfigHook } from "./tile-config";
 export { addIsorollTab, flagCheckbox } from "../ui/tab-helpers";
 import { MODULE_ID } from "../volume/flags";
-import { CanvasTransform } from "./canvas-transform";
+import { CanvasTransform } from "./stage-transform";
 import { PROJECTION_TYPES } from "./constants";
 import { addIsorollTab } from "../ui/tab-helpers";
 

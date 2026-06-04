@@ -7,7 +7,7 @@ import { TokenGizmos } from "./volume/token-gizmos";
 import { TokenVolumeOverlay } from "./volume/token-volume-overlay";
 import { TokenVolumeGizmos } from "./volume/token-volume-gizmos";
 import { Occluder } from "./occluder/occluder";
-import { CanvasTransform } from "./transform/canvas-transform";
+import { CanvasTransform } from "./transform/stage-transform";
 import { BackgroundGizmos } from "./volume/background-gizmos";
 import { ObjectTransform } from "./transform/object-transform";
 import { registerSceneConfigHook, registerTileConfigHook, registerRulerPatch } from "./transform/scene-config";

@@ -1,3 +1,5 @@
+// Background sprite counter-transform: undistorted background while stage is isometric.
+// Also patches the GridConfig preview sprite's updateTransform for live GridConfig handles.
 import { getProjection } from "./constants";
 import { MODULE_ID } from "../volume/flags";
 import { BackgroundGizmos } from "../volume/background-gizmos";
@@ -9,43 +11,12 @@ type BgState = {
   anchorX: number; anchorY: number;
 };
 
-export class CanvasTransform {
+export class BackgroundTransform {
   private static originalBg: BgState | null = null;
-  static previewOverride: { enabled: boolean; transformBg: boolean } | null = null;
-
-  static activate(): void {
-    Hooks.on("canvasReady",       CanvasTransform.onCanvasReady);
-    Hooks.on("updateScene",       CanvasTransform.onUpdateScene);
-    Hooks.on("renderGridConfig",  CanvasTransform.onRenderGridConfig);
-    Hooks.on("closeSceneConfig",  CanvasTransform.onCloseSceneConfig);
-  }
-
-  private static isEnabled(): boolean {
-    return CanvasTransform.previewOverride?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true);
-  }
-
-  private static isBackgroundTransformEnabled(): boolean {
-    return CanvasTransform.previewOverride?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true);
-  }
-
-  private static apply(): void {
-    const stage = canvas.app?.stage;
-    if (!stage) return;
-    const proj = getProjection(canvas.scene);
-    stage.rotation = proj.rotation;
-    stage.skew.set(proj.skewX, proj.skewY);
-  }
-
-  private static reset(): void {
-    const stage = canvas.app?.stage;
-    if (!stage) return;
-    stage.rotation = 0;
-    stage.skew.set(0, 0);
-  }
 
   // canvas.environment.primary.background is the rendered sprite in v14.
   // canvas.primary.background exists but transforming it has no visual effect.
-  private static getBackground(): PIXI.Sprite | null {
+  static getSprite(): PIXI.Sprite | null {
     type WithBg = { background?: PIXI.Sprite };
     type WithPrimary = { primary?: WithBg };
     const envBg = (canvas as unknown as { environment?: WithPrimary }).environment?.primary?.background;
@@ -53,8 +24,8 @@ export class CanvasTransform {
     return (canvas.primary as unknown as WithBg).background ?? null;
   }
 
-  private static captureBackground(bg: PIXI.Sprite): void {
-    CanvasTransform.originalBg = {
+  static capture(bg: PIXI.Sprite): void {
+    BackgroundTransform.originalBg = {
       rotation: bg.rotation, skewX: bg.skew.x, skewY: bg.skew.y,
       scaleX: bg.scale.x, scaleY: bg.scale.y, posX: bg.position.x, posY: bg.position.y,
       anchorX: bg.anchor?.x ?? 0, anchorY: bg.anchor?.y ?? 0,
@@ -62,10 +33,10 @@ export class CanvasTransform {
   }
 
   // Counter-transform: background appears undistorted while stage is isometric.
-  // Scale builds on captured origScaleX (Foundry pre-scales bg to fill canvas, not 1:1 px).
-  private static applyBackground(): void {
-    const bg = CanvasTransform.getBackground();
-    const orig = CanvasTransform.originalBg;
+  // Scale builds on captured orig.scaleX (Foundry pre-scales bg to fill canvas, not 1:1 px).
+  static apply(): void {
+    const bg = BackgroundTransform.getSprite();
+    const orig = BackgroundTransform.originalBg;
     if (!bg || !orig) return;
     const proj = getProjection(canvas.scene);
     const { reverseRotation, reverseSkewX, reverseSkewY, ratio, counterFactor } = proj;
@@ -79,9 +50,9 @@ export class CanvasTransform {
     bg.position.set(dims.sceneX + dims.sceneWidth / 2, dims.sceneY + dims.sceneHeight / 2);
   }
 
-  private static resetBackground(): void {
-    const bg = CanvasTransform.getBackground();
-    const orig = CanvasTransform.originalBg;
+  static reset(): void {
+    const bg = BackgroundTransform.getSprite();
+    const orig = BackgroundTransform.originalBg;
     if (!bg || !orig) return;
     bg.anchor?.set(orig.anchorX, orig.anchorY);
     bg.rotation = orig.rotation;
@@ -90,38 +61,18 @@ export class CanvasTransform {
     bg.position.set(orig.posX, orig.posY);
   }
 
-  static refresh(): void {
-    for (const token of canvas.tokens?.placeables ?? []) token.refresh();
-    for (const tile of canvas.tiles?.placeables ?? []) tile.refresh();
-  }
-  // #drawOutline() rect becomes a diamond through the stage transform — hide when bg is untransformed.
-  private static setOutlineVisible(v: boolean): void {
-    type CanvasIface = { interface?: PIXI.Container };
-    const outline = (canvas as unknown as CanvasIface).interface?.children.find((c): c is PIXI.Graphics => c instanceof PIXI.Graphics);
-    if (outline) outline.visible = v;
-  }
-
-  static applyCurrentState(): void {
-    if (CanvasTransform.isEnabled()) {
-      CanvasTransform.apply();
-      if (!CanvasTransform.isBackgroundTransformEnabled()) {
-        CanvasTransform.applyBackground();
-        CanvasTransform.setOutlineVisible(false);
-      } else {
-        CanvasTransform.resetBackground();
-        CanvasTransform.setOutlineVisible(true);
-      }
-    } else {
-      CanvasTransform.reset();
-      CanvasTransform.resetBackground();
-      CanvasTransform.setOutlineVisible(true);
-    }
+  static clearCapture(): void {
+    BackgroundTransform.originalBg = null;
   }
 
   // Override bg sprite's updateTransform so #refreshPreview resets pick up each frame.
   // Grid mesh (children[2]) untouched: stays isometric, camera unchanged.
-  private static onRenderGridConfig(): void {
-    if (!CanvasTransform.isEnabled() || CanvasTransform.isBackgroundTransformEnabled()) return;
+  // Reads flags directly — GridConfig and SceneConfig are never open simultaneously,
+  // so previewOverride is always null here and doesn't need to be consulted.
+  static onRenderGridConfig(): void {
+    const enabled   = canvas.scene?.getFlag(MODULE_ID, "enabled")            === true;
+    const bgTransform = canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true;
+    if (!enabled || bgTransform) return;
     const stage = canvas.app?.stage;
     if (!stage) return;
     const stageChildren = (stage as PIXI.Container).children;
@@ -138,9 +89,7 @@ export class CanvasTransform {
     if (!(bg instanceof PIXI.Sprite)) return;
     const proj = getProjection(canvas.scene);
     const origUpdate = bg.updateTransform.bind(bg);
-    (bg as unknown as { updateTransform: () => void }).updateTransform = function(
-      this: PIXI.Sprite,
-    ) {
+    (bg as unknown as { updateTransform: () => void }).updateTransform = function(this: PIXI.Sprite) {
       const x = this.x, y = this.y;
       const sx = this.scale.x, sy = this.scale.y;
       const rot = this.rotation;
@@ -173,27 +122,5 @@ export class CanvasTransform {
       this.scale.set(sx, sy);
       this.position.set(x, y);
     };
-  }
-
-  private static onCloseSceneConfig(): void {
-    if (!CanvasTransform.previewOverride) return;
-    CanvasTransform.previewOverride = null;
-    CanvasTransform.applyCurrentState();
-    CanvasTransform.refresh();
-  }
-
-  private static onCanvasReady(): void {
-    const bg = CanvasTransform.getBackground();
-    CanvasTransform.originalBg = null;
-    if (bg) CanvasTransform.captureBackground(bg);
-    CanvasTransform.applyCurrentState();
-  }
-
-  private static onUpdateScene(scene: Scene, changes: Record<string, unknown>): void {
-    if (scene.id !== canvas.scene?.id) return;
-    const changed = (changes as { flags?: Record<string, unknown> }).flags?.[MODULE_ID];
-    if (changed === undefined) return;
-    CanvasTransform.applyCurrentState();
-    CanvasTransform.refresh();
   }
 }
