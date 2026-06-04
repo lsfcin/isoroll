@@ -5,11 +5,11 @@ import { MODULE_ID } from "./flags";
 import { clientToGlobal } from "./gizmos-drag";
 import { makeElevHandle, makeSquareCounterHandle, bgCorner, drawDashedContour } from "./gizmos-handles";
 import { BgDrag, commitBgDrag } from "./background-gizmos-drag";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 type GCApp = { _processSubmitData?: (...a: unknown[]) => Promise<unknown> };
 
 export class BackgroundGizmos {
-  private static layer:        PIXI.Container | null = null;
   private static previewBg:    PIXI.Sprite | null = null;
   private static bgYScaleTemp: number | null = null;
   private static currentHtml:  HTMLElement | null = null;
@@ -88,7 +88,7 @@ export class BackgroundGizmos {
     BackgroundGizmos.clearLayer();
     if (!BackgroundGizmos.isEnabled() || !BackgroundGizmos.currentHtml) return;
     const html  = BackgroundGizmos.currentHtml;
-    const layer = BackgroundGizmos.ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.BG_GIZMOS);
     const proj  = getProjection(canvas.scene);
     const _po   = CanvasTransform.previewOverride;
     const isoCT = (_po?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true)) && !(_po?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true));
@@ -127,7 +127,7 @@ export class BackgroundGizmos {
       handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => { e.stopPropagation(); BackgroundGizmos.beginDrag(type, e.global.x, e.global.y, scale, sCX, sCY, bgYS, baseH, shiftX, shiftY); });
       layer.addChild(handle);
     }
-    BackgroundGizmos.bringToTop();
+    LayerManager.bringToTop(LAYER_KEYS.BG_GIZMOS);
   }
 
   private static scaleVerticalStep(delta: number): void {
@@ -138,28 +138,12 @@ export class BackgroundGizmos {
     BackgroundGizmos.show();
   }
   private static clearLayer(): void {
-    BackgroundGizmos.layer?.removeChildren().forEach(c => (c as PIXI.Container).destroy({ children: true }));
+    const l = LayerManager.ensureLayer(LAYER_KEYS.BG_GIZMOS);
+    l.removeChildren().forEach(c => (c as PIXI.Container).destroy({ children: true }));
   }
 
   static clearAll(): void {
-    if (!BackgroundGizmos.layer) return;
-    try { (canvas.stage as unknown as PIXI.Container).removeChild(BackgroundGizmos.layer); } catch { /* ok */ }
-    BackgroundGizmos.layer.destroy({ children: true }); BackgroundGizmos.layer = null;
-  }
-
-  private static ensureLayer(): PIXI.Container {
-    if (BackgroundGizmos.layer && !BackgroundGizmos.layer.parent) BackgroundGizmos.layer = null;
-    if (BackgroundGizmos.layer) return BackgroundGizmos.layer;
-    const l = new PIXI.Container(); l.eventMode = "passive";
-    (canvas.stage as unknown as PIXI.Container).addChild(l);
-    return (BackgroundGizmos.layer = l);
-  }
-
-  private static bringToTop(): void {
-    if (!BackgroundGizmos.layer?.parent) return;
-    const s = canvas.stage as unknown as PIXI.Container;
-    try { s.removeChild(BackgroundGizmos.layer); } catch { /* ok */ }
-    s.addChild(BackgroundGizmos.layer);
+    LayerManager.clearLayer(LAYER_KEYS.BG_GIZMOS);
   }
 
   private static beginDrag(
