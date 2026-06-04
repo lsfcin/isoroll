@@ -1,8 +1,8 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
 import { getProjection } from "../transform/constants";
-import { VolumeFlags } from "./flags";
-import { makeElevHandle } from "./gizmos-handles";
-import { clientToGlobal } from "./gizmos-drag";
+import { VolumeFlags } from "../volume/flags";
+import { makeElevHandle } from "../volume/gizmos-handles";
+import { clientToGlobal } from "../volume/gizmos-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 interface TokenElevDrag {
@@ -13,47 +13,47 @@ interface TokenElevDrag {
 
 type ElevHandleState = { x: number; y: number; elev: number; boundH: number };
 
-export class TokenVolumeGizmos {
+export class TokenElevGizmo {
   private static sets: Map<string, PIXI.Container> = new Map();
   private static lastState: Map<string, ElevHandleState> = new Map();
   private static drag: TokenElevDrag | null = null;
-  private static readonly onMove = (e: PointerEvent): void => TokenVolumeGizmos.handleMove(e);
-  private static readonly onUp   = (e: PointerEvent): void => TokenVolumeGizmos.handleUp(e);
+  private static readonly onMove = (e: PointerEvent): void => TokenElevGizmo.handleMove(e);
+  private static readonly onUp   = (e: PointerEvent): void => TokenElevGizmo.handleUp(e);
 
   static activate(): void {
-    Hooks.on("canvasReady",  TokenVolumeGizmos.onCanvasReady);
-    Hooks.on("updateScene",  TokenVolumeGizmos.onUpdateScene);
-    Hooks.on("controlToken", TokenVolumeGizmos.onControlToken);
-    Hooks.on("refreshToken", TokenVolumeGizmos.onRefreshToken);
+    Hooks.on("canvasReady",  TokenElevGizmo.onCanvasReady);
+    Hooks.on("updateScene",  TokenElevGizmo.onUpdateScene);
+    Hooks.on("controlToken", TokenElevGizmo.onControlToken);
+    Hooks.on("refreshToken", TokenElevGizmo.onRefreshToken);
   }
 
-  private static onCanvasReady(): void { TokenVolumeGizmos.clearAll(); }
+  private static onCanvasReady(): void { TokenElevGizmo.clearAll(); }
 
   private static onUpdateScene(scene: Scene): void {
     if (scene.id !== canvas.scene?.id) return;
-    TokenVolumeGizmos.clearAll();
+    TokenElevGizmo.clearAll();
   }
 
   private static onControlToken(token: Token, controlled: boolean): void {
     if (!VolumeFlags.isSceneEnabled()) return;
-    if (controlled) TokenVolumeGizmos.show(token);
-    else TokenVolumeGizmos.hide(token.id);
+    if (controlled) TokenElevGizmo.show(token);
+    else TokenElevGizmo.hide(token.id);
   }
 
   private static onRefreshToken(token: Token): void {
     if (!VolumeFlags.isSceneEnabled()) return;
-    if (!TokenVolumeGizmos.sets.has(token.id)) return;
+    if (!TokenElevGizmo.sets.has(token.id)) return;
     const x = token.document.x ?? 0, y = token.document.y ?? 0;
     const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
     const boundH = VolumeFlags.getTokenHeight(token.document);
-    const last = TokenVolumeGizmos.lastState.get(token.id);
+    const last = TokenElevGizmo.lastState.get(token.id);
     if (last && last.x === x && last.y === y && last.elev === elev && last.boundH === boundH) return;
-    TokenVolumeGizmos.lastState.set(token.id, { x, y, elev, boundH });
-    TokenVolumeGizmos.show(token);
+    TokenElevGizmo.lastState.set(token.id, { x, y, elev, boundH });
+    TokenElevGizmo.show(token);
   }
 
   static show(token: Token): void {
-    TokenVolumeGizmos.hide(token.id);
+    TokenElevGizmo.hide(token.id);
     if (!VolumeFlags.getShowVolumeManipulation(token.document, true)) return;
 
     const gs   = canvas.grid?.size ?? 100;
@@ -80,35 +80,35 @@ export class TokenVolumeGizmos {
 
     handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
       e.stopPropagation();
-      TokenVolumeGizmos.beginDrag(token, e.global.x, e.global.y, elev);
+      TokenElevGizmo.beginDrag(token, e.global.x, e.global.y, elev);
     });
 
     const container = new PIXI.Container();
     container.addChild(handle);
     layer.addChild(container);
-    TokenVolumeGizmos.sets.set(token.id, container);
+    TokenElevGizmo.sets.set(token.id, container);
     LayerManager.bringToTop(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
   }
 
   static hide(tokenId: string): void {
-    const c = TokenVolumeGizmos.sets.get(tokenId);
+    const c = TokenElevGizmo.sets.get(tokenId);
     if (!c) return;
     c.parent?.removeChild(c);
     c.destroy({ children: true });
-    TokenVolumeGizmos.sets.delete(tokenId);
-    TokenVolumeGizmos.lastState.delete(tokenId);
+    TokenElevGizmo.sets.delete(tokenId);
+    TokenElevGizmo.lastState.delete(tokenId);
   }
 
   static clearAll(): void {
-    for (const id of Array.from(TokenVolumeGizmos.sets.keys())) TokenVolumeGizmos.hide(id);
-    TokenVolumeGizmos.lastState.clear();
+    for (const id of Array.from(TokenElevGizmo.sets.keys())) TokenElevGizmo.hide(id);
+    TokenElevGizmo.lastState.clear();
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
   }
 
   private static beginDrag(token: Token, gx: number, gy: number, elev: number): void {
-    TokenVolumeGizmos.drag = { token, startGX: gx, startGY: gy, startElev: elev };
-    window.addEventListener("pointermove", TokenVolumeGizmos.onMove);
-    window.addEventListener("pointerup",   TokenVolumeGizmos.onUp, { once: true });
+    TokenElevGizmo.drag = { token, startGX: gx, startGY: gy, startElev: elev };
+    window.addEventListener("pointermove", TokenElevGizmo.onMove);
+    window.addEventListener("pointerup",   TokenElevGizmo.onUp, { once: true });
   }
 
   private static commit(drag: TokenElevDrag, gy: number): void {
@@ -122,18 +122,18 @@ export class TokenVolumeGizmos {
   }
 
   private static handleMove(e: PointerEvent): void {
-    if (!TokenVolumeGizmos.drag) return;
+    if (!TokenElevGizmo.drag) return;
     e.preventDefault();
     const { y: gy } = clientToGlobal(e.clientX, e.clientY);
-    TokenVolumeGizmos.commit(TokenVolumeGizmos.drag, gy);
+    TokenElevGizmo.commit(TokenElevGizmo.drag, gy);
   }
 
   private static handleUp(e: PointerEvent): void {
-    window.removeEventListener("pointermove", TokenVolumeGizmos.onMove);
-    const drag = TokenVolumeGizmos.drag;
-    TokenVolumeGizmos.drag = null;
+    window.removeEventListener("pointermove", TokenElevGizmo.onMove);
+    const drag = TokenElevGizmo.drag;
+    TokenElevGizmo.drag = null;
     if (!drag) return;
     const { y: gy } = clientToGlobal(e.clientX, e.clientY);
-    TokenVolumeGizmos.commit(drag, gy);
+    TokenElevGizmo.commit(drag, gy);
   }
 }
