@@ -103,5 +103,44 @@ hook and call `clearAll()` on all overlays/gizmos.
 
 ---
 
+## B8 — TileConfig Iso tab has extra wrapping container not present in other tabs
+
+**Symptom:** The Iso tab content in the Tile config popup (AppV2) is visually wrapped in an
+extra bordered/outlined div. Other tabs (Position, Appearance, Overhead) render their fields
+directly without this outer container. The extra wrapper causes a visual indent/border that
+breaks consistency with native Foundry tab layout.
+
+**Affected:** `src/transform/tile-config.ts` (or wherever the Iso tab HTML is injected) —
+likely an extra `<div class="form-group">` or `<fieldset>` wrapping the entire tab content.
+
+---
+
+## B9 — TileConfig Iso tab: "Volume Manipulation" label wraps to two lines
+
+**Symptom:** The label "Volume Manipulation" in the Iso tab renders as two lines ("Volume" /
+"Manipulation") while "Image Manipulation" renders correctly on one line. Both should be
+single-line bold labels.
+
+**Affected:** Same injection site as B8 — likely a missing `white-space: nowrap` or a CSS
+width constraint forcing the wrap, possibly related to the extra wrapper from B8.
+
+---
+
+## B10 — Opening TileConfig popup hides all isoroll gizmos and overlays
+
+**Symptom:** When the Tile config popup is opened for a selected tile, all isoroll visuals
+(volume gizmo handles, 3D bounding box overlay, image contour) disappear. They were visible
+before the popup opened. Closing the popup does not restore them — the tile must be
+deselected and reselected.
+
+**Root cause hypothesis:** Opening TileConfig fires `controlTile` with `controlled = false`
+(or equivalent deselect event) before re-selecting, causing overlays/gizmos to call `hide()`.
+Alternatively, a `renderTileConfig` hook clears the controlled state.
+
+**Affected:** `VolumeOverlay`, `VolumeGizmos`, `TokenVolumeOverlay`, `TokenVolumeGizmos` —
+all check `controlTile` hook; none guard against TileConfig open/close lifecycle.
+
+---
+
 > ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
 > from branch switching, not a code regression).
