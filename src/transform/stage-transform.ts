@@ -67,6 +67,9 @@ export class CanvasTransform {
   }
 
   private static onCanvasReady(): void {
+    // reset() before clearCapture() — if updateScene→apply() raced ahead of canvasReady,
+    // the bg may already be counter-transformed; restore it before recapturing natural state.
+    BackgroundTransform.reset();
     BackgroundTransform.clearCapture();
     const bg = BackgroundTransform.getSprite();
     if (bg) BackgroundTransform.capture(bg);
