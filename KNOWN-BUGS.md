@@ -60,5 +60,20 @@ preview — they only run on actual scene update (after Save). Likely needs an e
 
 ---
 
+## B5 — Module overlays, gizmos, and walls visible inside GridConfig tool
+
+**Symptom:** Opening the Grid Configuration Tool does not hide isoroll overlays, volume gizmo
+handles, or wall overlays. All three remain visible on the canvas while the grid config dialog
+is open, which is visually confusing.
+
+**Expected:** When GridConfig is active, module overlays should be suppressed (similar to how
+Foundry's native controls hide themselves during scene configuration).
+
+**Affected:** All overlay/gizmo activate() methods — they hook on `controlTile`/`controlToken`
+but do not hook on any GridConfig open/close event. Likely fix: listen for `closeGridConfig`
+hook and call `clearAll()` on all overlays/gizmos.
+
+---
+
 > ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
 > from branch switching, not a code regression).
