@@ -1,6 +1,8 @@
 // Pure drag-math helpers for VolumeGizmos: axis projection, snapping, handle positions.
 import { getProjection } from "../transform/constants";
 import { MODULE_ID } from "./flags";
+import { snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
+export { imageBLCorner, imageTRCorner, imageBCCorner, imageTCCorner, clientToGlobal, snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
 
 export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale" | "imgYScale" | "swapSide";
 
@@ -27,33 +29,6 @@ export interface DragState {
 // WeakMap key is PIXI.Container (Graphics extends Container; elevation handle is plain Container)
 export const handleTypeMap = new WeakMap<PIXI.Container, HandleType>();
 
-export function snapQuarterPx(canvasPx: number, gridSize: number): number {
-  const q = gridSize * 0.25;
-  return Math.round(canvasPx / q) * q;
-}
-
-export function snapQuarterUnits(units: number): number {
-  return Math.round(units * 4) / 4;
-}
-
-// lxSign: -1 left, 0 center, +1 right.  lySign: -1 top, 0 middle, +1 bottom.
-function meshCorner(tile: Tile, lxSign: number, lySign: number): { x: number; y: number } | null {
-  type M = { x: number; y: number; rotation: number; scale: { x: number; y: number }; texture?: { width: number; height: number }; anchor?: { x: number; y: number } };
-  const mesh = tile.mesh as unknown as M | null | undefined;
-  if (!mesh?.texture) return null;
-  const texW = mesh.texture.width, texH = mesh.texture.height;
-  const ax = mesh.anchor?.x ?? 0.5, ay = mesh.anchor?.y ?? 0.5;
-  const sx = Math.abs(mesh.scale.x), sy = mesh.scale.y;  // abs so flipped image corners stay correct
-  const cr = Math.cos(mesh.rotation), sr = Math.sin(mesh.rotation);
-  const lx = (lxSign < 0 ? -ax : lxSign > 0 ? 1 - ax : 0.5 - ax) * texW;
-  const ly = (lySign < 0 ? -ay : lySign > 0 ? 1 - ay : 0.5 - ay) * texH;
-  return { x: mesh.x + cr*(lx*sx) - sr*(ly*sy), y: mesh.y + sr*(lx*sx) + cr*(ly*sy) };
-}
-export function imageBLCorner(tile: Tile) { return meshCorner(tile, -1, +1); }
-export function imageTRCorner(tile: Tile) { return meshCorner(tile, +1, -1); }
-export function imageBCCorner(tile: Tile) { return meshCorner(tile,  0, +1); }
-export function imageTCCorner(tile: Tile) { return meshCorner(tile,  0, -1); }
-
 // Returns canvas-space positions for all handle anchors
 export function handlePositions(
   tx: number, ty: number, tw: number, th: number,
@@ -77,11 +52,6 @@ export function handlePositions(
     imgYScale: { cx: imgTC?.x ?? (tx + tw / 2),   cy: imgTC?.y ?? ty },
     swapSide:  { cx: imgBC?.x ?? (tx + tw / 2),   cy: imgBC?.y ?? (ty + th) },
   };
-}
-
-export function clientToGlobal(clientX: number, clientY: number): { x: number; y: number } {
-  const rect = (canvas.app!.view as HTMLCanvasElement).getBoundingClientRect();
-  return { x: clientX - rect.left, y: clientY - rect.top };
 }
 
 // Project screen delta onto the resize/elevation axis, snap, return new values.

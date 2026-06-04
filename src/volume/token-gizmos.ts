@@ -53,10 +53,9 @@ export class TokenGizmos {
     TokenGizmos.hide(token.id);
     if (!VolumeFlags.getShowImageManipulation(token.document, true)) return;
     const layer  = TokenGizmos.ensureLayer();
-    const tAsT    = token as unknown as Tile;
-    const bl      = imageBLCorner(tAsT);
-    const tr      = imageTRCorner(tAsT);
-    const tc      = imageTCCorner(tAsT);
+    const bl      = imageBLCorner(token);
+    const tr      = imageTRCorner(token);
+    const tc      = imageTCCorner(token);
     const gs      = canvas.grid?.size ?? 100;
     const imgOff  = VolumeFlags.getImageOffset(token.document);
     const imgScl  = VolumeFlags.getImageScale(token.document);
