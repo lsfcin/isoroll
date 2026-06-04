@@ -13,6 +13,8 @@ type BgState = {
 
 export class BackgroundTransform {
   private static originalBg: BgState | null = null;
+  private static patchedSprite: PIXI.Sprite | null = null;
+  private static savedUpdateTransform: (() => void) | null = null;
 
   // canvas.environment.primary.background is the rendered sprite in v14.
   // canvas.primary.background exists but transforming it has no visual effect.
@@ -65,6 +67,15 @@ export class BackgroundTransform {
     BackgroundTransform.originalBg = null;
   }
 
+  static clearGridConfigPatch(): void {
+    if (BackgroundTransform.patchedSprite && BackgroundTransform.savedUpdateTransform) {
+      (BackgroundTransform.patchedSprite as unknown as { updateTransform: () => void }).updateTransform =
+        BackgroundTransform.savedUpdateTransform;
+    }
+    BackgroundTransform.patchedSprite = null;
+    BackgroundTransform.savedUpdateTransform = null;
+  }
+
   // Override bg sprite's updateTransform so #refreshPreview resets pick up each frame.
   // Grid mesh (children[2]) untouched: stays isometric, camera unchanged.
   // Reads flags directly — GridConfig and SceneConfig are never open simultaneously,
@@ -88,7 +99,9 @@ export class BackgroundTransform {
     const bg = previewContainer.children[1];
     if (!(bg instanceof PIXI.Sprite)) return;
     const proj = getProjection(canvas.scene);
-    const origUpdate = bg.updateTransform.bind(bg);
+    BackgroundTransform.patchedSprite = bg;
+    BackgroundTransform.savedUpdateTransform = bg.updateTransform.bind(bg);
+    const origUpdate = BackgroundTransform.savedUpdateTransform;
     (bg as unknown as { updateTransform: () => void }).updateTransform = function(this: PIXI.Sprite) {
       const x = this.x, y = this.y;
       const sx = this.scale.x, sy = this.scale.y;

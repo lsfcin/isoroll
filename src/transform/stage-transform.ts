@@ -10,6 +10,7 @@ export class CanvasTransform {
     Hooks.on("canvasReady",      CanvasTransform.onCanvasReady);
     Hooks.on("updateScene",      CanvasTransform.onUpdateScene);
     Hooks.on("renderGridConfig", BackgroundTransform.onRenderGridConfig);
+    Hooks.on("closeGridConfig",  BackgroundTransform.clearGridConfigPatch);
     Hooks.on("closeSceneConfig", CanvasTransform.onCloseSceneConfig);
   }
 
