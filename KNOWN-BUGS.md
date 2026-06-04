@@ -60,6 +60,34 @@ preview — they only run on actual scene update (after Save). Likely needs an e
 
 ---
 
+## B6 — GridConfig "Reset Changes" clears background dashed outline and gizmos
+
+**Symptom:** In the Grid Configuration Tool, clicking "Reset Changes" causes the background
+dashed contour and all background gizmo handles to disappear. They do not reappear unless the
+GridConfig is closed and reopened (or the background is reselected).
+
+**Root cause hypothesis:** Reset Changes fires a scene or canvas update event (likely
+`updateScene` or equivalent) that triggers `clearAll()` on the background gizmos/overlay.
+The gizmos don't re-register after the reset because no `controlTile`/selection hook fires.
+
+**Affected:** `BackgroundGizmos` / `CanvasTransform` overlay hooks.
+
+---
+
+## B7 — SceneConfig Iso tab has excess height, Save Changes floats in empty space
+
+**Symptom:** The Iso tab in the Scene Configuration popup (AppV2) has too much vertical space
+at the bottom. The "Save Changes" button floats in the middle of that empty space instead of
+sitting at the bottom of the form content.
+
+**Root cause hypothesis:** AppV2 tab content height is not being constrained — the tab panel
+expands to a fixed dialog height rather than wrapping its content. Likely a missing
+`overflow`, `height`, or `flex` CSS rule on the injected tab content container.
+
+**Affected:** `src/transform/scene-config.ts` — tab injection / CSS for the Iso tab panel.
+
+---
+
 ## B5 — Module overlays, gizmos, and walls visible inside GridConfig tool
 
 **Symptom:** Opening the Grid Configuration Tool does not hide isoroll overlays, volume gizmo
