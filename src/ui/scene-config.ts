@@ -43,7 +43,6 @@ export function registerSceneConfigHook(): void {
       const customVisible = projection === "custom" ? "" : 'style="display:none"';
 
       addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"), `
-          <legend>${game.i18n.localize("ISOROLL.SceneConfig.Heading")}</legend>
           <div class="form-group">
             <label for="isoroll-enabled">${game.i18n.localize("ISOROLL.SceneConfig.Enable")}</label>
             <div class="form-fields">
@@ -51,48 +50,51 @@ export function registerSceneConfigHook(): void {
             </div>
             <p class="hint">${game.i18n.localize("ISOROLL.SceneConfig.EnableHint")}</p>
           </div>
-          <div class="form-group">
-            <label for="isoroll-transformBackground">${game.i18n.localize("ISOROLL.SceneConfig.TransformBackground")}</label>
-            <div class="form-fields">
-              <input type="checkbox" id="isoroll-transformBackground" name="flags.${MODULE_ID}.transformBackground" ${transformBg ? "checked" : ""}>
-            </div>
-            <p class="hint">${game.i18n.localize("ISOROLL.SceneConfig.TransformBackgroundHint")}</p>
-          </div>
-          <div class="form-group">
-            <label for="isoroll-projection">${game.i18n.localize("ISOROLL.SceneConfig.Projection")}</label>
-            <div class="form-fields">
-              <select id="isoroll-projection" name="flags.${MODULE_ID}.projection" class="isoroll-projection-select">
-                ${projectionOptions(projection)}
-              </select>
-            </div>
-            <p class="hint">${game.i18n.localize("ISOROLL.SceneConfig.ProjectionHint")}</p>
-          </div>
-          <div class="isoroll-custom-fields" ${customVisible}>
+          <fieldset>
+            <legend>${game.i18n.localize("ISOROLL.SceneConfig.TransformationsHeading")}</legend>
             <div class="form-group">
-              <label for="isoroll-customRotation">${game.i18n.localize("ISOROLL.SceneConfig.CustomRotation")}</label>
+              <label for="isoroll-projection">${game.i18n.localize("ISOROLL.SceneConfig.Projection")}</label>
               <div class="form-fields">
-                <input type="number" id="isoroll-customRotation" step="0.001" name="flags.${MODULE_ID}.customRotation" value="${cRot}">
+                <select id="isoroll-projection" name="flags.${MODULE_ID}.projection" class="isoroll-projection-select">
+                  ${projectionOptions(projection)}
+                </select>
+              </div>
+              <p class="hint">${game.i18n.localize("ISOROLL.SceneConfig.ProjectionHint")}</p>
+            </div>
+            <div class="isoroll-custom-fields" ${customVisible}>
+              <div class="form-group">
+                <label for="isoroll-customRotation">${game.i18n.localize("ISOROLL.SceneConfig.CustomRotation")}</label>
+                <div class="form-fields">
+                  <input type="number" id="isoroll-customRotation" step="0.001" name="flags.${MODULE_ID}.customRotation" value="${cRot}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="isoroll-customSkewX">${game.i18n.localize("ISOROLL.SceneConfig.CustomSkewX")}</label>
+                <div class="form-fields">
+                  <input type="number" id="isoroll-customSkewX" step="0.001" name="flags.${MODULE_ID}.customSkewX" value="${cSkX}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="isoroll-customSkewY">${game.i18n.localize("ISOROLL.SceneConfig.CustomSkewY")}</label>
+                <div class="form-fields">
+                  <input type="number" id="isoroll-customSkewY" step="0.001" name="flags.${MODULE_ID}.customSkewY" value="${cSkY}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="isoroll-customRatio">${game.i18n.localize("ISOROLL.SceneConfig.CustomRatio")}</label>
+                <div class="form-fields">
+                  <input type="number" id="isoroll-customRatio" step="0.001" min="0.1" name="flags.${MODULE_ID}.customRatio" value="${cRatio}">
+                </div>
               </div>
             </div>
             <div class="form-group">
-              <label for="isoroll-customSkewX">${game.i18n.localize("ISOROLL.SceneConfig.CustomSkewX")}</label>
+              <label for="isoroll-transformBackground">${game.i18n.localize("ISOROLL.SceneConfig.TransformBackground")}</label>
               <div class="form-fields">
-                <input type="number" id="isoroll-customSkewX" step="0.001" name="flags.${MODULE_ID}.customSkewX" value="${cSkX}">
+                <input type="checkbox" id="isoroll-transformBackground" name="flags.${MODULE_ID}.transformBackground" ${transformBg ? "checked" : ""}>
               </div>
+              <p class="hint">${game.i18n.localize("ISOROLL.SceneConfig.TransformBackgroundHint")}</p>
             </div>
-            <div class="form-group">
-              <label for="isoroll-customSkewY">${game.i18n.localize("ISOROLL.SceneConfig.CustomSkewY")}</label>
-              <div class="form-fields">
-                <input type="number" id="isoroll-customSkewY" step="0.001" name="flags.${MODULE_ID}.customSkewY" value="${cSkY}">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="isoroll-customRatio">${game.i18n.localize("ISOROLL.SceneConfig.CustomRatio")}</label>
-              <div class="form-fields">
-                <input type="number" id="isoroll-customRatio" step="0.001" min="0.1" name="flags.${MODULE_ID}.customRatio" value="${cRatio}">
-              </div>
-            </div>
-          </div>`,
+          </fieldset>`,
         ($h) => {
           $h.on("change", `input[name="flags.${MODULE_ID}.enabled"]`, (event) => {
             if (!(event.target as HTMLInputElement).checked)

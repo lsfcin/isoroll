@@ -2,7 +2,7 @@
   "ISOROLL": {
     "TabLabel": "Iso",
     "SceneConfig": {
-      "Heading": "Isométrico",
+      "TransformationsHeading": "Transformações",
       "Enable": "Ativar Isométrico",
       "EnableHint": "Aplica projeção dimétrica 2:1 à cena e à grade.",
       "TransformBackground": "Transformar Fundo",
@@ -15,25 +15,29 @@
       "CustomRatio": "Razão Vertical"
     },
     "TokenConfig": {
-      "Heading": "Isométrico",
+      "TransformationHeading": "Transformação",
+      "ManipulationHeading": "Manipulação",
+      "PresetHeading": "Predefinição",
       "TransformToken": "Transformar Token",
       "TransformTokenHint": "Aplica a transformação isométrica do palco ao token. Quando desmarcado (padrão), o sprite do token aparece sem distorção independente da rotação do palco.",
-      "ShowImageManipulation": "Exibir Manipulação de Imagem",
+      "ShowImageManipulation": "Manipulação de Imagem",
       "ShowImageManipulationHint": "Exibe as alças de deslocamento/escala da imagem (círculo e quadrado brancos) e o contorno tracejado da imagem quando o token está selecionado.",
-      "ShowVolumeManipulation": "Exibir Manipulação de Volume",
+      "ShowVolumeManipulation": "Manipulação de Volume",
       "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e a alça de elevação quando o token está selecionado.",
       "PresetEnabled": "Usar Predefinição de Imagem",
       "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um token com esta imagem, e atualiza a predefinição ao editar este token."
     },
     "TileConfig": {
-      "Heading": "Isométrico",
+      "TransformationHeading": "Transformação",
+      "ManipulationHeading": "Manipulação",
+      "PresetHeading": "Predefinição",
       "ForegroundTile": "Tile de Primeiro Plano",
       "ForegroundTileHint": "Trata como objeto 3D de primeiro plano. Tamanho e posição escalam com mudanças no tamanho da grade, como tokens. Desmarque para tiles de fundo ou chão que devem permanecer visualmente fixos.",
       "TransformTile": "Transformar Tile",
       "TransformTileHint": "Aplica a transformação isométrica do palco ao tile. Quando desmarcado (padrão), o sprite do tile aparece sem distorção independente da rotação do palco.",
-      "ShowImageManipulation": "Exibir Manipulação de Imagem",
+      "ShowImageManipulation": "Manipulação de Imagem",
       "ShowImageManipulationHint": "Exibe as alças de deslocamento/escala da imagem (círculo e quadrado brancos) e o contorno tracejado da imagem quando o tile está selecionado.",
-      "ShowVolumeManipulation": "Exibir Manipulação de Volume",
+      "ShowVolumeManipulation": "Manipulação de Volume",
       "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e todas as alças de volume (tamanho, elevação, movimento) quando o tile está selecionado.",
       "PresetEnabled": "Usar Predefinição de Imagem",
       "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um tile com esta imagem, e atualiza a predefinição ao editar este tile."

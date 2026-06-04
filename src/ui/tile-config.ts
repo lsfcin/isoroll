@@ -47,11 +47,17 @@ export function registerTileConfigHook(): void {
     })();
 
     addIsorollTab($html, t("ISOROLL.TabLabel"),
-      flagCheckbox("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
+      `<fieldset><legend>${t("ISOROLL.TileConfig.TransformationHeading")}</legend>` +
       flagCheckbox("transformTile",         "TileConfig", d.getFlag(MODULE_ID, "transformTile")          === true) +
+      flagCheckbox("foregroundTile",        "TileConfig", d.getFlag(MODULE_ID, "foregroundTile")         !== false) +
+      `</fieldset>` +
+      `<fieldset><legend>${t("ISOROLL.TileConfig.ManipulationHeading")}</legend>` +
       flagCheckbox("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
       flagCheckbox("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
+      `</fieldset>` +
+      `<fieldset><legend>${t("ISOROLL.TileConfig.PresetHeading")}</legend>` +
       flagCheckbox("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +
+      `</fieldset>` +
       wallSection + doorSection,
       ($h) => {
         const refresh  = () => $h.find(".isoroll-wall-count").text(WallManager.getLinkedWallIds(d).length);

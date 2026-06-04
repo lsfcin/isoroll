@@ -315,5 +315,23 @@ available).
 
 ---
 
+## B24 — TileHUD and TokenHUD mispositioned on first right-click after F5
+
+**Symptom:** After a hard reload (F5), before any canvas interaction (no pan, no zoom),
+right-clicking a tile or token places the HUD popup at the wrong screen position. Performing
+any pan or zoom first causes the HUD to position correctly on subsequent right-clicks.
+
+**Root cause hypothesis:** HUD screen-position is computed by projecting world coordinates
+through the current canvas transform. On first load the stage world transform may not yet
+be reflected in whatever state the module uses for that projection — either `CanvasTransform`
+hasn't run `applyCurrentState` yet, or a stale identity matrix is used before the first
+canvas interaction updates the cached transform values.
+
+**Affected:** HUD positioning logic — likely wherever `TileHUD` / `TokenHUD` render hooks
+compute screen coordinates from world position; possibly `CanvasTransform.applyCurrentState`
+not being called on initial scene ready.
+
+---
+
 > ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
 > from branch switching, not a code regression).

@@ -25,7 +25,7 @@ export function addIsorollTab(
   if (tabContentExists) return;
 
   const $section = $(`<div class="tab" data-tab="${TAB}"></div>`)
-    .append(`<fieldset>${fieldsetContent}</fieldset>`);
+    .append(fieldsetContent);
   const $lastTab = $html.find(".tab[data-tab]").last();
   if ($lastTab.length) $lastTab.after($section);
   else ($html.is("form") ? $html : $html.find("form").first()).append($section);

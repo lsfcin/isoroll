@@ -8,11 +8,16 @@ export function registerTokenConfigHook(): void {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
       const d = app.document;
       addIsorollTab($html, game.i18n.localize("ISOROLL.TabLabel"),
-        `<legend>${game.i18n.localize("ISOROLL.TokenConfig.Heading")}</legend>` +
+        `<fieldset><legend>${game.i18n.localize("ISOROLL.TokenConfig.TransformationHeading")}</legend>` +
         flagCheckbox("transformToken",         "TokenConfig", d.getFlag(MODULE_ID, "transformToken")         === true) +
+        `</fieldset>` +
+        `<fieldset><legend>${game.i18n.localize("ISOROLL.TokenConfig.ManipulationHeading")}</legend>` +
         flagCheckbox("showImageManipulation",  "TokenConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
         flagCheckbox("showVolumeManipulation", "TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
-        flagCheckbox("presetEnabled",          "TokenConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false));
+        `</fieldset>` +
+        `<fieldset><legend>${game.i18n.localize("ISOROLL.TokenConfig.PresetHeading")}</legend>` +
+        flagCheckbox("presetEnabled",          "TokenConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +
+        `</fieldset>`);
     },
   );
 }
