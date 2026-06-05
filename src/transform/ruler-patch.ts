@@ -82,8 +82,13 @@ function patchTokenHUDProto(proto: HudProto | undefined): void {
     const raw = (token.center ?? { x: token.x ?? 0, y: token.y ?? 0 }) as { x: number; y: number };
     const c = isoHudCenter(raw.x, raw.y);
     if (!c) return pos;
-    pos.left = c.left;
-    pos.top  = c.top;
+    // Native _updatePosition centers the HUD: pos.left = raw.x + centering_offset.
+    // In non-iso, isoHudCenter(x,y).left = (zoom*x)/zoom = x — zoom cancels.
+    // Extract the zoom-independent centering offset and apply it to the iso center.
+    const centeringOffsetX = (pos.left ?? 0) - raw.x;
+    const centeringOffsetY = (pos.top  ?? 0) - raw.y;
+    pos.left = c.left + centeringOffsetX;
+    pos.top  = c.top  + centeringOffsetY;
     return pos;
   };
 }
