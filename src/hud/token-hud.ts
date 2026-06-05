@@ -16,7 +16,13 @@ export class TokenHud {
       const pos = isoHudPosition(center);
       if (!pos) return;
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
-      $html.css({ ...pos, transform: "translate(-50%, -50%)" });
+      // Preserve Foundry's native transform (contains uiScale) — only append our centering.
+      const el = $html[0] as HTMLElement;
+      const nativeTransform = el.style.transform;
+      const finalTransform = nativeTransform
+        ? `${nativeTransform} translate(-50%, -50%)`
+        : "translate(-50%, -50%)";
+      $html.css({ ...pos, transform: finalTransform });
     });
   }
 }
