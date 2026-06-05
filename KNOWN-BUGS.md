@@ -132,21 +132,6 @@ may work correctly — this is specific to token elevation.
 
 ---
 
-## B10 — Opening TileConfig popup hides all isoroll gizmos and overlays
-
-**Symptom:** When the Tile config popup is opened for a selected tile, all isoroll visuals
-(volume gizmo handles, 3D bounding box overlay, image contour) disappear. They were visible
-before the popup opened. Closing the popup does not restore them — the tile must be
-deselected and reselected.
-
-**Root cause hypothesis:** Opening TileConfig fires `controlTile` with `controlled = false`
-(or equivalent deselect event) before re-selecting, causing overlays/gizmos to call `hide()`.
-Alternatively, a `renderTileConfig` hook clears the controlled state.
-
-**Affected:** `VolumeOverlay`, `VolumeGizmos`, `TokenVolumeOverlay`, `TokenVolumeGizmos` —
-all check `controlTile` hook; none guard against TileConfig open/close lifecycle.
-
----
 
 ## B17 — Tile swap doesn't mirror imageOffset inside 3D volume
 
@@ -231,3 +216,18 @@ constraint on the fieldset / tab content area.
 
 > ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
 > from branch switching, not a code regression).
+
+---
+
+## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays
+
+**Observation:** Opening the TileConfig or TokenConfig popup causes all isoroll visuals
+(volume gizmo handles, 3D bounding box, image contour) to disappear. Closing the popup
+does not restore them — tile/token must be deselected and reselected.
+
+**Cause:** Foundry fires `controlTile`/`controlToken` with `controlled = false` when the
+config popup opens, which our hooks interpret as a deselect.
+
+**Open question:** Is this the right UX? Overlays are editing tools — having them disappear
+while the config popup is open may be intentional (reduces clutter). The cost is one
+extra click (reselect) after closing the popup. Decide before fixing.
