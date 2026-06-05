@@ -17,6 +17,7 @@ import { TileHud } from "./hud/tile-hud";
 import { TokenHud } from "./hud/token-hud";
 import { PresetManager } from "./preset/preset-manager";
 import { WallManager } from "./walls/wall-manager";
+import { WallOverlay } from "./walls/wall-overlay";
 import { LayerManager, LAYER_KEYS } from "./render/layer-manager";
 
 Hooks.once("init", () => {
@@ -45,5 +46,14 @@ Hooks.once("init", () => {
     LAYER_KEYS.BG_GIZMOS,
     LAYER_KEYS.WALL_OVERLAY,
   ]);
+  Hooks.on("renderGridConfig", () => {
+    VolumeOverlay.clearAll();
+    VolumeGizmos.clearAll();
+    TokenOverlay.clearAll();
+    TokenGizmos.clearAll();
+    TokenElevGizmo.clearAll();
+    WallOverlay.clearAll();
+  });
+
   console.log("isoroll | initialized");
 });

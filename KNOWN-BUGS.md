@@ -34,16 +34,6 @@ rescale logic as tokens/walls — only SIZE should be stable.
 
 ---
 
-## B3 — Generate base walls places walls at original tile footprint, not image base
-
-**Symptom:** Clicking the "Generate Base Walls" HUD button places 4 walls at the tile's
-original grid footprint (tile.x/y + width/height), ignoring `imageOffset`, `imageScale`,
-elevation offset, and `boundHeight`. The walls should be placed at the isometric image
-base rectangle as computed by `imageRect()`.
-
-**Affected:** `generateBaseWalls` / `generateBaseWallDefs` in `wall-ops.ts`.
-
----
 
 ## B4 — SceneConfig Iso tab: tiles and tokens don't transform live on "Enable Isometric" toggle
 
@@ -74,20 +64,7 @@ The gizmos don't re-register after the reset because no `controlTile`/selection 
 
 ---
 
-## B5 — Module overlays, gizmos, and walls visible inside GridConfig tool
 
-**Symptom:** Opening the Grid Configuration Tool does not hide isoroll overlays, volume gizmo
-handles, or wall overlays. All three remain visible on the canvas while the grid config dialog
-is open, which is visually confusing.
-
-**Expected:** When GridConfig is active, module overlays should be suppressed (similar to how
-Foundry's native controls hide themselves during scene configuration).
-
-**Affected:** All overlay/gizmo activate() methods — they hook on `controlTile`/`controlToken`
-but do not hook on any GridConfig open/close event. Likely fix: listen for `closeGridConfig`
-hook and call `clearAll()` on all overlays/gizmos.
-
----
 
 ## B16 — TokenConfig: saving "Transform Token" loses transform, breaks token image placement
 
@@ -200,33 +177,6 @@ inside the volume box.
 
 ---
 
-## B18 — Changing a linked wall's type does not trigger tile preset update
-
-**Symptom:** When the user changes a wall's type (e.g. normal → ethereal) in the Walls
-layer while that wall is linked to a tile, the tile's preset is not re-saved. Other wall
-property changes that affect the visual/game state are not reflected in the stored preset.
-
-**Expected:** Any change to a linked wall document should trigger an upsert of the parent
-tile's preset (the same path that fires on tile move/resize).
-
-**Affected:** `WallManager.onUpdateWall` in `wall-manager.ts` — currently only re-syncs
-anchor position on `"c"` changes; does not call preset upsert on type/flag changes.
-
----
-
-## B20 — Door "hide" mode does not make tile invisible on Token layer
-
-**Status update:** `fade` mode now works correctly (tile becomes semi-transparent when door
-is opened). `hide` mode is still broken: the tile does not become invisible on the Token
-layer when opened; the Tile layer shows semi-transparent visual feedback for the open state
-instead of fully hiding it. `none` mode untested.
-
-**Expected:** `hide` mode — tile invisible when door is open. `fade` mode — ✓ working.
-
-**Affected:** `applyDoorBehavior` in `wall-door.ts` — the `hide` branch likely sets opacity
-instead of `visible = false`, or the layer-visibility logic targets the wrong layer.
-
----
 
 ## B22 — GridConfig arrow keys move background in projected grid axes, not screen axes
 
