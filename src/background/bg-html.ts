@@ -22,12 +22,14 @@ export class BgHtml {
     BgHtml.currentHtml = html;
     const curYS = (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
     setBgYScaleOverride(curYS);
-    // Cache preview bg BEFORE our layer exists — reverse-search would find our layer otherwise.
-    if (!BgHtml.previewBg) {
-      const kids = (canvas.app?.stage as unknown as { children: PIXI.Container[] }).children;
-      for (let i = kids.length - 1; i >= 0; i--) { const c = kids[i];
-        if (c instanceof PIXI.Container && c.constructor === PIXI.Container) { const bg = c.children[1]; if (bg instanceof PIXI.Sprite) BgHtml.previewBg = bg; break; }
-      }
+    // Re-cache on every render: Reset Changes destroys + recreates the preview container,
+    // making any stale previewBg reference point to a destroyed sprite.
+    // BG_GIZMOS layer children are Graphics/Container, not Sprites, so the search safely
+    // skips it and finds the GCT preview container's background sprite.
+    BgHtml.previewBg = null;
+    const kids = (canvas.app?.stage as unknown as { children: PIXI.Container[] }).children;
+    for (let i = kids.length - 1; i >= 0; i--) { const c = kids[i];
+      if (c instanceof PIXI.Container && c.constructor === PIXI.Container) { const bg = c.children[1]; if (bg instanceof PIXI.Sprite) BgHtml.previewBg = bg; break; }
     }
     if (!html.querySelector('#isoroll-bg-yscale')) {
       html.querySelector('[name="scale"]')?.closest('.form-group')?.insertAdjacentHTML('afterend',

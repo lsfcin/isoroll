@@ -51,19 +51,6 @@ preview — they only run on actual scene update (after Save). Likely needs an e
 
 ---
 
-## B6 — GridConfig "Reset Changes" clears background dashed outline and gizmos
-
-**Symptom:** In the Grid Configuration Tool, clicking "Reset Changes" causes the background
-dashed contour and all background gizmo handles to disappear. They do not reappear unless the
-GridConfig is closed and reopened (or the background is reselected).
-
-**Root cause hypothesis:** Reset Changes fires a scene or canvas update event (likely
-`updateScene` or equivalent) that triggers `clearAll()` on the background gizmos/overlay.
-The gizmos don't re-register after the reset because no `controlTile`/selection hook fires.
-
-**Affected:** `BackgroundGizmos` / `CanvasTransform` overlay hooks.
-
----
 
 
 
