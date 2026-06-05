@@ -33,6 +33,25 @@ function patchRulerProto(proto: RulerProto | undefined): void {
 type HudPosition = { left?: number; top?: number; width?: number; height?: number; scale?: number };
 type HudProto = { _updatePosition?: (pos: HudPosition) => HudPosition };
 
+function patchTokenHUDProto(proto: HudProto | undefined): void {
+  if (!proto?._updatePosition) return;
+  const orig = proto._updatePosition;
+  proto._updatePosition = function(this: { object: unknown }, pos: HudPosition) {
+    orig.call(this, pos);
+    const token = this.object as Token | null | undefined;
+    if (!token?.document) return pos;
+    if (!canvas.scene?.getFlag(MODULE_ID, "enabled")) return pos;
+    if (token.document.getFlag(MODULE_ID, "transformToken") === true) return pos;
+    const wt = canvas.app?.stage?.worldTransform;
+    const zoom = canvasZoom();
+    if (!wt) return pos;
+    const center = (token.center ?? { x: token.x ?? 0, y: token.y ?? 0 }) as { x: number; y: number };
+    pos.left = (wt.a * center.x + wt.c * center.y) / zoom;
+    pos.top  = (wt.b * center.x + wt.d * center.y) / zoom;
+    return pos;
+  };
+}
+
 function patchTileHUDProto(proto: HudProto | undefined): void {
   if (!proto?._updatePosition) return;
   const orig = proto._updatePosition;
@@ -68,15 +87,17 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
 }
 
 export function registerRulerPatch(): void {
-  type CfgToken = { rulerClass?: { prototype: RulerProto } };
+  type CfgToken = { rulerClass?: { prototype: RulerProto }; hudClass?: { prototype: HudProto } };
   type CfgTile  = { hudClass?:  { prototype: HudProto  } };
   // Prefer the v14 namespaced path; fall back to deprecated global for older hosts.
   type GWithFoundry = { foundry?: { canvas?: { interaction?: { Ruler?: { prototype: RulerProto } } } }; Ruler?: { prototype: RulerProto } };
   const g = globalThis as unknown as GWithFoundry;
-  const rulerCls = g.foundry?.canvas?.interaction?.Ruler ?? g.Ruler;
+  const rulerCls      = g.foundry?.canvas?.interaction?.Ruler ?? g.Ruler;
   const tokenRulerCls = (CONFIG as unknown as { Token?: CfgToken })?.Token?.rulerClass;
+  const tokenHudCls   = (CONFIG as unknown as { Token?: CfgToken })?.Token?.hudClass;
   const tileHudCls    = (CONFIG as unknown as { Tile?:  CfgTile  })?.Tile?.hudClass;
   patchRulerProto(rulerCls?.prototype);
   patchRulerProto(tokenRulerCls?.prototype);
+  patchTokenHUDProto(tokenHudCls?.prototype);
   patchTileHUDProto(tileHudCls?.prototype);
 }

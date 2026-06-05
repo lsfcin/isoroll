@@ -6,7 +6,7 @@ export async function applyDoorBehavior(doc: TileDocument, isOpen: boolean): Pro
   const b = getDoorBehavior(doc);
   if (b.mode === "none") return;
   if (!isOpen) { await doc.update({ hidden: false, alpha: 1 }); return; }
-  if (b.mode === "hide") { await doc.update({ hidden: true }); return; }
+  if (b.mode === "hide") { await doc.update({ hidden: false, alpha: 0 }); return; }
   if (b.mode === "fade") { await doc.update({ alpha: b.opacity }); return; }
 }
 

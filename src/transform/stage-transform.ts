@@ -29,6 +29,12 @@ export class CanvasTransform {
     const proj = CanvasTransform.previewProjection ?? currentProjection();
     stage.rotation = proj.rotation;
     stage.skew.set(proj.skewX, proj.skewY);
+    // Force worldTransform cache to sync — PIXI only updates it during the render loop,
+    // so right-click HUD reads stale identity matrix before the first canvas interaction.
+    // updateTransform() crashes when stage.parent is null (canvasReady); use the two-step
+    // alternative: recompute localTransform, then copy to worldTransform (root = no parent).
+    stage.transform.updateLocalTransform();
+    stage.worldTransform.copyFrom(stage.localTransform);
   }
 
   private static resetStage(): void {
