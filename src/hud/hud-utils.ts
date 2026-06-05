@@ -48,6 +48,18 @@ export function updateHudButton(
   if (opts.tooltip  !== undefined) $btn.attr("data-tooltip", opts.tooltip);
 }
 
+/**
+ * Isometric-projected CSS width of a canvas rectangle (w × h pixels).
+ * Accounts for both the horizontal and depth axes of the iso footprint.
+ * Returns 0 when the stage transform is not yet available.
+ */
+export function isoVisualCssWidth(w: number, h: number): number {
+  const wt   = canvas.app?.stage?.worldTransform;
+  const zoom = canvasZoom();
+  if (!wt) return 0;
+  return (wt.a / zoom) * w + (wt.c / zoom) * h;
+}
+
 /** True when isometric mode is active on the current scene. */
 export function isIsoActive(): boolean {
   return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;

@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../flags";
 import { canvasZoom } from "../util";
-import { isoHudCenter } from "../hud/hud-utils";
+import { isoHudCenter, isoVisualCssWidth } from "../hud/hud-utils";
 
 // ── Ruler / TokenRuler label position ────────────────────────────────────────
 // Both classes set context.position in canvas px, used as CSS left/top in
@@ -48,10 +48,8 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
     if (!c) return pos;
     const s    = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
     const docW = tile.document.width ?? 0, docH = tile.document.height ?? 0;
-    // Isometric-projected CSS width of the tile footprint (canvas px → CSS px)
-    const wt = canvas.app!.stage.worldTransform;
-    const zoom = canvasZoom();
-    const visualCssW = (wt.a / zoom) * docW + (wt.c / zoom) * docH;
+    const visualCssW = isoVisualCssWidth(docW, docH);
+    if (visualCssW === 0) return pos;
     // AppV2 uses transform-origin: top-left, so visual_left = CSS_left.
     // Set CSS left = tile visual left edge = L - visualCssW/2.
     // top = T - visualCssW/4 (= T - sinB*(W+H)/2) = tile visual top, invariant to swap
@@ -86,12 +84,12 @@ function patchTokenHUDProto(proto: HudProto | undefined): void {
     const centeringOffsetY = (pos.top ?? 0) - raw.y;
     // Iso-projected visual width of the token footprint — same formula as TileHUD.
     // token.w/h are canvas px (document.width/height * gridSize).
-    const wt   = canvas.app!.stage.worldTransform;
-    const zoom = canvasZoom();
-    const s    = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
-    const tw   = (token as unknown as { w?: number }).w ?? 100;
-    const th   = (token as unknown as { h?: number }).h ?? 100;
-    const visualCssW = (wt.a / zoom) * tw + (wt.c / zoom) * th;
+    const s  = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
+    const gs = (canvas.grid  as unknown as { size?: number })?.size ?? 100;
+    const tw = (token as unknown as { w?: number }).w ?? token.document.width  * gs;
+    const th = (token as unknown as { h?: number }).h ?? token.document.height * gs;
+    const visualCssW = isoVisualCssWidth(tw, th);
+    if (visualCssW === 0) return pos;
     // Left edge = iso-projected center − half visual width (centers HUD on token footprint).
     // Top keeps native vertical centering; width spans the full iso footprint.
     pos.left  = c.left - visualCssW / 2;
