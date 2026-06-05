@@ -277,5 +277,19 @@ not being called on initial scene ready.
 
 ---
 
+---
+
+## B25 — SceneConfig Iso tab: "Save Changes" floats in large empty vertical space
+
+**Symptom:** In the SceneConfig popup → Iso tab, the "Save Changes" button appears at the
+bottom of a large empty vertical gap below the Transformations fieldset. Was previously
+correct (compact layout). Regressed during the refactor.
+
+**Affected:** SceneConfig Iso tab template / form layout — likely `src/ui/scene-config.ts`
+or the Handlebars template it renders. Probably a missing CSS rule or removed height
+constraint on the fieldset / tab content area.
+
+---
+
 > ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
 > from branch switching, not a code regression).

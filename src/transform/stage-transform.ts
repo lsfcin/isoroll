@@ -75,6 +75,26 @@ export class CanvasTransform {
     const bg = BackgroundTransform.getSprite();
     if (bg) BackgroundTransform.capture(bg);
     CanvasTransform.applyCurrentState();
+    CanvasTransform.syncHudAfterStageApply();
+  }
+
+  // After applyStage() on canvasReady, PIXI hasn't run a render loop yet so
+  // worldTransform is stale (identity). Foundry's #hud CSS left/top must equal
+  // wt.tx/ty — it's only updated by canvasPan, which hasn't fired.
+  // Force both to sync here so the first right-click sees the correct positions.
+  private static syncHudAfterStageApply(): void {
+    const stage = canvas.app?.stage;
+    if (!stage) return;
+    // Step 1: flush worldTransform cache from localTransform (stage is root — no parent).
+    stage.transform.updateLocalTransform();
+    stage.worldTransform.copyFrom(stage.localTransform);
+    // Step 2: align #hud CSS to match wt.tx/ty (same as what canvasPan does).
+    const wt  = stage.worldTransform;
+    const hud = document.getElementById("hud");
+    if (hud) {
+      hud.style.left = `${wt.tx}px`;
+      hud.style.top  = `${wt.ty}px`;
+    }
   }
 
   private static onUpdateScene(scene: Scene, changes: Record<string, unknown>): void {
