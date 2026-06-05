@@ -5,7 +5,6 @@
 
 ---
 
-
 ## B1 — Gizmo and line sizes scale with scene grid size
 
 **Symptom:** Handle diamonds, circles, and bounding-box lines scale up/down relative to
@@ -34,25 +33,6 @@ rescale logic as tokens/walls — only SIZE should be stable.
 **Affected:** `onPreUpdateScene` / `onUpdateSceneGridRescale` in `object-transform.ts`.
 
 ---
-
-
-## B4 — SceneConfig Iso tab: tiles and tokens don't transform live on "Enable Isometric" toggle
-
-**Symptom:** In the SceneConfig popup → Iso tab, toggling the "Enable Isometric" checkbox
-triggers an immediate live preview for the grid and background (correct behavior). However,
-tiles and tokens do NOT counter-transform until "Save Changes" is clicked and the scene
-reloads. Expected: tiles and tokens should react instantly, the same way the grid and
-background do.
-
-**Affected:** `CanvasTransform.previewOverride` triggers the stage transform preview,
-but `ObjectTransform` hooks (`refreshTile`, `refreshToken`) are not re-fired during the
-preview — they only run on actual scene update (after Save). Likely needs an explicit
-`canvas.tiles.placeables.forEach(t => t.refresh())` call when the preview override changes.
-
----
-
-
-
 
 ## B16 — TokenConfig: saving "Transform Token" loses transform, breaks token image placement
 
@@ -132,7 +112,6 @@ may work correctly — this is specific to token elevation.
 
 ---
 
-
 ## B17 — Tile swap doesn't mirror imageOffset inside 3D volume
 
 **Symptom:** When a tile is flipped (`tileFlipped = true`), the image visually mirrors, but
@@ -149,7 +128,6 @@ inside the volume box.
 `transform/object-transform.ts` or `volume/overlay-geometry.ts`.
 
 ---
-
 
 ## B22 — GridConfig arrow keys move background in projected grid axes, not screen axes
 
@@ -179,43 +157,6 @@ the key behaviour.
 **Affected:** `BackgroundGizmos.onRenderGridConfig` (currently `background/bg-gizmos.ts`,
 will become `background/bg-html.ts` after C2); `screenToCanvas` in `src/util.ts` (already
 available).
-
----
-
-## ~~B24 — TileHUD and TokenHUD mispositioned on first right-click after F5~~ RESOLVED
-
-**Root cause (confirmed):** Foundry sets `#hud style.left = wt.tx`, `style.top = wt.ty`
-only inside the `canvasPan` handler. `applyStage()` on `canvasReady` mutates stage
-rotation/skew (changing `wt.tx/ty`) but `#hud` CSS is never updated until the first pan.
-Additionally, PIXI's `worldTransform` is only recomputed during the render loop — it is
-stale (identity) right after `stage.rotation/skew` are set.
-
-**Fix:** `CanvasTransform.syncHudAfterStageApply()` in `stage-transform.ts` — called at
-the end of `onCanvasReady`:
-1. Force worldTransform flush: `stage.transform.updateLocalTransform(); stage.worldTransform.copyFrom(stage.localTransform)`
-2. Sync `#hud` CSS: `hud.style.left = wt.tx + "px"; hud.style.top = wt.ty + "px"`
-
-Also refactored: both TileHUD and TokenHUD now use `_updatePosition` prototype patch
-(not hooks). `isoHudCenter` and `isoVisualCssWidth` extracted to `hud-utils.ts`.
-
----
-
----
-
-## B25 — SceneConfig Iso tab: "Save Changes" floats in large empty vertical space
-
-**Symptom:** In the SceneConfig popup → Iso tab, the "Save Changes" button appears at the
-bottom of a large empty vertical gap below the Transformations fieldset. Was previously
-correct (compact layout). Regressed during the refactor.
-
-**Affected:** SceneConfig Iso tab template / form layout — likely `src/ui/scene-config.ts`
-or the Handlebars template it renders. Probably a missing CSS rule or removed height
-constraint on the fieldset / tab content area.
-
----
-
-> ~~B4 — Background gizmo handles mispositioned~~ — resolved (was a stale dist/ artifact
-> from branch switching, not a code regression).
 
 ---
 
