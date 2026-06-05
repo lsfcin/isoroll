@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../flags";
 import { canvasZoom } from "../util";
+import { isoHudCenter } from "../hud/hud-utils";
 
 // ── Ruler / TokenRuler label position ────────────────────────────────────────
 // Both classes set context.position in canvas px, used as CSS left/top in
@@ -42,41 +43,63 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
     if (!tile?.document) return pos;
     if (!canvas.scene?.getFlag(MODULE_ID, "enabled")) return pos;
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return pos;
-    const wt = canvas.app?.stage?.worldTransform;
-    const zoom = canvasZoom();
-    if (!wt) return pos;
-    const s  = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
     const cx = tile.document.x ?? 0, cy = tile.document.y ?? 0;
+    const c = isoHudCenter(cx, cy);
+    if (!c) return pos;
+    const s    = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
     const docW = tile.document.width ?? 0, docH = tile.document.height ?? 0;
     // Isometric-projected CSS width of the tile footprint (canvas px → CSS px)
-    const cosA = wt.a / zoom, cosC = wt.c / zoom;
-    const visualCssW = cosA * docW + cosC * docH;
-    // Visual center of the tile in CSS/HUD space (pan tx/ty absorbed by #hud)
-    const L = (wt.a * cx + wt.c * cy) / zoom;
-    const T = (wt.b * cx + wt.d * cy) / zoom;
+    const wt = canvas.app!.stage.worldTransform;
+    const zoom = canvasZoom();
+    const visualCssW = (wt.a / zoom) * docW + (wt.c / zoom) * docH;
     // AppV2 uses transform-origin: top-left, so visual_left = CSS_left.
     // Set CSS left = tile visual left edge = L - visualCssW/2.
     // top = T - visualCssW/4 (= T - sinB*(W+H)/2) = tile visual top, invariant to swap
     // because sinB = cosA/2 and (W+H) doesn't change when dimensions swap.
     // height = 0 → el.style.height = "" (auto) — avoids docH dependency across swap.
-    pos.left   = L - visualCssW / 2;
-    pos.top    = T - visualCssW / 4;
+    pos.left   = c.left - visualCssW / 2;
+    pos.top    = c.top  - visualCssW / 4;
     pos.width  = visualCssW / s;
     pos.height = 0;
     return pos;
   };
 }
 
+// ── TokenHUD _updatePosition ──────────────────────────────────────────────────
+// Same pattern as TileHUD: patch _updatePosition so every render call gets the
+// corrected center position. Foundry's transform (uiScale) is preserved because
+// we only set left/top — never touch pos.scale or the element's CSS transform.
+
+function patchTokenHUDProto(proto: HudProto | undefined): void {
+  if (!proto?._updatePosition) return;
+  const orig = proto._updatePosition;
+  proto._updatePosition = function(this: { object: unknown }, pos: HudPosition) {
+    orig.call(this, pos);
+    const token = this.object as Token | null | undefined;
+    if (!token?.document) return pos;
+    if (!canvas.scene?.getFlag(MODULE_ID, "enabled")) return pos;
+    if (token.document.getFlag(MODULE_ID, "transformToken") === true) return pos;
+    const raw = (token.center ?? { x: token.x ?? 0, y: token.y ?? 0 }) as { x: number; y: number };
+    const c = isoHudCenter(raw.x, raw.y);
+    if (!c) return pos;
+    pos.left = c.left;
+    pos.top  = c.top;
+    return pos;
+  };
+}
+
 export function registerRulerPatch(): void {
-  type CfgToken = { rulerClass?: { prototype: RulerProto } };
+  type CfgToken = { rulerClass?: { prototype: RulerProto }; hudClass?: { prototype: HudProto } };
   type CfgTile  = { hudClass?:  { prototype: HudProto  } };
   // Prefer the v14 namespaced path; fall back to deprecated global for older hosts.
   type GWithFoundry = { foundry?: { canvas?: { interaction?: { Ruler?: { prototype: RulerProto } } } }; Ruler?: { prototype: RulerProto } };
   const g = globalThis as unknown as GWithFoundry;
-  const rulerCls = g.foundry?.canvas?.interaction?.Ruler ?? g.Ruler;
+  const rulerCls      = g.foundry?.canvas?.interaction?.Ruler ?? g.Ruler;
   const tokenRulerCls = (CONFIG as unknown as { Token?: CfgToken })?.Token?.rulerClass;
+  const tokenHudCls   = (CONFIG as unknown as { Token?: CfgToken })?.Token?.hudClass;
   const tileHudCls    = (CONFIG as unknown as { Tile?:  CfgTile  })?.Tile?.hudClass;
   patchRulerProto(rulerCls?.prototype);
   patchRulerProto(tokenRulerCls?.prototype);
+  patchTokenHUDProto(tokenHudCls?.prototype);
   patchTileHUDProto(tileHudCls?.prototype);
 }

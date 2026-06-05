@@ -54,17 +54,19 @@ export function isIsoActive(): boolean {
 }
 
 /**
- * Compute CSS left/top for a canvas object's center under the current iso transform.
- * Uses PIXI worldTransform (projection already baked in by stage-transform).
+ * Compute numeric left/top CSS coords for a canvas point under the current iso transform.
+ * Uses PIXI worldTransform (projection baked in by stage-transform).
+ * pan tx/ty are absorbed by #hud CSS left/top — do NOT include wt.tx/ty here.
  * Returns null when the stage transform is not yet available.
  */
-export function isoHudPosition(
-  center: { x: number; y: number },
-): { left: string; top: string } | null {
+export function isoHudCenter(
+  x: number, y: number,
+): { left: number; top: number } | null {
   const wt   = canvas.app?.stage?.worldTransform;
   const zoom = canvasZoom();
   if (!wt) return null;
-  const L = (wt.a * center.x + wt.c * center.y) / zoom;
-  const T = (wt.b * center.x + wt.d * center.y) / zoom;
-  return { left: `${L}px`, top: `${T}px` };
+  return {
+    left: (wt.a * x + wt.c * y) / zoom,
+    top:  (wt.b * x + wt.d * y) / zoom,
+  };
 }
