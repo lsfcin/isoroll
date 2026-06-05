@@ -82,13 +82,21 @@ function patchTokenHUDProto(proto: HudProto | undefined): void {
     const raw = (token.center ?? { x: token.x ?? 0, y: token.y ?? 0 }) as { x: number; y: number };
     const c = isoHudCenter(raw.x, raw.y);
     if (!c) return pos;
-    // Native _updatePosition centers the HUD: pos.left = raw.x + centering_offset.
-    // In non-iso, isoHudCenter(x,y).left = (zoom*x)/zoom = x — zoom cancels.
-    // Extract the zoom-independent centering offset and apply it to the iso center.
-    const centeringOffsetX = (pos.left ?? 0) - raw.x;
-    const centeringOffsetY = (pos.top  ?? 0) - raw.y;
-    pos.left = c.left + centeringOffsetX;
-    pos.top  = c.top  + centeringOffsetY;
+    // Preserve native vertical centering (zoom-independent: zoom cancels in isoHudCenter).
+    const centeringOffsetY = (pos.top ?? 0) - raw.y;
+    // Iso-projected visual width of the token footprint — same formula as TileHUD.
+    // token.w/h are canvas px (document.width/height * gridSize).
+    const wt   = canvas.app!.stage.worldTransform;
+    const zoom = canvasZoom();
+    const s    = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
+    const tw   = (token as unknown as { w?: number }).w ?? 100;
+    const th   = (token as unknown as { h?: number }).h ?? 100;
+    const visualCssW = (wt.a / zoom) * tw + (wt.c / zoom) * th;
+    // Left edge = iso-projected center − half visual width (centers HUD on token footprint).
+    // Top keeps native vertical centering; width spans the full iso footprint.
+    pos.left  = c.left - visualCssW / 2;
+    pos.top   = c.top  + centeringOffsetY;
+    pos.width = visualCssW / s;
     return pos;
   };
 }
