@@ -29,7 +29,7 @@
 | `transform/object-transform.ts` | Per-token/tile counter-transform, hooks: refreshToken/refreshTile |
 | `transform/tile-transform.ts` | Tile-specific transform math |
 | `transform/token-transform.ts` | Token-specific transform math |
-| `transform/ruler-patch.ts` | Ruler coordinate patch for iso space |
+| `transform/ruler-patch.ts` | Ruler coordinate patch + `patchTileHUDProto` + `patchTokenHUDProto` — all `_updatePosition` patches for iso HUD positioning |
 
 ### `src/ui/` — all config form tab injection
 | Path | Responsibility |
@@ -42,9 +42,9 @@
 ### `src/hud/` — HUD patches
 | Path | Responsibility |
 |------|---------------|
-| `hud/hud-utils.ts` | DOM helpers: `hudButton()`, `clearIsorollHud()`, `appendHudButtons()`, `onHudAction/Toggle()`, `updateHudButton()`, `isIsoActive()`, `isoHudPosition()` |
+| `hud/hud-utils.ts` | DOM helpers: `hudButton()`, `clearIsorollHud()`, `appendHudButtons()`, `onHudAction/Toggle()`, `updateHudButton()`, `isIsoActive()`, `isoHudCenter()`, `isoVisualCssWidth()` |
 | `hud/tile-hud.ts` | `TileHud` — wall control buttons in TileHUD (generate/select/unlink/delete walls, door mode) |
-| `hud/token-hud.ts` | `TokenHud` — TokenHUD repositioning under iso stage transform |
+| `hud/token-hud.ts` | `TokenHud` — no-op shell; HUD repositioning handled by `patchTokenHUDProto` in `ruler-patch.ts` |
 
 ### `src/render/`
 | Path | Responsibility |
@@ -166,6 +166,8 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - AppV2 `stopPropagation` on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on the content section (see `ui/scene-config.ts`)
 - **GridConfig `_processSubmitData`** only calls `super._processSubmitData` when one of 7 native fields changed. Module-specific fields silently skipped. Workaround: instance-level patch on `app._processSubmitData` at `renderGridConfig` time (done in `background/bg-html.ts`).
 - **GridConfig `updateTransform` centering**: when overriding the bg sprite's `updateTransform`, `scY` in the position formula must include `bgYScale` — if only `scale.set()` uses it, the visual center shifts vertically instead of scaling around center.
+- **PIXI `worldTransform` cache on `canvasReady`**: after `stage.rotation/skew` are set, `worldTransform` is stale (identity) until the next PIXI render frame. Also, Foundry only sets `#hud style.left/top = wt.tx/ty` inside `canvasPan` — never on initial load. Fix: `syncHudAfterStageApply()` in `stage-transform.ts` flushes the cache (`updateLocalTransform` + `copyFrom`) and syncs `#hud` CSS immediately. Do NOT call `stage.updateTransform()` — crashes when `stage.parent` is null (true during `canvasReady`).
+- **HUD `_updatePosition` pattern**: both TileHUD and TokenHUD use prototype patches on `CONFIG.Tile/Token.hudClass.prototype._updatePosition`. Never use `renderTileHUD`/`renderTokenHUD` hooks — they miss document-update re-renders and RAF timing can stomp Foundry's `transform: scale(uiScale)`. Only set `pos.left/top/width` — never `pos.scale`.
 - **`preCreateTile` + `updateSource`**: calling `doc.updateSource(data)` in `preCreateTile` does modify the creation data. But calling `doc.update()` again in `createTile` with the same data causes a PIXI sprite blink. Solution: skip the `createTile` fallback when `getCachedPreset(key)` confirms `preCreateTile` already applied.
 - **`FilePicker.upload` 5-param API**: param 4 is `body` (extra FormData entries, pass `{}`), param 5 is `options` (`notify: false` lives here). Passing `{ notify: false }` as param 4 silently ignores it.
 

@@ -259,21 +259,21 @@ available).
 
 ---
 
-## B24 — TileHUD and TokenHUD mispositioned on first right-click after F5
+## ~~B24 — TileHUD and TokenHUD mispositioned on first right-click after F5~~ RESOLVED
 
-**Symptom:** After a hard reload (F5), before any canvas interaction (no pan, no zoom),
-right-clicking a tile or token places the HUD popup at the wrong screen position. Performing
-any pan or zoom first causes the HUD to position correctly on subsequent right-clicks.
+**Root cause (confirmed):** Foundry sets `#hud style.left = wt.tx`, `style.top = wt.ty`
+only inside the `canvasPan` handler. `applyStage()` on `canvasReady` mutates stage
+rotation/skew (changing `wt.tx/ty`) but `#hud` CSS is never updated until the first pan.
+Additionally, PIXI's `worldTransform` is only recomputed during the render loop — it is
+stale (identity) right after `stage.rotation/skew` are set.
 
-**Root cause hypothesis:** HUD screen-position is computed by projecting world coordinates
-through the current canvas transform. On first load the stage world transform may not yet
-be reflected in whatever state the module uses for that projection — either `CanvasTransform`
-hasn't run `applyCurrentState` yet, or a stale identity matrix is used before the first
-canvas interaction updates the cached transform values.
+**Fix:** `CanvasTransform.syncHudAfterStageApply()` in `stage-transform.ts` — called at
+the end of `onCanvasReady`:
+1. Force worldTransform flush: `stage.transform.updateLocalTransform(); stage.worldTransform.copyFrom(stage.localTransform)`
+2. Sync `#hud` CSS: `hud.style.left = wt.tx + "px"; hud.style.top = wt.ty + "px"`
 
-**Affected:** HUD positioning logic — likely wherever `TileHUD` / `TokenHUD` render hooks
-compute screen coordinates from world position; possibly `CanvasTransform.applyCurrentState`
-not being called on initial scene ready.
+Also refactored: both TileHUD and TokenHUD now use `_updatePosition` prototype patch
+(not hooks). `isoHudCenter` and `isoVisualCssWidth` extracted to `hud-utils.ts`.
 
 ---
 
