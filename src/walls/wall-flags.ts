@@ -34,3 +34,10 @@ export function hasLinkedDoor(doc: TileDocument): boolean {
     return w && ((w.document as WallDoc).door ?? 0) > 0;
   });
 }
+
+export function isLinkedDoorOpen(doc: TileDocument): boolean {
+  return getLinkedWallIds(doc).some(id => {
+    const w = wallsLayer().get(id);
+    return w && ((w.document as WallDoc).door ?? 0) > 0 && ((w.document as WallDoc).ds ?? 0) > 0;
+  });
+}
