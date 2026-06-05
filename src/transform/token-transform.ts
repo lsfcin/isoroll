@@ -1,17 +1,17 @@
 // Token counter-transform: refreshToken hook handler.
-import { currentProjection } from "./constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
+import { CanvasTransform } from "./stage-transform";
 import { MutMeshLike as MeshLike, EPS } from "./tile-transform";
 import { gridDistance, elevToCanvas } from "../util";
 const tokenBase = new WeakMap<object, { x: number; y: number }>();
 
 export function onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
-  if (!VolumeFlags.isSceneEnabled()) return;
+  if (!CanvasTransform.effectiveEnabled()) return;
   if (token.document.getFlag(MODULE_ID, "transformToken") === true) return;
   const mesh = token.mesh as unknown as MeshLike | null | undefined;
   if (!mesh) return;
   const gs   = canvas.grid?.size ?? 100;
-  const proj = currentProjection();
+  const proj = CanvasTransform.effectiveProjection();
   const { reverseRotation, ratio, counterFactor, heightDir: { x: hdx, y: hdy } } = proj;
   const docW = (token.document.width  ?? 1) * gs;
   const docH = (token.document.height ?? 1) * gs;

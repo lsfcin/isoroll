@@ -1,6 +1,6 @@
 // Tile counter-transform: refreshTile hook + grid-rescale scene update handlers.
-import { currentProjection } from "./constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
+import { CanvasTransform } from "./stage-transform";
 import { gridDistance, elevToCanvas } from "../util";
 
 export type MutMutMeshLike = {
@@ -24,8 +24,8 @@ function applyTileCounter(
   docBoundH: number,
   imgScale: number,
   imgYScale: number,
+  proj = CanvasTransform.effectiveProjection(),
 ): void {
-  const proj = currentProjection();
   const { reverseRotation, ratio, counterFactor } = proj;
   const targetRot = (docRotationDeg * Math.PI) / 180 + reverseRotation;
   if (Math.abs(mesh.rotation - targetRot) > EPS) mesh.rotation = targetRot;
@@ -73,7 +73,7 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
 }
 
 export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): void {
-  if (!VolumeFlags.isSceneEnabled()) return;
+  if (!CanvasTransform.effectiveEnabled()) return;
   if (tile.document.getFlag(MODULE_ID, "transformTile") === true) {
     // Mesh may carry stale counter-transform values (flag just toggled, or drag-drop with
     // position-only refresh). Detect by comparing mesh.rotation to the native (un-offset) value.
@@ -98,7 +98,7 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   const elev    = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
   const boundH  = VolumeFlags.getTileHeight(tile.document) * gs;
   const E       = elevToCanvas(elev, gs, gd);
-  const proj    = currentProjection();
+  const proj    = CanvasTransform.effectiveProjection();
   const { x: hdx, y: hdy } = proj.heightDir;
   const imgScale   = VolumeFlags.getImageScale(tile.document);
   const imgYScale  = VolumeFlags.getImageYScale(tile.document);

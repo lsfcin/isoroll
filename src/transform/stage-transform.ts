@@ -19,6 +19,14 @@ export class CanvasTransform {
     return CanvasTransform.previewOverride?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true);
   }
 
+  static effectiveEnabled(): boolean {
+    return CanvasTransform.previewOverride?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true);
+  }
+
+  static effectiveProjection(): IsoProjection {
+    return CanvasTransform.previewProjection ?? currentProjection();
+  }
+
   private static isBackgroundTransformEnabled(): boolean {
     return CanvasTransform.previewOverride?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true);
   }
