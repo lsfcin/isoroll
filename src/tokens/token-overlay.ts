@@ -1,5 +1,5 @@
 // Image contour and 3D volume box overlay for selected tokens (merged from two classes).
-import { VolumeFlags } from "../flags";
+import { MODULE_ID, VolumeFlags } from "../flags";
 import { drawMeshContour, MeshLike } from "../draw/contour";
 import { computeTokenVerts, drawBox, drawAnchorLine } from "../draw/volume-box";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
@@ -23,12 +23,13 @@ export class TokenOverlay {
 
   private static onControlToken(token: Token, controlled: boolean): void {
     if (!VolumeFlags.isSceneEnabled()) return;
-    if (controlled) TokenOverlay.show(token);
+    if (controlled && token.document.getFlag(MODULE_ID, "transformToken") !== true) TokenOverlay.show(token);
     else TokenOverlay.hide(token.id);
   }
 
   private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    if (token.document.getFlag(MODULE_ID, "transformToken") === true) { TokenOverlay.hide(token.id); return; }
     if (!TokenOverlay.boxes.has(token.id)) return;
     // Skip pure animation frames: mesh moves but document position unchanged.
     if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;

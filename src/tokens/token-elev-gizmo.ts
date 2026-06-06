@@ -1,6 +1,6 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
 import { currentProjection } from "../transform/constants";
-import { VolumeFlags } from "../flags";
+import { MODULE_ID, VolumeFlags } from "../flags";
 import { makeCircleHandle } from "../gizmos/handle-draw";
 import { clientToGlobal } from "../gizmos/mesh-corners";
 import { canvasZoom, gridDistance, elevToCanvas, startPointerDrag } from "../util";
@@ -34,12 +34,13 @@ export class TokenElevGizmo {
 
   private static onControlToken(token: Token, controlled: boolean): void {
     if (!VolumeFlags.isSceneEnabled()) return;
-    if (controlled) TokenElevGizmo.show(token);
+    if (controlled && token.document.getFlag(MODULE_ID, "transformToken") !== true) TokenElevGizmo.show(token);
     else TokenElevGizmo.hide(token.id);
   }
 
   private static onRefreshToken(token: Token): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    if (token.document.getFlag(MODULE_ID, "transformToken") === true) { TokenElevGizmo.hide(token.id); return; }
     if (!TokenElevGizmo.sets.has(token.id)) return;
     const x = token.document.x ?? 0, y = token.document.y ?? 0;
     const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;

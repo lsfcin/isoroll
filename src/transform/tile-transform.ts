@@ -75,20 +75,13 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
 export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): void {
   if (!CanvasTransform.effectiveEnabled()) return;
   if (tile.document.getFlag(MODULE_ID, "transformTile") === true) {
-    // Mesh may carry stale counter-transform values (flag just toggled, or drag-drop with
-    // position-only refresh). Detect by comparing mesh.rotation to the native (un-offset) value.
-    const mesh0 = tile.mesh as unknown as MutMeshLike | null | undefined;
-    if (mesh0) {
-      const nativeRot = ((tile.document.rotation ?? 0) * Math.PI) / 180;
-      if (Math.abs(mesh0.rotation - nativeRot) > EPS) {
-        // Apply native rotation/size synchronously — deferred renderFlags would leave a
-        // visible flash when the preview clone is destroyed and original re-appears.
-        type HasRefresh = { _refreshRotation(): void; _refreshSize(): void };
-        const t = tile as unknown as HasRefresh;
-        t._refreshRotation();
-        t._refreshSize();
-      }
-    }
+    // Reset mesh to native Foundry state: undo any counter-transform (rotation, scale, position
+    // offset) that may have been left by a prior transformTile=false refresh.
+    type HasRefresh = { _refreshRotation(): void; _refreshSize(): void; _refreshPosition(): void };
+    const t = tile as unknown as HasRefresh;
+    t._refreshRotation?.();
+    t._refreshSize?.();
+    t._refreshPosition?.();
     return;
   }
   const mesh = tile.mesh as unknown as MutMeshLike | null | undefined;

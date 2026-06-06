@@ -42,7 +42,6 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
     const tile = this.object as Tile | null | undefined;
     if (!tile?.document) return pos;
     if (!canvas.scene?.getFlag(MODULE_ID, "enabled")) return pos;
-    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return pos;
     const cx = tile.document.x ?? 0, cy = tile.document.y ?? 0;
     const c = isoHudCenter(cx, cy);
     if (!c) return pos;
@@ -76,7 +75,6 @@ function patchTokenHUDProto(proto: HudProto | undefined): void {
     const token = this.object as Token | null | undefined;
     if (!token?.document) return pos;
     if (!canvas.scene?.getFlag(MODULE_ID, "enabled")) return pos;
-    if (token.document.getFlag(MODULE_ID, "transformToken") === true) return pos;
     const raw = (token.center ?? { x: token.x ?? 0, y: token.y ?? 0 }) as { x: number; y: number };
     const c = isoHudCenter(raw.x, raw.y);
     if (!c) return pos;
