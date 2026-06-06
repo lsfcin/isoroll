@@ -7,9 +7,7 @@ const tokenBase = new WeakMap<object, { x: number; y: number }>();
 
 export function onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
   if (!CanvasTransform.effectiveEnabled()) return;
-  const tfFlag = token.document.getFlag(MODULE_ID, "transformToken");
-  console.log(`isoroll | onRefreshToken token=${token.id} transformToken=${String(tfFlag)} flags=${JSON.stringify(flags)}`);
-  if (tfFlag === true) {
+  if (token.document.getFlag(MODULE_ID, "transformToken") === true) {
     // Reset mesh to native Foundry state: undo counter-transform rotation, scale, and
     // elevation/imageOffset position that may have been left by a prior transformToken=false refresh.
     type HasRefresh = { _refreshRotation(): void; _refreshSize(): void; _refreshPosition(): void };
@@ -17,6 +15,9 @@ export function onRefreshToken(token: Token, flags?: Record<string, boolean>): v
     t._refreshRotation?.();
     t._refreshSize?.();
     t._refreshPosition?.();
+    // Keep tokenBase current so switching back to transformToken=false uses the right center.
+    const m = token.mesh as unknown as MeshLike | null | undefined;
+    if (m) tokenBase.set(token, { x: m.x, y: m.y });
     return;
   }
   const mesh = token.mesh as unknown as MeshLike | null | undefined;
