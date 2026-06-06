@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../flags";
+import { MODULE_ID, VolumeFlags } from "../flags";
 import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "./wall-flags";
 import { updateLinkedWallPositions, flipLinkedWallAnchorsX } from "./wall-sync";
 import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls } from "./wall-crud";
@@ -13,7 +13,10 @@ import { upsertTile, debounced, tileUpsertTimers } from "../preset/preset-upsert
 const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 0);
 
 export class WallManager {
+  private static preSizes: Map<string, { w: number; h: number }> = new Map();
+
   static activate(): void {
+    Hooks.on("preUpdateTile", WallManager.onPreUpdateTile);
     Hooks.on("updateTile",    WallManager.onUpdateTile);
     Hooks.on("deleteTile",    WallManager.onDeleteTile);
     Hooks.on("deleteWall",    WallManager.onDeleteWall);
@@ -29,19 +32,58 @@ export class WallManager {
     WallOverlay.activate();
   }
 
+  private static onPreUpdateTile(
+    doc: TileDocument,
+    changes: Record<string, unknown>,
+    options: Record<string, unknown>,
+  ): void {
+    if (options.isoroll) return;
+    if (!("width" in changes) && !("height" in changes)) return;
+    WallManager.preSizes.set(doc.id!, { w: doc.width ?? 0, h: doc.height ?? 0 });
+  }
+
   private static onUpdateTile(
     doc: TileDocument,
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
   ): void {
     if (options.isoroll === "preset") return;
-    if (!getLinkedWallIds(doc).length) return;
-    const posOrSize   = "x" in changes || "y" in changes || "width" in changes || "height" in changes;
-    const elevChanged = "elevation" in changes;
-    const isoFlags    = (changes as Record<string, Record<string, unknown>>)?.flags?.[MODULE_ID] ?? {};
+
+    const isoFlags           = (changes as Record<string, Record<string, unknown>>)?.flags?.[MODULE_ID] ?? {};
     const tileFlippedChanged = "tileFlipped" in isoFlags;
-    const imagePropsChanged  = "imageOffset" in isoFlags || "imageScale" in isoFlags;
     const boundHChanged      = "boundHeight" in isoFlags;
+    const sizeChanged        = "width" in changes || "height" in changes;
+
+    // Native size change (no isoroll option): rescale boundHeight proportionally.
+    // Skipped for our own gizmo drags (isoroll:"gizmoDrag"), grid rescales (isoroll:"gridRescale"),
+    // swapSide (tileFlippedChanged), and explicit boundH edits (boundHChanged).
+    if (sizeChanged && !tileFlippedChanged && !boundHChanged && !options.isoroll) {
+      const pre = WallManager.preSizes.get(doc.id!);
+      WallManager.preSizes.delete(doc.id!);
+      if (pre) {
+        const oldMax = Math.max(pre.w, pre.h);
+        const newMax = Math.max(doc.width ?? 0, doc.height ?? 0);
+        if (oldMax > 0 && Math.abs(newMax / oldMax - 1) > 1e-4) {
+          const ratio    = newMax / oldMax;
+          const newBoundH = VolumeFlags.getTileHeight(doc) * ratio;
+          wrap(async () => {
+            await doc.update({
+              [`flags.${MODULE_ID}.boundHeight`]:     newBoundH,
+              [`flags.${MODULE_ID}.boundHeightBase`]: { w: doc.width ?? 0, h: doc.height ?? 0 },
+            });
+          }, "boundH rescale");
+          // Linked-wall position update deferred to the subsequent boundHChanged hook.
+          if (getLinkedWallIds(doc).length) return;
+        }
+      }
+    }
+
+    if (!getLinkedWallIds(doc).length) return;
+
+    const posOrSize         = "x" in changes || "y" in changes || "width" in changes || "height" in changes;
+    const elevChanged       = "elevation" in changes;
+    const imagePropsChanged = "imageOffset" in isoFlags || "imageScale" in isoFlags;
+
     if (tileFlippedChanged) {
       // swapSide changes width+height+tileFlipped in one update.
       // flipLinkedWallAnchorsX handles the full transform so skip updateLinkedWallPositions.

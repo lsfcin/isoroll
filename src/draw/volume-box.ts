@@ -53,7 +53,7 @@ export function computeVerts(tile: Tile): BoxVerts {
   const gridSize  = canvas.grid?.size ?? 100;
   const gridDist  = gridDistance();
   const elevation = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
-  const boundH    = VolumeFlags.getTileHeight(tile.document);
+  const boundH    = VolumeFlags.getEffectiveTileHeight(tile.document);
 
   const E  = elevToCanvas(elevation, gridSize, gridDist);
   const EH = E + boundH * gridSize;

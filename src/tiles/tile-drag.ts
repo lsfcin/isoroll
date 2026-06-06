@@ -133,12 +133,30 @@ export function projectDrag(
 export function commitDrag(drag: DragState, gx: number, gy: number): void {
   const { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY, imgScale, imgYScale } = projectDrag(drag, gx, gy);
   switch (drag.type) {
-    case "width":     void drag.tile.document.update({ width: tw }); break;
-    case "height":    void drag.tile.document.update({ height: th }); break;
-    case "boundH":    void drag.tile.document.setFlag(MODULE_ID, "boundHeight", boundH); break;
-    case "elevation": void drag.tile.document.update({ elevation: elev }); break;
-    case "scale":     void drag.tile.document.update({ width: tw, height: th }); break;
-    case "move":      void drag.tile.document.update({ x: docX, y: docY }); break;
+    case "width":     void drag.tile.document.update({ width: tw },            { isoroll: "gizmoDrag" }); break;
+    case "height":    void drag.tile.document.update({ height: th },           { isoroll: "gizmoDrag" }); break;
+    case "boundH": {
+      const tw2 = drag.tile.document.width ?? 0;
+      const th2 = drag.tile.document.height ?? 0;
+      void drag.tile.document.update({
+        [`flags.${MODULE_ID}.boundHeight`]:     boundH,
+        [`flags.${MODULE_ID}.boundHeightBase`]: { w: tw2, h: th2 },
+      });
+      break;
+    }
+    case "elevation": void drag.tile.document.update({ elevation: elev },      { isoroll: "gizmoDrag" }); break;
+    case "scale": {
+      const scaleMax  = Math.max(drag.startW, drag.startH);
+      const newMax    = Math.max(tw, th);
+      const newBoundH = scaleMax > 0 ? drag.startBoundH * newMax / scaleMax : drag.startBoundH;
+      void drag.tile.document.update({
+        width: tw, height: th,
+        [`flags.${MODULE_ID}.boundHeight`]:     newBoundH,
+        [`flags.${MODULE_ID}.boundHeightBase`]: { w: tw, h: th },
+      }, { isoroll: "gizmoDrag" });
+      break;
+    }
+    case "move":      void drag.tile.document.update({ x: docX, y: docY },     { isoroll: "gizmoDrag" }); break;
     case "imgOffset":  { const gs = canvas.grid?.size ?? 100; void drag.tile.document.setFlag(MODULE_ID, "imageOffset", { x: imgOffX / gs, y: imgOffY / gs }); break; }
     case "imgScale":   void drag.tile.document.setFlag(MODULE_ID, "imageScale",  imgScale); break;
     case "imgYScale":  void drag.tile.document.setFlag(MODULE_ID, "imageYScale", imgYScale); break;

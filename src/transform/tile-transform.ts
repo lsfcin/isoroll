@@ -69,7 +69,7 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
       height: (t.document.height ?? 0) * ratio,
     }));
   if (updates.length === 0) return;
-  void canvas.scene!.updateEmbeddedDocuments("Tile", updates);
+  void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" });
 }
 
 export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): void {
@@ -89,7 +89,7 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   const gs      = canvas.grid?.size ?? 100;
   const gd      = gridDistance();
   const elev    = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
-  const boundH  = VolumeFlags.getTileHeight(tile.document) * gs;
+  const boundH  = VolumeFlags.getEffectiveTileHeight(tile.document) * gs;
   const E       = elevToCanvas(elev, gs, gd);
   const proj    = CanvasTransform.effectiveProjection();
   const { x: hdx, y: hdy } = proj.heightDir;
@@ -107,6 +107,10 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   );
   // applyTileCounter sets scale.x > 0; negate only if still positive after that.
   if (imgFlipped && mesh.scale.x > 0) mesh.scale.x = -mesh.scale.x;
+  // Anchor at bottom-center (0.5, 1.0): the floor texel of the wall stays at the
+  // base-elevation center of the tile regardless of scale. Image scales upward from
+  // that fixed floor point — no drift on resize.
+  mesh.anchor?.set(0.5, 1.0);
   const imgOff = VolumeFlags.getImageOffset(tile.document);
   mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x * gs;
   mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y * gs;

@@ -94,23 +94,6 @@ may work correctly — this is specific to token elevation.
 
 ---
 
-## B17 — Tile swap doesn't mirror imageOffset inside 3D volume
-
-**Symptom:** When a tile is flipped (`tileFlipped = true`), the image visually mirrors, but
-its position inside the 3D volume box is wrong. The gap between image-left-border and
-volume-left-border (`a`) and the gap between image-right-border and volume-right-border (`b`)
-are preserved after the swap. They should be mirrored: `a` becomes the right-side gap, `b`
-becomes the left-side gap.
-
-**Expected:** After flip, imageOffset.x should be reflected around the tile center — effectively
-negated (or `tileWidth - offsetX - imageWidth`) — so the image sits symmetrically mirrored
-inside the volume box.
-
-**Affected:** Wherever `imageOffset` is consumed together with `tileFlipped`, likely in
-`transform/object-transform.ts` or `volume/overlay-geometry.ts`.
-
----
-
 ## B22 — GridConfig arrow keys move background in projected grid axes, not screen axes
 
 **Symptom:** In the Grid Configuration Tool with Iso enabled, the arrow keys (which control

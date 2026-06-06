@@ -64,7 +64,7 @@ export class VolumeGizmos {
     const gs     = canvas.grid?.size ?? 100;
     const gd     = gridDistance();
     const elev   = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
-    const boundH = VolumeFlags.getTileHeight(tile.document);
+    const boundH = VolumeFlags.getEffectiveTileHeight(tile.document);
     const E      = elevToCanvas(elev, gs, gd);
     const EH     = E + boundH * gs;
     const { x: hdx, y: hdy } = proj.heightDir;

@@ -33,6 +33,18 @@ export class VolumeFlags {
     return (tile.getFlag(MODULE_ID, "boundHeight") as number | undefined) ?? 1;
   }
 
+  // During a live resize preview the stored boundH lags the new tile dimensions.
+  // If a reference size was recorded when boundH was last explicitly set, scale
+  // proportionally so the effective height tracks the tile's current size.
+  static getEffectiveTileHeight(tile: TileDocument): number {
+    const stored = VolumeFlags.getTileHeight(tile);
+    const base   = tile.getFlag(MODULE_ID, "boundHeightBase") as { w: number; h: number } | undefined;
+    if (!base) return stored;
+    const baseMax = Math.max(base.w, base.h);
+    const curMax  = Math.max(tile.width ?? 0, tile.height ?? 0);
+    return baseMax > 0 ? stored * curMax / baseMax : stored;
+  }
+
   static getImageOffset(doc: { getFlag(s: string, k: string): unknown }): { x: number; y: number } {
     return (doc.getFlag(MODULE_ID, "imageOffset") as { x: number; y: number } | undefined) ?? { x: 0, y: 0 };
   }
