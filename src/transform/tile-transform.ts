@@ -3,7 +3,7 @@ import { MODULE_ID, VolumeFlags } from "../flags";
 import { CanvasTransform } from "./stage-transform";
 import { gridDistance, elevToCanvas } from "../util";
 
-export type MutMutMeshLike = {
+export type MutMeshLike = {
   x: number;
   y: number;
   rotation: number;
@@ -107,10 +107,24 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   );
   // applyTileCounter sets scale.x > 0; negate only if still positive after that.
   if (imgFlipped && mesh.scale.x > 0) mesh.scale.x = -mesh.scale.x;
-  // Anchor at bottom-center (0.5, 1.0): the floor texel of the wall stays at the
-  // base-elevation center of the tile regardless of scale. Image scales upward from
-  // that fixed floor point — no drift on resize.
-  mesh.anchor?.set(0.5, 1.0);
+  // Compute anchor: inverse-transform the footprint's bottom-center offset (0, docH/2)
+  // through the mesh rotation to find which texel sits at the gizmo canvas position.
+  // That texel is the wall-ground contact point in the artwork.
+  {
+    const texW = mesh.texture?.width  || 1;
+    const texH = mesh.texture?.height || 1;
+    const cr   = Math.cos(mesh.rotation);
+    const sr   = Math.sin(mesh.rotation);
+    const absSx = Math.abs(mesh.scale.x);
+    const absSy = Math.abs(mesh.scale.y);
+    const half_docH = (tile.document.height ?? 0) / 2;
+    // Inverse-rotate (0, half_docH) — the footprint bottom-center canvas offset:
+    const lu = sr * half_docH;
+    const lv = cr * half_docH;
+    const ax = Math.max(0, Math.min(1, 0.5 + lu / (texW * absSx)));
+    const ay = Math.max(0, Math.min(1, 0.5 + lv / (texH * absSy)));
+    mesh.anchor?.set(ax, ay);
+  }
   const imgOff = VolumeFlags.getImageOffset(tile.document);
   mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x * gs;
   mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y * gs;
