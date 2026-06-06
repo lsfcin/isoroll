@@ -34,24 +34,6 @@ rescale logic as tokens/walls — only SIZE should be stable.
 
 ---
 
-## B16 — TokenConfig: saving "Transform Token" loses transform, breaks token image placement
-
-**Symptom:** In the TokenConfig popup → Iso tab, toggling "Transform Token" shows a correct
-live preview (token counter-transforms as expected). However, clicking "Update Token" to save
-causes the transformation to be lost. After saving, the token image appears placed directly on
-the grid with incorrect rotation/skew — not the expected undistorted sprite.
-
-**Uncertainty:** Not confirmed whether this regressed during refactoring (steps 1–3) or was
-pre-existing. The live-preview path works; the save/reload path does not.
-
-**Root cause hypothesis:** On save, Foundry re-renders the token via `refreshToken` hook.
-The `ObjectTransform` handler may not be re-applying the counter-transform after the token
-document update, or the `transformToken` flag value isn't being read correctly on refresh.
-
-**Affected:** `ObjectTransform.onRefreshToken` in `transform/object-transform.ts` —
-check whether it reads the updated flag value after a token document save.
-
----
 
 ## B12 — Token elevation label renders as black square (intermittent)
 
