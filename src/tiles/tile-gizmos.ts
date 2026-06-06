@@ -120,9 +120,13 @@ export class VolumeGizmos {
 
   private static swapSide(tile: Tile): void {
     const tw = tile.document.width ?? 0, th = tile.document.height ?? 0;
+    const imgOff = VolumeFlags.getImageOffset(tile.document);
     void tile.document.update({
       width: th, height: tw,
-      [`flags.${MODULE_ID}.tileFlipped`]: !VolumeFlags.getTileFlipped(tile.document),
+      [`flags.${MODULE_ID}.tileFlipped`]:  !VolumeFlags.getTileFlipped(tile.document),
+      // Same (ax,ay)→(1-ay,1-ax) transform used for wall anchors with dimensionsSwapped.
+      // In canvas-offset terms: (ox, oy) → (-oy, -ox).
+      [`flags.${MODULE_ID}.imageOffset`]:  { x: -imgOff.y, y: -imgOff.x },
     });
   }
 
