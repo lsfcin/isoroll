@@ -2,6 +2,9 @@
 import { MODULE_ID, VolumeFlags } from "../flags";
 import { CanvasTransform } from "./stage-transform";
 import { gridDistance, elevToCanvas } from "../util";
+import { transformCoord, P2 } from "./coord-map";
+
+const DEBUG_ANCHOR = true;
 
 export type MutMeshLike = {
   x: number;
@@ -107,25 +110,57 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   );
   // applyTileCounter sets scale.x > 0; negate only if still positive after that.
   if (imgFlipped && mesh.scale.x > 0) mesh.scale.x = -mesh.scale.x;
-  // Compute anchor: inverse-transform the footprint's bottom-center offset (0, docH/2)
-  // through the mesh rotation to find which texel sits at the gizmo canvas position.
-  // That texel is the wall-ground contact point in the artwork.
-  {
-    const texW = mesh.texture?.width  || 1;
-    const texH = mesh.texture?.height || 1;
-    const cr   = Math.cos(mesh.rotation);
-    const sr   = Math.sin(mesh.rotation);
-    const absSx = Math.abs(mesh.scale.x);
-    const absSy = Math.abs(mesh.scale.y);
-    const half_docH = (tile.document.height ?? 0) / 2;
-    // Inverse-rotate (0, half_docH) — the footprint bottom-center canvas offset:
-    const lu = sr * half_docH;
-    const lv = cr * half_docH;
-    const ax = Math.max(0, Math.min(1, 0.5 + lu / (texW * absSx)));
-    const ay = Math.max(0, Math.min(1, 0.5 + lv / (texH * absSy)));
-    mesh.anchor?.set(ax, ay);
-  }
+
+  // We want the geometric center of the texture (0.5, 0.5) to map to the 3D box center.
+  // The orange circle handler is at baseCenter. We temporarily set the mesh position to 
+  // the 3D box center, then use our universal transform to find where baseCenter falls on the image.
+  const baseCenter: P2 = { 
+    x: (tile.document.x ?? 0) + hdx * E, 
+    y: (tile.document.y ?? 0) + hdy * E 
+  };
+  
+  mesh.anchor?.set(0.5, 0.5);
+  mesh.x = baseCenter.x + hdx * (boundH / 2);
+  mesh.y = baseCenter.y + hdy * (boundH / 2);
+
+  const anchorUV = transformCoord(baseCenter, "WORLD", "IMAGE", { mesh }) as P2;
+  mesh.anchor?.set(Math.max(0, Math.min(1, anchorUV.x)), Math.max(0, Math.min(1, anchorUV.y)));
+
   const imgOff = VolumeFlags.getImageOffset(tile.document);
-  mesh.x = (tile.document.x ?? 0) + hdx * E + imgOff.x * gs;
-  mesh.y = (tile.document.y ?? 0) + hdy * E + imgOff.y * gs;
+  mesh.x = baseCenter.x + imgOff.x * gs;
+  mesh.y = baseCenter.y + imgOff.y * gs;
+
+  if (DEBUG_ANCHOR) {
+    const stage = (window as any).canvas.stage;
+    let worldDbg = stage.getChildByName("anchor-world-dbg-" + (tile as any).id);
+    if (!worldDbg) {
+      worldDbg = new (window as any).PIXI.Graphics();
+      worldDbg.name = "anchor-world-dbg-" + (tile as any).id;
+      stage.addChild(worldDbg);
+    }
+    worldDbg.clear();
+    worldDbg.beginFill(0xff0000, 0.9);
+    worldDbg.lineStyle(1, 0xffffff, 1);
+    worldDbg.drawRect(baseCenter.x - 3, baseCenter.y - 15, 6, 30);
+    worldDbg.endFill();
+
+    let imgDbg = (mesh as any).getChildByName("anchor-img-dbg");
+    if (!imgDbg) {
+      imgDbg = new (window as any).PIXI.Graphics();
+      imgDbg.name = "anchor-img-dbg";
+      (mesh as any).addChild(imgDbg);
+    }
+    imgDbg.clear();
+    const texW = mesh.texture?.width || 1;
+    const texH = mesh.texture?.height || 1;
+    const absSx = Math.abs(mesh.scale.x || 1);
+    const absSy = Math.abs(mesh.scale.y || 1);
+    const lx = (anchorUV.x - (mesh.anchor?.x || 0)) * texW;
+    const ly = (anchorUV.y - (mesh.anchor?.y || 0)) * texH;
+    const bw = 30 / absSx, bh = 6 / absSy;
+    imgDbg.beginFill(0x0000ff, 0.9);
+    imgDbg.lineStyle(1 / Math.max(absSx, absSy), 0xffffff, 1);
+    imgDbg.drawRect(lx - bw / 2, ly - bh / 2, bw, bh);
+    imgDbg.endFill();
+  }
 }

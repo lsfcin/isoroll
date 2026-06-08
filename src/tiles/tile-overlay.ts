@@ -3,6 +3,7 @@ import { MODULE_ID, VolumeFlags } from "../flags";
 import { P, computeVerts, drawBox, drawAnchorLine } from "../draw/volume-box";
 import { drawMeshContour, MeshLike } from "../draw/contour";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
+import { DEBUG_COORD, drawCoordDebug } from "../transform/coord-debug";
 
 export class VolumeOverlay {
   private static boxes: Map<string, PIXI.Graphics> = new Map();
@@ -68,11 +69,16 @@ export class VolumeOverlay {
     // Image contour drawn first so it appears behind the 3D box lines
     if (showImg) drawMeshContour(g, tile.mesh as unknown as MeshLike);
 
+    const v = computeVerts(tile);
+
     if (showVol) {
-      const v = computeVerts(tile);
       if (v.elevation > 0) drawAnchorLine(g, v);
       drawBox(g, v);
       if (v.elevation < 0) drawAnchorLine(g, v);
+    }
+
+    if (DEBUG_COORD) {
+      drawCoordDebug(g, tile, v.baseCenter);
     }
   }
 
