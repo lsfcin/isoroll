@@ -56,7 +56,7 @@ export class TokenGizmos {
     const bl      = imageBottomLeft(token);
     const tr      = imageTopRight(token);
     const tc      = imageTopCenter(token);
-    const gs      = canvas.grid?.size ?? 100;
+    const gridSize = canvas.grid?.size ?? 100;
     const imgOff  = VolumeFlags.getImageOffset(token.document);
     const imgScl  = VolumeFlags.getImageScale(token.document);
     const imgYScl = VolumeFlags.getImageYScale(token.document);
@@ -78,7 +78,7 @@ export class TokenGizmos {
       if (pos) { handle.x = pos.x; handle.y = pos.y; }
       handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
         e.stopPropagation();
-        TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gs, imgOff.y * gs, imgScl, imgYScl, tkImgHalfH, meshCX, meshCY);
+        TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gridSize, imgOff.y * gridSize, imgScl, imgYScl, tkImgHalfH, meshCX, meshCY);
       });
       container.addChild(handle);
     }
@@ -116,9 +116,9 @@ export class TokenGizmos {
     const dx = gx - drag.startGX, dy = gy - drag.startGY;
     const wt = canvas.app!.stage.worldTransform;
     if (drag.type === "imgOffset") {
-      const gs = canvas.grid?.size ?? 100;
+      const gridSize = canvas.grid?.size ?? 100;
       const { x, y } = projectImgOffset(dx, dy, wt, drag.startImgOffX, drag.startImgOffY);
-      void drag.token.document.setFlag(MODULE_ID, "imageOffset", { x: x / gs, y: y / gs });
+      void drag.token.document.setFlag(MODULE_ID, "imageOffset", { x: x / gridSize, y: y / gridSize });
     } else if (drag.type === "imgYScale") {
       void drag.token.document.setFlag(MODULE_ID, "imageYScale",
         projectImgYScale(dx, dy, wt, canvasZoom(), drag.startImgYScale, drag.startImgHalfH));

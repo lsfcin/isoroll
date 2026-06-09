@@ -1,3 +1,4 @@
+// IMAGE ↔ WORLD: normalised [0,1]² texture space via PIXI mesh transform.
 import type { P2, TileMeshCoord } from './coord-types.js';
 
 /**

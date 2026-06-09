@@ -1,3 +1,4 @@
+// ISO3D ↔ WORLD: 3D isometric space with elevation via heightDir.
 import type { P2, P3 } from './coord-types.js';
 
 /**

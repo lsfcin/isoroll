@@ -1,3 +1,4 @@
+// VIEWPORT ↔ WORLD: affine matrix inverse/forward.
 import type { P2, AffineMatrix } from './coord-types.js';
 
 /** Viewport (canvas element) pixels → world coordinates. */

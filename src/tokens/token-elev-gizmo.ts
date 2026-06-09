@@ -55,22 +55,22 @@ export class TokenElevGizmo {
     TokenElevGizmo.hide(token.id);
     if (!VolumeFlags.getShowVolumeManipulation(token.document, true)) return;
 
-    const gs   = canvas.grid?.size ?? 100;
-    const gd   = gridDistance();
-    const tw   = (token.document.width  ?? 1) * gs;
-    const th   = (token.document.height ?? 1) * gs;
-    const tx   = token.document.x ?? 0;
-    const ty   = token.document.y ?? 0;
-    const proj = currentProjection();
-    const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
-    const boundH = VolumeFlags.getTokenHeight(token.document);
-    const E    = elevToCanvas(elev, gs, gd);
-    const EH   = E + boundH * gs;
-    const { x: hdx, y: hdy } = proj.heightDir;
+    const gridSize = canvas.grid?.size ?? 100;
+    const gridDist = gridDistance();
+    const tw       = (token.document.width  ?? 1) * gridSize;
+    const th       = (token.document.height ?? 1) * gridSize;
+    const tx       = token.document.x ?? 0;
+    const ty       = token.document.y ?? 0;
+    const proj     = currentProjection();
+    const elev     = (token.document as unknown as { elevation?: number }).elevation ?? 0;
+    const boundH   = VolumeFlags.getTokenHeight(token.document);
+    const elevPx   = elevToCanvas(elev, gridSize, gridDist);
+    const elevTopPx = elevPx + boundH * gridSize;
+    const hDir     = proj.heightDir;
 
     // Midpoint of SE vertical edge (same formula as tile elevation handle)
-    const seMidX = tx + tw + hdx * (E + EH) / 2;
-    const seMidY = ty + th + hdy * (E + EH) / 2;
+    const seMidX = tx + tw + hDir.x * (elevPx + elevTopPx) / 2;
+    const seMidY = ty + th + hDir.y * (elevPx + elevTopPx) / 2;
 
     const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
     const handle = makeCircleHandle(0xff9829);
@@ -113,10 +113,10 @@ export class TokenElevGizmo {
   }
 
   private static commit(drag: TokenElevDrag, gy: number): void {
-    const zoom = canvasZoom();
-    const gs   = canvas.grid?.size ?? 100;
-    const gd   = gridDistance();
-    const deltaFeet = -(gy - drag.startGY) / (zoom * gs / gd);
+    const zoom     = canvasZoom();
+    const gridSize = canvas.grid?.size ?? 100;
+    const gridDist = gridDistance();
+    const deltaFeet = -(gy - drag.startGY) / (zoom * gridSize / gridDist);
     const elev = Math.round(drag.startElev + deltaFeet);
     void (drag.token.document as unknown as { update(d: object, o?: object): Promise<unknown> })
       .update({ elevation: elev }, { animate: false });

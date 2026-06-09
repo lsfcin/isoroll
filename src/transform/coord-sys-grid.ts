@@ -1,3 +1,4 @@
+// GRID ↔ WORLD: scale by gridSize (canvas pixels per grid unit).
 import type { P2 } from './coord-types.js';
 
 /** Grid units → world pixel coordinates. */

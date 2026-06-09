@@ -34,25 +34,25 @@ export const handleTypeMap = new WeakMap<PIXI.Container, HandleType>();
 // Returns canvas-space positions for all handle anchors
 export function handlePositions(
   tx: number, ty: number, tw: number, th: number,
-  E: number, EH: number, hdx: number, hdy: number,
+  elevPx: number, elevTopPx: number, hDirX: number, hDirY: number,
   imgBL?: { x: number; y: number } | null,
   imgTR?: { x: number; y: number } | null,
   imgBC?: { x: number; y: number } | null,
   imgTC?: { x: number; y: number } | null,
 ): Record<HandleType, { cx: number; cy: number }> {
-  const seMidX = tx + tw + hdx * (E + EH) / 2;
-  const seMidY = ty + th + hdy * (E + EH) / 2;
+  const seMidX = tx + tw + hDirX * (elevPx + elevTopPx) / 2;
+  const seMidY = ty + th + hDirY * (elevPx + elevTopPx) / 2;
   return {
-    width:     { cx: tx + hdx * E,              cy: ty + th / 2 + hdy * E },
-    height:    { cx: tx + tw / 2 + hdx * E,     cy: ty + th + hdy * E },
-    boundH:    { cx: tx + tw + hdx * EH,         cy: ty + th / 2 + hdy * EH },
-    elevation: { cx: seMidX,                      cy: seMidY },
-    scale:     { cx: tx + tw + hdx * E,           cy: ty + th + hdy * E },
-    move:      { cx: tx + tw / 2 + hdx * E,       cy: ty + th / 2 + hdy * E },
-    imgOffset: { cx: imgBL?.x ?? tx,              cy: imgBL?.y ?? (ty + th) },
-    imgScale:  { cx: imgTR?.x ?? (tx + tw),       cy: imgTR?.y ?? ty },
-    imgYScale: { cx: imgTC?.x ?? (tx + tw / 2),   cy: imgTC?.y ?? ty },
-    swapSide:  { cx: imgBC?.x ?? (tx + tw / 2),   cy: imgBC?.y ?? (ty + th) },
+    width:     { cx: tx + hDirX * elevPx,              cy: ty + th / 2 + hDirY * elevPx },
+    height:    { cx: tx + tw / 2 + hDirX * elevPx,     cy: ty + th + hDirY * elevPx },
+    boundH:    { cx: tx + tw + hDirX * elevTopPx,       cy: ty + th / 2 + hDirY * elevTopPx },
+    elevation: { cx: seMidX,                             cy: seMidY },
+    scale:     { cx: tx + tw + hDirX * elevPx,          cy: ty + th + hDirY * elevPx },
+    move:      { cx: tx + tw / 2 + hDirX * elevPx,      cy: ty + th / 2 + hDirY * elevPx },
+    imgOffset: { cx: imgBL?.x ?? tx,                    cy: imgBL?.y ?? (ty + th) },
+    imgScale:  { cx: imgTR?.x ?? (tx + tw),             cy: imgTR?.y ?? ty },
+    imgYScale: { cx: imgTC?.x ?? (tx + tw / 2),         cy: imgTC?.y ?? ty },
+    swapSide:  { cx: imgBC?.x ?? (tx + tw / 2),         cy: imgBC?.y ?? (ty + th) },
   };
 }
 
@@ -62,10 +62,10 @@ export function projectDrag(
   drag: DragState, gx: number, gy: number,
 ): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number; imgOffX: number; imgOffY: number; imgScale: number; imgYScale: number } {
   const dx = gx - drag.startGX, dy = gy - drag.startGY;
-  const wt    = canvas.app!.stage.worldTransform;
-  const zoom = canvasZoom();
-  const gs   = canvas.grid?.size ?? 100;
-  const gd   = gridDistance();
+  const wt       = canvas.app!.stage.worldTransform;
+  const zoom     = canvasZoom();
+  const gridSize = canvas.grid?.size ?? 100;
+  const gridDist = gridDistance();
 
   let tw = drag.startW, th = drag.startH, boundH = drag.startBoundH, elev = drag.startElev;
   let docX = drag.startDocX, docY = drag.startDocY;
@@ -75,22 +75,22 @@ export function projectDrag(
   switch (drag.type) {
     case "width": {
       const d = (dx * wt.a + dy * wt.b) / zoom;
-      tw = Math.max(gs * 0.25, snapQuarterPx(drag.startW - d, gs));
+      tw = Math.max(gridSize * 0.25, snapQuarterPx(drag.startW - d, gridSize));
       break;
     }
     case "height": {
       const d = (dx * wt.c + dy * wt.d) / zoom;
-      th = Math.max(gs * 0.25, snapQuarterPx(drag.startH + d, gs));
+      th = Math.max(gridSize * 0.25, snapQuarterPx(drag.startH + d, gridSize));
       break;
     }
     case "boundH": {
-      const delta = (-dy) / (zoom * gs);
+      const delta = (-dy) / (zoom * gridSize);
       boundH = Math.max(0.25, snapQuarterUnits(drag.startBoundH + delta));
       break;
     }
     case "elevation": {
       // Screen up (dy < 0) = increase elevation; snap to integer feet
-      const deltaFeet = (-dy) / (zoom * gs / gd);
+      const deltaFeet = (-dy) / (zoom * gridSize / gridDist);
       elev = Math.round(drag.startElev + deltaFeet);
       break;
     }
@@ -99,14 +99,14 @@ export function projectDrag(
       // Positive = dragging toward SE = growing. Scale both width and height proportionally.
       const d = (dx * wt.a + dy * wt.b + dx * wt.c + dy * wt.d) / (2 * zoom);
       const ratio = drag.startH > 0 ? drag.startW / drag.startH : 1;
-      tw = Math.max(gs * 0.25, snapQuarterPx(drag.startW + d, gs));
-      th = Math.max(gs * 0.25, snapQuarterPx(tw / ratio, gs));
+      tw = Math.max(gridSize * 0.25, snapQuarterPx(drag.startW + d, gridSize));
+      th = Math.max(gridSize * 0.25, snapQuarterPx(tw / ratio, gridSize));
       break;
     }
     case "move": {
       const { x: cdx, y: cdy } = screenToCanvas(dx, dy, wt);
-      docX = snapQuarterPx(drag.startDocX + cdx, gs);
-      docY = snapQuarterPx(drag.startDocY + cdy, gs);
+      docX = snapQuarterPx(drag.startDocX + cdx, gridSize);
+      docY = snapQuarterPx(drag.startDocY + cdy, gridSize);
       break;
     }
     case "imgOffset": {
@@ -114,10 +114,10 @@ export function projectDrag(
       break;
     }
     case "imgScale": {
-      const { x: hdx, y: hdy } = currentProjection().heightDir;
-      const E2 = elevToCanvas(drag.startElev, gs, gd);
-      const cx = drag.startDocX + hdx * E2 + drag.startImgOffX;
-      const cy = drag.startDocY + hdy * E2 + drag.startImgOffY;
+      const hDir   = currentProjection().heightDir;
+      const elevPx = elevToCanvas(drag.startElev, gridSize, gridDist);
+      const cx = drag.startDocX + hDir.x * elevPx + drag.startImgOffX;
+      const cy = drag.startDocY + hDir.y * elevPx + drag.startImgOffY;
       imgScale = projectImgScale(gx, gy, drag.startGX, drag.startGY, drag.startImgScale, cx, cy, wt);
       break;
     }
@@ -157,7 +157,11 @@ export function commitDrag(drag: DragState, gx: number, gy: number): void {
       break;
     }
     case "move":      void drag.tile.document.update({ x: docX, y: docY },     { isoroll: "gizmoDrag" }); break;
-    case "imgOffset":  { const gs = canvas.grid?.size ?? 100; void drag.tile.document.setFlag(MODULE_ID, "imageOffset", { x: imgOffX / gs, y: imgOffY / gs }); break; }
+    case "imgOffset": {
+      const gridSize = canvas.grid?.size ?? 100;
+      void drag.tile.document.setFlag(MODULE_ID, "imageOffset", { x: imgOffX / gridSize, y: imgOffY / gridSize });
+      break;
+    }
     case "imgScale":   void drag.tile.document.setFlag(MODULE_ID, "imageScale",  imgScale); break;
     case "imgYScale":  void drag.tile.document.setFlag(MODULE_ID, "imageYScale", imgYScale); break;
     case "swapSide":   break; // handled via pointerdown, not drag

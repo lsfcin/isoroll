@@ -45,7 +45,7 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
     const cx = tile.document.x ?? 0, cy = tile.document.y ?? 0;
     const c = isoHudCenter(cx, cy);
     if (!c) return pos;
-    const s    = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
+    const uiScale = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
     const docW = tile.document.width ?? 0, docH = tile.document.height ?? 0;
     const visualCssW = isoVisualCssWidth(docW, docH);
     if (visualCssW === 0) return pos;
@@ -56,7 +56,7 @@ function patchTileHUDProto(proto: HudProto | undefined): void {
     // height = 0 → el.style.height = "" (auto) — avoids docH dependency across swap.
     pos.left   = c.left - visualCssW / 2;
     pos.top    = c.top  - visualCssW / 4;
-    pos.width  = visualCssW / s;
+    pos.width  = visualCssW / uiScale;
     pos.height = 0;
     return pos;
   };
@@ -82,17 +82,17 @@ function patchTokenHUDProto(proto: HudProto | undefined): void {
     const centeringOffsetY = (pos.top ?? 0) - raw.y;
     // Iso-projected visual width of the token footprint — same formula as TileHUD.
     // token.w/h are canvas px (document.width/height * gridSize).
-    const s  = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
-    const gs = (canvas.grid  as unknown as { size?: number })?.size ?? 100;
-    const tw = (token as unknown as { w?: number }).w ?? token.document.width  * gs;
-    const th = (token as unknown as { h?: number }).h ?? token.document.height * gs;
+    const uiScale  = (canvas.dimensions as unknown as { uiScale?: number })?.uiScale ?? 1;
+    const gridSize = (canvas.grid  as unknown as { size?: number })?.size ?? 100;
+    const tw = (token as unknown as { w?: number }).w ?? token.document.width  * gridSize;
+    const th = (token as unknown as { h?: number }).h ?? token.document.height * gridSize;
     const visualCssW = isoVisualCssWidth(tw, th);
     if (visualCssW === 0) return pos;
     // Left edge = iso-projected center − half visual width (centers HUD on token footprint).
     // Top keeps native vertical centering; width spans the full iso footprint.
     pos.left  = c.left - visualCssW / 2;
     pos.top   = c.top  + centeringOffsetY;
-    pos.width = visualCssW / s;
+    pos.width = visualCssW / uiScale;
     return pos;
   };
 }

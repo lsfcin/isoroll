@@ -55,27 +55,27 @@ export class VolumeGizmos {
 
   static show(tile: Tile): void {
     VolumeGizmos.hide(tile.id);
-    const layer = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_GIZMOS);
-    const tw = tile.document.width  ?? 0;
-    const th = tile.document.height ?? 0;
-    const tx = (tile.document.x ?? 0) - tw / 2;
-    const ty = (tile.document.y ?? 0) - th / 2;
-    const proj   = currentProjection();
-    const gs     = canvas.grid?.size ?? 100;
-    const gd     = gridDistance();
-    const elev   = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
-    const boundH = VolumeFlags.getEffectiveTileHeight(tile.document);
-    const E      = elevToCanvas(elev, gs, gd);
-    const EH     = E + boundH * gs;
-    const { x: hdx, y: hdy } = proj.heightDir;
-    const imgBL = imageBottomLeft(tile), imgTR = imageTopRight(tile), imgBC = imageBottomCenter(tile);
+    const layer    = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_GIZMOS);
+    const tw       = tile.document.width  ?? 0;
+    const th       = tile.document.height ?? 0;
+    const tx       = (tile.document.x ?? 0) - tw / 2;
+    const ty       = (tile.document.y ?? 0) - th / 2;
+    const proj     = currentProjection();
+    const gridSize = canvas.grid?.size ?? 100;
+    const gridDist = gridDistance();
+    const elev     = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
+    const boundH   = VolumeFlags.getEffectiveTileHeight(tile.document);
+    const elevPx   = elevToCanvas(elev, gridSize, gridDist);
+    const elevTopPx = elevPx + boundH * gridSize;
+    const hDir     = proj.heightDir;
+    const imgBL    = imageBottomLeft(tile), imgTR = imageTopRight(tile), imgBC = imageBottomCenter(tile);
     const imgOff    = VolumeFlags.getImageOffset(tile.document);
     const imgScale  = VolumeFlags.getImageScale(tile.document);
     const imgYScale = VolumeFlags.getImageYScale(tile.document);
     const showVolManip = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImgManip = VolumeFlags.getShowImageManipulation(tile.document, true);
     const imgTC = imageTopCenter(tile);
-    const positions = handlePositions(tx, ty, tw, th, E, EH, hdx, hdy, imgBL, imgTR, imgBC, imgTC);
+    const positions = handlePositions(tx, ty, tw, th, elevPx, elevTopPx, hDir.x, hDir.y, imgBL, imgTR, imgBC, imgTC);
     // baseHalfH: canvas-px half image height when imgYScale=1 — used for snap in projectDrag
     type MeshSnap = { scale: { y: number }; texture?: { height: number } };
     const tileMeshSnap = tile.mesh as unknown as MeshSnap | null | undefined;
@@ -88,7 +88,7 @@ export class VolumeGizmos {
     if (showImgManip) handleTypes.push("imgOffset", "imgScale", "imgYScale", "swapSide");
     for (const type of handleTypes) {
       const pos    = positions[type];
-      const handle = makeHandleForType(type, hdx, hdy);
+      const handle = makeHandleForType(type, hDir.x, hDir.y);
       handle.x = pos.cx;
       handle.y = pos.cy;
       handleTypeMap.set(handle, type);
@@ -97,7 +97,7 @@ export class VolumeGizmos {
         if (type === "swapSide") { VolumeGizmos.swapSide(tile); return; }
         VolumeGizmos.beginDrag(type, tile, e.global.x, e.global.y,
           tx, ty, tw, th, boundH, elev, tile.document.x ?? 0, tile.document.y ?? 0,
-          imgOff.x * gs, imgOff.y * gs, imgScale, imgYScale, imgHalfH);
+          imgOff.x * gridSize, imgOff.y * gridSize, imgScale, imgYScale, imgHalfH);
       });
       container.addChild(handle);
     }

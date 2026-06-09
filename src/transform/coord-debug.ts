@@ -99,9 +99,9 @@ function nativeRender(
       g.beginFill(colorNum, 0.9);
       g.lineStyle(1, 0xffffff, 1);
       const ptI = pt as P3;
-      const E = (ptI.z * ctx.gridSize!) / ctx.gridDistance!;
-      const px = ptI.x + ctx.heightDir!.x * E;
-      const py = ptI.y + ctx.heightDir!.y * E;
+      const elevPx = (ptI.z * ctx.gridSize!) / ctx.gridDistance!;
+      const px = ptI.x + ctx.heightDir!.x * elevPx;
+      const py = ptI.y + ctx.heightDir!.y * elevPx;
       g.drawRect(px - w/2, py - h/2, w, h);
       g.endFill();
       break;

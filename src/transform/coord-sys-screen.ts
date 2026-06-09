@@ -1,3 +1,4 @@
+// SCREEN ↔ WORLD: browser window pixels via viewport affine inverse.
 import type { P2, AffineMatrix } from './coord-types.js';
 import { toWorld as vpToWorld, fromWorld as worldToVp } from './coord-sys-viewport.js';
 

@@ -23,21 +23,21 @@ export function point(x: number, y: number): P { return { x, y }; }
 
 function buildBoxVerts(
   tx: number, ty: number, tw: number, th: number,
-  E: number, EH: number, ex: number, ey: number,
+  elevPx: number, elevTopPx: number, hDirX: number, hDirY: number,
   elevation: number,
 ): BoxVerts {
   return {
-    NW_base: point(tx + ex * E,       ty + ey * E),
-    NE_base: point(tx + tw + ex * E,  ty + ey * E),
-    SW_base: point(tx + ex * E,       ty + th + ey * E),
-    SE_base: point(tx + tw + ex * E,  ty + th + ey * E),
-    NW_top:  point(tx + ex * EH,      ty + ey * EH),
-    NE_top:  point(tx + tw + ex * EH, ty + ey * EH),
-    SW_top:  point(tx + ex * EH,      ty + th + ey * EH),
-    SE_top:  point(tx + tw + ex * EH, ty + th + ey * EH),
-    ground:     point(tx + tw / 2,           ty + th / 2),
-    baseCenter: point(tx + tw / 2 + ex * E,  ty + th / 2 + ey * E),
-    topCenter:  point(tx + tw / 2 + ex * EH, ty + th / 2 + ey * EH),
+    NW_base: point(tx + hDirX * elevPx,       ty + hDirY * elevPx),
+    NE_base: point(tx + tw + hDirX * elevPx,  ty + hDirY * elevPx),
+    SW_base: point(tx + hDirX * elevPx,       ty + th + hDirY * elevPx),
+    SE_base: point(tx + tw + hDirX * elevPx,  ty + th + hDirY * elevPx),
+    NW_top:  point(tx + hDirX * elevTopPx,      ty + hDirY * elevTopPx),
+    NE_top:  point(tx + tw + hDirX * elevTopPx, ty + hDirY * elevTopPx),
+    SW_top:  point(tx + hDirX * elevTopPx,      ty + th + hDirY * elevTopPx),
+    SE_top:  point(tx + tw + hDirX * elevTopPx, ty + th + hDirY * elevTopPx),
+    ground:     point(tx + tw / 2,                  ty + th / 2),
+    baseCenter: point(tx + tw / 2 + hDirX * elevPx,    ty + th / 2 + hDirY * elevPx),
+    topCenter:  point(tx + tw / 2 + hDirX * elevTopPx, ty + th / 2 + hDirY * elevTopPx),
     elevation,
   };
 }
@@ -55,11 +55,11 @@ export function computeVerts(tile: Tile): BoxVerts {
   const elevation = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
   const boundH    = VolumeFlags.getEffectiveTileHeight(tile.document);
 
-  const E  = elevToCanvas(elevation, gridSize, gridDist);
-  const EH = E + boundH * gridSize;
-  const ex = proj.heightDir.x, ey = proj.heightDir.y;
+  const elevPx    = elevToCanvas(elevation, gridSize, gridDist);
+  const elevTopPx = elevPx + boundH * gridSize;
+  const hDirX     = proj.heightDir.x, hDirY = proj.heightDir.y;
 
-  return buildBoxVerts(tx, ty, tw, th, E, EH, ex, ey, elevation);
+  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, hDirX, hDirY, elevation);
 }
 
 // token.document.x/y = top-left (unlike tiles where it = center)
@@ -76,11 +76,11 @@ export function computeTokenVerts(token: Token): BoxVerts {
   const elevation = (token.document as unknown as { elevation?: number }).elevation ?? 0;
   const boundH    = VolumeFlags.getTokenHeight(token.document);
 
-  const E  = elevToCanvas(elevation, gridSize, gridDist);
-  const EH = E + boundH * gridSize;
-  const ex = proj.heightDir.x, ey = proj.heightDir.y;
+  const elevPx    = elevToCanvas(elevation, gridSize, gridDist);
+  const elevTopPx = elevPx + boundH * gridSize;
+  const hDirX     = proj.heightDir.x, hDirY = proj.heightDir.y;
 
-  return buildBoxVerts(tx, ty, tw, th, E, EH, ex, ey, elevation);
+  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, hDirX, hDirY, elevation);
 }
 
 export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {
