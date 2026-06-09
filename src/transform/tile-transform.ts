@@ -1,10 +1,10 @@
-// Tile counter-transform: refreshTile hook + grid-rescale scene update handlers.
+// Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers.
 import { MODULE_ID, VolumeFlags } from "../flags";
 import { CanvasTransform } from "./stage-transform";
 import { gridDistance, elevToCanvas } from "../util";
 import { transformCoord, P2 } from "./coord-map";
 
-const DEBUG_ANCHOR = true;
+const DEBUG_ANCHOR = false;
 
 export type MutMeshLike = {
   x: number;
@@ -75,6 +75,18 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
   void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" });
 }
 
+// setFlag() updates don't set any Tile render flags → refreshTile never fires.
+// Detect isoroll flag changes and manually trigger refreshMesh (fires refreshTile without resetting mesh.x/y).
+export function onUpdateTileFlags(doc: unknown, changes: Record<string, unknown>): void {
+  const flagChanges = (changes as { flags?: Record<string, unknown> }).flags;
+  if (!flagChanges?.[MODULE_ID]) return;
+  const tile = (doc as { object?: unknown }).object;
+  if (DEBUG_ANCHOR) console.log("[isoroll] onUpdateTileFlags: isoroll flags changed", flagChanges[MODULE_ID], "tile object:", tile ? "found" : "null");
+  if (!tile) return;
+  (tile as { renderFlags?: { set(f: Record<string, boolean>): void } })
+    .renderFlags?.set({ refreshMesh: true });
+}
+
 export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): void {
   if (!CanvasTransform.effectiveEnabled()) return;
   if (tile.document.getFlag(MODULE_ID, "transformTile") === true) {
@@ -89,6 +101,7 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   }
   const mesh = tile.mesh as unknown as MutMeshLike | null | undefined;
   if (!mesh) return;
+
   const gridSize  = canvas.grid?.size ?? 100;
   const gridDist  = gridDistance();
   const elev      = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
@@ -119,6 +132,9 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
     y: (tile.document.y ?? 0) + heightDir.y * elevPx,
   };
 
+  const imgOffWorld = VolumeFlags.getImageOffset(tile.document);
+  const imgOffPx = { x: imgOffWorld.x * gridSize, y: imgOffWorld.y * gridSize };
+
   mesh.anchor?.set(0.5, 0.5);
   mesh.x = baseCenterWorld.x + heightDir.x * (boundH / 2);
   mesh.y = baseCenterWorld.y + heightDir.y * (boundH / 2);
@@ -126,41 +142,6 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   const anchorUV = transformCoord(baseCenterWorld, "WORLD", "IMAGE", { mesh }) as P2;
   mesh.anchor?.set(Math.max(0, Math.min(1, anchorUV.x)), Math.max(0, Math.min(1, anchorUV.y)));
 
-  const imgOff = VolumeFlags.getImageOffset(tile.document);
-  mesh.x = baseCenterWorld.x + imgOff.x * gridSize;
-  mesh.y = baseCenterWorld.y + imgOff.y * gridSize;
-
-  if (DEBUG_ANCHOR) {
-    const stage = (window as any).canvas.stage;
-    let worldDbg = stage.getChildByName("anchor-world-dbg-" + (tile as any).id);
-    if (!worldDbg) {
-      worldDbg = new (window as any).PIXI.Graphics();
-      worldDbg.name = "anchor-world-dbg-" + (tile as any).id;
-      stage.addChild(worldDbg);
-    }
-    worldDbg.clear();
-    worldDbg.beginFill(0xff0000, 0.9);
-    worldDbg.lineStyle(1, 0xffffff, 1);
-    worldDbg.drawRect(baseCenterWorld.x - 3, baseCenterWorld.y - 15, 6, 30);
-    worldDbg.endFill();
-
-    let imgDbg = (mesh as any).getChildByName("anchor-img-dbg");
-    if (!imgDbg) {
-      imgDbg = new (window as any).PIXI.Graphics();
-      imgDbg.name = "anchor-img-dbg";
-      (mesh as any).addChild(imgDbg);
-    }
-    imgDbg.clear();
-    const texW = mesh.texture?.width || 1;
-    const texH = mesh.texture?.height || 1;
-    const absSx = Math.abs(mesh.scale.x || 1);
-    const absSy = Math.abs(mesh.scale.y || 1);
-    const lx = (anchorUV.x - (mesh.anchor?.x || 0)) * texW;
-    const ly = (anchorUV.y - (mesh.anchor?.y || 0)) * texH;
-    const bw = 30 / absSx, bh = 6 / absSy;
-    imgDbg.beginFill(0x0000ff, 0.9);
-    imgDbg.lineStyle(1 / Math.max(absSx, absSy), 0xffffff, 1);
-    imgDbg.drawRect(lx - bw / 2, ly - bh / 2, bw, bh);
-    imgDbg.endFill();
-  }
+  mesh.x = baseCenterWorld.x + imgOffPx.x;
+  mesh.y = baseCenterWorld.y + imgOffPx.y;
 }

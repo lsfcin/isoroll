@@ -125,6 +125,31 @@ available).
 
 ---
 
+## B25 — imageOffset anchor not refreshed on the spot when flag changes
+
+**Symptom:** After changing `imageOffset` (via drag or TileConfig form), the tile mesh
+anchor and position are not always updated immediately. The change is correct after a
+manual tile re-select or scene reload.
+
+**Root cause:** `tile.document.setFlag(MODULE_ID, "imageOffset", ...)` sends a document
+update where `changed` only contains `flags.*`. Foundry's `Tile._onUpdate` sets render
+flags only for `x`, `y`, `width`, `height`, `rotation`, etc. — flag-only updates set no
+render flags, so `refreshTile` hook never fires and our `onRefreshTile` is not called.
+
+A partial fix (`onUpdateTileFlags` in `tile-transform.ts`) detects isoroll flag changes
+and manually sets `renderFlags.set({ refreshMesh: true })` to trigger the hook. However
+the imgOff→anchor mapping has a coordinate-space subtlety: `imgOff` is stored as a
+WORLD-space displacement normalized by gridSize (anchor moves to `baseCenterWorld + imgOff
+* gridSize`), and correctly expressing it in IMAGE [0,1]² space to update the anchor
+in-place requires a two-point `transformCoord` difference. Not worth the complexity now.
+
+**Workaround:** Re-select the tile after changing imageOffset.
+
+**Affected:** `onRefreshTile` in `tile-transform.ts`; `onUpdateTileFlags`; drag commit in
+`tile-drag.ts` case `"imgOffset"`.
+
+---
+
 ## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays
 
 **Observation:** Opening the TileConfig or TokenConfig popup causes all isoroll visuals
