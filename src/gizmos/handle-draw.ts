@@ -5,14 +5,14 @@ export const HANDLE_SIZE = 9;
 export const HALF        = HANDLE_SIZE / 2;
 
 // Canvas-aligned square → appears as a diamond under the isometric stage transform.
-export function makeHandle(color: number): PIXI.Graphics {
+export function makeHandle(color: number, cursor = "pointer"): PIXI.Graphics {
   const g = new PIXI.Graphics();
   g.lineStyle(0.5, BLACK, 1);
   g.beginFill(color, 0.9);
   g.drawRect(-HALF, -HALF, HANDLE_SIZE, HANDLE_SIZE);
   g.endFill();
   g.eventMode = "static";
-  g.cursor = "pointer";
+  g.cursor = cursor;
   return g;
 }
 

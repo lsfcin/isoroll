@@ -4,7 +4,7 @@ import { CanvasTransform } from "../transform/stage-transform";
 import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
 import { clientToGlobal } from "../gizmos/mesh-corners";
 import { startPointerDrag } from "../util";
-import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
+import { makeHandle, makeCircleHandle, makeMoveHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
 import { drawDashedContour } from "../draw/shapes";
 import { BgDrag, commitBgDrag } from "./bg-drag";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
@@ -59,8 +59,8 @@ export class BackgroundGizmos {
     const scale  = Number(getEl('scale')?.value) || sx;
     const sCX    = wt.a * cx + wt.c * cy + wt.tx, sCY = wt.b * cx + wt.d * cy + wt.ty;
     const defs: [PIXI.Container, BgDrag["type"], { x: number; y: number }][] = [
-      [makeSquareCounterHandle(0xffffff, "nesw-resize"), "bgScale",     tr],
-      [makeCircleHandle(0xffffff, "move"),               "bgTranslate", bl],
+      [isoCT ? makeSquareCounterHandle(0xffffff, "nesw-resize") : makeHandle(0xffffff, "nesw-resize"), "bgScale",     tr],
+      [isoCT ? makeCircleHandle(0xffffff, "move")               : makeMoveHandle(0xffffff),            "bgTranslate", bl],
     ];
     if (isoCT) defs.splice(1, 0, [makeSquareCounterHandle(0xffffff, "ns-resize"), "bgYScale", tc]);
     for (const [handle, type, pos] of defs) {
