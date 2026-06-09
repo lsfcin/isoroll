@@ -20,20 +20,6 @@ rescale logic as tokens/walls — only SIZE should be stable.
 
 ---
 
-## B12 — Token elevation label renders as black square (intermittent)
-
-**Symptom:** When changing token elevation via the orange circle elevation handle, the
-elevation label on the grid (the "1 ft" text Foundry renders near the token) occasionally
-appears as a solid black square instead of readable text. Intermittent — not reproducible via
-elevation changes through other means (only observed via the drag handle).
-
-**Root cause hypothesis:** Rapid successive `setFlag` calls during drag may cause a race
-condition in Foundry's label rendering or texture cache.
-
-**Affected:** `TokenVolumeGizmos` elevation drag → `token.document.update({ elevation })`.
-
----
-
 ## B25 — imageOffset anchor not refreshed on the spot when flag changes
 
 **Symptom:** After changing `imageOffset` (via drag or TileConfig form), the tile mesh

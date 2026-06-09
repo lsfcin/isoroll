@@ -115,10 +115,10 @@ export class TokenElevGizmo {
       strokeThickness: 3,
       lineJoin: "round",
     }));
-    label.anchor.set(0, 0);
+    label.anchor.set(0.5, 0.5);
     label.x = 0; label.y = 0;
     label.eventMode = "none";
-    label.alpha = selected ? 0.7 : 0.3;
+    label.alpha = selected ? 0.95 : 0.3;
     label.visible = elev !== 0 && (selected || VolumeFlags.getShowElevationUnselected(token.document));
     const texSrc = (label.texture as unknown as { source?: { autoGenerateMipmaps: boolean }; baseTexture?: { mipmap: number } });
     if (texSrc.source)      texSrc.source.autoGenerateMipmaps = false;
@@ -126,7 +126,7 @@ export class TokenElevGizmo {
     const labelWrap = new PIXI.Container();
     labelWrap.rotation = proj.reverseRotation;
     labelWrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
-    labelWrap.x = tx + tw + heightDir.x * elevPx; labelWrap.y = ty + th + heightDir.y * elevPx;
+    labelWrap.x = tx + tw / 2 + heightDir.x * elevPx; labelWrap.y = ty + th + heightDir.y * elevPx;
     labelWrap.eventMode = "none";
     labelWrap.addChild(label);
 
