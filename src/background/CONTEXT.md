@@ -20,3 +20,13 @@
 | Subdirectory | Description |
 |--------------|-------------|
 | _(none)_ | All files at this level |
+
+<!-- routing:start -->
+## Routing
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`bg-drag.ts`](bg-drag.ts) | — | `commitBgDrag`, `BG_YSCALE_SNAP_PX` | Drag math for BackgroundGizmos: translate, uniform scale, Y-scale. |
+| [`bg-gizmos.ts`](bg-gizmos.ts) | — | `bgCorner` | Interactive handles + dashed contour for background image, shown only in GridConfig. |
+| [`bg-html.ts`](bg-html.ts) | — | — | GridConfig HTML injection: Vertical Scale field, key/wheel handlers, _processSubmitData patch. |
+<!-- routing:end -->
