@@ -24,6 +24,8 @@
       "ShowImageManipulationHint": "Show the image offset/scale handles (white circle and square) and the dashed image contour when the token is selected.",
       "ShowVolumeManipulation": "Volume Manipulation",
       "ShowVolumeManipulationHint": "Show the 3D bounding box and the elevation handle when the token is selected.",
+      "ShowElevationUnselected": "Show Elevation When Unselected",
+      "ShowElevationUnselectedHint": "Display the elevation label next to the token even when it is not selected.",
       "PresetEnabled": "Use Image Preset",
       "PresetEnabledHint": "Automatically apply saved configuration when a token with this image is placed, and update the preset when you edit this token."
     },

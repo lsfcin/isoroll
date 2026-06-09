@@ -49,12 +49,12 @@ export function addIsorollTab(
   onFirstInject?.($html);
 }
 
-export function flagCheckbox(flagKey: string, ns: string, checked: boolean): string {
+export function flagCheckbox(flagKey: string, ns: string, checked: boolean, labelAttrs = ""): string {
   const k  = flagKey.charAt(0).toUpperCase() + flagKey.slice(1);
   const id = `isoroll-${flagKey}`;
   return (
     `<div class="form-group">` +
-    `<label for="${id}">${game.i18n.localize(`ISOROLL.${ns}.${k}`)}</label>` +
+    `<label for="${id}"${labelAttrs ? ` ${labelAttrs}` : ""}>${game.i18n.localize(`ISOROLL.${ns}.${k}`)}</label>` +
     `<div class="form-fields"><input type="checkbox" id="${id}" name="flags.${MODULE_ID}.${flagKey}" ${checked ? "checked" : ""}></div>` +
     `<p class="hint">${game.i18n.localize(`ISOROLL.${ns}.${k}Hint`)}</p>` +
     `</div>`
