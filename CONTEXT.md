@@ -9,38 +9,9 @@
 - Enable per scene: Scene Config → Basics → "Enable Isoroll" checkbox
 - Build: `npm run build` → symlink at `/home/lucas/foundrydata-v14/Data/modules/isoroll`
 - Foundry running at `http://localhost:30000/game`
+- Source code: `src/` — see [`src/CONTEXT.md`](src/CONTEXT.md) for full source map
 
-## Source Map
-
-| Path | Responsibility |
-|------|---------------|
-| `src/module.ts` | Entry point — wires all hooks in `Hooks.once("init")` |
-| `src/transform/canvas-transform.ts` | Stage rotation+skew, background counter-transform, hooks: canvasReady/updateScene/renderGridConfig |
-| `src/transform/object-transform.ts` | Per-token/tile counter-transform + HUD repositioning, hooks: refreshToken/refreshTile/renderTokenHUD |
-| `src/transform/scene-config.ts` | Isoroll tab injection for SceneConfig, TokenConfig, TileConfig; projection dropdown |
-| `src/transform/constants.ts` | `PROJECTION_TYPES` (8 presets), `getProjection(scene)`, `IsoProjection` interface |
-| `src/volume/flags.ts` | `MODULE_ID`, `VolumeFlags` flag accessors (boundHeight, imageOffset, imageScale, showImageManipulation, showVolumeManipulation, …) |
-| `src/volume/settings.ts` | DefaultTokenHeight (default 2 grid units ≈ 10 ft), OcclusionOpacity module settings |
-| `src/volume/overlay-geometry.ts` | 3D box geometry: `computeVerts()` (tile), `computeTokenVerts()` (token), `drawBox()`, `drawAnchorLine()`, `drawDash()`, `BoxVerts` |
-| `src/volume/overlay.ts` | `VolumeOverlay` — 3D box + image contour on selected tiles; gated by showVolumeManipulation / showImageManipulation |
-| `src/volume/token-volume-overlay.ts` | `TokenVolumeOverlay` — 3D bounding box on selected tokens; doc-state cached to skip 60fps rebuilds during animation |
-| `src/volume/gizmos-drag.ts` | Pure drag math: `projectDrag()`, `handlePositions()`, `commitDrag()`, snap helpers, `imageTCCorner()` |
-| `src/volume/gizmos-handles.ts` | PIXI factory functions for all handle shapes + `createRotateBlocker()` + `bgCorner()` + `drawDashedContour()` |
-| `src/volume/gizmos.ts` | `VolumeGizmos` — volume handles (width/height/boundH/elevation/scale/move) gated by showVolumeManipulation; image handles (imgOffset/imgScale/imgYScale/swapSide) gated by showImageManipulation |
-| `src/volume/token-gizmos.ts` | `TokenGizmos` — image handles (BL circle: offset, TR square: scale, TC square: Y-scale) for tokens; gated by showImageManipulation |
-| `src/volume/background-gizmos.ts` | `BackgroundGizmos` — Y-scale/scale/translate handles + dashed contour on background image in GridConfig; injects Vertical Scale field; CTRL+Wheel/Arrow shortcuts |
-| `src/volume/background-gizmos-drag.ts` | `BgDrag` type + `commitBgDrag()` — drag math for all three background handle types |
-| `src/volume/token-overlay.ts` | `TokenOverlay` — dashed image contour on selected tokens; gated by showImageManipulation |
-| `src/volume/token-volume-gizmos.ts` | `TokenVolumeGizmos` — elevation handle (orange circle, SE edge midpoint) for tokens; doc-state cached |
-| `src/preset/preset-types.ts` | `TilePreset`, `TokenPreset`, `BackgroundPreset` interfaces; `IsorollPreset` union |
-| `src/preset/preset-storage.ts` | File I/O: `deriveKey()`, `readPreset()`, `writePreset()`, `getCachedPreset()`, `preloadCache()`; in-memory cache + `_index.json` |
-| `src/preset/preset-ops.ts` | Extract/apply/auto-apply/upsert functions for all preset types; debounce infra; `changedFlagKeys()`; `applyPresetToSource()` (sync, for `preCreateTile`) |
-| `src/preset/preset-manager.ts` | `PresetManager.activate()`: hooks (`preCreateTile`, `createTile/Token/Scene`, `updateTile/Token/Scene`); console API (`window.ISOROLL_PRESETS`) |
-| `src/sorter/depth-sorter.ts` | Depth sort (dormant — not activated, see ROADMAP) |
-| `src/occluder/occluder.ts` | Tile alpha fade when token is behind it |
-| `src/resolver/asset-resolver.ts` | Stance fallback chain, `resolveBestTokenAsset()` |
-| `lang/en.json` | English i18n strings |
-| `lang/pt-br.json` | Portuguese (BR) i18n strings |
+---
 
 ## Projection Math
 
@@ -64,7 +35,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | `flags.isoroll.transformToken` | boolean | token | false | Apply isometric stage to token sprite |
 | `flags.isoroll.transformTile` | boolean | tile | false | Apply isometric stage to tile sprite |
 | `flags.isoroll.boundHeight` | number | tile+token | tile:1 / token:2 | 3D volume height in grid units (token default from `defaultTokenHeight` setting) |
-| `flags.isoroll.imageOffset` | {x,y} | tile+token | {0,0} | Canvas-pixel offset of image from natural center |
+| `flags.isoroll.imageOffset` | {x,y} | tile+token | {0,0} | WORLD-space displacement from natural center, normalized by gridSize |
 | `flags.isoroll.imageScale` | number | tile+token | 1 | Image uniform scale multiplier |
 | `flags.isoroll.imageYScale` | number | tile+token | 1 | Image Y-axis scale multiplier (for projection adaptation) |
 | `flags.isoroll.backgroundYScale` | number | scene | 1 | Background image Y-scale multiplier (set via GridConfig Vertical Scale field) |
@@ -78,18 +49,21 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - Token rotation: v14 auto-facing suppressed for undistorted tokens; 8-directional sprite selection not yet implemented (placeholder in `object-transform.ts`)
 - Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP
 - `tile.x/tile.y` = 0 in v14 — use `tile.document.x/y` (CENTER, not top-left); top-left = `doc.x - width/2, doc.y - height/2`
-- `setFlag` fires `refreshTile` with `{refreshPosition, refreshPerception}` only — `isMeshReset` returns false; scale guarded by meshReset won't run for flag-only changes
+- **`setFlag` does NOT trigger `refreshTile`**: flag-only updates (`changes` contains only `flags.*`) set no Tile render flags in `_onUpdate`. Use the `updateTile` hook → `onUpdateTileFlags` which manually calls `tile.renderFlags.set({ refreshMesh: true })`.
 - `mesh.scale.set()` (absolute) is safe on every refresh; only `*=` patterns need meshReset guard
 - `addIsorollTab` has no double-inject guard — if `renderSceneConfig` fires more than once for the same dialog (edge case), the Iso tab will appear twice; add `if ($html.find(\`a[data-tab="${TAB}"]\`).length) return;` at the top of `addIsorollTab` if this becomes a problem
-- AppV2 `stopPropagation` on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on the content section (see `scene-config.ts`)
-- **GridConfig `_processSubmitData`** only calls `super._processSubmitData` when one of 7 native fields changed (`width/height/padding/shiftX/shiftY/grid.size/grid.type`). Module-specific form fields are silently skipped. Workaround: instance-level patch on `app._processSubmitData` at `renderGridConfig` time.
-- **GridConfig `updateTransform` centering**: when overriding the bg sprite's `updateTransform`, `scY` in the position formula (the `R·S·(-tw/2,-th/2)` center offset) must include `bgYScale` — if only `scale.set()` uses it, the visual center shifts vertically instead of scaling around center.
-- **`preCreateTile` + `updateSource`**: calling `doc.updateSource(data)` in `preCreateTile` does modify the creation data (confirmed: `createTile` fires with the updated width/height/flags). BUT calling `doc.update()` again in `createTile` with the same data causes a PIXI sprite redraw blink. Solution: skip the `createTile` fallback when the in-memory cache confirms `preCreateTile` already applied (i.e. `getCachedPreset(key)` returns a hit).
-- **`FilePicker.upload` 5-param API**: `FilePicker.upload(source, path, file, body, options)` — the 4th param is `body` (extra FormData entries, pass `{}`), the 5th is `options` (where `notify: false` lives). Passing `{ notify: false }` as the 4th arg silently uses it as body and shows success notifications regardless.
+- AppV2 `stopPropagation` on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on the content section (see `ui/scene-config.ts`)
+- **GridConfig `_processSubmitData`** only calls `super._processSubmitData` when one of 7 native fields changed. Module-specific fields silently skipped. Workaround: instance-level patch on `app._processSubmitData` at `renderGridConfig` time (done in `background/bg-html.ts`).
+- **GridConfig `updateTransform` centering**: when overriding the bg sprite's `updateTransform`, `scY` in the position formula must include `bgYScale` — if only `scale.set()` uses it, the visual center shifts vertically instead of scaling around center.
+- **PIXI `worldTransform` cache on `canvasReady`**: after `stage.rotation/skew` are set, `worldTransform` is stale (identity) until the next PIXI render frame. Also, Foundry only sets `#hud style.left/top = wt.tx/ty` inside `canvasPan` — never on initial load. Fix: `syncHudAfterStageApply()` in `stage-transform.ts` flushes the cache (`updateLocalTransform` + `copyFrom`) and syncs `#hud` CSS immediately. Do NOT call `stage.updateTransform()` — crashes when `stage.parent` is null (true during `canvasReady`).
+- **HUD `_updatePosition` pattern**: both TileHUD and TokenHUD use prototype patches on `CONFIG.Tile/Token.hudClass.prototype._updatePosition`. Never use `renderTileHUD`/`renderTokenHUD` hooks — they miss document-update re-renders and RAF timing can stomp Foundry's `transform: scale(uiScale)`. Only set `pos.left/top/width` — never `pos.scale`.
+- **`preCreateTile` + `updateSource`**: calling `doc.updateSource(data)` in `preCreateTile` does modify the creation data. But calling `doc.update()` again in `createTile` with the same data causes a PIXI sprite blink. Solution: skip the `createTile` fallback when `getCachedPreset(key)` confirms `preCreateTile` already applied.
+- **`FilePicker.upload` 5-param API**: param 4 is `body` (extra FormData entries, pass `{}`), param 5 is `options` (`notify: false` lives here). Passing `{ notify: false }` as param 4 silently ignores it.
 
 ## See Also
 
 - [ROADMAP.md](ROADMAP.md) — full phase plan, architecture decisions
+- [KNOWN-BUGS.md](KNOWN-BUGS.md) — confirmed bugs with root-cause analysis
 - `isoroll-content/` repo — AI art pipeline (private)
 - `/foundry` skill — Foundry v14 gotchas, coordinate systems, hooks, component hierarchy
 
@@ -97,8 +71,4 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | Subdirectory | Description |
 |--------------|-------------|
-| [`src/transform/`](src/transform/) | Stage, background, and per-object transforms; config UI tab injection |
-| [`src/volume/`](src/volume/) | 3D volume flags and settings |
-| [`src/sorter/`](src/sorter/) | Depth sort (dormant) |
-| [`src/occluder/`](src/occluder/) | Tile occlusion |
-| [`src/resolver/`](src/resolver/) | Asset stance fallback |
+| [`src/`](src/CONTEXT.md) | All TypeScript source — entry point, flags, settings, util, all subsystems |

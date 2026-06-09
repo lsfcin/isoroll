@@ -13,7 +13,9 @@ type FP = {
 };
 
 function fp(): FP {
-  return (globalThis as unknown as { FilePicker: FP }).FilePicker;
+  type V14 = { foundry?: { applications?: { apps?: { FilePicker?: { implementation?: FP } } } } };
+  return (globalThis as unknown as V14).foundry?.applications?.apps?.FilePicker?.implementation
+    ?? (globalThis as unknown as { FilePicker: FP }).FilePicker;
 }
 
 export function deriveKey(src: string): string {

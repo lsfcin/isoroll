@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
 
 const rad = (d: number): number => (d * Math.PI) / 180;
 
@@ -127,4 +127,8 @@ export function getProjection(
   }
 
   return PROJECTION_TYPES[key ?? "dimetric_2_1"] ?? DIMETRIC_2_1;
+}
+
+export function currentProjection(): IsoProjection {
+  return getProjection(canvas.scene);
 }

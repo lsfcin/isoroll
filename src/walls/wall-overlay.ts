@@ -1,8 +1,9 @@
 // PIXI overlay: shows linked walls when tile is selected, with select-mode picking.
-import { MODULE_ID } from "../volume/flags";
-import { getLinkedWallIds, wallsLayer, imageRect, anchorToCanvas } from "./wall-core";
-import type { WallDoc, TileDoc } from "./wall-core";
+import { MODULE_ID } from "../flags";
+import { getLinkedWallIds } from "./wall-flags";
+import { wallsLayer, imageRect, anchorToCanvas, type WallDoc, type TileDoc } from "./wall-coords";
 import { addEndpointHandles, addLineHover, addSelectInteraction, addWallDblClick } from "./wall-overlay-ops";
+import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
 
 // Colors matching Foundry's Wall layer rendering exactly
 export const WALL_COLORS = {
@@ -32,108 +33,86 @@ export function wallColor(doc: WallDoc): number {
 }
 
 export class WallOverlay {
-  private static _layer: PIXI.Container | null = null;
-  private static _boxes: Map<string, PIXI.Container> = new Map();
-  private static _selectTile: string | null = null;
-  private static _altMode = false;
-  private static _pendingRefresh: Set<string> = new Set();
-  private static _rafId: number | null = null;
+  private static boxes: Map<string, PIXI.Container> = new Map();
+  private static selectTile: string | null = null;
+  private static altMode = false;
+  private static pendingRefresh: Set<string> = new Set();
+  private static rafId: number | null = null;
 
   static activate(): void {
     Hooks.on("canvasReady", () => WallOverlay.clearAll());
     Hooks.on("controlTile", (tile: Tile, controlled: boolean) => {
       if (controlled) WallOverlay.show(tile);
-      else { WallOverlay._selectTile = null; WallOverlay.hide(tile.id); }
+      else { WallOverlay.selectTile = null; WallOverlay.hide(tile.id); }
     });
-    // VolumeGizmos.bringToTop() runs on every refreshTile — stay above it by re-topping here.
-    // This handler registers after VolumeGizmos (WallManager activates last in module.ts).
     Hooks.on("refreshTile", (rawTile: unknown) => {
-      if (WallOverlay._boxes.size > 0) WallOverlay._bringToTop();
+      if (WallOverlay.boxes.size > 0) LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
       // Preview clone fires refreshTile with drag-updated doc.x/y — redraw walls at new position.
       const t = rawTile as { id: string; hasPreview?: boolean; isPreview?: boolean };
-      if (WallOverlay._boxes.has(t.id) && !t.hasPreview && t.isPreview) WallOverlay.show(rawTile as any, true);
+      if (WallOverlay.boxes.has(t.id) && !t.hasPreview && t.isPreview) WallOverlay.show(rawTile as any, true);
     });
-    window.addEventListener("keydown", e => { if (e.altKey) WallOverlay._setAltMode(true); });
-    window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay._setAltMode(false); });
+    window.addEventListener("keydown", e => { if (e.altKey) WallOverlay.setAltMode(true); });
+    window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay.setAltMode(false); });
   }
 
   static show(tile: Tile, isDrag = false): void {
     WallOverlay.hide(tile.id);
-    const layer = WallOverlay._ensureLayer();
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.WALL_OVERLAY);
     const ctr   = new PIXI.Container();
     ctr.eventMode = "auto";
-    if (WallOverlay._selectTile === tile.id) WallOverlay._drawSelect(ctr, tile.document);
-    else WallOverlay._drawDisplay(ctr, tile.document, isDrag);
+    if (WallOverlay.selectTile === tile.id) WallOverlay.drawSelect(ctr, tile.document);
+    else WallOverlay.drawDisplay(ctr, tile.document, isDrag);
     layer.addChild(ctr);
-    WallOverlay._boxes.set(tile.id, ctr);
-    WallOverlay._bringToTop();
+    WallOverlay.boxes.set(tile.id, ctr);
+    LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
   }
 
   static hide(tileId: string): void {
-    const ctr = WallOverlay._boxes.get(tileId);
+    const ctr = WallOverlay.boxes.get(tileId);
     if (!ctr) return;
-    WallOverlay._layer?.removeChild(ctr);
+    ctr.parent?.removeChild(ctr);
     ctr.destroy({ children: true });
-    WallOverlay._boxes.delete(tileId);
+    WallOverlay.boxes.delete(tileId);
   }
 
   static clearAll(): void {
-    for (const id of [...WallOverlay._boxes.keys()]) WallOverlay.hide(id);
-    WallOverlay._selectTile = null;
-    if (WallOverlay._layer) {
-      try { (canvas.stage as unknown as PIXI.Container).removeChild(WallOverlay._layer); } catch { /* ok */ }
-      WallOverlay._layer.destroy({ children: true });
-      WallOverlay._layer = null;
-    }
+    for (const id of [...WallOverlay.boxes.keys()]) WallOverlay.hide(id);
+    WallOverlay.selectTile = null;
+    LayerManager.clearLayer(LAYER_KEYS.WALL_OVERLAY);
   }
 
-  static enterSelect(tile: Tile): void { WallOverlay._selectTile = tile.id; WallOverlay.show(tile); }
-  static exitSelect(tile: Tile): void  { WallOverlay._selectTile = null;    WallOverlay.show(tile); }
-  static isSelectMode(tileId: string): boolean { return WallOverlay._selectTile === tileId; }
+  static enterSelect(tile: Tile): void { WallOverlay.selectTile = tile.id; WallOverlay.show(tile); }
+  static exitSelect(tile: Tile): void  { WallOverlay.selectTile = null;    WallOverlay.show(tile); }
+  static isSelectMode(tileId: string): boolean { return WallOverlay.selectTile === tileId; }
+  // Direct (non-deferred) show — use after mutations so RAF timing can't race with controlTile.
+  static showIfActive(tile: Tile): void {
+    if (WallOverlay.boxes.has(tile.id)) WallOverlay.show(tile);
+  }
   static refresh(tile: Tile): void {
-    if (!WallOverlay._boxes.has(tile.id)) return;
-    WallOverlay._pendingRefresh.add(tile.id);
-    if (WallOverlay._rafId !== null) return;
-    WallOverlay._rafId = requestAnimationFrame(() => {
-      WallOverlay._rafId = null;
-      for (const id of WallOverlay._pendingRefresh) {
-        if (!WallOverlay._boxes.has(id)) continue;
+    if (!WallOverlay.boxes.has(tile.id)) return;
+    WallOverlay.pendingRefresh.add(tile.id);
+    if (WallOverlay.rafId !== null) return;
+    WallOverlay.rafId = requestAnimationFrame(() => {
+      WallOverlay.rafId = null;
+      for (const id of WallOverlay.pendingRefresh) {
+        if (!WallOverlay.boxes.has(id)) continue;
         const t = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(id);
         if (t) WallOverlay.show(t);
       }
-      WallOverlay._pendingRefresh.clear();
+      WallOverlay.pendingRefresh.clear();
     });
   }
 
-  private static _setAltMode(active: boolean): void {
-    if (WallOverlay._altMode === active) return;
-    WallOverlay._altMode = active;
-    for (const id of [...WallOverlay._boxes.keys()]) { // snapshot: show() mutates _boxes
+  private static setAltMode(active: boolean): void {
+    if (WallOverlay.altMode === active) return;
+    WallOverlay.altMode = active;
+    for (const id of [...WallOverlay.boxes.keys()]) { // snapshot: show() mutates _boxes
       const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(id);
       if (tile) WallOverlay.show(tile);
     }
   }
 
-  private static _ensureLayer(): PIXI.Container {
-    if (WallOverlay._layer && !WallOverlay._layer.parent) WallOverlay._layer = null;
-    if (!WallOverlay._layer) {
-      const l = new PIXI.Container();
-      l.eventMode = "passive";
-      (canvas.stage as unknown as PIXI.Container).addChild(l);
-      WallOverlay._layer = l;
-    }
-    return WallOverlay._layer;
-  }
-
-  private static _bringToTop(): void {
-    const l = WallOverlay._layer;
-    if (!l) return;
-    const s = canvas.stage as unknown as PIXI.Container;
-    try { s.removeChild(l); } catch { /* ok */ }
-    s.addChild(l);
-  }
-
-  private static _drawDisplay(ctr: PIXI.Container, doc: TileDocument, isDrag = false): void {
+  private static drawDisplay(ctr: PIXI.Container, doc: TileDocument, isDrag = false): void {
     const r = 2;
     const rect = isDrag ? imageRect(doc as TileDoc) : null;
     for (const id of getLinkedWallIds(doc)) {
@@ -160,7 +139,7 @@ export class WallOverlay {
     }
   }
 
-  private static _drawSelect(ctr: PIXI.Container, doc: TileDocument): void {
+  private static drawSelect(ctr: PIXI.Container, doc: TileDocument): void {
     const linked = new Set(getLinkedWallIds(doc));
     const r = 2;
     for (const wall of wallsLayer().placeables) {
@@ -172,10 +151,10 @@ export class WallOverlay {
       const g     = new PIXI.Graphics();
       { const dx=c[2]-c[0], dy=c[3]-c[1], l=Math.sqrt(dx*dx+dy*dy)||1, nx=(-dy/l)*6, ny=(dx/l)*6, ex=(dx/l)*5, ey=(dy/l)*5;
         g.hitArea = new PIXI.Polygon([c[0]-ex+nx,c[1]-ey+ny, c[2]+ex+nx,c[3]+ey+ny, c[2]+ex-nx,c[3]+ey-ny, c[0]-ex-nx,c[1]-ey-ny]); }
-      const la = isLnk ? 1 : UNLINKED_ALPHA;
-      g.lineStyle(LINE_W + 1.5, 0x000000, la);
+      const alpha = isLnk ? 1 : UNLINKED_ALPHA;
+      g.lineStyle(LINE_W + 1.5, 0x000000, alpha);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
-      g.lineStyle(LINE_W, col, la);
+      g.lineStyle(LINE_W, col, alpha);
       g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
       g.lineStyle(0);
       // Endpoint circles (visual only, matches Wall layer appearance)

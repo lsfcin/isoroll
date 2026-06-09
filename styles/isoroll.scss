@@ -6,8 +6,11 @@
   }
 }
 
-// Iso tab scrolls independently so the Save button is never hidden
+// Override .scene-config .tab { flex: 1; height: 0 } which expands all native tabs
+// to fill the window. Our tab has short content — shrink to fit, cap tall content.
 .tab[data-tab="isoroll"] {
+  flex: none;
+  height: auto;
   overflow-y: auto;
   max-height: 55vh;
 }

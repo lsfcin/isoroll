@@ -1,21 +1,16 @@
 import { deriveKey, readPreset, writePreset, preloadCache, getCachedPreset } from "./preset-storage";
+import { getSrc, docId, toScene, isPresetEnabled, gridSize, getSceneBg, type TextureDoc, type SceneDoc } from "./preset-ops";
+import { applyTile, applyToken, applyBackground, autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls, applyPresetToSource, tilePresetData } from "./preset-apply";
+import { tileUpsertTimers, tokenUpsertTimers, bgUpsertTimers, debounced, upsertTile, upsertToken, upsertBackground } from "./preset-upsert";
 import {
-  getSrc, docId, asSD, isPresetEnabled, gridSize,
-  tileUpsertTimers, tokenUpsertTimers, bgUpsertTimers, debounced,
-  applyTile, applyToken, applyBackground,
-  autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls,
-  upsertTile, upsertToken, upsertBackground,
   changedFlagKeys, intersects, bgNativeChanged, tileNativeChanged,
   TILE_PRESET_KEYS, TOKEN_PRESET_KEYS, BG_PRESET_FLAG_KEYS,
-  applyPresetToSource, tilePresetData,
-  type TextureDoc, type SceneDoc,
-} from "./preset-ops";
+} from "./preset-diff";
 import type { TilePreset, TokenPreset } from "./preset-types";
-import { MODULE_ID } from "../volume/flags";
+import { MODULE_ID } from "../flags";
+import { scheduleWrap } from "../util";
 
-function wrap(fn: () => Promise<void>, label: string): void {
-  setTimeout(() => fn().catch(e => console.warn(`isoroll | ${label} failed`, e)), 50);
-}
+const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 50);
 
 export class PresetManager {
   static activate(): void {
@@ -63,7 +58,7 @@ export class PresetManager {
       if (!!(changes as unknown as SceneDoc).background?.src) { wrap(() => autoApplyBackground(scene), "bg auto-apply"); return; }
       const cf = changedFlagKeys(changes);
       if (bgNativeChanged(changes) || intersects(cf, BG_PRESET_FLAG_KEYS))
-        debounced(bgUpsertTimers, asSD(scene).id ?? "", () => upsertBackground(scene));
+        debounced(bgUpsertTimers, toScene(scene).id ?? "", () => upsertBackground(scene));
     });
 
     // ── ready: preload cache + console API ───────────────────────────────────
@@ -112,7 +107,7 @@ export class PresetManager {
           save: async () => {
             const scene = canvas.scene;
             if (!scene) { console.warn("isoroll | no active scene"); return; }
-            const src = asSD(scene).background?.src;
+            const src = getSceneBg(scene)?.src;
             if (!src) { console.warn("isoroll | no background"); return; }
             await upsertBackground(scene);
           },
