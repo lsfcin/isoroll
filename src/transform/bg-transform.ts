@@ -19,8 +19,12 @@ type BgState = {
 
 export class BackgroundTransform {
   private static originalBg: BgState | null = null;
+  private static lastCapturedSprite: PIXI.Sprite | null = null;
   private static patchedSprite: PIXI.Sprite | null = null;
   private static savedUpdateTransform: (() => void) | null = null;
+
+  // Sprite pointer at last capture — used by onCanvasReady to detect canvas.draw() redraws.
+  static get lastCapture(): PIXI.Sprite | null { return BackgroundTransform.lastCapturedSprite; }
 
   // canvas.environment.primary.background is the rendered sprite in v14.
   // canvas.primary.background exists but transforming it has no visual effect.
@@ -33,6 +37,7 @@ export class BackgroundTransform {
   }
 
   static capture(bg: PIXI.Sprite): void {
+    BackgroundTransform.lastCapturedSprite = bg;
     BackgroundTransform.originalBg = {
       rotation: bg.rotation, skewX: bg.skew.x, skewY: bg.skew.y,
       scaleX: bg.scale.x, scaleY: bg.scale.y, posX: bg.position.x, posY: bg.position.y,
@@ -82,13 +87,11 @@ export class BackgroundTransform {
     BackgroundTransform.savedUpdateTransform = null;
   }
 
-  // Override bg sprite's updateTransform so #refreshPreview resets pick up each frame.
+  // Override bg sprite's updateTransform so #refreshPreview picks up each frame.
   // Grid mesh (children[2]) untouched: stays isometric, camera unchanged.
-  // Reads flags directly — GridConfig and SceneConfig are never open simultaneously,
-  // so previewOverride is always null here and doesn't need to be consulted.
-  static onRenderGridConfig(): void {
-    const enabled   = canvas.scene?.getFlag(MODULE_ID, "enabled")            === true;
-    const bgTransform = canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true;
+  // Called from CanvasTransform.onRenderGridConfig with effective state (respects
+  // pending SceneConfig changes captured in lastPreviewState).
+  static onRenderGridConfig(enabled: boolean, bgTransform: boolean): void {
     if (!enabled || bgTransform) return;
     const stage = canvas.app?.stage;
     if (!stage) return;

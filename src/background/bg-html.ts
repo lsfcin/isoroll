@@ -20,8 +20,7 @@ export class BgHtml {
 
   // TBF = iso enabled + background NOT transformed — the only mode using vertical scale.
   private static isTBF(): boolean {
-    const bgOn = CanvasTransform.previewOverride?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true);
-    return CanvasTransform.effectiveEnabled() && !bgOn;
+    return CanvasTransform.gctEffectiveEnabled() && !CanvasTransform.gctEffectiveTransformBg();
   }
 
   private static onRenderGridConfig(app: GCApp, html: HTMLElement): void {
@@ -75,7 +74,7 @@ export class BgHtml {
       const ye = form?.elements.namedItem?.('shiftY') as HTMLInputElement | null;
       if (!xe || !ye) return;
       e.preventDefault(); e.stopPropagation();
-      if (CanvasTransform.effectiveEnabled()) {
+      if (CanvasTransform.gctEffectiveEnabled()) {
         // TBF / TBT: iso projection — right=X-/Y-, left=X+/Y+, up=X-/Y+, down=X+/Y-
         const dx = (e.code === "ArrowLeft" || e.code === "ArrowDown") ? +1 : -1;
         const dy = (e.code === "ArrowLeft" || e.code === "ArrowUp")   ? +1 : -1;

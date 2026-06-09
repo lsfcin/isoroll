@@ -6,12 +6,16 @@ import { BackgroundTransform } from "./bg-transform";
 export class CanvasTransform {
   static previewOverride: { enabled: boolean; transformBg: boolean } | null = null;
   static previewProjection: IsoProjection | null = null;
+  // Captured when SceneConfig closes while iso flags had a pending preview change.
+  // Read by onRenderGridConfig if GCT opens immediately after SceneConfig close.
+  // Cleared on closeGridConfig so stale state doesn't persist across sessions.
+  static lastPreviewState: { enabled: boolean; transformBg: boolean } | null = null;
 
   static activate(): void {
     Hooks.on("canvasReady",      CanvasTransform.onCanvasReady);
     Hooks.on("updateScene",      CanvasTransform.onUpdateScene);
-    Hooks.on("renderGridConfig", BackgroundTransform.onRenderGridConfig);
-    Hooks.on("closeGridConfig",  BackgroundTransform.clearGridConfigPatch);
+    Hooks.on("renderGridConfig", CanvasTransform.onRenderGridConfig);
+    Hooks.on("closeGridConfig",  CanvasTransform.onCloseGridConfig);
     Hooks.on("closeSceneConfig", CanvasTransform.onCloseSceneConfig);
   }
 
@@ -21,6 +25,19 @@ export class CanvasTransform {
 
   static effectiveEnabled(): boolean {
     return CanvasTransform.previewOverride?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true);
+  }
+
+  // Effective state for GCT session: live preview → pending SceneConfig state → saved flag.
+  static gctEffectiveEnabled(): boolean {
+    return CanvasTransform.previewOverride?.enabled
+      ?? CanvasTransform.lastPreviewState?.enabled
+      ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true);
+  }
+
+  static gctEffectiveTransformBg(): boolean {
+    return CanvasTransform.previewOverride?.transformBg
+      ?? CanvasTransform.lastPreviewState?.transformBg
+      ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true);
   }
 
   static effectiveProjection(): IsoProjection {
@@ -76,11 +93,12 @@ export class CanvasTransform {
   }
 
   private static onCanvasReady(): void {
-    // reset() before clearCapture() — if updateScene→apply() raced ahead of canvasReady,
-    // the bg may already be counter-transformed; restore it before recapturing natural state.
-    BackgroundTransform.reset();
-    BackgroundTransform.clearCapture();
     const bg = BackgroundTransform.getSprite();
+    // reset() only when sprite is unchanged (same canvas session, no canvas.draw() redraw).
+    // If bg is a new sprite (canvas.draw() was called), original values are stale — skipping
+    // reset() keeps the sprite at Foundry's freshly-drawn position before we recapture.
+    if (bg && bg === BackgroundTransform.lastCapture) BackgroundTransform.reset();
+    BackgroundTransform.clearCapture();
     if (bg) BackgroundTransform.capture(bg);
     CanvasTransform.applyCurrentState();
     CanvasTransform.syncHudAfterStageApply();
@@ -113,11 +131,39 @@ export class CanvasTransform {
     CanvasTransform.refresh();
   }
 
+  // If a pending SceneConfig iso change differs from saved flags, the stage was reverted
+  // to saved state by applyCurrentState() in onCloseSceneConfig. Re-apply the effective
+  // state so the GCT preview reflects what the user had pending in SceneConfig.
+  private static onRenderGridConfig(): void {
+    const lps = CanvasTransform.lastPreviewState;
+    const savedEnabled = canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
+    if (lps && lps.enabled !== savedEnabled) {
+      if (lps.enabled) {
+        CanvasTransform.applyStage();
+        if (!lps.transformBg) BackgroundTransform.apply();
+        else BackgroundTransform.reset();
+      } else {
+        CanvasTransform.resetStage();
+        BackgroundTransform.reset();
+      }
+    }
+    BackgroundTransform.onRenderGridConfig(
+      CanvasTransform.gctEffectiveEnabled(),
+      CanvasTransform.gctEffectiveTransformBg(),
+    );
+  }
+
+  private static onCloseGridConfig(): void {
+    CanvasTransform.lastPreviewState = null;
+    BackgroundTransform.clearGridConfigPatch();
+  }
+
   private static onCloseSceneConfig(): void {
     if (!CanvasTransform.previewOverride && !CanvasTransform.previewProjection) return;
+    CanvasTransform.lastPreviewState = CanvasTransform.previewOverride; // capture before clearing
     CanvasTransform.previewOverride = null;
     CanvasTransform.previewProjection = null;
-    CanvasTransform.applyCurrentState();
+    CanvasTransform.applyCurrentState(); // reverts to saved scene flags
     CanvasTransform.refresh();
   }
 }

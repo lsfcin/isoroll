@@ -13,7 +13,7 @@ Abbreviations used below:
 - **TBT** — Enable Isometric = true, Transformed Background = true
 - **GCT** — Grid Configuration Tool
 
-### Step 1 — B22-1 + B22-2: Arrow key handlers (implement first)
+### Step 1 — B22-1 + B22-2: Arrow key handlers ✅ DONE
 
 **Root cause:** `document.addEventListener('keydown', ...)` registers in bubble phase.
 Foundry's handlers (on form inputs, registered before ours) run first. Then ours runs.
@@ -26,7 +26,7 @@ Foundry's handlers (on form inputs, registered before ours) run first. Then ours
 3. Revert user's ±2 hack to clean ±1 deltas.
 4. Replace `canvas.scene?.getFlag(MODULE_ID, "enabled")` guard with `CanvasTransform.effectiveEnabled()` — respects current SceneConfig preview state, fixes the EIF-diagonal issue.
 
-### Step 2 — B22-0a: GCT uses saved state, not effective state
+### Step 2 — B22-0a: GCT uses saved state, not effective state ✅ DONE
 
 **Root cause:** `BackgroundTransform.onRenderGridConfig` reads saved scene flags. Comment says
 "SceneConfig and GCT are never open simultaneously" — wrong assumption. User changes iso in
@@ -34,23 +34,16 @@ SceneConfig → opens GCT → Foundry closes SceneConfig first → `onCloseScene
 `previewOverride = null` → `applyCurrentState()` reverts to saved flags → GCT opens showing
 saved state. Pending SceneConfig changes are gone.
 
-**Fix (bg-transform.ts):**
-In `onRenderGridConfig`, before reading saved flags, check if a SceneConfig app is currently
-open via `Object.values(ui.windows).find(a => a.constructor.name === "SceneConfig")`. If found,
-read the pending iso-flag values from its form elements (flags.isoroll.enabled,
-flags.isoroll.transformBackground). Fall back to scene flags if not found.
+**Fix (stage-transform.ts, bg-transform.ts, bg-html.ts, bg-gizmos.ts):**
+Added `CanvasTransform.lastPreviewState` (captured from `previewOverride` before clear in
+`onCloseSceneConfig`). Added `gctEffectiveEnabled()` / `gctEffectiveTransformBg()` with 3-way
+fallback: live SceneConfig preview → `lastPreviewState` → saved flag. `CanvasTransform.onRenderGridConfig`
+re-applies correct stage/bg state when pending differs from saved. All GCT-context code (gizmos,
+isTBF(), arrow handler) switched to gct-effective methods. `lastPreviewState` cleared on `closeGridConfig`.
 
-### Step 3 — B22-0c: EIF gizmos distorted in GCT
+### Step 3 — B22-0c: EIF gizmos distorted in GCT ✅ RESOLVED by Step 2
 
-**Root cause:** `onRenderGridConfig` early-returns in EIF (`!enabled → return`). The previewBg
-sprite is left with whatever transform Foundry's `#createPreview()` gave it — possibly stale
-from a prior GCT session in a different mode. bg-gizmos then computes outline positions from
-unexpected sprite dimensions.
-
-**Fix (bg-transform.ts):**
-In EIF, instead of returning early, apply a `updateTransform` patch that resets the previewBg
-to an identity-like transform (rotation=0, skew=0, original scale). Ensures clean baseline
-regardless of prior GCT state. Likely partially resolved by Step 2 fix.
+Gizmos `isoCT` now uses `gctEffectiveEnabled/TransformBg()` — correct in all pending-state scenarios.
 
 ### Step 4 — B22-0b: TBT grid offset (gap between outline and grid)
 
@@ -150,6 +143,25 @@ in-place requires a two-point `transformCoord` difference. Not worth the complex
 
 **Affected:** `onRefreshTile` in `tile-transform.ts`; `onUpdateTileFlags`; drag commit in
 `tile-drag.ts` case `"imgOffset"`.
+
+---
+
+## B27 — Background position not updated after GCT save ✅ DONE
+
+**Symptom:** After saving changes in GCT (shiftX/shiftY), the scene outline (dashed border)
+moves to the correct position but the background image remains at the old position. Reloading
+Foundry places the background correctly.
+
+**Root cause:** GCT save triggers `canvas.draw()` (shiftX/shiftY are in Foundry's redraw list).
+`canvasReady` fires with a freshly created bg sprite. Our `onCanvasReady` called `reset()` BEFORE
+re-capturing, which applied stale `originalBg` values (from the pre-draw canvasReady) to the new
+sprite — moving it back to the old position. We then captured that wrong position. Subsequent
+`applyCurrentState()` in EIF restored to the wrong captured position.
+
+**Fix (stage-transform.ts + bg-transform.ts):** Track `lastCapturedSprite` (the sprite pointer at
+last `capture()` call). In `onCanvasReady`, only call `reset()` if `bg === lastCapture` (same
+sprite = no canvas.draw() redraw, guard against racing updateScene). New sprite after canvas.draw()
+is at Foundry's correct position — skip reset, re-capture immediately.
 
 ---
 

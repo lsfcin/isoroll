@@ -2,7 +2,6 @@
 import { currentProjection } from "../transform/constants";
 import { CanvasTransform } from "../transform/stage-transform";
 import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
-import { MODULE_ID } from "../flags";
 import { clientToGlobal } from "../gizmos/mesh-corners";
 import { startPointerDrag } from "../util";
 import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
@@ -33,8 +32,7 @@ export class BackgroundGizmos {
     const html  = BgHtml.currentHtml;
     const layer = LayerManager.ensureLayer(LAYER_KEYS.BG_GIZMOS);
     const proj  = currentProjection();
-    const _po   = CanvasTransform.previewOverride;
-    const isoCT = (_po?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true)) && !(_po?.transformBg ?? (canvas.scene?.getFlag(MODULE_ID, "transformBackground") === true));
+    const isoCT = CanvasTransform.gctEffectiveEnabled() && !CanvasTransform.gctEffectiveTransformBg();
     const cosR  = isoCT ? Math.cos(proj.reverseRotation) : 1;
     const sinR  = isoCT ? Math.sin(proj.reverseRotation) : 0;
     const previewBg = BgHtml.previewBg;
