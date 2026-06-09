@@ -67,7 +67,7 @@ export class VolumeGizmos {
     const boundH   = VolumeFlags.getEffectiveTileHeight(tile.document);
     const elevPx   = elevToCanvas(elev, gridSize, gridDist);
     const elevTopPx = elevPx + boundH * gridSize;
-    const hDir     = proj.heightDir;
+    const heightDir     = proj.heightDir;
     const imgBL    = imageBottomLeft(tile), imgTR = imageTopRight(tile), imgBC = imageBottomCenter(tile);
     const imgOff    = VolumeFlags.getImageOffset(tile.document);
     const imgScale  = VolumeFlags.getImageScale(tile.document);
@@ -75,7 +75,7 @@ export class VolumeGizmos {
     const showVolManip = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImgManip = VolumeFlags.getShowImageManipulation(tile.document, true);
     const imgTC = imageTopCenter(tile);
-    const positions = handlePositions(tx, ty, tw, th, elevPx, elevTopPx, hDir.x, hDir.y, imgBL, imgTR, imgBC, imgTC);
+    const positions = handlePositions(tx, ty, tw, th, elevPx, elevTopPx, heightDir.x, heightDir.y, imgBL, imgTR, imgBC, imgTC);
     // baseHalfH: canvas-px half image height when imgYScale=1 — used for snap in projectDrag
     type MeshSnap = { scale: { y: number }; texture?: { height: number } };
     const tileMeshSnap = tile.mesh as unknown as MeshSnap | null | undefined;
@@ -88,7 +88,7 @@ export class VolumeGizmos {
     if (showImgManip) handleTypes.push("imgOffset", "imgScale", "imgYScale", "swapSide");
     for (const type of handleTypes) {
       const pos    = positions[type];
-      const handle = makeHandleForType(type, hDir.x, hDir.y);
+      const handle = makeHandleForType(type, heightDir.x, heightDir.y);
       handle.x = pos.cx;
       handle.y = pos.cy;
       handleTypeMap.set(handle, type);

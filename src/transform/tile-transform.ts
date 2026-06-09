@@ -95,7 +95,7 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   const boundH    = VolumeFlags.getEffectiveTileHeight(tile.document) * gridSize;
   const elevPx    = elevToCanvas(elev, gridSize, gridDist);
   const proj      = CanvasTransform.effectiveProjection();
-  const hDir      = proj.heightDir;
+  const heightDir      = proj.heightDir;
   const imgScale   = VolumeFlags.getImageScale(tile.document);
   const imgYScale  = VolumeFlags.getImageYScale(tile.document);
   const imgFlipped = VolumeFlags.getTileFlipped(tile.document);
@@ -115,13 +115,13 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   // The orange circle handler is at baseCenterWorld. We temporarily set the mesh position to
   // the 3D box center, then use our universal transform to find where baseCenterWorld falls on the image.
   const baseCenterWorld: P2 = {
-    x: (tile.document.x ?? 0) + hDir.x * elevPx,
-    y: (tile.document.y ?? 0) + hDir.y * elevPx,
+    x: (tile.document.x ?? 0) + heightDir.x * elevPx,
+    y: (tile.document.y ?? 0) + heightDir.y * elevPx,
   };
 
   mesh.anchor?.set(0.5, 0.5);
-  mesh.x = baseCenterWorld.x + hDir.x * (boundH / 2);
-  mesh.y = baseCenterWorld.y + hDir.y * (boundH / 2);
+  mesh.x = baseCenterWorld.x + heightDir.x * (boundH / 2);
+  mesh.y = baseCenterWorld.y + heightDir.y * (boundH / 2);
 
   const anchorUV = transformCoord(baseCenterWorld, "WORLD", "IMAGE", { mesh }) as P2;
   mesh.anchor?.set(Math.max(0, Math.min(1, anchorUV.x)), Math.max(0, Math.min(1, anchorUV.y)));

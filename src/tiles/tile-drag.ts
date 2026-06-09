@@ -114,10 +114,10 @@ export function projectDrag(
       break;
     }
     case "imgScale": {
-      const hDir   = currentProjection().heightDir;
+      const heightDir   = currentProjection().heightDir;
       const elevPx = elevToCanvas(drag.startElev, gridSize, gridDist);
-      const cx = drag.startDocX + hDir.x * elevPx + drag.startImgOffX;
-      const cy = drag.startDocY + hDir.y * elevPx + drag.startImgOffY;
+      const cx = drag.startDocX + heightDir.x * elevPx + drag.startImgOffX;
+      const cy = drag.startDocY + heightDir.y * elevPx + drag.startImgOffY;
       imgScale = projectImgScale(gx, gy, drag.startGX, drag.startGY, drag.startImgScale, cx, cy, wt);
       break;
     }

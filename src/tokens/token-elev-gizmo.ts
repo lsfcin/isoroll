@@ -66,11 +66,11 @@ export class TokenElevGizmo {
     const boundH   = VolumeFlags.getTokenHeight(token.document);
     const elevPx   = elevToCanvas(elev, gridSize, gridDist);
     const elevTopPx = elevPx + boundH * gridSize;
-    const hDir     = proj.heightDir;
+    const heightDir     = proj.heightDir;
 
     // Midpoint of SE vertical edge (same formula as tile elevation handle)
-    const seMidX = tx + tw + hDir.x * (elevPx + elevTopPx) / 2;
-    const seMidY = ty + th + hDir.y * (elevPx + elevTopPx) / 2;
+    const seMidX = tx + tw + heightDir.x * (elevPx + elevTopPx) / 2;
+    const seMidY = ty + th + heightDir.y * (elevPx + elevTopPx) / 2;
 
     const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
     const handle = makeCircleHandle(0xff9829);

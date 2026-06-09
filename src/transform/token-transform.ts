@@ -25,7 +25,7 @@ export function onRefreshToken(token: Token, flags?: Record<string, boolean>): v
   const gridSize = canvas.grid?.size ?? 100;
   const proj     = CanvasTransform.effectiveProjection();
   const { reverseRotation, ratio, counterFactor } = proj;
-  const hDir     = proj.heightDir;
+  const heightDir     = proj.heightDir;
   const docW     = (token.document.width  ?? 1) * gridSize;
   const docH     = (token.document.height ?? 1) * gridSize;
   const imgScl   = VolumeFlags.getImageScale(token.document);
@@ -57,6 +57,6 @@ export function onRefreshToken(token: Token, flags?: Record<string, boolean>): v
   const elev     = (token.document as unknown as { elevation?: number }).elevation ?? 0;
   const elevPx   = elevToCanvas(elev, gridSize, gridDist);
   const imgOff   = VolumeFlags.getImageOffset(token.document);
-  mesh.x = base.x + hDir.x * elevPx + imgOff.x * gridSize;
-  mesh.y = base.y + hDir.y * elevPx + imgOff.y * gridSize;
+  mesh.x = base.x + heightDir.x * elevPx + imgOff.x * gridSize;
+  mesh.y = base.y + heightDir.y * elevPx + imgOff.y * gridSize;
 }
