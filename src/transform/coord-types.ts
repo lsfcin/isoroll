@@ -30,8 +30,8 @@
  *   ISO3D    — our conceptual 3D isometric space.
  *              x, y: canvas-pixel footprint position (= WORLD coords at elevation 0)
  *              z:    elevation in grid-distance units (feet, meters, etc.)
- *              world.x = iso.x + heightDir.x × elevToCanvas(z, gs, gd)
- *              world.y = iso.y + heightDir.y × elevToCanvas(z, gs, gd)
+ *              world.x = iso.x + heightDir.x × elevToCanvas(z, gridSize, gridDist)
+ *              world.y = iso.y + heightDir.y × elevToCanvas(z, gridSize, gridDist)
  *              heightDir = {x:1, y:-1} for all built-in presets.
  *
  * ─── Layer Map ────────────────────────────────────────────────────────────────

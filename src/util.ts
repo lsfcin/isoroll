@@ -11,8 +11,8 @@ export function gridDistance(): number {
   return (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
 }
 
-export function elevToCanvas(elev: number, gs: number, gd: number): number {
-  return elev * gs / gd;
+export function elevToCanvas(elev: number, gridSize: number, gridDist: number): number {
+  return elev * gridSize / gridDist;
 }
 
 export function screenToCanvas(

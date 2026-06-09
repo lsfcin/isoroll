@@ -48,10 +48,10 @@ export function onPreUpdateScene(
   changes: { grid?: { size?: number } },
 ): void {
   if (!changes.grid?.size) return;
-  const oldGs = (scene.grid as { size: number }).size;
-  const newGs = changes.grid.size;
-  if (oldGs <= 0 || oldGs === newGs) return;
-  pendingGridRescale = { sceneId: (scene as { id: string }).id, ratio: newGs / oldGs };
+  const oldGridSize = (scene.grid as { size: number }).size;
+  const newGridSize = changes.grid.size;
+  if (oldGridSize <= 0 || oldGridSize === newGridSize) return;
+  pendingGridRescale = { sceneId: (scene as { id: string }).id, ratio: newGridSize / oldGridSize };
 }
 
 export function onUpdateSceneGridRescale(scene: { id: string }): void {
@@ -89,13 +89,13 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   }
   const mesh = tile.mesh as unknown as MutMeshLike | null | undefined;
   if (!mesh) return;
-  const gs      = canvas.grid?.size ?? 100;
-  const gd      = gridDistance();
-  const elev    = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
-  const boundH  = VolumeFlags.getEffectiveTileHeight(tile.document) * gs;
-  const E       = elevToCanvas(elev, gs, gd);
-  const proj    = CanvasTransform.effectiveProjection();
-  const { x: hdx, y: hdy } = proj.heightDir;
+  const gridSize  = canvas.grid?.size ?? 100;
+  const gridDist  = gridDistance();
+  const elev      = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
+  const boundH    = VolumeFlags.getEffectiveTileHeight(tile.document) * gridSize;
+  const elevPx    = elevToCanvas(elev, gridSize, gridDist);
+  const proj      = CanvasTransform.effectiveProjection();
+  const hDir      = proj.heightDir;
   const imgScale   = VolumeFlags.getImageScale(tile.document);
   const imgYScale  = VolumeFlags.getImageYScale(tile.document);
   const imgFlipped = VolumeFlags.getTileFlipped(tile.document);
@@ -112,23 +112,23 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
   if (imgFlipped && mesh.scale.x > 0) mesh.scale.x = -mesh.scale.x;
 
   // We want the geometric center of the texture (0.5, 0.5) to map to the 3D box center.
-  // The orange circle handler is at baseCenter. We temporarily set the mesh position to 
-  // the 3D box center, then use our universal transform to find where baseCenter falls on the image.
-  const baseCenter: P2 = { 
-    x: (tile.document.x ?? 0) + hdx * E, 
-    y: (tile.document.y ?? 0) + hdy * E 
+  // The orange circle handler is at baseCenterWorld. We temporarily set the mesh position to
+  // the 3D box center, then use our universal transform to find where baseCenterWorld falls on the image.
+  const baseCenterWorld: P2 = {
+    x: (tile.document.x ?? 0) + hDir.x * elevPx,
+    y: (tile.document.y ?? 0) + hDir.y * elevPx,
   };
-  
-  mesh.anchor?.set(0.5, 0.5);
-  mesh.x = baseCenter.x + hdx * (boundH / 2);
-  mesh.y = baseCenter.y + hdy * (boundH / 2);
 
-  const anchorUV = transformCoord(baseCenter, "WORLD", "IMAGE", { mesh }) as P2;
+  mesh.anchor?.set(0.5, 0.5);
+  mesh.x = baseCenterWorld.x + hDir.x * (boundH / 2);
+  mesh.y = baseCenterWorld.y + hDir.y * (boundH / 2);
+
+  const anchorUV = transformCoord(baseCenterWorld, "WORLD", "IMAGE", { mesh }) as P2;
   mesh.anchor?.set(Math.max(0, Math.min(1, anchorUV.x)), Math.max(0, Math.min(1, anchorUV.y)));
 
   const imgOff = VolumeFlags.getImageOffset(tile.document);
-  mesh.x = baseCenter.x + imgOff.x * gs;
-  mesh.y = baseCenter.y + imgOff.y * gs;
+  mesh.x = baseCenterWorld.x + imgOff.x * gridSize;
+  mesh.y = baseCenterWorld.y + imgOff.y * gridSize;
 
   if (DEBUG_ANCHOR) {
     const stage = (window as any).canvas.stage;
@@ -141,7 +141,7 @@ export function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): voi
     worldDbg.clear();
     worldDbg.beginFill(0xff0000, 0.9);
     worldDbg.lineStyle(1, 0xffffff, 1);
-    worldDbg.drawRect(baseCenter.x - 3, baseCenter.y - 15, 6, 30);
+    worldDbg.drawRect(baseCenterWorld.x - 3, baseCenterWorld.y - 15, 6, 30);
     worldDbg.endFill();
 
     let imgDbg = (mesh as any).getChildByName("anchor-img-dbg");

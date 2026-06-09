@@ -22,13 +22,14 @@ export function onRefreshToken(token: Token, flags?: Record<string, boolean>): v
   }
   const mesh = token.mesh as unknown as MeshLike | null | undefined;
   if (!mesh) return;
-  const gs   = canvas.grid?.size ?? 100;
-  const proj = CanvasTransform.effectiveProjection();
-  const { reverseRotation, ratio, counterFactor, heightDir: { x: hdx, y: hdy } } = proj;
-  const docW = (token.document.width  ?? 1) * gs;
-  const docH = (token.document.height ?? 1) * gs;
-  const imgScl  = VolumeFlags.getImageScale(token.document);
-  const imgYScl = VolumeFlags.getImageYScale(token.document);
+  const gridSize = canvas.grid?.size ?? 100;
+  const proj     = CanvasTransform.effectiveProjection();
+  const { reverseRotation, ratio, counterFactor } = proj;
+  const hDir     = proj.heightDir;
+  const docW     = (token.document.width  ?? 1) * gridSize;
+  const docH     = (token.document.height ?? 1) * gridSize;
+  const imgScl   = VolumeFlags.getImageScale(token.document);
+  const imgYScl  = VolumeFlags.getImageYScale(token.document);
 
   // Re-apply counter-transform — _refreshMesh() resets scale/anchor on animation frames.
   // Guards avoid setting PIXI dirty when the value is already correct, breaking any
@@ -51,11 +52,11 @@ export function onRefreshToken(token: Token, flags?: Record<string, boolean>): v
   if (!flags || flags["refreshPosition"]) {
     tokenBase.set(token, { x: mesh.x, y: mesh.y });
   }
-  const base  = tokenBase.get(token) ?? { x: mesh.x, y: mesh.y };
-  const gd    = gridDistance();
-  const elev  = (token.document as unknown as { elevation?: number }).elevation ?? 0;
-  const E     = elevToCanvas(elev, gs, gd);
-  const imgOff = VolumeFlags.getImageOffset(token.document);
-  mesh.x = base.x + hdx * E + imgOff.x * gs;
-  mesh.y = base.y + hdy * E + imgOff.y * gs;
+  const base     = tokenBase.get(token) ?? { x: mesh.x, y: mesh.y };
+  const gridDist = gridDistance();
+  const elev     = (token.document as unknown as { elevation?: number }).elevation ?? 0;
+  const elevPx   = elevToCanvas(elev, gridSize, gridDist);
+  const imgOff   = VolumeFlags.getImageOffset(token.document);
+  mesh.x = base.x + hDir.x * elevPx + imgOff.x * gridSize;
+  mesh.y = base.y + hDir.y * elevPx + imgOff.y * gridSize;
 }
