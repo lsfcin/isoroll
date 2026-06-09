@@ -81,152 +81,11 @@
 
 ## Phase Status
 
-### Phase 1 — Canvas Transform ✅ DONE
+### Phase 4 — Image Edit Mode 🔲 UX PENDING
 
-- [x] Stage rotation + skew (dimetric 2:1)
-- [x] `canvasReady` + `updateScene` hooks
-- [x] Enable/disable per scene via flag
-
-### Phase 2 — Object Counter-Transform ✅ DONE
-
-- [x] `refreshToken` / `refreshTile` hooks with scale-guard flags
-- [x] Token counter-transform: `anchor(0.5,0.5)`, rotation locked to `reverseRotation` (auto-facing suppressed)
-- [x] Tile counter-transform: uniform scale `max(docW,docH)/max(texW,texH)` — preserves aspect ratio
-- [x] TokenHUD repositioned via `renderTokenHUD` hook with correct HUD-container-space math
-- [x] TileHUD repositioned via `_updatePosition` prototype patch on `CONFIG.Tile.hudClass`; spans tile visual isometric footprint width `cosA*(docW+docH)`; swap-stable vertical `T - visualCssW/4`
-- [x] Movement ruler labels (Ruler + TokenRuler `_getWaypointLabelContext`) patched to apply worldTransform correction — same HUD displacement bug as TokenHUD
-- [x] `DIMETRIC_2_1` constants shared via `constants.ts`
-- ⏳ Token 8-directional sprite selection (TODO placeholder in `object-transform.ts`) → Phase Future/Multiview
-
-### Phase 2.5 — Config UI ✅ DONE
-
-- [x] "Enable Isoroll" + "Transform Background" in Scene Config (Isoroll tab)
-- [x] "Transform Token" in Token Config (Isoroll tab)
-- [x] "Transform Tile" in Tile Config (Isoroll tab)
-- [x] pt-BR language support
-- [x] Foundry AppV2 tab injection (see `/foundry` skill)
-- [x] Grid Configuration Tool (grid wrench): counter-transforms preview bg sprite when `transformBackground=false`; grid mesh stays isometric; camera position unchanged. Pattern: `updateTransform` override with save→apply→origUpdate→restore on `renderGridConfig` hook.
-- [x] Grid Config scene offset: bg position uses `canvas.dimensions.sceneX/Y` (not static scene flags) so Scene Offset changes are reflected live
-- [x] AppV2 stale `tabGroups` bug: clicking native tab after custom tab was activated left content hidden; fixed by explicit `addClass("active")` in other-tab handler
-- [x] `imageOffset` stored in grid-relative units (divide on save, multiply by `gs` on apply/drag-start) — preserves offset across gridSize changes
-- [x] `foregroundTile` flag (default true): foreground tiles rescale `x/y/width/height` canvas px when scene gridSize changes (via `preUpdateScene`/`updateScene` hooks), preserving grid-unit footprint like tokens. Checkbox in TileConfig Iso tab.
-- [x] Background image handles in GridConfig Tool (when `transformBackground=false`):
-  - TC white square → `backgroundYScale` scene flag (Y-scale only); CTRL+Wheel/Arrow shortcuts (step 0.01)
-  - TR white square → `scale` native form field (uniform scale)
-  - BL white circle → `shiftX`/`shiftY` native form fields (translate)
-  - Dashed contour (white, screen-density-normalised via worldTransform scale factors); live update during Y-scale drag
-  - "Vertical Scale" numeric field injected into GridConfig form (step=0.001, min=0.05, max=5)
-  - `backgroundYScale` persisted via instance-level `_processSubmitData` patch (GridConfig native submit skips non-native fields)
-
-### Phase 3 — Volume Handles (Gizmos) ✅ DONE (v2 — full redesign)
-
-**3D Box Overlay** (`src/volume/overlay.ts`):
-- [x] 8-vertex, 12-edge 3D bounding box drawn with dashed PIXI.Graphics
-- [x] Front edges: full alpha orange + dark outline; back/hidden edges: 40% alpha
-- [x] Height direction: canvas (+1,−1) per grid unit — produces pure screen-vertical for all presets
-- [x] Elevation offset: tile.document.elevation × gridSize / gridDistance
-- [x] Height offset: boundHeight flag × gridSize
-- [x] Anchor dashed line from ground center to box base (elevated) or top (below ground)
-- [x] Redraws on controlTile/refreshTile, clears on canvasReady/updateScene
-
-**Gizmo Handles — Tiles** (`src/volume/gizmos.ts`, `gizmos-handles.ts`, `gizmos-drag.ts`):
-- [x] Volume handles (orange `#ff9829`), live-drag on pointermove — gated by `showVolumeManipulation`:
-  - Width (diamond) — left-edge midpoint of base → tile.document.width
-  - Height (diamond) — bottom-edge midpoint of base → tile.document.height
-  - BoundH (face parallelogram) — top back-face of box → boundHeight flag
-  - Elevation (counter-transformed circle) — SE vertical edge midpoint → tile.document.elevation
-  - Scale (diamond) — SE_base corner → proportional width+height
-  - Move (circle) — base face center → tile.document.x/y
-- [x] Image handles (white), gated by `showImageManipulation`:
-  - imgOffset (circle, BL corner) → imageOffset flag
-  - imgScale (square, TR corner) → imageScale flag
-  - imgYScale (square, TC top-center) → imageYScale flag; Y-axis only; 12px screen-space snap to 1.0
-  - swapSide (triangle button, BC edge) — swaps width↔height + tileFlipped in single `document.update()` (avoids mid-swap refreshTile with inconsistent state)
-- [x] 1/4 grid-unit snap; elevation snaps to integer feet
-- [x] Tile mesh displaced by elevation: `mesh.x/y = doc.x/y + hdx/hdy * E`
-- [x] Image scale includes boundHeight: `Math.max(docW, docH, docBoundH)`
-- [x] Rotation handle suppressed: invisible event-absorber over Foundry's triangle
-- [x] Anchor line: orange line from ground center to elevated base
-- [x] Auto-show on tile select, auto-hide on deselect, rebuild on refreshTile
-
-**Gizmo Handles — Tokens** (`src/volume/token-gizmos.ts`, `token-volume-gizmos.ts`):
-- [x] Image handles (white), gated by `showImageManipulation`:
-  - imgOffset (circle, BL corner) → imageOffset flag
-  - imgScale (square, TR corner) → imageScale flag
-  - imgYScale (square, TC top-center) → imageYScale flag; Y-axis only; 12px screen-space snap to 1.0
-- [x] Volume handle (orange), gated by `showVolumeManipulation`:
-  - Elevation (counter-transformed circle) — SE edge midpoint → token.document.elevation (with `{ animate: false }`)
-- [x] Doc-state cache (x, y, elevation, boundH) prevents 60fps PIXI rebuild during movement animation
-
-**Token Volume Overlay** (`src/volume/token-volume-overlay.ts`):
-- [x] Same 12-edge 3D wireframe box as tiles; uses `computeTokenVerts()` (token coords: x/y = top-left, width/height × gridSize)
-- [x] Anchor line from ground to elevated base
-- [x] Token mesh displaced by elevation: `mesh.x/y = base + hdx/hdy * E + imgOff`; tokenBase captures natural center on `refreshPosition` only; elevation fresh-read every frame so drag updates immediately
-- [x] Doc-state cache avoids redundant redraws when document unchanged
-
-**Config UI — Manipulation flags** (`src/transform/scene-config.ts`):
-- [x] `showImageManipulation` checkbox in TokenConfig + TileConfig Iso tab (default true)
-- [x] `showVolumeManipulation` checkbox in TokenConfig + TileConfig Iso tab (default true)
-- [x] `defaultTokenHeight` setting default raised to 2 grid units (≈ 10 ft at standard 5 ft/sq grid)
-
-**Projection System** (`src/transform/constants.ts`):
-- [x] PROJECTION_TYPES map: dimetric_2_1, true_iso, overhead, proj_3_2, diablo, torment, hades (approx.), custom
-- [x] getProjection(scene) — reads flags.isoroll.projection, handles custom numeric inputs
-- [x] heightDir field on IsoProjection for 3D box math
-- [x] canvas-transform.ts + object-transform.ts use getProjection() per hook call
-
-**Scene Config** (`src/transform/scene-config.ts`):
-- [x] Projection dropdown added to Iso tab (after Transform Background)
-- [x] Custom projection: 4 numeric fields (rotation°, skewX°, skewY°, ratio) shown when "custom" selected
-- [x] Tab renamed: "Isoroll" → "Iso" (all sheets: scene/tile/token)
-
-### Phase 4 — Image Edit Mode ✅ HANDLES DONE / 🔲 UX PENDING
-
-**Tokens + Tiles (done):**
-- [x] BL circle handle → drag to translate image (`flags.isoroll.imageOffset`)
-- [x] TR square handle → drag to scale image (`flags.isoroll.imageScale`)
-- [x] Dashed image contour shown on select (white dash, screen-pixel-adapted length)
-- [x] Handles shown on select via `controlToken`/`controlTile`; rebuilt on refresh
-- [x] Drag math: screen-space delta inverted through worldTransform for offset; radial distance ratio for scale
-- [x] Image offset correctly tracks movement (tokenBase pattern, captured on `refreshPosition` only)
-- [x] Hide/show animation safe (refreshMesh-only frames skipped)
-- [x] `showImageManipulation` flag (default true) gates handles + contour per object
-
-**UX polish (pending):**
 - [ ] Double-click enters image-edit mode (volume handles hidden while active)
 - [ ] Fine-tune numeric text inputs for offset/scale
 - [ ] ESC / click-outside exits image-edit mode
-
-### Phase 5 — Preset System ✅ DONE
-
-**Storage** (`src/preset/preset-storage.ts`):
-- [x] File-per-image at `Data/isoroll/presets/<mirrored-path>.json`; intermediate dirs created lazily and cached
-- [x] `_index.json` flat map for O(1) startup preload (created empty on first run to suppress 404 noise)
-- [x] In-memory cache (`Map<key, IsorollPreset>`); populated from index on `ready`, updated on every write
-- [x] `FilePicker.upload(source, path, file, body, options)` — body={} 4th param, notify:false in 5th options param
-
-**Hooks** (`src/preset/preset-manager.ts`):
-- [x] `preCreateTile` → `doc.updateSource(presetData)` — synchronous cache lookup, applies width/height + all flags before Foundry persists the tile (zero blink)
-- [x] `createTile` → async fallback (file fetch) ONLY on cache miss; skipped on cache hit to avoid redundant PIXI sprite redraw blink
-- [x] `createToken` / `createScene` → async auto-apply on first placement
-- [x] `updateTile` / `updateToken` → upsert on preset flag or native width/height changes; 500ms debounce
-- [x] `updateScene` → upsert on background native fields or `backgroundYScale` flag change; 500ms debounce
-- [x] Circular guard: preset-triggered `doc.update()` passes `{ isoroll: "preset" }` option; hooks skip those updates
-
-**Preset fields** (`src/preset/preset-types.ts`):
-- Tile: `gridWidth`, `gridHeight` (grid units), `boundHeight`, `imageScale`, `imageYScale`, `imageOffset`, `tileFlipped`, `foregroundTile`
-- Token: same minus `gridWidth`/`gridHeight`/`foregroundTile`
-- Background: `scaleX`, `offsetX`, `offsetY`, `gridSize`, `backgroundYScale`
-
-**Ops** (`src/preset/preset-ops.ts`): extract, apply, auto-apply, upsert functions; debounce infra; changedFlagKeys helpers
-
-**Config UI** (`src/transform/scene-config.ts`):
-- [x] "Use Image Preset" checkbox in TileConfig + TokenConfig Iso tab (`flags.isoroll.presetEnabled`, default true/opt-out)
-
-**Console API** (`window.ISOROLL_PRESETS`):
-- `tile.{get(src), save(src?), apply(src)}`
-- `token.{get(src), save(src?), apply(src)}`
-- `background.{get(src), save(), apply(src)}`
 
 ### Phase 6 — Stance State Machine 🔲 PENDING
 
@@ -255,19 +114,34 @@
 
 ---
 
----
-
 ## Repo Structure
 
 ```
 isoroll-module/          ← this repo (public, Foundry module)
   src/
-    transform/           canvas-transform, object-transform, scene-config, constants
-    volume/              flags, settings, overlay, gizmos, background-gizmos, …
-    preset/              preset-types, preset-storage, preset-ops, preset-manager
+    transform/           stage-transform, tile-transform, token-transform, bg-transform,
+                         object-transform, constants, coord-types, coord-map, coord-sys-*,
+                         coord-debug, ruler-patch
+    ui/                  scene-config, tile-config, token-config, tab-helpers
+    tiles/               tile-overlay, tile-gizmos, tile-drag
+    tokens/              token-overlay, token-gizmos, token-elev-gizmo
+    background/          bg-gizmos, bg-drag, bg-html
+    gizmos/              handle-draw, handle-factories, img-drag, mesh-corners
+    draw/                volume-box, contour, shapes, constants
+    hud/                 tile-hud, token-hud, hud-utils
+    walls/               wall-manager, wall-coords, wall-crud, wall-overlay,
+                         wall-overlay-ops, wall-history, wall-sync, wall-door,
+                         wall-flags, wall-types
+    preset/              preset-types, preset-storage, preset-ops, preset-apply,
+                         preset-diff, preset-upsert, preset-manager
+    render/              layer-manager
     sorter/              depth-sorter
     occluder/            occluder
     resolver/            asset-resolver
+    flags.ts             module-level flag helpers
+    settings.ts          module settings registration
+    util.ts              shared utilities
+    module.ts            entry point
   styles/                isoroll.scss
   lang/                  en.json, pt-br.json
   assets/                placeholder art
