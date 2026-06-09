@@ -117,8 +117,8 @@ export class TokenElevGizmo {
     label.anchor.set(0, 0.5);
     label.x = HALF + 6; label.y = 0;
     label.eventMode = "none";
-    label.alpha = selected ? 0.8 : 0.5;
-    label.visible = elev !== 0;
+    label.alpha = selected ? 0.7 : 0.3;
+    label.visible = elev !== 0 && (selected || VolumeFlags.getShowElevationUnselected(token.document));
     const texSrc = (label.texture as unknown as { source?: { autoGenerateMipmaps: boolean }; baseTexture?: { mipmap: number } });
     if (texSrc.source)      texSrc.source.autoGenerateMipmaps = false;
     if (texSrc.baseTexture) texSrc.baseTexture.mipmap = 0;

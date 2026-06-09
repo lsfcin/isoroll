@@ -24,6 +24,8 @@
       "ShowImageManipulationHint": "Exibe as alças de deslocamento/escala da imagem (círculo e quadrado brancos) e o contorno tracejado da imagem quando o token está selecionado.",
       "ShowVolumeManipulation": "Manipulação de Volume",
       "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e a alça de elevação quando o token está selecionado.",
+      "ShowElevationUnselected": "Exibir Elevação Quando Não Selecionado",
+      "ShowElevationUnselectedHint": "Exibe o rótulo de elevação próximo ao token mesmo quando ele não está selecionado.",
       "PresetEnabled": "Usar Predefinição de Imagem",
       "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um token com esta imagem, e atualiza a predefinição ao editar este token."
     },

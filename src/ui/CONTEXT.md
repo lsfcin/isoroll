@@ -20,3 +20,14 @@
 | Subdirectory | Description |
 |--------------|-------------|
 | _(none)_ | All files at this level |
+
+<!-- routing:start -->
+## Routing
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`scene-config.ts`](scene-config.ts) | — | `registerSceneConfigHook`, `projectionOptions` | ← add first-line comment |
+| [`tab-helpers.ts`](tab-helpers.ts) | — | `addIsorollTab`, `flagCheckbox` | AppV2 tab injection and flag checkbox builder shared across TileConfig, TokenConfig, SceneConfig. |
+| [`tile-config.ts`](tile-config.ts) | — | `registerTileConfigHook` | ← add first-line comment |
+| [`token-config.ts`](token-config.ts) | — | `registerTokenConfigHook` | Registers the isoroll Iso tab in the TokenConfig AppV2 sheet. |
+<!-- routing:end -->

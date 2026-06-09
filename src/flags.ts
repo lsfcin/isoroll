@@ -75,6 +75,10 @@ export class VolumeFlags {
     return (val !== undefined && val !== null) ? (val as boolean) : defaultValue;
   }
 
+  static getShowElevationUnselected(doc: { getFlag(s: string, k: string): unknown }): boolean {
+    return doc.getFlag(MODULE_ID, "showElevationUnselected") !== false;
+  }
+
   // Foreground tiles scale with gridSize (like tokens). Default true for all tiles.
   static isForegroundTile(tile: TileDocument): boolean {
     return tile.getFlag(MODULE_ID, "foregroundTile") !== false;
