@@ -17,7 +17,7 @@ export async function updateLinkedWallPositions(doc: TileDocument): Promise<void
     updates.push({ _id: id, c: anchorToCanvas(icx, icy, sw, sh, anchor) });
   }
   if (!updates.length) return;
-  await scene().updateEmbeddedDocuments("Wall", updates, { isoroll: "wallMove" });
+  await scene().updateEmbeddedDocuments("Wall", updates, { isoroll: "wallMove", isUndo: true });
 }
 
 // swapSide mirrors the tile image in screen-X through the tile center.
@@ -47,5 +47,5 @@ export async function flipLinkedWallAnchorsX(doc: TileDocument, dimensionsSwappe
     });
   }
   if (!updates.length) return;
-  await scene().updateEmbeddedDocuments("Wall", updates, { isoroll: "wallMove" });
+  await scene().updateEmbeddedDocuments("Wall", updates, { isoroll: "wallMove", isUndo: true });
 }

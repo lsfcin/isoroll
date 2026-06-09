@@ -8,8 +8,9 @@ export function getLinkedWallIds(doc: TileDocument): string[] {
   return Array.isArray(v) ? (v as string[]) : [];
 }
 
-export async function setLinkedWallIds(doc: TileDocument, ids: string[]): Promise<void> {
-  await doc.setFlag(MODULE_ID, "linkedWallIds", ids);
+export async function setLinkedWallIds(doc: TileDocument, ids: string[], opts: object = {}): Promise<void> {
+  await (doc as unknown as { update(d: object, o?: object): Promise<unknown> })
+    .update({ [`flags.${MODULE_ID}.linkedWallIds`]: ids }, opts);
 }
 
 export async function pruneLinkedWalls(doc: TileDocument): Promise<void> {

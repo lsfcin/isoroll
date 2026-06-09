@@ -41,7 +41,7 @@ export async function createWallsFromDefs(doc: TileDocument, defs: WallDef[]): P
       },
     };
   });
-  const created = await scene().createEmbeddedDocuments("Wall", wallData);
+  const created = await scene().createEmbeddedDocuments("Wall", wallData, { isUndo: true });
   return created.map(w => w.id ?? "").filter(Boolean);
 }
 
@@ -51,8 +51,9 @@ export async function deleteLinkedWalls(doc: TileDocument, skipHistory = false):
     const prevData = ids.map(id => (wallsLayer().get(id)!.document as any).toObject());
     WallHistory.push({ k: "delete", tileId: doc.id ?? "", prevData });
   }
-  if (ids.length) await scene().deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete" });
-  await doc.unsetFlag(MODULE_ID, "linkedWallIds");
+  if (ids.length) await scene().deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete", isUndo: true });
+  await (doc as unknown as { update(d: object, o?: object): Promise<unknown> })
+    .update({ [`flags.${MODULE_ID}.-=linkedWallIds`]: null }, { isUndo: true });
 }
 
 /** Links currently controlled walls to the tile. Returns count newly linked. */
@@ -85,9 +86,10 @@ export async function unlinkAllWalls(doc: TileDocument): Promise<void> {
   if (ids.length) {
     await scene().updateEmbeddedDocuments("Wall", ids.map(id => ({
       _id: id, flags: { [MODULE_ID]: { parentTileId: null, tileAnchor: null } },
-    })));
+    })), { isUndo: true });
   }
-  await doc.unsetFlag(MODULE_ID, "linkedWallIds");
+  await (doc as unknown as { update(d: object, o?: object): Promise<unknown> })
+    .update({ [`flags.${MODULE_ID}.-=linkedWallIds`]: null }, { isUndo: true });
 }
 
 export async function generateBaseWalls(doc: TileDocument): Promise<void> {
@@ -95,7 +97,7 @@ export async function generateBaseWalls(doc: TileDocument): Promise<void> {
     .map(id => (wallsLayer().get(id)!.document as any).toObject());
   await deleteLinkedWalls(doc, true);
   const newIds = await createWallsFromDefs(doc, generateBaseWallDefs(doc));
-  await setLinkedWallIds(doc, newIds);
+  await setLinkedWallIds(doc, newIds, { isUndo: true });
   WallHistory.push({ k: "create", tileId: doc.id ?? "", newIds, prevData });
 }
 

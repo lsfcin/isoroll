@@ -26,7 +26,7 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`tile-drag.ts`](tile-drag.ts) | — | `handlePositions`, `projectDrag`, `commitDrag`, `handleTypeMap` | Pure drag-math helpers for VolumeGizmos: axis projection, snapping, handle positions. |
+| [`tile-drag.ts`](tile-drag.ts) | — | `handlePositions`, `projectDrag`, `commitDrag`, `storeDragHistory`, `handleTypeMap` | Pure drag-math helpers for VolumeGizmos: axis projection, snapping, handle positions. |
 | [`tile-gizmos.ts`](tile-gizmos.ts) | — | — | Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button. |
 | [`tile-overlay.ts`](tile-overlay.ts) | — | — | Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer. |
 <!-- routing:end -->

@@ -129,24 +129,26 @@ export function projectDrag(
   return { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY, imgScale, imgYScale };
 }
 
-// Commit drag result to document. preview=true adds isUndo:true to suppress intermediate
-// pointermove undo entries; only the final pointerup (preview=false) creates a stack entry.
-export function commitDrag(drag: DragState, gx: number, gy: number, preview = false): void {
+// All drag updates suppress Foundry's auto-store (isUndo:true). storeDragHistory() must be
+// called once on pointerup to push the pre-drag original manually. This ensures one correct
+// undo entry regardless of how many pointermove frames fired during the drag.
+const DRAG_OPTS = { isoroll: "gizmoDrag", isUndo: true } as const;
+
+export function commitDrag(drag: DragState, gx: number, gy: number): void {
   const { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY, imgScale, imgYScale } = projectDrag(drag, gx, gy);
-  const opts = preview ? { isoroll: "gizmoDrag", isUndo: true } : { isoroll: "gizmoDrag" };
   switch (drag.type) {
-    case "width":     void drag.tile.document.update({ width: tw },            opts); break;
-    case "height":    void drag.tile.document.update({ height: th },           opts); break;
+    case "width":     void drag.tile.document.update({ width: tw },            DRAG_OPTS); break;
+    case "height":    void drag.tile.document.update({ height: th },           DRAG_OPTS); break;
     case "boundH": {
       const tw2 = drag.tile.document.width ?? 0;
       const th2 = drag.tile.document.height ?? 0;
       void drag.tile.document.update({
         [`flags.${MODULE_ID}.boundHeight`]:     boundH,
         [`flags.${MODULE_ID}.boundHeightBase`]: { w: tw2, h: th2 },
-      }, opts);
+      }, DRAG_OPTS);
       break;
     }
-    case "elevation": void drag.tile.document.update({ elevation: elev },      opts); break;
+    case "elevation": void drag.tile.document.update({ elevation: elev },      DRAG_OPTS); break;
     case "scale": {
       const scaleMax  = Math.max(drag.startW, drag.startH);
       const newMax    = Math.max(tw, th);
@@ -155,17 +157,41 @@ export function commitDrag(drag: DragState, gx: number, gy: number, preview = fa
         width: tw, height: th,
         [`flags.${MODULE_ID}.boundHeight`]:     newBoundH,
         [`flags.${MODULE_ID}.boundHeightBase`]: { w: tw, h: th },
-      }, opts);
+      }, DRAG_OPTS);
       break;
     }
-    case "move":      void drag.tile.document.update({ x: docX, y: docY },     opts); break;
+    case "move":      void drag.tile.document.update({ x: docX, y: docY },     DRAG_OPTS); break;
     case "imgOffset": {
       const gridSize = canvas.grid?.size ?? 100;
-      void drag.tile.document.update({ [`flags.${MODULE_ID}.imageOffset`]: { x: imgOffX / gridSize, y: imgOffY / gridSize } }, opts);
+      void drag.tile.document.update({ [`flags.${MODULE_ID}.imageOffset`]: { x: imgOffX / gridSize, y: imgOffY / gridSize } }, DRAG_OPTS);
       break;
     }
-    case "imgScale":   void drag.tile.document.update({ [`flags.${MODULE_ID}.imageScale`]:  imgScale  }, opts); break;
-    case "imgYScale":  void drag.tile.document.update({ [`flags.${MODULE_ID}.imageYScale`]: imgYScale }, opts); break;
+    case "imgScale":   void drag.tile.document.update({ [`flags.${MODULE_ID}.imageScale`]:  imgScale  }, DRAG_OPTS); break;
+    case "imgYScale":  void drag.tile.document.update({ [`flags.${MODULE_ID}.imageYScale`]: imgYScale }, DRAG_OPTS); break;
     case "swapSide":   break; // handled via pointerdown, not drag
   }
+}
+
+// Push pre-drag document state to canvas.tiles.history so one Ctrl+Z restores correctly.
+export function storeDragHistory(drag: DragState): void {
+  const id = drag.tile.id; if (!id) return;
+  const gs = canvas.grid?.size ?? 100;
+  const o: Record<string, unknown> = { _id: id };
+  const fk = (k: string) => `flags.${MODULE_ID}.${k}`;
+  const bh = { w: drag.startW, h: drag.startH };
+  switch (drag.type) {
+    case "width":     o.width = drag.startW; break;
+    case "height":    o.height = drag.startH; break;
+    case "boundH":    o[fk("boundHeight")] = drag.startBoundH; o[fk("boundHeightBase")] = bh; break;
+    case "elevation": o.elevation = drag.startElev; break;
+    case "scale":     o.width = drag.startW; o.height = drag.startH; o[fk("boundHeight")] = drag.startBoundH; o[fk("boundHeightBase")] = bh; break;
+    case "move":      o.x = drag.startDocX; o.y = drag.startDocY; break;
+    case "imgOffset": o[fk("imageOffset")]  = { x: drag.startImgOffX / gs, y: drag.startImgOffY / gs }; break;
+    case "imgScale":  o[fk("imageScale")]   = drag.startImgScale; break;
+    case "imgYScale": o[fk("imageYScale")]  = drag.startImgYScale; break;
+    case "swapSide":  return;
+  }
+  const layer = canvas.tiles as unknown as { history: { type: string; data: unknown[]; options: object }[] };
+  layer.history.push({ type: "update", data: [o], options: { isoroll: "gizmoDrag" } });
+  console.debug(`[isoroll] storeDragHistory | type=${drag.type} tile=${id}`, o);
 }

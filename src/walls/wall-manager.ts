@@ -26,6 +26,9 @@ export class WallManager {
       if (!e.ctrlKey || e.key !== "z" || e.shiftKey) return;
       if ((e.target as HTMLElement)?.matches?.("input,textarea,[contenteditable]")) return;
       if (!WallHistory.size) return;
+      // Defer to Foundry if tile history has entries added after this wall op
+      const currentTileHistLen = ((canvas as unknown as { tiles?: { history?: unknown[] } }).tiles?.history?.length ?? 0);
+      if (currentTileHistLen > WallHistory.topTileHistLen) return;
       e.preventDefault(); e.stopImmediatePropagation();
       WallHistory.undo().catch(console.warn);
     });
@@ -70,7 +73,7 @@ export class WallManager {
             await doc.update({
               [`flags.${MODULE_ID}.boundHeight`]:     newBoundH,
               [`flags.${MODULE_ID}.boundHeightBase`]: { w: doc.width ?? 0, h: doc.height ?? 0 },
-            });
+            }, { isoroll: "gizmoDrag", isUndo: true });
           }, "boundH rescale");
           // Linked-wall position update deferred to the subsequent boundHChanged hook.
           if (getLinkedWallIds(doc).length) return;
@@ -112,7 +115,7 @@ export class WallManager {
     const tileObj = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(tileId);
     if (!tileObj) return;
     const ids = getLinkedWallIds(tileObj.document).filter(id => id !== doc.id);
-    wrap(() => setLinkedWallIds(tileObj.document, ids), "wall id prune");
+    wrap(() => setLinkedWallIds(tileObj.document, ids, { isUndo: true }), "wall id prune");
     WallOverlay.refresh(tileObj);
   }
 

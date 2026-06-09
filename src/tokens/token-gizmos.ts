@@ -107,15 +107,28 @@ export class TokenGizmos {
   ): void {
     const drag: TkDrag = { type, token, startGX: gx, startGY: gy, startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale, startImgYScale: imgYScale, startImgHalfH: imgHalfH, startMeshCX: meshCX, startMeshCY: meshCY };
     startPointerDrag(drag,
-      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); TokenGizmos.commit(d, x, y, true); },
       (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); TokenGizmos.commit(d, x, y); },
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); TokenGizmos.pushHistory(d); TokenGizmos.commit(d, x, y); },
     );
   }
 
-  private static commit(drag: TkDrag, gx: number, gy: number, preview = false): void {
+  private static pushHistory(drag: TkDrag): void {
+    const id = drag.token.id;
+    if (!id) return;
+    const gridSize = canvas.grid?.size ?? 100;
+    const original: Record<string, unknown> = { _id: id };
+    if (drag.type === "imgOffset") original[`flags.${MODULE_ID}.imageOffset`] = { x: drag.startImgOffX / gridSize, y: drag.startImgOffY / gridSize };
+    else if (drag.type === "imgYScale") original[`flags.${MODULE_ID}.imageYScale`] = drag.startImgYScale;
+    else original[`flags.${MODULE_ID}.imageScale`] = drag.startImgScale;
+    const layer = canvas.tokens as unknown as { history: { type: string; data: unknown[]; options: object }[] };
+    layer.history.push({ type: "update", data: [original], options: { isUndo: true } });
+    console.debug(`[isoroll] storeDragHistory | type=${drag.type} token=${id}`, original);
+  }
+
+  private static commit(drag: TkDrag, gx: number, gy: number): void {
     const dx = gx - drag.startGX, dy = gy - drag.startGY;
     const wt = canvas.app!.stage.worldTransform;
-    const opts = preview ? { isUndo: true } : {};
+    const opts = { isUndo: true };
     if (drag.type === "imgOffset") {
       const gridSize = canvas.grid?.size ?? 100;
       const { x, y } = projectImgOffset(dx, dy, wt, drag.startImgOffX, drag.startImgOffY);

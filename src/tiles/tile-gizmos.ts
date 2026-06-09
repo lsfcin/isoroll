@@ -3,7 +3,7 @@ import { currentProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
 import { gridDistance, elevToCanvas, startPointerDrag } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
-import { HandleType, DragState, handleTypeMap, handlePositions, commitDrag } from "./tile-drag";
+import { HandleType, DragState, handleTypeMap, handlePositions, commitDrag, storeDragHistory } from "./tile-drag";
 import { imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal } from "../gizmos/mesh-corners";
 import { makeHandleForType, createRotateBlocker } from "../gizmos/handle-factories";
 
@@ -144,8 +144,8 @@ export class VolumeGizmos {
       startImgYScale: imgYScale, startImgHalfH: imgHalfH,
     };
     startPointerDrag(drag,
-      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); commitDrag(d, x, y, true); },
       (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); commitDrag(d, x, y); },
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); storeDragHistory(d); commitDrag(d, x, y); },
     );
   }
 }
