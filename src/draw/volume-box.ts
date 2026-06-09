@@ -23,21 +23,21 @@ export function point(x: number, y: number): P { return { x, y }; }
 
 function buildBoxVerts(
   tx: number, ty: number, tw: number, th: number,
-  elevPx: number, elevTopPx: number, hDirX: number, hDirY: number,
+  elevPx: number, elevTopPx: number, heightDirX: number, heightDirY: number,
   elevation: number,
 ): BoxVerts {
   return {
-    NW_base: point(tx + hDirX * elevPx,       ty + hDirY * elevPx),
-    NE_base: point(tx + tw + hDirX * elevPx,  ty + hDirY * elevPx),
-    SW_base: point(tx + hDirX * elevPx,       ty + th + hDirY * elevPx),
-    SE_base: point(tx + tw + hDirX * elevPx,  ty + th + hDirY * elevPx),
-    NW_top:  point(tx + hDirX * elevTopPx,      ty + hDirY * elevTopPx),
-    NE_top:  point(tx + tw + hDirX * elevTopPx, ty + hDirY * elevTopPx),
-    SW_top:  point(tx + hDirX * elevTopPx,      ty + th + hDirY * elevTopPx),
-    SE_top:  point(tx + tw + hDirX * elevTopPx, ty + th + hDirY * elevTopPx),
+    NW_base: point(tx + heightDirX * elevPx,       ty + heightDirY * elevPx),
+    NE_base: point(tx + tw + heightDirX * elevPx,  ty + heightDirY * elevPx),
+    SW_base: point(tx + heightDirX * elevPx,       ty + th + heightDirY * elevPx),
+    SE_base: point(tx + tw + heightDirX * elevPx,  ty + th + heightDirY * elevPx),
+    NW_top:  point(tx + heightDirX * elevTopPx,      ty + heightDirY * elevTopPx),
+    NE_top:  point(tx + tw + heightDirX * elevTopPx, ty + heightDirY * elevTopPx),
+    SW_top:  point(tx + heightDirX * elevTopPx,      ty + th + heightDirY * elevTopPx),
+    SE_top:  point(tx + tw + heightDirX * elevTopPx, ty + th + heightDirY * elevTopPx),
     ground:     point(tx + tw / 2,                  ty + th / 2),
-    baseCenter: point(tx + tw / 2 + hDirX * elevPx,    ty + th / 2 + hDirY * elevPx),
-    topCenter:  point(tx + tw / 2 + hDirX * elevTopPx, ty + th / 2 + hDirY * elevTopPx),
+    baseCenter: point(tx + tw / 2 + heightDirX * elevPx,    ty + th / 2 + heightDirY * elevPx),
+    topCenter:  point(tx + tw / 2 + heightDirX * elevTopPx, ty + th / 2 + heightDirY * elevTopPx),
     elevation,
   };
 }
@@ -57,9 +57,9 @@ export function computeVerts(tile: Tile): BoxVerts {
 
   const elevPx    = elevToCanvas(elevation, gridSize, gridDist);
   const elevTopPx = elevPx + boundH * gridSize;
-  const hDirX     = proj.heightDir.x, hDirY = proj.heightDir.y;
+  const heightDirX     = proj.heightDir.x, heightDirY = proj.heightDir.y;
 
-  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, hDirX, hDirY, elevation);
+  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, heightDirX, heightDirY, elevation);
 }
 
 // token.document.x/y = top-left (unlike tiles where it = center)
@@ -78,9 +78,9 @@ export function computeTokenVerts(token: Token): BoxVerts {
 
   const elevPx    = elevToCanvas(elevation, gridSize, gridDist);
   const elevTopPx = elevPx + boundH * gridSize;
-  const hDirX     = proj.heightDir.x, hDirY = proj.heightDir.y;
+  const heightDirX     = proj.heightDir.x, heightDirY = proj.heightDir.y;
 
-  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, hDirX, hDirY, elevation);
+  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, heightDirX, heightDirY, elevation);
 }
 
 export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {

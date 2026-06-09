@@ -34,21 +34,21 @@ export const handleTypeMap = new WeakMap<PIXI.Container, HandleType>();
 // Returns canvas-space positions for all handle anchors
 export function handlePositions(
   tx: number, ty: number, tw: number, th: number,
-  elevPx: number, elevTopPx: number, hDirX: number, hDirY: number,
+  elevPx: number, elevTopPx: number, heightDirX: number, heightDirY: number,
   imgBL?: { x: number; y: number } | null,
   imgTR?: { x: number; y: number } | null,
   imgBC?: { x: number; y: number } | null,
   imgTC?: { x: number; y: number } | null,
 ): Record<HandleType, { cx: number; cy: number }> {
-  const seMidX = tx + tw + hDirX * (elevPx + elevTopPx) / 2;
-  const seMidY = ty + th + hDirY * (elevPx + elevTopPx) / 2;
+  const seMidX = tx + tw + heightDirX * (elevPx + elevTopPx) / 2;
+  const seMidY = ty + th + heightDirY * (elevPx + elevTopPx) / 2;
   return {
-    width:     { cx: tx + hDirX * elevPx,              cy: ty + th / 2 + hDirY * elevPx },
-    height:    { cx: tx + tw / 2 + hDirX * elevPx,     cy: ty + th + hDirY * elevPx },
-    boundH:    { cx: tx + tw + hDirX * elevTopPx,       cy: ty + th / 2 + hDirY * elevTopPx },
+    width:     { cx: tx + heightDirX * elevPx,              cy: ty + th / 2 + heightDirY * elevPx },
+    height:    { cx: tx + tw / 2 + heightDirX * elevPx,     cy: ty + th + heightDirY * elevPx },
+    boundH:    { cx: tx + tw + heightDirX * elevTopPx,       cy: ty + th / 2 + heightDirY * elevTopPx },
     elevation: { cx: seMidX,                             cy: seMidY },
-    scale:     { cx: tx + tw + hDirX * elevPx,          cy: ty + th + hDirY * elevPx },
-    move:      { cx: tx + tw / 2 + hDirX * elevPx,      cy: ty + th / 2 + hDirY * elevPx },
+    scale:     { cx: tx + tw + heightDirX * elevPx,          cy: ty + th + heightDirY * elevPx },
+    move:      { cx: tx + tw / 2 + heightDirX * elevPx,      cy: ty + th / 2 + heightDirY * elevPx },
     imgOffset: { cx: imgBL?.x ?? tx,                    cy: imgBL?.y ?? (ty + th) },
     imgScale:  { cx: imgTR?.x ?? (tx + tw),             cy: imgTR?.y ?? ty },
     imgYScale: { cx: imgTC?.x ?? (tx + tw / 2),         cy: imgTC?.y ?? ty },

@@ -20,7 +20,7 @@ export const HANDLE_COLOR: Record<HandleType, number> = {
 
 // Dispatches the correct factory for a given handle type; used by VolumeGizmos.show().
 export function makeHandleForType(
-  type: HandleType, hDirX: number, hDirY: number,
+  type: HandleType, heightDirX: number, heightDirY: number,
 ): PIXI.Container | PIXI.Graphics {
   const color = HANDLE_COLOR[type];
   if (type === "elevation") return makeCircleHandle(color);
@@ -30,8 +30,8 @@ export function makeHandleForType(
   if (type === "swapSide")  return makeSwapHandle();
   if (type === "move")      return makeMoveHandle(color);
   if (type === "boundH") {
-    const vLen = Math.sqrt(hDirX * hDirX + hDirY * hDirY);
-    return makeFaceHandle(color, 0, HALF, (hDirX / vLen) * HALF * 2, (hDirY / vLen) * HALF * 2);
+    const vLen = Math.sqrt(heightDirX * heightDirX + heightDirY * heightDirY);
+    return makeFaceHandle(color, 0, HALF, (heightDirX / vLen) * HALF * 2, (heightDirY / vLen) * HALF * 2);
   }
   return makeHandle(color);
 }
