@@ -35,37 +35,6 @@ condition in Foundry's label rendering or texture cache.
 
 ---
 
-## B14 — Undo stacks every intermediate drag step, not just the drop
-
-**Symptom:** Ctrl+Z after dragging a handle (width, height, move, imgOffset, etc.) requires
-multiple presses to undo the single drag action — one press per intermediate update fired
-during the drag. The undo stack should record only the final committed value (on pointer-up),
-not every frame.
-
-**Root cause hypothesis:** `commitDrag` / equivalent is called on every `pointermove` event,
-and each call fires a `document.update` / `setFlag` which Foundry records as a separate undo
-entry. Fix: only call the final commit on `pointerup`; during drag, either use a local
-preview or throttle without persisting.
-
-**Affected:** `VolumeGizmos.commitDrag`, `TokenGizmos.commit`, `TokenVolumeGizmos` — all
-call document updates on every move event.
-
----
-
-## B15 — Undo does not revert token elevation changes made via elevation handle
-
-**Symptom:** After changing a token's elevation using the orange circle elevation handle,
-Ctrl+Z does not restore the previous elevation value. Other handle types (imgOffset, etc.)
-may work correctly — this is specific to token elevation.
-
-**Root cause hypothesis:** Token elevation updates may bypass the `WallHistory` undo system
-(which tracks tile-linked operations) and Foundry's own undo may not capture `setFlag` /
-`update` calls made from the elevation drag handler.
-
-**Affected:** `TokenVolumeGizmos` elevation drag handler → `token.document.update`.
-
----
-
 ## B22 — GridConfig arrow keys move background in projected grid axes, not screen axes
 
 **Symptom:** In the Grid Configuration Tool with Iso enabled, the arrow keys (which control
