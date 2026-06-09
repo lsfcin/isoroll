@@ -57,9 +57,9 @@ export function computeVerts(tile: Tile): BoxVerts {
 
   const elevPx    = elevToCanvas(elevation, gridSize, gridDist);
   const elevTopPx = elevPx + boundH * gridSize;
-  const heightDirX     = proj.heightDir.x, heightDirY = proj.heightDir.y;
+  const hDir      = proj.heightDir;
 
-  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, heightDirX, heightDirY, elevation);
+  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, hDir.x, hDir.y, elevation);
 }
 
 // token.document.x/y = top-left (unlike tiles where it = center)
@@ -78,9 +78,9 @@ export function computeTokenVerts(token: Token): BoxVerts {
 
   const elevPx    = elevToCanvas(elevation, gridSize, gridDist);
   const elevTopPx = elevPx + boundH * gridSize;
-  const heightDirX     = proj.heightDir.x, heightDirY = proj.heightDir.y;
+  const hDir      = proj.heightDir;
 
-  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, heightDirX, heightDirY, elevation);
+  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, hDir.x, hDir.y, elevation);
 }
 
 export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {
