@@ -14,7 +14,7 @@ export function registerTokenConfigHook(): void {
         `<fieldset><legend>${game.i18n.localize("ISOROLL.TokenConfig.ManipulationHeading")}</legend>` +
         flagCheckbox("showImageManipulation",     "TokenConfig", d.getFlag(MODULE_ID, "showImageManipulation")     !== false) +
         flagCheckbox("showVolumeManipulation",    "TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation")    !== false) +
-        flagCheckbox("showElevationUnselected",   "TokenConfig", d.getFlag(MODULE_ID, "showElevationUnselected")   !== false) +
+        flagCheckbox("showElevationUnselected",   "TokenConfig", d.getFlag(MODULE_ID, "showElevationUnselected")   !== false, 'style="white-space:nowrap"') +
         `</fieldset>` +
         `<fieldset><legend>${game.i18n.localize("ISOROLL.TokenConfig.PresetHeading")}</legend>` +
         flagCheckbox("presetEnabled",          "TokenConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +

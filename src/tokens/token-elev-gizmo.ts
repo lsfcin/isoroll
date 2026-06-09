@@ -1,7 +1,7 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
 import { currentProjection } from "../transform/constants";
 import { MODULE_ID, VolumeFlags } from "../flags";
-import { makeCircleHandle, HALF } from "../gizmos/handle-draw";
+import { makeCircleHandle } from "../gizmos/handle-draw";
 import { clientToGlobal } from "../gizmos/mesh-corners";
 import { canvasZoom, gridDistance, elevToCanvas, startPointerDrag } from "../util";
 import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
@@ -12,7 +12,7 @@ interface TokenElevDrag {
   startElev: number;
 }
 
-type ElevHandleState = { x: number; y: number; elev: number; boundH: number };
+type ElevHandleState = { x: number; y: number; elev: number; boundH: number; showElevUnsel: boolean };
 
 export class TokenElevGizmo {
   private static sets: Map<string, PIXI.Container> = new Map();
@@ -61,9 +61,10 @@ export class TokenElevGizmo {
     const x = token.document.x ?? 0, y = token.document.y ?? 0;
     const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
     const boundH = VolumeFlags.getTokenHeight(token.document);
+    const showElevUnsel = VolumeFlags.getShowElevationUnselected(token.document);
     const last = TokenElevGizmo.lastState.get(token.id);
-    if (last && last.x === x && last.y === y && last.elev === elev && last.boundH === boundH) return;
-    TokenElevGizmo.lastState.set(token.id, { x, y, elev, boundH });
+    if (last && last.x === x && last.y === y && last.elev === elev && last.boundH === boundH && last.showElevUnsel === showElevUnsel) return;
+    TokenElevGizmo.lastState.set(token.id, { x, y, elev, boundH, showElevUnsel });
     TokenElevGizmo.show(token, (token as unknown as { controlled?: boolean }).controlled ?? false);
   }
 
@@ -114,8 +115,8 @@ export class TokenElevGizmo {
       strokeThickness: 3,
       lineJoin: "round",
     }));
-    label.anchor.set(0, 0.5);
-    label.x = HALF + 6; label.y = 0;
+    label.anchor.set(0, 0);
+    label.x = 0; label.y = 0;
     label.eventMode = "none";
     label.alpha = selected ? 0.7 : 0.3;
     label.visible = elev !== 0 && (selected || VolumeFlags.getShowElevationUnselected(token.document));
@@ -125,8 +126,7 @@ export class TokenElevGizmo {
     const labelWrap = new PIXI.Container();
     labelWrap.rotation = proj.reverseRotation;
     labelWrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
-    labelWrap.x = seMidX;
-    labelWrap.y = seMidY;
+    labelWrap.x = tx + tw + heightDir.x * elevPx; labelWrap.y = ty + th + heightDir.y * elevPx;
     labelWrap.eventMode = "none";
     labelWrap.addChild(label);
 
