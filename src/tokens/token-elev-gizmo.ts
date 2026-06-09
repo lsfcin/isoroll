@@ -83,8 +83,8 @@ export class TokenElevGizmo {
       TokenElevGizmo.beginDrag(token, e.global.x, e.global.y, elev);
     });
 
-    // Elevation label to the right of the handle — we own this text so we can
-    // prevent mipmap generation that causes GL_INVALID_OPERATION on some GPU drivers.
+    // Elevation label — counter-transformed so it reads flat on screen, same as the handle.
+    // Invisible at ground level (elev === 0) to match Foundry's own tooltip behaviour.
     const gridUnits = (canvas.grid as unknown as { units?: string }).units ?? "ft";
     const label = new PIXI.Text(`${elev} ${gridUnits}`, new PIXI.TextStyle({
       fontFamily: "Signika, sans-serif",
@@ -93,13 +93,21 @@ export class TokenElevGizmo {
       stroke: 0x000000,
       strokeThickness: 3,
     }));
-    label.x = seMidX + HALF + 6;
-    label.y = seMidY;
     label.anchor.set(0, 0.5);
+    label.x = HALF + 6;  // local space: right of handle circle in screen pixels
+    label.y = 0;
     label.eventMode = "none";
+    label.visible = elev !== 0;
     const texSrc = (label.texture as unknown as { source?: { autoGenerateMipmaps: boolean }; baseTexture?: { mipmap: number } });
     if (texSrc.source)      texSrc.source.autoGenerateMipmaps = false;
     if (texSrc.baseTexture) texSrc.baseTexture.mipmap = 0;
+    const labelWrap = new PIXI.Container();
+    labelWrap.rotation = proj.reverseRotation;
+    labelWrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
+    labelWrap.x = seMidX;
+    labelWrap.y = seMidY;
+    labelWrap.eventMode = "none";
+    labelWrap.addChild(label);
 
     // Hide Foundry's native elevation tooltip — suppresses its texture upload → no GL error.
     const nativeTooltip = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
@@ -107,7 +115,7 @@ export class TokenElevGizmo {
 
     const container = new PIXI.Container();
     container.addChild(handle);
-    container.addChild(label);
+    container.addChild(labelWrap);
     layer.addChild(container);
     TokenElevGizmo.sets.set(token.id, container);
     LayerManager.bringToTop(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
