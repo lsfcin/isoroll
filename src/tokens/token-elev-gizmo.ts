@@ -92,6 +92,7 @@ export class TokenElevGizmo {
       fill: 0xffffff,
       stroke: 0x000000,
       strokeThickness: 3,
+      lineJoin: "round",
     }));
     label.anchor.set(0, 0.5);
     label.x = HALF + 6;  // local space: right of handle circle in screen pixels
