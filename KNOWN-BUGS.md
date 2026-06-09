@@ -3,8 +3,6 @@
 > Confirmed pre-existing on `main`. Fix after refactor — reorganized code will make
 > root causes easier to locate.
 
-**Abbreviations:** EIF = Enable Isometric false; TBF = iso true + Transformed Background false; TBT = iso true + Transformed Background true; GCT = Grid Configuration Tool.
-
 ## B2 — Tile position jumps on grid size change
 
 **Symptom:** When grid size changes (e.g. via GridConfig), tokens and walls reposition
