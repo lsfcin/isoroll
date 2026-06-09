@@ -5,20 +5,6 @@
 
 ---
 
-## B1 — Gizmo and line sizes scale with scene grid size
-
-**Symptom:** Handle diamonds, circles, and bounding-box lines scale up/down relative to
-Foundry's native grid gizmos when the scene grid size changes (tested at 20, 50, 100 px).
-Our sizes are calibrated for a single grid size, not screen-space invariant.
-
-**Affected:** All `make*Handle` factories in `gizmos-handles.ts`; `LINE_W` constants in
-`wall-overlay.ts`; `HANDLE_SIZE` constant.
-
-**Expected:** Handle sizes and line widths should remain constant in screen pixels
-regardless of grid size (i.e., they should be divided by canvas zoom, not by grid size).
-
----
-
 ## B2 — Tile position jumps on grid size change
 
 **Symptom:** When grid size changes (e.g. via GridConfig), tokens and walls reposition
@@ -46,20 +32,6 @@ elevation changes through other means (only observed via the drag handle).
 condition in Foundry's label rendering or texture cache.
 
 **Affected:** `TokenVolumeGizmos` elevation drag → `token.document.update({ elevation })`.
-
----
-
-## B13 — Native Foundry tile corner scale does not scale the 3D volume height
-
-**Symptom:** Resizing a tile using Foundry's native corner scale handle (orange square in the
-tile controls) changes width/height but does not proportionally adjust `boundHeight`. The 3D
-volume box becomes incorrect (too tall or too short relative to the new tile size).
-
-**Expected:** When tile dimensions change via native scale, `boundHeight` should rescale
-proportionally so the visual volume maintains its aspect ratio.
-
-**Affected:** `onUpdateTile` in `wall-manager.ts` / `VolumeGizmos` — no handler currently
-adjusts `boundHeight` in response to a pure width/height change from native controls.
 
 ---
 

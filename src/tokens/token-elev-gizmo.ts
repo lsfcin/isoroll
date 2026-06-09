@@ -107,19 +107,20 @@ export class TokenElevGizmo {
   private static beginDrag(token: Token, gx: number, gy: number, elev: number): void {
     const drag: TokenElevDrag = { token, startGX: gx, startGY: gy, startElev: elev };
     startPointerDrag(drag,
-      (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); TokenElevGizmo.commit(d, y); },
+      (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); TokenElevGizmo.commit(d, y, true); },
       (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); TokenElevGizmo.commit(d, y); },
     );
   }
 
-  private static commit(drag: TokenElevDrag, gy: number): void {
+  private static commit(drag: TokenElevDrag, gy: number, preview = false): void {
     const zoom     = canvasZoom();
     const gridSize = canvas.grid?.size ?? 100;
     const gridDist = gridDistance();
     const deltaFeet = -(gy - drag.startGY) / (zoom * gridSize / gridDist);
     const elev = Math.round(drag.startElev + deltaFeet);
+    const opts = preview ? { animate: false, isUndo: true } : { animate: false };
     void (drag.token.document as unknown as { update(d: object, o?: object): Promise<unknown> })
-      .update({ elevation: elev }, { animate: false });
+      .update({ elevation: elev }, opts);
   }
 
 }

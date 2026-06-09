@@ -129,22 +129,24 @@ export function projectDrag(
   return { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY, imgScale, imgYScale };
 }
 
-// Commit drag result to document
-export function commitDrag(drag: DragState, gx: number, gy: number): void {
+// Commit drag result to document. preview=true adds isUndo:true to suppress intermediate
+// pointermove undo entries; only the final pointerup (preview=false) creates a stack entry.
+export function commitDrag(drag: DragState, gx: number, gy: number, preview = false): void {
   const { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY, imgScale, imgYScale } = projectDrag(drag, gx, gy);
+  const opts = preview ? { isoroll: "gizmoDrag", isUndo: true } : { isoroll: "gizmoDrag" };
   switch (drag.type) {
-    case "width":     void drag.tile.document.update({ width: tw },            { isoroll: "gizmoDrag" }); break;
-    case "height":    void drag.tile.document.update({ height: th },           { isoroll: "gizmoDrag" }); break;
+    case "width":     void drag.tile.document.update({ width: tw },            opts); break;
+    case "height":    void drag.tile.document.update({ height: th },           opts); break;
     case "boundH": {
       const tw2 = drag.tile.document.width ?? 0;
       const th2 = drag.tile.document.height ?? 0;
       void drag.tile.document.update({
         [`flags.${MODULE_ID}.boundHeight`]:     boundH,
         [`flags.${MODULE_ID}.boundHeightBase`]: { w: tw2, h: th2 },
-      });
+      }, opts);
       break;
     }
-    case "elevation": void drag.tile.document.update({ elevation: elev },      { isoroll: "gizmoDrag" }); break;
+    case "elevation": void drag.tile.document.update({ elevation: elev },      opts); break;
     case "scale": {
       const scaleMax  = Math.max(drag.startW, drag.startH);
       const newMax    = Math.max(tw, th);
@@ -153,17 +155,17 @@ export function commitDrag(drag: DragState, gx: number, gy: number): void {
         width: tw, height: th,
         [`flags.${MODULE_ID}.boundHeight`]:     newBoundH,
         [`flags.${MODULE_ID}.boundHeightBase`]: { w: tw, h: th },
-      }, { isoroll: "gizmoDrag" });
+      }, opts);
       break;
     }
-    case "move":      void drag.tile.document.update({ x: docX, y: docY },     { isoroll: "gizmoDrag" }); break;
+    case "move":      void drag.tile.document.update({ x: docX, y: docY },     opts); break;
     case "imgOffset": {
       const gridSize = canvas.grid?.size ?? 100;
-      void drag.tile.document.setFlag(MODULE_ID, "imageOffset", { x: imgOffX / gridSize, y: imgOffY / gridSize });
+      void drag.tile.document.update({ [`flags.${MODULE_ID}.imageOffset`]: { x: imgOffX / gridSize, y: imgOffY / gridSize } }, opts);
       break;
     }
-    case "imgScale":   void drag.tile.document.setFlag(MODULE_ID, "imageScale",  imgScale); break;
-    case "imgYScale":  void drag.tile.document.setFlag(MODULE_ID, "imageYScale", imgYScale); break;
+    case "imgScale":   void drag.tile.document.update({ [`flags.${MODULE_ID}.imageScale`]:  imgScale  }, opts); break;
+    case "imgYScale":  void drag.tile.document.update({ [`flags.${MODULE_ID}.imageYScale`]: imgYScale }, opts); break;
     case "swapSide":   break; // handled via pointerdown, not drag
   }
 }

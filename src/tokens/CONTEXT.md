@@ -14,3 +14,13 @@
 | Subdirectory | Description |
 |--------------|-------------|
 | _(none)_ | All files at this level |
+
+<!-- routing:start -->
+## Routing
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`token-elev-gizmo.ts`](token-elev-gizmo.ts) | — | — | Elevation handle for token volumes (orange circle, drag up/down changes elevation). |
+| [`token-gizmos.ts`](token-gizmos.ts) | — | — | Image offset + scale handles for tokens (bottom-left circle, top-right square). |
+| [`token-overlay.ts`](token-overlay.ts) | — | — | Image contour and 3D volume box overlay for selected tokens (merged from two classes). |
+<!-- routing:end -->

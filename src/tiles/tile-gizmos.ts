@@ -144,7 +144,7 @@ export class VolumeGizmos {
       startImgYScale: imgYScale, startImgHalfH: imgHalfH,
     };
     startPointerDrag(drag,
-      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); commitDrag(d, x, y); },
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); commitDrag(d, x, y, true); },
       (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); commitDrag(d, x, y); },
     );
   }

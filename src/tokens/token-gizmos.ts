@@ -107,24 +107,25 @@ export class TokenGizmos {
   ): void {
     const drag: TkDrag = { type, token, startGX: gx, startGY: gy, startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale, startImgYScale: imgYScale, startImgHalfH: imgHalfH, startMeshCX: meshCX, startMeshCY: meshCY };
     startPointerDrag(drag,
-      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); TokenGizmos.commit(d, x, y); },
+      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); TokenGizmos.commit(d, x, y, true); },
       (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); TokenGizmos.commit(d, x, y); },
     );
   }
 
-  private static commit(drag: TkDrag, gx: number, gy: number): void {
+  private static commit(drag: TkDrag, gx: number, gy: number, preview = false): void {
     const dx = gx - drag.startGX, dy = gy - drag.startGY;
     const wt = canvas.app!.stage.worldTransform;
+    const opts = preview ? { isUndo: true } : {};
     if (drag.type === "imgOffset") {
       const gridSize = canvas.grid?.size ?? 100;
       const { x, y } = projectImgOffset(dx, dy, wt, drag.startImgOffX, drag.startImgOffY);
-      void drag.token.document.setFlag(MODULE_ID, "imageOffset", { x: x / gridSize, y: y / gridSize });
+      void drag.token.document.update({ [`flags.${MODULE_ID}.imageOffset`]: { x: x / gridSize, y: y / gridSize } }, opts);
     } else if (drag.type === "imgYScale") {
-      void drag.token.document.setFlag(MODULE_ID, "imageYScale",
-        projectImgYScale(dx, dy, wt, canvasZoom(), drag.startImgYScale, drag.startImgHalfH));
+      void drag.token.document.update({ [`flags.${MODULE_ID}.imageYScale`]:
+        projectImgYScale(dx, dy, wt, canvasZoom(), drag.startImgYScale, drag.startImgHalfH) }, opts);
     } else {
-      void drag.token.document.setFlag(MODULE_ID, "imageScale",
-        projectImgScale(gx, gy, drag.startGX, drag.startGY, drag.startImgScale, drag.startMeshCX, drag.startMeshCY, wt));
+      void drag.token.document.update({ [`flags.${MODULE_ID}.imageScale`]:
+        projectImgScale(gx, gy, drag.startGX, drag.startGY, drag.startImgScale, drag.startMeshCX, drag.startMeshCY, wt) }, opts);
     }
   }
 
