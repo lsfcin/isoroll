@@ -9,118 +9,7 @@
 - Enable per scene: Scene Config → Basics → "Enable Isoroll" checkbox
 - Build: `npm run build` → symlink at `/home/lucas/foundrydata-v14/Data/modules/isoroll`
 - Foundry running at `http://localhost:30000/game`
-
-## Source Map
-
-### Entry point
-| Path | Responsibility |
-|------|---------------|
-| `src/module.ts` | Wires all hooks in `Hooks.once("init")` |
-| `src/flags.ts` | `MODULE_ID`, `VolumeFlags` flag accessors (boundHeight, imageOffset, imageScale, showImageManipulation, showVolumeManipulation, tileFlipped, …) |
-| `src/settings.ts` | `registerVolumeSettings()` — DefaultTokenHeight + OcclusionOpacity module settings |
-| `src/util.ts` | Shared math + drag: `canvasZoom`, `gridDistance`, `elevToCanvas`, `screenToCanvas`, `screenPointToCanvas`, `scheduleWrap`, `startPointerDrag<T>` |
-
-### `src/transform/` — coordinate math only
-| Path | Responsibility |
-|------|---------------|
-| `transform/constants.ts` | `PROJECTION_TYPES` (8 presets), `getProjection(scene)`, `currentProjection()`, `IsoProjection` interface |
-| `transform/stage-transform.ts` | `CanvasTransform` — stage rotation+skew, `previewOverride`, hooks: canvasReady/updateScene |
-| `transform/bg-transform.ts` | Background sprite counter-transform: `getBgYScale()`, `setBgYScaleOverride()`, `applyBgTransform()` |
-| `transform/object-transform.ts` | Per-token/tile counter-transform, hooks: refreshToken/refreshTile |
-| `transform/tile-transform.ts` | Tile-specific transform math |
-| `transform/token-transform.ts` | Token-specific transform math |
-| `transform/ruler-patch.ts` | Ruler coordinate patch + `patchTileHUDProto` + `patchTokenHUDProto` — all `_updatePosition` patches for iso HUD positioning |
-
-### `src/ui/` — all config form tab injection
-| Path | Responsibility |
-|------|---------------|
-| `ui/tab-helpers.ts` | `addIsorollTab()`, `flagCheckbox()` — shared AppV2 tab injection helpers |
-| `ui/scene-config.ts` | Isoroll tab for SceneConfig: projection dropdown, enable/transformBg checkboxes, custom params |
-| `ui/tile-config.ts` | Isoroll tab for TileConfig: volume flags + wall management buttons |
-| `ui/token-config.ts` | Isoroll tab for TokenConfig: transformToken, imageOffset/scale fields |
-
-### `src/hud/` — HUD patches
-| Path | Responsibility |
-|------|---------------|
-| `hud/hud-utils.ts` | DOM helpers: `hudButton()`, `clearIsorollHud()`, `appendHudButtons()`, `onHudAction/Toggle()`, `updateHudButton()`, `isIsoActive()`, `isoHudCenter()`, `isoVisualCssWidth()` |
-| `hud/tile-hud.ts` | `TileHud` — wall control buttons in TileHUD (generate/select/unlink/delete walls, door mode) |
-| `hud/token-hud.ts` | `TokenHud` — no-op shell; HUD repositioning handled by `patchTokenHUDProto` in `ruler-patch.ts` |
-
-### `src/render/`
-| Path | Responsibility |
-|------|---------------|
-| `render/layer-manager.ts` | Central PIXI layer registry: `ensureLayer`, `bringToTop`, `clearLayer`, `declareOrder` |
-
-### `src/draw/` — PIXI drawing utilities
-| Path | Responsibility |
-|------|---------------|
-| `draw/constants.ts` | Visual constants: `ORANGE`, `BLACK`, `DASH_LEN`, `GAP_LEN`, alpha values |
-| `draw/shapes.ts` | `drawDash()`, `drawDashedContour()` |
-| `draw/contour.ts` | `drawMeshContour()`, `MeshLike` interface — shared image contour for tiles and tokens |
-| `draw/volume-box.ts` | 3D box geometry: `BoxVerts`, `P`, `computeVerts()` (tile), `computeTokenVerts()` (token), `drawBox()`, `drawAnchorLine()` |
-
-### `src/gizmos/` — handle factories and drag math
-| Path | Responsibility |
-|------|---------------|
-| `gizmos/handle-draw.ts` | Low-level PIXI handle drawing: `makeCircleHandle()`, `makeSquareCounterHandle()` |
-| `gizmos/handle-factories.ts` | `makeHandleForType()`, `createRotateBlocker()` — typed handle construction |
-| `gizmos/mesh-corners.ts` | Corner/center helpers: `imageBottomLeft/TopRight/BottomCenter/TopCenter()`, `clientToGlobal()`, snap helpers |
-| `gizmos/img-drag.ts` | Image drag math: `projectImgOffset()`, `projectImgScale()`, `projectImgYScale()` |
-
-### `src/tiles/` — tile volume overlays + gizmos
-| Path | Responsibility |
-|------|---------------|
-| `tiles/tile-overlay.ts` | `VolumeOverlay` — 3D box + image contour on selected tiles |
-| `tiles/tile-gizmos.ts` | `VolumeGizmos` — volume handles (width/height/boundH/elevation/scale/move) + image handles (imgOffset/imgScale/imgYScale/swapSide) |
-| `tiles/tile-drag.ts` | `DragState`, `HandleType`, `handlePositions()`, `commitDrag()` — tile handle drag math |
-
-### `src/tokens/` — token volume overlays + gizmos
-| Path | Responsibility |
-|------|---------------|
-| `tokens/token-overlay.ts` | `TokenOverlay` — image contour + 3D box on selected tokens |
-| `tokens/token-gizmos.ts` | `TokenGizmos` — image handles (BL circle: offset, TR square: scale, TC square: Y-scale) |
-| `tokens/token-elev-gizmo.ts` | `TokenElevGizmo` — elevation handle (orange circle, SE edge midpoint) |
-
-### `src/background/` — background image gizmos (GridConfig only)
-| Path | Responsibility |
-|------|---------------|
-| `background/bg-html.ts` | `BgHtml` — GridConfig HTML injection: Vertical Scale field, key/wheel handlers, `_processSubmitData` patch, preview-bg caching |
-| `background/bg-gizmos.ts` | `BackgroundGizmos` — PIXI handles + dashed contour on background image; scale/translate/yScale drag |
-| `background/bg-drag.ts` | `BgDrag` type + `commitBgDrag()` — drag math for all three background handle types |
-
-### `src/walls/` — linked wall system
-| Path | Responsibility |
-|------|---------------|
-| `walls/wall-coords.ts` | Coordinate helpers: `canvasToAnchor()`, `anchorToCanvas()`, `wallsLayer()`, `scene()`, `TileDoc` type |
-| `walls/wall-flags.ts` | Flag accessors: `getLinkedWallIds()`, `setLinkedWallIds()`, `hasLinkedDoor()`, `getDoorBehavior()`, `setDoorBehavior()` |
-| `walls/wall-types.ts` | `DoorBehavior` and other wall type definitions |
-| `walls/wall-crud.ts` | `generateBaseWalls()`, `deleteLinkedWalls()`, `unlinkAllWalls()`, `generateBaseWallDefs()` |
-| `walls/wall-sync.ts` | `updateLinkedWallPositions()`, `flipLinkedWallAnchorsX()` |
-| `walls/wall-door.ts` | `applyDoorBehavior()`, `cycleDoorBehavior()` |
-| `walls/wall-history.ts` | `WallHistory` — undo stack for wall operations |
-| `walls/wall-manager.ts` | `WallManager` — lifecycle hooks (updateTile/deleteTile/updateWall/deleteWall) + public static façade for tile-config and tile-hud |
-| `walls/wall-overlay.ts` | `WallOverlay` — PIXI wall line + endpoint rendering; select mode |
-| `walls/wall-overlay-ops.ts` | Interactive helpers: `addEndpointHandles()`, `addLineHover()`, `addWallDblClick()`, `addSelectInteraction()` |
-
-### `src/preset/` — image preset system
-| Path | Responsibility |
-|------|---------------|
-| `preset/preset-types.ts` | `TilePreset`, `TokenPreset`, `BackgroundPreset`, `IsorollPreset` interfaces |
-| `preset/preset-storage.ts` | File I/O: `readPreset()`, `writePreset()`, cache, `_index.json` |
-| `preset/preset-diff.ts` | Change detection: `changedFlagKeys()`, key lists, `bgNativeChanged()`, `tileNativeChanged()` |
-| `preset/preset-upsert.ts` | `upsertTile()`, `upsertToken()`, `upsertBackground()` — debounced preset saves |
-| `preset/preset-apply.ts` | `applyTile()`, `applyToken()`, `applyBackground()`, `applyPresetToSource()` (sync, for preCreateTile) |
-| `preset/preset-ops.ts` | Thin coordinator shims; `autoApply*` entry points |
-| `preset/preset-manager.ts` | `PresetManager.activate()`: hooks (preCreateTile, create/updateTile/Token/Scene); console API (`window.ISOROLL_PRESETS`) |
-
-### Other
-| Path | Responsibility |
-|------|---------------|
-| `src/occluder/occluder.ts` | Tile alpha fade when token is behind it |
-| `src/sorter/depth-sorter.ts` | Depth sort (dormant — not activated, see ROADMAP) |
-| `src/resolver/asset-resolver.ts` | Stance fallback chain, `resolveBestTokenAsset()` |
-| `lang/en.json` | English i18n strings |
-| `lang/pt-br.json` | Portuguese (BR) i18n strings |
+- Source code: `src/` — see [`src/CONTEXT.md`](src/CONTEXT.md) for full source map
 
 ---
 
@@ -146,7 +35,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | `flags.isoroll.transformToken` | boolean | token | false | Apply isometric stage to token sprite |
 | `flags.isoroll.transformTile` | boolean | tile | false | Apply isometric stage to tile sprite |
 | `flags.isoroll.boundHeight` | number | tile+token | tile:1 / token:2 | 3D volume height in grid units (token default from `defaultTokenHeight` setting) |
-| `flags.isoroll.imageOffset` | {x,y} | tile+token | {0,0} | Canvas-pixel offset of image from natural center |
+| `flags.isoroll.imageOffset` | {x,y} | tile+token | {0,0} | WORLD-space displacement from natural center, normalized by gridSize |
 | `flags.isoroll.imageScale` | number | tile+token | 1 | Image uniform scale multiplier |
 | `flags.isoroll.imageYScale` | number | tile+token | 1 | Image Y-axis scale multiplier (for projection adaptation) |
 | `flags.isoroll.backgroundYScale` | number | scene | 1 | Background image Y-scale multiplier (set via GridConfig Vertical Scale field) |
@@ -160,7 +49,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - Token rotation: v14 auto-facing suppressed for undistorted tokens; 8-directional sprite selection not yet implemented (placeholder in `object-transform.ts`)
 - Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP
 - `tile.x/tile.y` = 0 in v14 — use `tile.document.x/y` (CENTER, not top-left); top-left = `doc.x - width/2, doc.y - height/2`
-- `setFlag` fires `refreshTile` with `{refreshPosition, refreshPerception}` only — `isMeshReset` returns false; scale guarded by meshReset won't run for flag-only changes
+- **`setFlag` does NOT trigger `refreshTile`**: flag-only updates (`changes` contains only `flags.*`) set no Tile render flags in `_onUpdate`. Use the `updateTile` hook → `onUpdateTileFlags` which manually calls `tile.renderFlags.set({ refreshMesh: true })`.
 - `mesh.scale.set()` (absolute) is safe on every refresh; only `*=` patterns need meshReset guard
 - `addIsorollTab` has no double-inject guard — if `renderSceneConfig` fires more than once for the same dialog (edge case), the Iso tab will appear twice; add `if ($html.find(\`a[data-tab="${TAB}"]\`).length) return;` at the top of `addIsorollTab` if this becomes a problem
 - AppV2 `stopPropagation` on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on the content section (see `ui/scene-config.ts`)
@@ -182,17 +71,4 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | Subdirectory | Description |
 |--------------|-------------|
-| [`src/transform/`](src/transform/) | Stage transform, bg transform, per-object counter-transform (math only — no UI) |
-| [`src/ui/`](src/ui/) | All config form tab injection (SceneConfig, TileConfig, TokenConfig) |
-| [`src/hud/`](src/hud/) | HUD patches (TileHUD wall buttons, TokenHUD repositioning) |
-| [`src/draw/`](src/draw/) | PIXI drawing utilities (constants, shapes, contour, volume-box geometry) |
-| [`src/gizmos/`](src/gizmos/) | Handle factories, mesh corner helpers, image drag math |
-| [`src/tiles/`](src/tiles/) | Tile volume overlay + gizmos + drag math |
-| [`src/tokens/`](src/tokens/) | Token volume overlay + image gizmos + elevation gizmo |
-| [`src/background/`](src/background/) | Background image gizmos (GridConfig only): HTML injection + PIXI drawing + drag math |
-| [`src/walls/`](src/walls/) | Linked wall system: coords, flags, CRUD, sync, door, history, manager, overlay |
-| [`src/preset/`](src/preset/) | Image preset system: types, storage, diff, upsert, apply, manager |
-| [`src/render/`](src/render/) | LayerManager (central PIXI layer registry) |
-| [`src/occluder/`](src/occluder/) | Tile occlusion |
-| [`src/sorter/`](src/sorter/) | Depth sort (dormant) |
-| [`src/resolver/`](src/resolver/) | Asset stance fallback |
+| [`src/`](src/CONTEXT.md) | All TypeScript source — entry point, flags, settings, util, all subsystems |

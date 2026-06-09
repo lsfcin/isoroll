@@ -1,7 +1,7 @@
 // PIXI drawing primitives for gizmo handles.
 import { currentProjection } from "../transform/constants";
 import { BLACK } from "../draw/constants";
-export const HANDLE_SIZE = 10;
+export const HANDLE_SIZE = 9;
 export const HALF        = HANDLE_SIZE / 2;
 
 // Canvas-aligned square → appears as a diamond under the isometric stage transform.

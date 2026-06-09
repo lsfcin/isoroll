@@ -43,12 +43,12 @@ export function handlePositions(
   const seMidX = tx + tw + heightDirX * (elevPx + elevTopPx) / 2;
   const seMidY = ty + th + heightDirY * (elevPx + elevTopPx) / 2;
   return {
-    width:     { cx: tx + heightDirX * elevPx,              cy: ty + th / 2 + heightDirY * elevPx },
-    height:    { cx: tx + tw / 2 + heightDirX * elevPx,     cy: ty + th + heightDirY * elevPx },
-    boundH:    { cx: tx + tw + heightDirX * elevTopPx,       cy: ty + th / 2 + heightDirY * elevTopPx },
-    elevation: { cx: seMidX,                             cy: seMidY },
-    scale:     { cx: tx + tw + heightDirX * elevPx,          cy: ty + th + heightDirY * elevPx },
-    move:      { cx: tx + tw / 2 + heightDirX * elevPx,      cy: ty + th / 2 + heightDirY * elevPx },
+    width:     { cx: tx + heightDirX * elevTopPx,          cy: ty + th / 2 + heightDirY * elevTopPx },
+    height:    { cx: tx + tw / 2 + heightDirX * elevTopPx, cy: ty + th + heightDirY * elevTopPx },
+    boundH:    { cx: tx + tw + heightDirX * elevTopPx,  cy: ty + th / 2 + heightDirY * elevTopPx },
+    elevation: { cx: seMidX,                            cy: seMidY },
+    scale:     { cx: tx + tw + heightDirX * elevTopPx,     cy: ty + th + heightDirY * elevTopPx },
+    move:      { cx: tx + tw / 2 + heightDirX * elevPx, cy: ty + th / 2 + heightDirY * elevPx },
     imgOffset: { cx: imgBL?.x ?? tx,                    cy: imgBL?.y ?? (ty + th) },
     imgScale:  { cx: imgTR?.x ?? (tx + tw),             cy: imgTR?.y ?? ty },
     imgYScale: { cx: imgTC?.x ?? (tx + tw / 2),         cy: imgTC?.y ?? ty },
