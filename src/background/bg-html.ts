@@ -1,7 +1,7 @@
 // GridConfig HTML injection: Vertical Scale field, key/wheel handlers, _processSubmitData patch.
-import { MODULE_ID } from "../flags";
-import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
-import { CanvasTransform } from "../transform/stage-transform";
+
+import { MODULE_ID } from "../core";
+import { getBgYScale, setBgYScaleOverride, CanvasTransform } from "../transform";
 
 type GCApp = { _processSubmitData?: (...a: unknown[]) => Promise<unknown> };
 

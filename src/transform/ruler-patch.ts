@@ -1,6 +1,7 @@
-import { MODULE_ID } from "../flags";
-import { canvasZoom } from "../util";
-import { isoHudCenter, isoVisualCssWidth } from "../hud/hud-utils";
+
+
+import { MODULE_ID, canvasZoom } from "../core";
+import { isoHudCenter, isoVisualCssWidth } from "../hud";
 
 // ── Ruler / TokenRuler label position ────────────────────────────────────────
 // Both classes set context.position in canvas px, used as CSS left/top in

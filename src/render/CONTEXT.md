@@ -12,3 +12,12 @@
 | Subdirectory | Description |
 |--------------|-------------|
 | _(none)_ | All files at this level |
+
+<!-- routing:start -->
+## Routing
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`index.ts`](index.ts) | — | — | **facade** — Public API for the render module — central PIXI layer registry |
+| [`layer-manager.ts`](layer-manager.ts) | [`layer-manager.d.ts`](layer-manager.d.ts) | `LayerManager`, `LAYER_KEYS`, `stage` | Central PIXI layer registry: creation, z-order policy, and teardown for all overlay layers. |
+<!-- routing:end -->

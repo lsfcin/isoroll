@@ -1,5 +1,6 @@
 // Create, delete, link, and extract linked wall documents for a tile.
-import { MODULE_ID, VolumeFlags } from "../flags";
+
+import { MODULE_ID, VolumeFlags } from "../core";
 import { WallHistory } from "./wall-history";
 import type { WallDef, WallConfig, TileAnchor } from "./wall-types";
 import {

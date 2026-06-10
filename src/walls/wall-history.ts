@@ -1,7 +1,7 @@
 // Undo stack for isoroll wall operations on the Tiles layer.
+import { MODULE_ID } from "../core";
 import { setLinkedWallIds } from "./wall-flags";
 import { wallsLayer, scene, canvasToAnchor, type TileDoc } from "./wall-coords";
-import { MODULE_ID } from "../flags";
 
 type EntryBase = { tileHistLen: number };
 type Entry =

@@ -1,8 +1,9 @@
 // Token counter-transform: refreshToken hook handler.
-import { MODULE_ID, VolumeFlags } from "../flags";
+
+import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas } from "../core";
 import { CanvasTransform } from "./stage-transform";
 import { MutMeshLike as MeshLike, EPS } from "./tile-transform";
-import { gridDistance, elevToCanvas } from "../util";
+
 const tokenBase = new WeakMap<object, { x: number; y: number }>();
 
 export function onRefreshToken(token: Token, flags?: Record<string, boolean>): void {

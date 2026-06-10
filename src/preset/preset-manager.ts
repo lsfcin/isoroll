@@ -1,3 +1,4 @@
+import { MODULE_ID, scheduleWrap } from "../core";
 import { deriveKey, readPreset, writePreset, preloadCache, getCachedPreset } from "./preset-storage";
 import { getSrc, docId, toScene, isPresetEnabled, gridSize, getSceneBg, type TextureDoc, type SceneDoc } from "./preset-ops";
 import { applyTile, applyToken, applyBackground, autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls, applyPresetToSource, tilePresetData } from "./preset-apply";
@@ -7,8 +8,6 @@ import {
   TILE_PRESET_KEYS, TOKEN_PRESET_KEYS, BG_PRESET_FLAG_KEYS,
 } from "./preset-diff";
 import type { TilePreset, TokenPreset } from "./preset-types";
-import { MODULE_ID } from "../flags";
-import { scheduleWrap } from "../util";
 
 const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 50);
 

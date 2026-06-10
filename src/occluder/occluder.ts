@@ -1,5 +1,6 @@
-import { MODULE_ID, VolumeFlags } from "../flags";
 
+
+import { MODULE_ID, VolumeFlags } from "../core";
 export class Occluder {
   static activate(): void {
     Hooks.on("refreshToken", Occluder.evaluateAll);

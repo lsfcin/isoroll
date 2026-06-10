@@ -1,8 +1,9 @@
 // Preset upsert: debounce + extract + write for tile, token, and background presets.
-import { MODULE_ID } from "../flags";
+
+import { MODULE_ID } from "../core";
 import { deriveKey, writePreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
-import { extractWallDefs } from "../walls/wall-crud";
+import { extractWallDefs } from "../walls";
 import { getSrc, isPresetEnabled, toScene, asFD, asTDp, gridSize, getSceneBg } from "./preset-ops";
 
 const getNum  = (d: unknown, k: string, def: number) => (asFD(d).getFlag(MODULE_ID, k) as number | undefined) ?? def;

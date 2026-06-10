@@ -1,9 +1,9 @@
 // Interactive helpers: endpoint handles, drag, select toggle.
-import { MODULE_ID } from "../flags";
+
+import { MODULE_ID, startPointerDrag, screenPointToCanvas } from "../core";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
 import { canvasToAnchor, wallsLayer, scene, type TileDoc } from "./wall-coords";
 import { WallHistory } from "./wall-history";
-import { startPointerDrag, screenPointToCanvas } from "../util";
 
 function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
   (ctr.getChildByName(`ep-${wallId}-A`) as PIXI.Graphics | null)?.scale.set(s);

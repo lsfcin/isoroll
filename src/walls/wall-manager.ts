@@ -1,4 +1,5 @@
-import { MODULE_ID, VolumeFlags } from "../flags";
+
+import { MODULE_ID, VolumeFlags, scheduleWrap } from "../core";
 import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "./wall-flags";
 import { updateLinkedWallPositions, flipLinkedWallAnchorsX } from "./wall-sync";
 import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls } from "./wall-crud";
@@ -7,8 +8,8 @@ import { applyDoorBehavior, cycleDoorBehavior as _cycleDoorBehavior } from "./wa
 import type { DoorBehavior } from "./wall-types";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
-import { scheduleWrap } from "../util";
-import { upsertTile, debounced, tileUpsertTimers } from "../preset/preset-upsert";
+
+import { upsertTile, debounced, tileUpsertTimers } from "../preset";
 
 const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 0);
 

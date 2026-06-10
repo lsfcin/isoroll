@@ -1,4 +1,4 @@
-export { IMG_YSCALE_SNAP_PX } from "../gizmos/img-drag";
+export { IMG_YSCALE_SNAP_PX } from "../gizmos";
 export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale" | "imgYScale" | "swapSide";
 export interface DragState {
     type: HandleType;

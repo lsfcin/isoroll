@@ -3,3 +3,8 @@ dist/
 *.log
 .env
 .env.*
+
+.tsbuildinfo-declarations
+
+# Facade interface files are redundant (index.ts is already minimal)
+src/**/index.d.ts

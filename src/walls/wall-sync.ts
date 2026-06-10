@@ -1,5 +1,6 @@
 // Linked-wall position synchronization when a tile moves or flips.
-import { MODULE_ID } from "../flags";
+
+import { MODULE_ID } from "../core";
 import type { TileAnchor } from "./wall-types";
 import { wallsLayer, scene, imageRect, anchorToCanvas, type TileDoc } from "./wall-coords";
 import { getLinkedWallIds } from "./wall-flags";

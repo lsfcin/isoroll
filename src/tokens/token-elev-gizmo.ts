@@ -1,10 +1,10 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
-import { currentProjection } from "../transform/constants";
-import { MODULE_ID, VolumeFlags } from "../flags";
-import { makeCircleHandle } from "../gizmos/handle-draw";
-import { clientToGlobal } from "../gizmos/mesh-corners";
-import { canvasZoom, gridDistance, elevToCanvas, startPointerDrag } from "../util";
-import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
+import { MODULE_ID, VolumeFlags, canvasZoom, gridDistance, elevToCanvas, startPointerDrag } from "../core";
+import { currentProjection } from "../transform";
+
+import { makeCircleHandle, clientToGlobal } from "../gizmos";
+
+import { LayerManager, LAYER_KEYS } from "../render";
 
 interface TokenElevDrag {
   token: Token;
