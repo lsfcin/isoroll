@@ -75,7 +75,7 @@ export class VolumeOverlay {
     if (showVol) {
       if (VolumeFlags.getShadowEnabled(tile.document)) {
         const gridSize = canvas.grid?.size ?? 100;
-        drawGroundShadow(g, v, (gridSize / 2) * VolumeFlags.getShadowRadius(tile.document), VolumeFlags.getShadowOpacity(tile.document), VolumeFlags.getShadowShape(tile.document));
+        drawGroundShadow(g, v.ground.x, v.ground.y, v.elevation, (gridSize / 2) * VolumeFlags.getShadowRadius(tile.document), VolumeFlags.getShadowOpacity(tile.document), VolumeFlags.getShadowShape(tile.document));
       }
       if (v.elevation > 0) drawAnchorLine(g, v);
       drawBox(g, v);

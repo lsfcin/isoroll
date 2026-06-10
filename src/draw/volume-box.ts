@@ -83,15 +83,17 @@ export function computeTokenVerts(token: Token): BoxVerts {
 }
 
 export function drawGroundShadow(
-  g: PIXI.Graphics, v: BoxVerts, radius: number, opacity: number, shape: "circle" | "rect",
+  g: PIXI.Graphics,
+  groundX: number, groundY: number, elevation: number,
+  radius: number, opacity: number, shape: "circle" | "rect",
 ): void {
-  if (Math.abs(v.elevation) < 0.01) return;
+  if (Math.abs(elevation) < 0.01) return;
   g.lineStyle(0);
   g.beginFill(BLACK, opacity);
   if (shape === "rect") {
-    g.drawRect(v.ground.x - radius, v.ground.y - radius, radius * 2, radius * 2);
+    g.drawRect(groundX - radius, groundY - radius, radius * 2, radius * 2);
   } else {
-    g.drawCircle(v.ground.x, v.ground.y, radius);
+    g.drawCircle(groundX, groundY, radius);
   }
   g.endFill();
 }

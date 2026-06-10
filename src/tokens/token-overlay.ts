@@ -2,7 +2,7 @@
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import type { MeshLike } from "../draw";
-import { drawMeshContour, computeTokenVerts, drawGroundShadow, drawBox, drawAnchorLine } from "../draw";
+import { drawMeshContour, computeTokenVerts, drawBox, drawAnchorLine } from "../draw";
 import { LayerManager, LAYER_KEYS } from "../render";
 
 export class TokenOverlay {
@@ -48,10 +48,6 @@ export class TokenOverlay {
     if (showImg) drawMeshContour(g, token.mesh as unknown as MeshLike);
     if (showVol) {
       const v = computeTokenVerts(token);
-      if (VolumeFlags.getShadowEnabled(token.document)) {
-        const gridSize = canvas.grid?.size ?? 100;
-        drawGroundShadow(g, v, (gridSize / 2) * VolumeFlags.getShadowRadius(token.document), VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
-      }
       if (v.elevation > 0) drawAnchorLine(g, v);
       drawBox(g, v);
       if (v.elevation < 0) drawAnchorLine(g, v);

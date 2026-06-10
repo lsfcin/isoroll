@@ -1,7 +1,7 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
 import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance } from "../core";
 import { currentProjection } from "../transform";
-import { drawDash, ANCHOR_DASH, ANCHOR_GAP } from "../draw";
+import { drawDash, drawGroundShadow, ANCHOR_DASH, ANCHOR_GAP } from "../draw";
 import { makeCircleHandle } from "../gizmos";
 import { beginElevDrag } from "./token-elev-drag";
 import { LayerManager, LAYER_KEYS } from "../render";
@@ -98,11 +98,20 @@ export class TokenElevGizmo {
       container.addChild(handle);
     }
 
+    const groundX = tx + tw / 2, groundY = ty + th / 2;
+
+    // Ground shadow — always visible when elevated
+    if (VolumeFlags.getShadowEnabled(token.document)) {
+      const shadowG = new PIXI.Graphics();
+      shadowG.eventMode = "none";
+      drawGroundShadow(shadowG, groundX, groundY, elev, (gridSize / 2) * VolumeFlags.getShadowRadius(token.document), VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
+      container.addChild(shadowG);
+    }
+
     // Dashed elevation line — unselected only, shows when elev !== 0
     if (!selected && elev !== 0) {
-      const groundX = tx + tw / 2, groundY = ty + th / 2;
-      const baseCX  = groundX + heightDir.x * elevPx;
-      const baseCY  = groundY + heightDir.y * elevPx;
+      const baseCX = groundX + heightDir.x * elevPx;
+      const baseCY = groundY + heightDir.y * elevPx;
       const lineG = new PIXI.Graphics();
       lineG.eventMode = "none";
       lineG.lineStyle(1, 0x000000, 0.35);
