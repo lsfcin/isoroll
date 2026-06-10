@@ -1,0 +1,10 @@
+export declare const ORANGE = 16750633;
+export declare const BLACK = 0;
+export declare const DASH_LEN = 4;
+export declare const GAP_LEN = 10;
+export declare const ANCHOR_DASH = 2;
+export declare const ANCHOR_GAP = 9;
+export declare const ALPHA_FRONT_OUTLINE = 0.45;
+export declare const ALPHA_FRONT_FILL = 0.85;
+export declare const ALPHA_BACK_OUTLINE = 0.18;
+export declare const ALPHA_BACK_FILL = 0.35;
