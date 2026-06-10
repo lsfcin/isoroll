@@ -1,21 +1,19 @@
 /**
  * Painter's algorithm depth sort for isometric SE camera.
  *
- * Sort key: gridCol + gridRow + elevation/gridSize
+ * Primary sort key: gridCol + gridRow + elevation/gridSize
  * Lower key = further from camera = rendered first (behind).
  *
- * Hooks into canvas primary layer sort after each render tick.
+ * When keys are equal, secondary sort by y then x provides a stable
+ * tiebreaker: a more-southern (higher y) or more-eastern (higher x)
+ * object is closer to the SE camera and renders in front.
+ * This prevents z-order flickering for stacked or same-key objects.
  */
 
 export class DepthSorter {
   static activate(): void {
     Hooks.on("refreshToken", DepthSorter.onRefresh);
     Hooks.on("refreshTile", DepthSorter.onRefresh);
-  }
-
-  private static sortKey(gridX: number, gridY: number, elevation: number): number {
-    const gridSize = canvas.grid?.size ?? 100;
-    return gridX + gridY + elevation / gridSize;
   }
 
   private static onRefresh(): void {
@@ -31,14 +29,18 @@ export class DepthSorter {
     primary.children.sort((a, b) => {
       const keyA = DepthSorter.objectSortKey(a, gridSize);
       const keyB = DepthSorter.objectSortKey(b, gridSize);
-      return keyA - keyB;
+      if (keyA !== keyB) return keyA - keyB;
+      // Secondary: south (higher y) = closer to SE camera = in front.
+      const dy = (a.y ?? 0) - (b.y ?? 0);
+      if (dy !== 0) return dy;
+      // Tertiary: east (higher x) = closer = in front.
+      return (a.x ?? 0) - (b.x ?? 0);
     });
   }
 
   private static objectSortKey(obj: PIXI.DisplayObject, gridSize: number): number {
     const x = obj.x ?? 0;
     const y = obj.y ?? 0;
-    // elevation stored as zIndex by convention on PrimaryCanvasObject
     const elevation = (obj as { elevation?: number }).elevation ?? 0;
     return (x / gridSize) + (y / gridSize) + (elevation / gridSize);
   }

@@ -12,3 +12,11 @@
 | Subdirectory | Description |
 |--------------|-------------|
 | _(none)_ | All files at this level |
+
+<!-- routing:start -->
+## Routing
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`depth-sorter.ts`](depth-sorter.ts) | — | — | ← add first-line comment |
+<!-- routing:end -->
