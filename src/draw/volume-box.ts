@@ -86,6 +86,7 @@ export function drawGroundShadow(
   g: PIXI.Graphics, v: BoxVerts, radius: number, opacity: number, shape: "circle" | "rect",
 ): void {
   if (Math.abs(v.elevation) < 0.01) return;
+  g.lineStyle(0);
   g.beginFill(BLACK, opacity);
   if (shape === "rect") {
     g.drawRect(v.ground.x - radius, v.ground.y - radius, radius * 2, radius * 2);
