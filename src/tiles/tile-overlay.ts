@@ -1,13 +1,13 @@
 // Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer.
 
 import { MODULE_ID, VolumeFlags } from "../core";
-import type { P, MeshLike } from "../draw";
+import type { MeshLike } from "../draw";
 import { computeVerts, drawGroundShadow, drawBox, drawAnchorLine, drawMeshContour } from "../draw";
 import { LayerManager, LAYER_KEYS } from "../render";
 import { DEBUG_COORD, drawCoordDebug } from "../transform";
 
 export class VolumeOverlay {
-  private static boxes: Map<string, PIXI.Graphics> = new Map();
+  private static boxes: Map<string, PIXI.Container> = new Map();
 
   static activate(): void {
     Hooks.on("canvasReady",   VolumeOverlay.onCanvasReady);
@@ -42,19 +42,19 @@ export class VolumeOverlay {
   static show(tile: Tile): void {
     VolumeOverlay.hide(tile.id);
     const layer = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_OVERLAY);
-    const g = new PIXI.Graphics();
-    g.eventMode = "passive";
-    VolumeOverlay.draw(g, tile);
-    layer.addChild(g);
-    VolumeOverlay.boxes.set(tile.id, g);
+    const c = new PIXI.Container();
+    c.eventMode = "passive";
+    VolumeOverlay.draw(c, tile);
+    layer.addChild(c);
+    VolumeOverlay.boxes.set(tile.id, c);
     LayerManager.bringToTop(LAYER_KEYS.VOLUME_OVERLAY);
   }
 
   static hide(tileId: string): void {
-    const g = VolumeOverlay.boxes.get(tileId);
-    if (!g) return;
-    g.parent?.removeChild(g);
-    g.destroy();
+    const c = VolumeOverlay.boxes.get(tileId);
+    if (!c) return;
+    c.parent?.removeChild(c);
+    c.destroy({ children: true });
     VolumeOverlay.boxes.delete(tileId);
   }
 
@@ -63,28 +63,27 @@ export class VolumeOverlay {
     LayerManager.clearLayer(LAYER_KEYS.VOLUME_OVERLAY);
   }
 
-  private static draw(g: PIXI.Graphics, tile: Tile): void {
+  private static draw(c: PIXI.Container, tile: Tile): void {
     const showVol = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImg = VolumeFlags.getShowImageManipulation(tile.document, true);
-
-    // Image contour drawn first so it appears behind the 3D box lines
-    if (showImg) drawMeshContour(g, tile.mesh as unknown as MeshLike);
-
     const v = computeVerts(tile);
 
+    if (showVol && VolumeFlags.getShadowEnabled(tile.document)) {
+      const gridSize = canvas.grid?.size ?? 100;
+      const shadow = drawGroundShadow(v.ground.x, v.ground.y, v.elevation, (gridSize / 2) * VolumeFlags.getShadowRadius(tile.document), VolumeFlags.getShadowOpacity(tile.document), VolumeFlags.getShadowShape(tile.document));
+      if (shadow) c.addChild(shadow);
+    }
+
+    const g = new PIXI.Graphics();
+    g.eventMode = "none";
+    if (showImg) drawMeshContour(g, tile.mesh as unknown as MeshLike);
     if (showVol) {
-      if (VolumeFlags.getShadowEnabled(tile.document)) {
-        const gridSize = canvas.grid?.size ?? 100;
-        drawGroundShadow(g, v.ground.x, v.ground.y, v.elevation, (gridSize / 2) * VolumeFlags.getShadowRadius(tile.document), VolumeFlags.getShadowOpacity(tile.document), VolumeFlags.getShadowShape(tile.document));
-      }
       if (v.elevation > 0) drawAnchorLine(g, v);
       drawBox(g, v);
       if (v.elevation < 0) drawAnchorLine(g, v);
     }
-
-    if (DEBUG_COORD) {
-      drawCoordDebug(g, tile, v.baseCenter);
-    }
+    if (DEBUG_COORD) drawCoordDebug(g, tile, v.baseCenter);
+    c.addChild(g);
   }
 
 }

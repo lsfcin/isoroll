@@ -82,20 +82,43 @@ export function computeTokenVerts(token: Token): BoxVerts {
   return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, heightDir.x, heightDir.y, elevation);
 }
 
+let _shadowTex: PIXI.Texture | null = null;
+function shadowTexture(): PIXI.Texture {
+  if (_shadowTex) return _shadowTex;
+  const size = 128, half = size / 2;
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = size;
+  const ctx = cv.getContext("2d")!;
+  const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+  grad.addColorStop(0,   "rgba(0,0,0,1)");
+  grad.addColorStop(1,   "rgba(0,0,0,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  _shadowTex = PIXI.Texture.from(cv);
+  return _shadowTex;
+}
+
 export function drawGroundShadow(
-  g: PIXI.Graphics,
   groundX: number, groundY: number, elevation: number,
   radius: number, opacity: number, shape: "circle" | "rect",
-): void {
-  if (Math.abs(elevation) < 0.01) return;
+): PIXI.DisplayObject | null {
+  if (Math.abs(elevation) < 0.01) return null;
+  if (shape === "circle") {
+    const sprite = new PIXI.Sprite(shadowTexture());
+    sprite.anchor.set(0.5);
+    sprite.position.set(groundX, groundY);
+    sprite.width = sprite.height = radius * 2;
+    sprite.alpha = opacity;
+    sprite.eventMode = "none";
+    return sprite;
+  }
+  const g = new PIXI.Graphics();
   g.lineStyle(0);
   g.beginFill(BLACK, opacity);
-  if (shape === "rect") {
-    g.drawRect(groundX - radius, groundY - radius, radius * 2, radius * 2);
-  } else {
-    g.drawCircle(groundX, groundY, radius);
-  }
+  g.drawRect(groundX - radius, groundY - radius, radius * 2, radius * 2);
   g.endFill();
+  g.eventMode = "none";
+  return g;
 }
 
 export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {

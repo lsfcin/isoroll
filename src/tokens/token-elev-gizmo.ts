@@ -102,10 +102,8 @@ export class TokenElevGizmo {
 
     // Ground shadow — always visible when elevated
     if (VolumeFlags.getShadowEnabled(token.document)) {
-      const shadowG = new PIXI.Graphics();
-      shadowG.eventMode = "none";
-      drawGroundShadow(shadowG, groundX, groundY, elev, (gridSize / 2) * VolumeFlags.getShadowRadius(token.document), VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
-      container.addChild(shadowG);
+      const shadow = drawGroundShadow(groundX, groundY, elev, (gridSize / 2) * VolumeFlags.getShadowRadius(token.document), VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
+      if (shadow) container.addChild(shadow);
     }
 
     // Dashed elevation line — unselected only, shows when elev !== 0
