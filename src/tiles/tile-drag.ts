@@ -1,10 +1,10 @@
 // Pure drag-math helpers for VolumeGizmos: axis projection, snapping, handle positions.
-import { currentProjection } from "../transform/constants";
-import { MODULE_ID } from "../flags";
-import { snapQuarterPx, snapQuarterUnits } from "../gizmos/mesh-corners";
-import { canvasZoom, gridDistance, elevToCanvas, screenToCanvas } from "../util";
-import { projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos/img-drag";
-export { IMG_YSCALE_SNAP_PX } from "../gizmos/img-drag";
+import { MODULE_ID, canvasZoom, gridDistance, elevToCanvas, screenToCanvas } from "../core";
+import { currentProjection } from "../transform";
+
+import { snapQuarterPx, snapQuarterUnits, projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos";
+
+export { IMG_YSCALE_SNAP_PX } from "../gizmos";
 
 export type HandleType = "width" | "height" | "boundH" | "elevation" | "scale" | "move" | "imgOffset" | "imgScale" | "imgYScale" | "swapSide";
 

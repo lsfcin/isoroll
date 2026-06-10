@@ -1,7 +1,7 @@
 // Shared type shims and helpers used across preset-apply, preset-upsert, preset-diff.
-import { MODULE_ID } from "../flags";
 
 // Typed shims
+import { MODULE_ID } from "../core";
 export type TextureDoc = { texture?: { src?: string } };
 type FlagDoc     = { getFlag(m: string, k: string): unknown; id?: string | null };
 type UpdateDoc   = { update(data: object, options?: object): Promise<unknown> };

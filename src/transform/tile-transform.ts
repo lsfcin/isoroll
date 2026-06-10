@@ -1,7 +1,8 @@
 // Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers.
-import { MODULE_ID, VolumeFlags } from "../flags";
+
+import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas } from "../core";
 import { CanvasTransform } from "./stage-transform";
-import { gridDistance, elevToCanvas } from "../util";
+
 import { transformCoord, P2 } from "./coord-map";
 
 const DEBUG_ANCHOR = false;

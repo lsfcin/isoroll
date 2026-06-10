@@ -1,296 +1,312 @@
-# isoroll — Module Roadmap
+# isoroll — Roadmap
+> Pending work only. Completed milestones move to HISTORY.md. See [SPECS.md](SPECS.md) for design decisions and [SETUP.md](SETUP.md) for dev setup.
 
-> Living doc: architecture decisions, phase status, pending work.
+<!-- Goal: agent-ready roadmap. Each milestone includes file paths, function names, flag names,
+     and technical context sufficient for implementation without prior session context. -->
 
-## Core Principles
+## Status
 
-1. **Reliability** — no glitches, no flicker, no broken transforms at edge cases
-2. **Speed** — optimized render path, no unnecessary recomputation
-3. **UX magic** — WYSIWYG editing, gizmo handles, anticipate intent, no bureaucratic menus
+All phases pending. Phase 1 is next priority.
 
----
+## Backlog
 
-## Architecture Decisions
-
-### Isometric Projection
-
-- **Dimetric 2:1** (not true isometric 1:1): rotation=-45°, skewX=skewY=18.435°, vertical ratio=2.0
-- Applied to `canvas.app.stage` (purely visual — lighting, walls, movement, grid all unaffected)
-- Grid is NOT counter-transformed — it aligns naturally with stage rotation+skew
-- Counter-transforms on tile/token meshes: tiles get bottom-left anchor (0,1); tokens get center anchor (0.5,0.5)
-- Scale includes √2 to compensate for 45° rotation stretching
-
-### Coordinate System
-
-- Stage transform is purely visual. All mechanical systems (Foundry lighting, walls, movement, reach) operate in original grid space.
-- Grid remains aligned — do not touch it.
-
-### 3D Volume Geometry
-
-- Tiles: x,y = volume origin (bottom-left front corner of isometric footprint), Option B
-- Token: center of bottom face = mid-bottom vertex
-- Uniform scale on resize (preserve aspect ratio)
-- Volume handles: 4 PIXI handles per axis (X/Y/Z + uniform) in `canvas.controls` (screen-space layer)
-- Volume handles hidden in image-edit mode
-
-### Depth Sort (Painter's Algorithm)
-
-- Sort key: `gridCol + gridRow + elevation / gridSize`
-- Implemented via `depthSort` hook overriding Foundry's default z-order
-
-### Occlusion
-
-- **Tile fades, NOT token** — tile gets `alpha = occlusionOpacity` when a token is behind it
-- Check: tile.sortKey > token.sortKey + XY footprint overlap + Z overlap
-- `OcclusionOpacity` setting: 0=invisible, 1=no effect (default 0.3)
-
-### Per-Scene Enablement
-
-- Flag: `scene.flags.isoroll.enabled` (boolean)
-- Scene Config checkbox in "Basics" tab
-
-### Asset Naming
-
-- Tokens: `{name}_{stance}_{facing}.{ext}` (e.g. `rogue_idle_SE.png`)
-- Tiles: `{name}_{facing}.{ext}` (e.g. `dungeon_floor_N.png`)
-- Facings: N, NE, E, SE, S, SW, W, NW, TOP
-
-### Stance System
-
-- Current stance tracked per token (not per scene)
-- Fallback chain (if image missing, walk chain):
-  ```
-  attack → ready → idle
-  shoot, cast, dodge, shield, evade, endure, hurt → ready → idle
-  prone, dead → idle
-  sneak, fly, talk → idle
-  idle → (terminal)
-  ```
-- Stance updates triggered by dnd5e hooks (Phase 6)
-
-### Preset System
-
-- **Storage**: one JSON per image at `Data/isoroll/presets/<mirrored-src-path>.json`; flat `_index.json` for fast cache preload at startup
-- **Key**: derived from `texture.src` — strip query/hash, lowercase (e.g. `assets/wall.rembg.png` → `assets/wall.rembg.png.json`)
-- **Cache**: in-memory `Map<imageKey, preset>` populated from `_index.json` on `ready`; updated immediately on every write
-- **No-blink placement**: `preCreateTile` applies from cache synchronously via `doc.updateSource()` before Foundry persists the tile; `createTile` async fallback fires ONLY on cache miss (skipped on hit to avoid redundant PIXI redraw blink)
-- **Auto-upsert**: `updateTile`/`updateToken`/`updateScene` hooks watch for relevant flag or native field changes; debounced 500ms to batch drag events
-- **Opt-out**: `flags.isoroll.presetEnabled` (default true) per tile/token for special cases
+<!-- Unscheduled ideas not yet tied to a phase. -->
 
 ---
 
-## Phase Status
+## Phase 1 — Token Depth Refinement 🔲 PENDING
 
-### Phase 1 — Canvas Transform ✅ DONE
+### Problem
 
-- [x] Stage rotation + skew (dimetric 2:1)
-- [x] `canvasReady` + `updateScene` hooks
-- [x] Enable/disable per scene via flag
+`DepthSorter` uses a single-pass sort with key `x/gs + y/gs + elev/gs` on all `canvas.primary.children`. Two tokens at the same grid cell and same elevation get identical keys → render order is arbitrary and may flicker every canvas refresh.
 
-### Phase 2 — Object Counter-Transform ✅ DONE
+### Solution
 
-- [x] `refreshToken` / `refreshTile` hooks with scale-guard flags
-- [x] Token counter-transform: `anchor(0.5,0.5)`, rotation locked to `reverseRotation` (auto-facing suppressed)
-- [x] Tile counter-transform: uniform scale `max(docW,docH)/max(texW,texH)` — preserves aspect ratio
-- [x] TokenHUD repositioned via `renderTokenHUD` hook with correct HUD-container-space math
-- [x] TileHUD repositioned via `_updatePosition` prototype patch on `CONFIG.Tile.hudClass`; spans tile visual isometric footprint width `cosA*(docW+docH)`; swap-stable vertical `T - visualCssW/4`
-- [x] Movement ruler labels (Ruler + TokenRuler `_getWaypointLabelContext`) patched to apply worldTransform correction — same HUD displacement bug as TokenHUD
-- [x] `DIMETRIC_2_1` constants shared via `constants.ts`
-- ⏳ Token 8-directional sprite selection (TODO placeholder in `object-transform.ts`) → Phase Future/Multiview
+After the main sort, run a pairwise epsilon-offset pass over tokens with close sort keys. If token A's footprint occludes token B (A is south/east of B in isometric space), nudge A's effective sort key by a small epsilon so it consistently renders in front. Uses `occludes(a, b)` pairwise test: `a.x <= b.x && (a.y + a.height) >= b.y`.
 
-### Phase 2.5 — Config UI ✅ DONE
+### Checklist
 
-- [x] "Enable Isoroll" + "Transform Background" in Scene Config (Isoroll tab)
-- [x] "Transform Token" in Token Config (Isoroll tab)
-- [x] "Transform Tile" in Tile Config (Isoroll tab)
-- [x] pt-BR language support
-- [x] Foundry AppV2 tab injection (see `/foundry` skill)
-- [x] Grid Configuration Tool (grid wrench): counter-transforms preview bg sprite when `transformBackground=false`; grid mesh stays isometric; camera position unchanged. Pattern: `updateTransform` override with save→apply→origUpdate→restore on `renderGridConfig` hook.
-- [x] Grid Config scene offset: bg position uses `canvas.dimensions.sceneX/Y` (not static scene flags) so Scene Offset changes are reflected live
-- [x] AppV2 stale `tabGroups` bug: clicking native tab after custom tab was activated left content hidden; fixed by explicit `addClass("active")` in other-tab handler
-- [x] `imageOffset` stored in grid-relative units (divide on save, multiply by `gs` on apply/drag-start) — preserves offset across gridSize changes
-- [x] `foregroundTile` flag (default true): foreground tiles rescale `x/y/width/height` canvas px when scene gridSize changes (via `preUpdateScene`/`updateScene` hooks), preserving grid-unit footprint like tokens. Checkbox in TileConfig Iso tab.
-- [x] Background image handles in GridConfig Tool (when `transformBackground=false`):
-  - TC white square → `backgroundYScale` scene flag (Y-scale only); CTRL+Wheel/Arrow shortcuts (step 0.01)
-  - TR white square → `scale` native form field (uniform scale)
-  - BL white circle → `shiftX`/`shiftY` native form fields (translate)
-  - Dashed contour (white, screen-density-normalised via worldTransform scale factors); live update during Y-scale drag
-  - "Vertical Scale" numeric field injected into GridConfig form (step=0.001, min=0.05, max=5)
-  - `backgroundYScale` persisted via instance-level `_processSubmitData` patch (GridConfig native submit skips non-native fields)
+- [ ] Implement `occludes(a, b)` helper in `depth-sorter.ts`
+- [ ] Add second-pass epsilon-offset loop in `DepthSorter.sort()` after main sort
 
-### Phase 3 — Volume Handles (Gizmos) ✅ DONE (v2 — full redesign)
+### Key Files
 
-**3D Box Overlay** (`src/volume/overlay.ts`):
-- [x] 8-vertex, 12-edge 3D bounding box drawn with dashed PIXI.Graphics
-- [x] Front edges: full alpha orange + dark outline; back/hidden edges: 40% alpha
-- [x] Height direction: canvas (+1,−1) per grid unit — produces pure screen-vertical for all presets
-- [x] Elevation offset: tile.document.elevation × gridSize / gridDistance
-- [x] Height offset: boundHeight flag × gridSize
-- [x] Anchor dashed line from ground center to box base (elevated) or top (below ground)
-- [x] Redraws on controlTile/refreshTile, clears on canvasReady/updateScene
+- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` (main sort on `canvas.primary`), `DepthSorter.objectSortKey()` (key formula)
 
-**Gizmo Handles — Tiles** (`src/volume/gizmos.ts`, `gizmos-handles.ts`, `gizmos-drag.ts`):
-- [x] Volume handles (orange `#ff9829`), live-drag on pointermove — gated by `showVolumeManipulation`:
-  - Width (diamond) — left-edge midpoint of base → tile.document.width
-  - Height (diamond) — bottom-edge midpoint of base → tile.document.height
-  - BoundH (face parallelogram) — top back-face of box → boundHeight flag
-  - Elevation (counter-transformed circle) — SE vertical edge midpoint → tile.document.elevation
-  - Scale (diamond) — SE_base corner → proportional width+height
-  - Move (circle) — base face center → tile.document.x/y
-- [x] Image handles (white), gated by `showImageManipulation`:
-  - imgOffset (circle, BL corner) → imageOffset flag
-  - imgScale (square, TR corner) → imageScale flag
-  - imgYScale (square, TC top-center) → imageYScale flag; Y-axis only; 12px screen-space snap to 1.0
-  - swapSide (triangle button, BC edge) — swaps width↔height + tileFlipped in single `document.update()` (avoids mid-swap refreshTile with inconsistent state)
-- [x] 1/4 grid-unit snap; elevation snaps to integer feet
-- [x] Tile mesh displaced by elevation: `mesh.x/y = doc.x/y + hdx/hdy * E`
-- [x] Image scale includes boundHeight: `Math.max(docW, docH, docBoundH)`
-- [x] Rotation handle suppressed: invisible event-absorber over Foundry's triangle
-- [x] Anchor line: orange line from ground center to elevated base
-- [x] Auto-show on tile select, auto-hide on deselect, rebuild on refreshTile
+### References
 
-**Gizmo Handles — Tokens** (`src/volume/token-gizmos.ts`, `token-volume-gizmos.ts`):
-- [x] Image handles (white), gated by `showImageManipulation`:
-  - imgOffset (circle, BL corner) → imageOffset flag
-  - imgScale (square, TR corner) → imageScale flag
-  - imgYScale (square, TC top-center) → imageYScale flag; Y-axis only; 12px screen-space snap to 1.0
-- [x] Volume handle (orange), gated by `showVolumeManipulation`:
-  - Elevation (counter-transformed circle) — SE edge midpoint → token.document.elevation (with `{ animate: false }`)
-- [x] Doc-state cache (x, y, elevation, boundH) prevents 60fps PIXI rebuild during movement animation
+- isometric-perspective fork `foreground.js` — `refineTokenOrdering()` (lines 408–428), `occludes()` (lines 343–352)
 
-**Token Volume Overlay** (`src/volume/token-volume-overlay.ts`):
-- [x] Same 12-edge 3D wireframe box as tiles; uses `computeTokenVerts()` (token coords: x/y = top-left, width/height × gridSize)
-- [x] Anchor line from ground to elevated base
-- [x] Token mesh displaced by elevation: `mesh.x/y = base + hdx/hdy * E + imgOff`; tokenBase captures natural center on `refreshPosition` only; elevation fresh-read every frame so drag updates immediately
-- [x] Doc-state cache avoids redundant redraws when document unchanged
+### Scope
 
-**Config UI — Manipulation flags** (`src/transform/scene-config.ts`):
-- [x] `showImageManipulation` checkbox in TokenConfig + TileConfig Iso tab (default true)
-- [x] `showVolumeManipulation` checkbox in TokenConfig + TileConfig Iso tab (default true)
-- [x] `defaultTokenHeight` setting default raised to 2 grid units (≈ 10 ft at standard 5 ft/sq grid)
+Only token-to-token ordering. Tile-to-tile and tile-to-token ordering handled by main sort key (elevation-aware, correct for non-overlapping objects).
 
-**Projection System** (`src/transform/constants.ts`):
-- [x] PROJECTION_TYPES map: dimetric_2_1, true_iso, overhead, proj_3_2, diablo, torment, hades (approx.), custom
-- [x] getProjection(scene) — reads flags.isoroll.projection, handles custom numeric inputs
-- [x] heightDir field on IsoProjection for 3D box math
-- [x] canvas-transform.ts + object-transform.ts use getProjection() per hook call
+---
 
-**Scene Config** (`src/transform/scene-config.ts`):
-- [x] Projection dropdown added to Iso tab (after Transform Background)
-- [x] Custom projection: 4 numeric fields (rotation°, skewX°, skewY°, ratio) shown when "custom" selected
-- [x] Tab renamed: "Isoroll" → "Iso" (all sheets: scene/tile/token)
+## Phase 2 — Ground Shadow + Unselected Elevation Line 🔲 PENDING
 
-### Phase 4 — Image Edit Mode ✅ HANDLES DONE / 🔲 UX PENDING
+### Problem
 
-**Tokens + Tiles (done):**
-- [x] BL circle handle → drag to translate image (`flags.isoroll.imageOffset`)
-- [x] TR square handle → drag to scale image (`flags.isoroll.imageScale`)
-- [x] Dashed image contour shown on select (white dash, screen-pixel-adapted length)
-- [x] Handles shown on select via `controlToken`/`controlTile`; rebuilt on refresh
-- [x] Drag math: screen-space delta inverted through worldTransform for offset; radial distance ratio for scale
-- [x] Image offset correctly tracks movement (tokenBase pattern, captured on `refreshPosition` only)
-- [x] Hide/show animation safe (refreshMesh-only frames skipped)
-- [x] `showImageManipulation` flag (default true) gates handles + contour per object
+Elevated tokens/tiles have no visual cue indicating their ground position or height when unselected. The existing orange anchor line only shows when selected.
 
-**UX polish (pending):**
-- [ ] Double-click enters image-edit mode (volume handles hidden while active)
-- [ ] Fine-tune numeric text inputs for offset/scale
-- [ ] ESC / click-outside exits image-edit mode
+### Solution
 
-### Phase 5 — Preset System ✅ DONE
+Two new overlay visuals drawn in stage-level overlay layers (not in `canvas.primary`) — unaffected by the vision/fog masking issue described in Phase 3.
 
-**Storage** (`src/preset/preset-storage.ts`):
-- [x] File-per-image at `Data/isoroll/presets/<mirrored-path>.json`; intermediate dirs created lazily and cached
-- [x] `_index.json` flat map for O(1) startup preload (created empty on first run to suppress 404 noise)
-- [x] In-memory cache (`Map<key, IsorollPreset>`); populated from index on `ready`, updated on every write
-- [x] `FilePicker.upload(source, path, file, body, options)` — body={} 4th param, notify:false in 5th options param
+**Ground shadow:** circle or rounded-rect drawn at the token's ground position when elevated.
 
-**Hooks** (`src/preset/preset-manager.ts`):
-- [x] `preCreateTile` → `doc.updateSource(presetData)` — synchronous cache lookup, applies width/height + all flags before Foundry persists the tile (zero blink)
-- [x] `createTile` → async fallback (file fetch) ONLY on cache miss; skipped on cache hit to avoid redundant PIXI sprite redraw blink
-- [x] `createToken` / `createScene` → async auto-apply on first placement
-- [x] `updateTile` / `updateToken` → upsert on preset flag or native width/height changes; 500ms debounce
-- [x] `updateScene` → upsert on background native fields or `backgroundYScale` flag change; 500ms debounce
-- [x] Circular guard: preset-triggered `doc.update()` passes `{ isoroll: "preset" }` option; hooks skip those updates
+**Unselected elevation line:** thin dashed black line from ground to token base, visible when `elevation > 0` and token is NOT selected.
 
-**Preset fields** (`src/preset/preset-types.ts`):
-- Tile: `gridWidth`, `gridHeight` (grid units), `boundHeight`, `imageScale`, `imageYScale`, `imageOffset`, `tileFlipped`, `foregroundTile`
-- Token: same minus `gridWidth`/`gridHeight`/`foregroundTile`
-- Background: `scaleX`, `offsetX`, `offsetY`, `gridSize`, `backgroundYScale`
+### Checklist
 
-**Ops** (`src/preset/preset-ops.ts`): extract, apply, auto-apply, upsert functions; debounce infra; changedFlagKeys helpers
+- [ ] Add `drawGroundShadow(g, v)` in `src/draw/volume-box.ts` using `v.ground` (computed by `buildBoxVerts`)
+- [ ] Call `drawGroundShadow` from `TokenOverlay.show()` in `src/tokens/token-overlay.ts`
+- [ ] Call `drawGroundShadow` from `VolumeOverlay.draw()` in `src/tiles/tile-overlay.ts`
+- [ ] Add shadow flags to `VolumeFlags` in `src/flags.ts`: `shadowEnabled` (bool, default `true`), `shadowShape` (`"circle"|"rect"`, default `"circle"`), `shadowRadius` (number, multiplier of `gridSize/2`, default `1.0`), `shadowOpacity` (number 0–1, default `0.3`)
+- [ ] Add shadow controls to Iso tab in `src/ui/token-config.ts` and `src/ui/tile-config.ts`
+- [ ] Add dashed elevation line in `TokenElevGizmo.show()` in `src/tokens/token-elev-gizmo.ts`, gated by `selected === false && elev > 0`
 
-**Config UI** (`src/transform/scene-config.ts`):
-- [x] "Use Image Preset" checkbox in TileConfig + TokenConfig Iso tab (`flags.isoroll.presetEnabled`, default true/opt-out)
+### Key Files
 
-**Console API** (`window.ISOROLL_PRESETS`):
-- `tile.{get(src), save(src?), apply(src)}`
-- `token.{get(src), save(src?), apply(src)}`
-- `background.{get(src), save(), apply(src)}`
+- `src/draw/volume-box.ts` — `drawAnchorLine()` (reference for existing line drawing), `buildBoxVerts()` (computes `v.ground`, `v.baseCenter`)
+- `src/tokens/token-overlay.ts` — `TokenOverlay.show()`
+- `src/tiles/tile-overlay.ts` — `VolumeOverlay.draw()`
+- `src/tokens/token-elev-gizmo.ts` — `TokenElevGizmo.show()` (already renders unselected; manages elevation label)
+- `src/flags.ts` — `VolumeFlags` type
+- `src/ui/token-config.ts`, `src/ui/tile-config.ts` — Iso tab config forms
 
-### Phase 6 — Stance State Machine 🔲 PENDING
+### Scope
+
+Dashed line is unselected-only. Existing orange anchor line in `drawAnchorLine()` (selected state, constant `ORANGE`) stays unchanged.
+
+---
+
+## Phase 3 — Separate Rendering Layer Architecture 🔲 PENDING
+
+**Prerequisite for Phase 4. Fixes a fundamental fog-of-war display bug.**
+
+### Problem
+
+`canvas.primary` (`PrimaryCanvasGroup`) applies a `VisibilityFilter` post-process shader that clips all pixels outside the vision polygon. Isoroll's counter-transforms (rotation, skew, scale on `token.mesh`/`tile.mesh`) make sprites visually extend beyond the token's official grid footprint. The `VisibilityFilter` only covers the footprint area — sprite overflow is hidden in fog, so a tall character shows only a grid-sized square.
+
+```
+canvas.app.stage  ← isoroll applies rotation + skew here
+  ├── canvas.primary (PrimaryCanvasGroup) ← VisibilityFilter applied here
+  │     ├── canvas.primary.tokens  ← TokenMesh objects live here
+  │     └── canvas.primary.tiles   ← TileMesh objects live here
+  ├── canvas.effects  (lighting, vision sources)
+  └── canvas.visibility  (CanvasVisibility — vision polygon texture)
+```
+
+### Solution
+
+Create a new `PIXI.Container` (the **Iso Sprite Layer**) added directly to `canvas.stage` — outside `VisibilityFilter` scope. For each counter-transformed token/tile:
+
+1. Clone the mesh sprite into the Iso Sprite Layer with matching transforms (`position`, `anchor`, `angle`, `rotation`, `skew`, `scale`, `texture`)
+2. Set the original mesh in `canvas.primary` to `alpha = 0` (hidden but Foundry manages it for hit detection/mechanics)
+3. Sort the Iso Sprite Layer children by the same key as `DepthSorter`
+4. Manage visibility state manually (Phase 4)
+
+### Checklist
+
+- [ ] Add Iso Sprite Layer container to `LayerManager` in `src/render/layer-manager.ts` (new key in `LAYER_KEYS`, added to `canvas.stage` directly)
+- [ ] Implement `cloneTokenSprite()` — copy `position`, `anchor`, `angle`, `rotation`, `skew`, `scale`, `texture`, `alpha` from `token.mesh`
+- [ ] Implement `cloneTileSprite()` — same for tiles
+- [ ] Hook `drawToken`, `refreshToken`, `destroyToken` — create/sync/destroy token clones
+- [ ] Hook `drawTile`, `refreshTile`, `destroyTile` — create/sync/destroy tile clones
+- [ ] Hook `canvasReady`, `updateScene` — rebuild layer on canvas reload
+- [ ] On `refreshToken`/`refreshTile`: update clone transform to match current mesh; use doc-state cache pattern to skip no-op refreshes
+- [ ] Wire Iso Sprite Layer sort into `DepthSorter.sort()` (run alongside `canvas.primary.children` sort)
+- [ ] Set original mesh `alpha = 0` for counter-transformed objects; restore on destroy
+
+### Key Files
+
+- `src/render/layer-manager.ts` — `LayerManager`, `LAYER_KEYS` (existing stage-level container management)
+- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` (entry point for dual-layer sort)
+- `src/tokens/token-elev-gizmo.ts` — `lastState` map (doc-state cache pattern to reference)
+
+### References
+
+- isometric-perspective fork `foreground.js`:
+  - `setupContainers()` — adds container directly to `canvas.stage`
+  - `cloneTileSprite()` (lines 223–241)
+  - `cloneTokenSprite()` (lines 243–271)
+
+### Scope
+
+Only counter-transformed objects (tiles/tokens with isoroll flags set) go into the Iso Sprite Layer. Non-transformed objects stay native. Hit detection stays in `canvas.primary` (original mesh, `alpha=0` but still interactive). Iso Sprite Layer sits above `canvas.primary`, below HUD layers.
+
+---
+
+## Phase 4 — Fog-of-War Tile Integration 🔲 PENDING
+
+**Requires Phase 3.**
+
+### Problem
+
+Isoroll tiles function as 3D scene walls/props. Once in the Iso Sprite Layer (Phase 3), they are outside `VisibilityFilter` — they will always render regardless of fog state. Tiles need manual visibility management matching native Foundry fog behavior.
+
+### Solution
+
+Sample each tile's visibility state using `canvas.visibility.testVisibility()` and apply alpha/filter to the clone sprite accordingly.
+
+| State | Behavior |
+|---|---|
+| Explored + visible | Full alpha |
+| Explored + fogged | Dim via `ColorMatrixFilter` |
+| Unexplored | Hide clone entirely |
+
+### Checklist
+
+- [ ] Add `flags.isoroll.hideOnFog` (bool, default `false`) to `VolumeFlags` in `src/flags.ts` — when true, tile hides in both fogged and unexplored states
+- [ ] Implement per-tile visibility state check using `canvas.visibility.testVisibility({ object, tolerance })` sampling tile center (and optionally corners for large tiles)
+- [ ] Apply `ColorMatrixFilter` (darken) to clone sprite for fogged state
+- [ ] Hide clone (`alpha = 0`) for unexplored state
+- [ ] Trigger re-evaluation on hooks: `sightRefresh`, `updateToken`, `canvasReady`
+- [ ] Add `hideOnFog` toggle to Iso tab in `src/ui/tile-config.ts`
+
+### Key Files
+
+- `src/flags.ts` — `VolumeFlags` type
+- `src/render/layer-manager.ts` — Iso Sprite Layer (Phase 3 output)
+- `src/ui/tile-config.ts` — Iso tab
+
+### References
+
+- isometric-perspective fork `foreground.js`:
+  - `updateLayerOpacity()` (lines 185–221) — per-sprite alpha modulation pattern
+  - `applyVisibilityCulling()` (lines 500–612) — `testVisibility` sampling pattern
+
+---
+
+## Phase 5 — Door Secondary Image 🔲 PENDING
+
+### Problem
+
+Tiles with linked door walls support `hide`, `fade`, and `none` behavior on door open/close. No way to swap to a secondary texture (e.g. closed door tile → open doorway tile).
+
+### Solution
+
+Add a fourth door behavior mode `"image"` that swaps `tile.mesh.texture` to a configurable secondary texture on open, restores on close.
+
+### Checklist
+
+- [ ] Add `"image"` to `DoorBehavior` type in `src/walls/wall-types.ts`
+- [ ] Add `flags.isoroll.doorOpenTexture` (string URL) to `TileDocument` flags in `src/flags.ts`
+- [ ] Add `mode === "image"` branch in `applyDoorBehavior()` in `src/walls/wall-door.ts`: on open swap `tile.mesh.texture` to texture loaded from flag; on close restore from `tile.document.texture.src`
+- [ ] Cache loaded texture (use Foundry's `loadTexture(url)`)
+- [ ] Add `"image"` to cycle sequence in `cycleDoorBehavior()` in `src/walls/wall-door.ts` (after `"fade"`)
+- [ ] Add texture picker field for `doorOpenTexture` to Iso tab in `src/ui/tile-config.ts` (shown only when behavior = `"image"`)
+
+### Key Files
+
+- `src/walls/wall-door.ts` — `applyDoorBehavior()`, `cycleDoorBehavior()`
+- `src/walls/wall-types.ts` — `DoorBehavior` type
+- `src/flags.ts` — tile flags
+- `src/ui/tile-config.ts` — Iso tab config form
+
+---
+
+## Phase 6 — Painter's Algorithm: Research + Design Guidelines 🔲 PENDING
+
+### Problem
+
+The painter's algorithm (z-sort by key) breaks with cyclic occlusion: Tile A in front of B, B in front of C, C in front of A — no linear z-order satisfies all three. Inherent to isometric projection with arbitrarily-sized objects. Current `DepthSorter` has no cycle detection.
+
+### Solution
+
+Research phase only — no full implementation. Evaluate solutions, assess costs at scene scale (20–200 tiles), and produce guidelines/recommendations for SPECS.md.
+
+### Checklist
+
+- [ ] Research topological sort + cycle detection + breaking (DAG of occlusion relationships, DFS cycle detection, break weakest edge by overlap area; cost O(n²))
+- [ ] Research tile splitting (subdivide at overlap boundaries; guarantees correct sort but multiplies object count)
+- [ ] Research BSP tree (classic technique; expensive to maintain with dynamic objects)
+- [ ] Evaluate Foundry's `document.sort` property as a user-facing sort-band control (fork uses `TILE_STRIDE = 10000` bands)
+- [ ] Assess cost of O(n²) topological sort at scene scale
+- [ ] Write recommendations to SPECS.md: which approach to pursue, or whether sort-band UI is sufficient mitigation
+- [ ] If sort-band UI is viable: add sort-band field to Iso tab in `src/ui/tile-config.ts`
+
+### Key Files
+
+- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` (entry point for any changes)
+
+### References
+
+- isometric-perspective fork `foreground.js`:
+  - `assignTileDepths()` (lines 316–341) — banded depth model
+  - `computeTokenEntries()` (lines 354–406) — second-pass violation correction
+
+---
+
+## Phase 7 — Image Edit Mode UX 🔲 PENDING
+
+### Problem
+
+Image handles and contour work. Mode-switching UX is missing — no way to enter/exit image-edit mode without touching volume handles.
+
+### Solution
+
+Double-click enters image-edit mode (volume handles hidden, image handles shown). ESC or click-outside exits. Numeric inputs for offset/scale.
+
+### Checklist
+
+- [ ] Add per-tile/token `imageEditMode` in-memory state flag to `VolumeGizmos` (`src/tiles/tile-gizmos.ts`) and `TokenGizmos` (`src/tokens/token-gizmos.ts`)
+- [ ] On enter image-edit mode: hide volume handles, keep image handles; on exit: restore
+- [ ] Wire double-click entry point in gizmo classes
+- [ ] Add ESC keydown listener to exit image-edit mode
+- [ ] Add pointerdown-outside check to exit image-edit mode
+- [ ] Add fine-tune numeric text inputs for offset/scale in `src/ui/tile-config.ts` and `src/ui/token-config.ts`
+
+### Key Files
+
+- `src/tiles/tile-gizmos.ts` — `VolumeGizmos`
+- `src/tokens/token-gizmos.ts` — `TokenGizmos`
+- `src/ui/tile-config.ts`, `src/ui/token-config.ts`
+
+### Scope
+
+`imageEditMode` is in-memory only — not persisted to flags.
+
+---
+
+## Phase 8 — Stance State Machine 🔲 PENDING
+
+### Problem
+
+Stance switching exists but lacks system integration and manual override.
+
+### Checklist
 
 - [ ] dnd5e hook integration (attack, skill, condition changes)
 - [ ] Keyboard shortcut for manual stance override
 - [ ] Fallback chain resolution at display time
 
-### Phase 7 — Template Scene 🔲 PENDING
+---
+
+## Phase 9 — Template Scene 🔲 PENDING
+
+### Checklist
 
 - [ ] Pre-built scene: ISO enabled, sample tiles placed
 - [ ] Demonstrates volume gizmos + occlusion
 
-### Phase 8 — Right-Click Context Menus 🔲 PENDING
+---
+
+## Phase 10 — Right-Click Context Menus 🔲 PENDING
+
+### Checklist
 
 - [ ] Redundant access to all controls (volume edit, image edit, presets)
 
-### Future — Multiview 🔲 DEFERRED
+---
+
+## Future — Multiview 🔲 DEFERRED
 
 - 8 directional facings + TOP
 - Auto-detect from token movement direction
 
-### Future — Animations 🔲 DEFERRED
+## Future — Animations 🔲 DEFERRED
 
 - Single-frame impact → fluid frame sequences
 - Frame naming: `{name}_{stance}_{facing}_{frame:04d}.{ext}`
-
----
-
----
-
-## Repo Structure
-
-```
-isoroll-module/          ← this repo (public, Foundry module)
-  src/
-    transform/           canvas-transform, object-transform, scene-config, constants
-    volume/              flags, settings, overlay, gizmos, background-gizmos, …
-    preset/              preset-types, preset-storage, preset-ops, preset-manager
-    sorter/              depth-sorter
-    occluder/            occluder
-    resolver/            asset-resolver
-  styles/                isoroll.scss
-  lang/                  en.json, pt-br.json
-  assets/                placeholder art
-  dist/                  build output (gitignored)
-
-isoroll-content/         ← separate private repo (art pipeline)
-  cli/                   iso-cli.py
-  pipeline/              blender_iso_rig.py, ComfyUI workflows
-  profiles/              generation profiles
-  outputs/               generated sprites
-```
-
----
-
-## Development Setup
-
-```bash
-# Symlink for live dev (already done)
-ln -s /mnt/workspace/Code/isoroll-module /home/lucas/foundrydata-v14/Data/modules/isoroll
-
-# Build
-npm run build      # dist/module.js + dist/styles.css
-
-# Release
-git tag v0.x.x && git push --tags   # triggers GitHub Actions → zip → Release
-```

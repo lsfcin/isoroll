@@ -1,6 +1,7 @@
 // Handle dispatch and tile-specific factories.
-import { HandleType } from "../tiles/tile-drag";
-import { canvasZoom } from "../util";
+import { canvasZoom } from "../core";
+import type { HandleType } from "../tiles";
+
 import {
   HALF, makeHandle, makeCircleHandle, makeSquareCounterHandle,
   makeMoveHandle, makeSwapHandle, makeFaceHandle,

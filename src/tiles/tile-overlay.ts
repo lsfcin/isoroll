@@ -1,9 +1,10 @@
 // Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer.
-import { MODULE_ID, VolumeFlags } from "../flags";
-import { P, computeVerts, drawBox, drawAnchorLine } from "../draw/volume-box";
-import { drawMeshContour, MeshLike } from "../draw/contour";
-import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
-import { DEBUG_COORD, drawCoordDebug } from "../transform/coord-debug";
+
+import { MODULE_ID, VolumeFlags } from "../core";
+import type { P, MeshLike } from "../draw";
+import { computeVerts, drawBox, drawAnchorLine, drawMeshContour } from "../draw";
+import { LayerManager, LAYER_KEYS } from "../render";
+import { DEBUG_COORD, drawCoordDebug } from "../transform";
 
 export class VolumeOverlay {
   private static boxes: Map<string, PIXI.Graphics> = new Map();

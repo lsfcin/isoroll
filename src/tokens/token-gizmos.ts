@@ -1,11 +1,10 @@
 // Image offset + scale handles for tokens (bottom-left circle, top-right square).
-import { MODULE_ID, VolumeFlags } from "../flags";
-import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal } from "../gizmos/mesh-corners";
-import { projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos/img-drag";
-import { makeCircleHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
-import { MeshLike } from "../draw/contour";
-import { canvasZoom, startPointerDrag } from "../util";
-import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
+
+import { MODULE_ID, VolumeFlags, canvasZoom, startPointerDrag } from "../core";
+import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale, makeCircleHandle, makeSquareCounterHandle } from "../gizmos";
+import type { MeshLike } from "../draw";
+
+import { LayerManager, LAYER_KEYS } from "../render";
 
 interface TkDrag {
   type: "imgOffset" | "imgScale" | "imgYScale";

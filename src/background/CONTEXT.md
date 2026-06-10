@@ -26,7 +26,8 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`bg-drag.ts`](bg-drag.ts) | — | `commitBgDrag`, `BG_YSCALE_SNAP_PX` | Drag math for BackgroundGizmos: translate, uniform scale, Y-scale. |
-| [`bg-gizmos.ts`](bg-gizmos.ts) | — | `bgCorner` | Interactive handles + dashed contour for background image, shown only in GridConfig. |
-| [`bg-html.ts`](bg-html.ts) | — | — | GridConfig HTML injection: Vertical Scale field, key/wheel handlers, _processSubmitData patch. |
+| [`index.ts`](index.ts) | — | — | **facade** — Public API for the background module — background image gizmos for GridConfig |
+| [`bg-drag.ts`](bg-drag.ts) | [`bg-drag.d.ts`](bg-drag.d.ts) | `commitBgDrag`, `BG_YSCALE_SNAP_PX` | Drag math for BackgroundGizmos: translate, uniform scale, Y-scale. |
+| [`bg-gizmos.ts`](bg-gizmos.ts) | [`bg-gizmos.d.ts`](bg-gizmos.d.ts) | `bgCorner` | Interactive handles + dashed contour for background image, shown only in GridConfig. |
+| [`bg-html.ts`](bg-html.ts) | [`bg-html.d.ts`](bg-html.d.ts) | — | GridConfig HTML injection: Vertical Scale field, key/wheel handlers, _processSubmitData patch. |
 <!-- routing:end -->

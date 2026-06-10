@@ -1,7 +1,7 @@
 // Geometry helpers for the 3D volume overlay: vertex computation and box drawing.
-import { currentProjection } from "../transform/constants";
-import { VolumeFlags } from "../flags";
-import { gridDistance, elevToCanvas } from "../util";
+import { VolumeFlags, gridDistance, elevToCanvas } from "../core";
+import { currentProjection } from "../transform";
+
 import {
   ORANGE, BLACK,
   ALPHA_FRONT_OUTLINE, ALPHA_FRONT_FILL, ALPHA_BACK_OUTLINE, ALPHA_BACK_FILL,
@@ -19,7 +19,6 @@ export interface BoxVerts {
 export type P = { x: number; y: number };
 
 export function point(x: number, y: number): P { return { x, y }; }
-
 
 function buildBoxVerts(
   tx: number, ty: number, tw: number, th: number,

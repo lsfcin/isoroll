@@ -1,11 +1,11 @@
 // AppV2 tab injection and flag checkbox builder shared across TileConfig, TokenConfig, SceneConfig.
-import { MODULE_ID } from "../flags";
 
 const TAB = "isoroll";
 
 // AppV2 partial re-renders wipe nav <a> items but preserve injected tab content <div>s.
 // Guard on content div (persists); always re-inject nav item (wiped); bind events once.
 // All click handlers delegated from $html so they survive nav DOM replacement.
+import { MODULE_ID } from "../core";
 export function addIsorollTab(
   $html: JQuery,
   label: string,

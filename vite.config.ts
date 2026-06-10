@@ -6,7 +6,7 @@ export default defineConfig({
     outDir: "dist",
     sourcemap: true,
     lib: {
-      entry: resolve(__dirname, "src/module.ts"),
+      entry: resolve(__dirname, "src/core/module.ts"),
       name: "isoroll",
       fileName: "module",
       formats: ["es"],

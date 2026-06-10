@@ -72,3 +72,21 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | Subdirectory | Description |
 |--------------|-------------|
 | [`src/`](src/CONTEXT.md) | All TypeScript source — entry point, flags, settings, util, all subsystems |
+
+<!-- routing:start -->
+## Routing
+
+| Subdirectory | Description |
+|--------------|-------------|
+| [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`KNOWN-BUGS.md`](KNOWN-BUGS.md) | — | — | isoroll-module — Known Bugs |
+| [`ROADMAP.md`](ROADMAP.md) | — | — | isoroll — Roadmap |
+| [`SETUP.md`](SETUP.md) | — | — | isoroll — Development Setup |
+| [`SPECS.md`](SPECS.md) | — | — | isoroll — Specs |
+| [`eslint.config.js`](eslint.config.js) | — | — | ← add first-line comment |
+| [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | ← add first-line comment |
+| [`vite.config.ts`](vite.config.ts) | — | — | ← add first-line comment |
+<!-- routing:end -->

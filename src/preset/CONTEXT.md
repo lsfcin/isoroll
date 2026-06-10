@@ -24,3 +24,18 @@
 | Subdirectory | Description |
 |--------------|-------------|
 | _(none)_ | All files at this level |
+
+<!-- routing:start -->
+## Routing
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`index.ts`](index.ts) | — | — | **facade** — Public API for the preset module — image preset system |
+| [`preset-apply.ts`](preset-apply.ts) | [`preset-apply.d.ts`](preset-apply.d.ts) | `tilePresetData`, `applyTile`, `applyToken`, `applyBackground`, `autoApplyTile` | Preset apply: compute update data, apply to doc, auto-apply from file/cache. |
+| [`preset-diff.ts`](preset-diff.ts) | [`preset-diff.d.ts`](preset-diff.d.ts) | `changedFlagKeys`, `TILE_PRESET_KEYS`, `TOKEN_PRESET_KEYS`, `BG_PRESET_FLAG_KEYS`, `intersects` | Change-detection helpers: flag-key sets and changed-field predicates. |
+| [`preset-manager.ts`](preset-manager.ts) | [`preset-manager.d.ts`](preset-manager.d.ts) | — | ← add first-line comment |
+| [`preset-ops.ts`](preset-ops.ts) | [`preset-ops.d.ts`](preset-ops.d.ts) | `asTD`, `asUD`, `toScene`, `asFD`, `asTDp` | Shared type shims and helpers used across preset-apply, preset-upsert, preset-diff. |
+| [`preset-storage.ts`](preset-storage.ts) | [`preset-storage.d.ts`](preset-storage.d.ts) | `deriveKey`, `getCachedPreset`, `preloadCache`, `readPreset`, `writePreset` | ← add first-line comment |
+| [`preset-types.ts`](preset-types.ts) | [`preset-types.d.ts`](preset-types.d.ts) | — | ← add first-line comment |
+| [`preset-upsert.ts`](preset-upsert.ts) | [`preset-upsert.d.ts`](preset-upsert.d.ts) | `debounced`, `upsertTile`, `upsertToken`, `upsertBackground`, `tileUpsertTimers` | Preset upsert: debounce + extract + write for tile, token, and background presets. |
+<!-- routing:end -->

@@ -1,5 +1,5 @@
 // Mesh corner, snap, and client-to-canvas coordinate helpers for gizmo placement.
-import { MeshLike } from "../draw/contour";
+import type { MeshLike } from "../draw";
 
 export type MeshHolder = { mesh: unknown };
 

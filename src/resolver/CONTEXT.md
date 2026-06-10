@@ -12,3 +12,12 @@
 | Subdirectory | Description |
 |--------------|-------------|
 | _(none)_ | All files at this level |
+
+<!-- routing:start -->
+## Routing
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`index.ts`](index.ts) | — | — | **facade** — Public API for the resolver module — asset stance fallback chain |
+| [`asset-resolver.ts`](asset-resolver.ts) | [`asset-resolver.d.ts`](asset-resolver.d.ts) | `stanceFallbackChain`, `resolveTokenAsset`, `resolveBestTokenAsset`, `resolveTileAsset` | ← add first-line comment |
+<!-- routing:end -->

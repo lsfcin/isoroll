@@ -1,6 +1,6 @@
-import { MODULE_ID } from "../flags";
-import { CanvasTransform } from "../transform/stage-transform";
-import { getProjection, PROJECTION_TYPES } from "../transform/constants";
+
+import { MODULE_ID } from "../core";
+import { CanvasTransform, getProjection, PROJECTION_TYPES } from "../transform";
 import { addIsorollTab } from "./tab-helpers";
 
 function projectionOptions(currentKey: string): string {

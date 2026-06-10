@@ -1,7 +1,7 @@
 // Shared pure-math helpers for image-manipulation drag (offset, scale, Y-scale).
 // Used by both tile gizmos and token gizmos — no tile/token-specific logic here.
-import { screenToCanvas } from "../util";
 
+import { screenToCanvas } from "../core";
 export const IMG_YSCALE_SNAP_PX = 12;
 
 type WT4 = { a: number; b: number; c: number; d: number };
