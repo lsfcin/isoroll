@@ -82,6 +82,19 @@ export function computeTokenVerts(token: Token): BoxVerts {
   return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, heightDir.x, heightDir.y, elevation);
 }
 
+export function drawGroundShadow(
+  g: PIXI.Graphics, v: BoxVerts, radius: number, opacity: number, shape: "circle" | "rect",
+): void {
+  if (Math.abs(v.elevation) < 0.01) return;
+  g.beginFill(BLACK, opacity);
+  if (shape === "rect") {
+    g.drawRect(v.ground.x - radius, v.ground.y - radius, radius * 2, radius * 2);
+  } else {
+    g.drawCircle(v.ground.x, v.ground.y, radius);
+  }
+  g.endFill();
+}
+
 export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {
   if (Math.abs(v.elevation) < 0.01) return;
   const dx = v.baseCenter.x - v.ground.x;

@@ -2,7 +2,7 @@
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import type { P, MeshLike } from "../draw";
-import { computeVerts, drawBox, drawAnchorLine, drawMeshContour } from "../draw";
+import { computeVerts, drawGroundShadow, drawBox, drawAnchorLine, drawMeshContour } from "../draw";
 import { LayerManager, LAYER_KEYS } from "../render";
 import { DEBUG_COORD, drawCoordDebug } from "../transform";
 
@@ -73,6 +73,10 @@ export class VolumeOverlay {
     const v = computeVerts(tile);
 
     if (showVol) {
+      if (VolumeFlags.getShadowEnabled(tile.document)) {
+        const gridSize = canvas.grid?.size ?? 100;
+        drawGroundShadow(g, v, (gridSize / 2) * VolumeFlags.getShadowRadius(tile.document), VolumeFlags.getShadowOpacity(tile.document), VolumeFlags.getShadowShape(tile.document));
+      }
       if (v.elevation > 0) drawAnchorLine(g, v);
       drawBox(g, v);
       if (v.elevation < 0) drawAnchorLine(g, v);
