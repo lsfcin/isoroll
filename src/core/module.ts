@@ -1,15 +1,15 @@
-import "../styles/isoroll.scss";
+import "../../styles/isoroll.scss";
 import { registerVolumeSettings } from "./settings";
-import { VolumeOverlay, VolumeGizmos } from "./tiles";
-import { TokenOverlay, TokenGizmos, TokenElevGizmo } from "./tokens";
-import { Occluder } from "./occluder";
-import { CanvasTransform, ObjectTransform, registerRulerPatch } from "./transform";
-import { BackgroundGizmos } from "./background";
-import { registerSceneConfigHook, registerTileConfigHook, registerTokenConfigHook } from "./ui";
-import { TileHud, TokenHud } from "./hud";
-import { PresetManager } from "./preset";
-import { WallManager, WallOverlay } from "./walls";
-import { LayerManager, LAYER_KEYS } from "./render";
+import { VolumeOverlay, VolumeGizmos } from "../tiles";
+import { TokenOverlay, TokenGizmos, TokenElevGizmo } from "../tokens";
+import { Occluder } from "../occluder";
+import { CanvasTransform, ObjectTransform, registerRulerPatch } from "../transform";
+import { BackgroundGizmos } from "../background";
+import { registerSceneConfigHook, registerTileConfigHook, registerTokenConfigHook } from "../ui";
+import { TileHud, TokenHud } from "../hud";
+import { PresetManager } from "../preset";
+import { WallManager, WallOverlay } from "../walls";
+import { LayerManager, LAYER_KEYS } from "../render";
 
 Hooks.once("init", () => {
   registerVolumeSettings();
