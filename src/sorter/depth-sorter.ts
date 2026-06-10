@@ -1,23 +1,56 @@
 /**
  * Painter's algorithm depth sort for isometric SE camera.
  *
- * Primary sort key: gridCol + gridRow + elevation/gridSize
- * Lower key = further from camera = rendered first (behind).
+ * Sort key: mesh center x + mesh center y (canvas pixels / gridSize).
+ * Lower key = further NW from camera = rendered first (behind).
  *
- * When keys are equal, secondary sort by y then x provides a stable
- * tiebreaker: a more-southern (higher y) or more-eastern (higher x)
- * object is closer to the SE camera and renders in front.
- * This prevents z-order flickering for stacked or same-key objects.
+ * Elevation is intentionally excluded: in the SE isometric view, a
+ * flying token at (2,3) is still *behind* a wall at (3,3) regardless
+ * of elevation. The elevation displacement applied to the mesh in
+ * token-transform.ts (mesh.x += heightDir.x * elevPx) already shifts
+ * elevated objects in screen space; we do not add it again here.
+ *
+ * When keys are equal, sort south (higher y) then east (higher x) as
+ * tiebreaker — both directions are closer to the SE camera.
+ *
+ * Implementation: we patch canvas.primary.sortChildren() on canvasReady
+ * because PrimaryCanvasGroup overrides sortChildren() and calls it on
+ * every render frame, which means a plain children.sort() call from a
+ * hook is immediately undone. Patching sortChildren() is the only
+ * reliable intercept point.
  */
 
+import { VolumeFlags } from "../flags";
+
 export class DepthSorter {
+  private static _origSortChildren: (() => void) | null = null;
+
   static activate(): void {
-    Hooks.on("refreshToken", DepthSorter.onRefresh);
-    Hooks.on("refreshTile", DepthSorter.onRefresh);
+    Hooks.on("canvasReady", DepthSorter.onCanvasReady);
   }
 
-  private static onRefresh(): void {
-    DepthSorter.sort();
+  private static onCanvasReady(): void {
+    DepthSorter.patch();
+  }
+
+  private static patch(): void {
+    const primary = canvas.primary as (typeof canvas.primary) & { sortChildren(): void };
+    if (!primary) return;
+
+    // Store original once; re-patch every canvasReady so the closure always
+    // holds the correct primary reference.
+    const orig = (primary as unknown as { __isoOrigSort?: () => void }).__isoOrigSort
+      ?? primary.sortChildren.bind(primary);
+    (primary as unknown as { __isoOrigSort: () => void }).__isoOrigSort = orig;
+    DepthSorter._origSortChildren = orig;
+
+    primary.sortChildren = function () {
+      if (!VolumeFlags.isSceneEnabled()) {
+        orig();
+        return;
+      }
+      DepthSorter.sort();
+    };
   }
 
   static sort(): void {
@@ -26,22 +59,19 @@ export class DepthSorter {
 
     const gridSize = canvas.grid?.size ?? 100;
 
-    primary.children.sort((a, b) => {
-      const keyA = DepthSorter.objectSortKey(a, gridSize);
-      const keyB = DepthSorter.objectSortKey(b, gridSize);
+    (primary.children as PIXI.DisplayObject[]).sort((a, b) => {
+      const keyA = DepthSorter.meshKey(a, gridSize);
+      const keyB = DepthSorter.meshKey(b, gridSize);
       if (keyA !== keyB) return keyA - keyB;
-      // Secondary: south (higher y) = closer to SE camera = in front.
+      // South (higher y) → closer to SE camera → in front.
       const dy = (a.y ?? 0) - (b.y ?? 0);
       if (dy !== 0) return dy;
-      // Tertiary: east (higher x) = closer = in front.
+      // East (higher x) → closer → in front.
       return (a.x ?? 0) - (b.x ?? 0);
     });
   }
 
-  private static objectSortKey(obj: PIXI.DisplayObject, gridSize: number): number {
-    const x = obj.x ?? 0;
-    const y = obj.y ?? 0;
-    const elevation = (obj as { elevation?: number }).elevation ?? 0;
-    return (x / gridSize) + (y / gridSize) + (elevation / gridSize);
+  private static meshKey(obj: PIXI.DisplayObject, gridSize: number): number {
+    return ((obj.x ?? 0) + (obj.y ?? 0)) / gridSize;
   }
 }
