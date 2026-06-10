@@ -1,16 +1,10 @@
 // Elevation handle for token volumes (orange circle, drag up/down changes elevation).
-import { MODULE_ID, VolumeFlags, canvasZoom, gridDistance, elevToCanvas, startPointerDrag } from "../core";
+import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance } from "../core";
 import { currentProjection } from "../transform";
-
-import { makeCircleHandle, clientToGlobal } from "../gizmos";
-
+import { drawDash, ANCHOR_DASH, ANCHOR_GAP } from "../draw";
+import { makeCircleHandle } from "../gizmos";
+import { beginElevDrag } from "./token-elev-drag";
 import { LayerManager, LAYER_KEYS } from "../render";
-
-interface TokenElevDrag {
-  token: Token;
-  startGX: number; startGY: number;
-  startElev: number;
-}
 
 type ElevHandleState = { x: number; y: number; elev: number; boundH: number; showElevUnsel: boolean };
 
@@ -99,9 +93,21 @@ export class TokenElevGizmo {
       handle.y = seMidY;
       handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
         e.stopPropagation();
-        TokenElevGizmo.beginDrag(token, e.global.x, e.global.y, elev);
+        beginElevDrag(TokenElevGizmo.lastCommittedElev, token, e.global.x, e.global.y, elev);
       });
       container.addChild(handle);
+    }
+
+    // Dashed elevation line — unselected only, shows when elev !== 0
+    if (!selected && elev !== 0) {
+      const groundX = tx + tw / 2, groundY = ty + th / 2;
+      const baseCX  = groundX + heightDir.x * elevPx;
+      const baseCY  = groundY + heightDir.y * elevPx;
+      const lineG = new PIXI.Graphics();
+      lineG.eventMode = "none";
+      lineG.lineStyle(1, 0x000000, 0.35);
+      drawDash(lineG, groundX, groundY, baseCX, baseCY, ANCHOR_DASH, ANCHOR_GAP);
+      container.addChild(lineG);
     }
 
     // Elevation label — counter-transformed so it reads flat on screen, same as the handle.
@@ -163,37 +169,6 @@ export class TokenElevGizmo {
     for (const id of Array.from(TokenElevGizmo.sets.keys())) TokenElevGizmo.hide(id);
     TokenElevGizmo.lastState.clear();
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
-  }
-
-  private static beginDrag(token: Token, gx: number, gy: number, elev: number): void {
-    TokenElevGizmo.lastCommittedElev.set(token.id ?? '', elev);
-    const drag: TokenElevDrag = { token, startGX: gx, startGY: gy, startElev: elev };
-    startPointerDrag(drag,
-      (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); TokenElevGizmo.commit(d, y); },
-      (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); TokenElevGizmo.pushHistory(d); TokenElevGizmo.commit(d, y); },
-    );
-  }
-
-  private static pushHistory(drag: TokenElevDrag): void {
-    const id = drag.token.id;
-    if (!id) return;
-    const layer = canvas.tokens as unknown as { history: { type: string; data: unknown[]; options: object }[] };
-    const original = { _id: id, elevation: drag.startElev };
-    layer.history.push({ type: "update", data: [original], options: {} });
-    console.debug(`[isoroll] storeDragHistory | type=elevation token=${id} startElev=${drag.startElev}`);
-  }
-
-  private static commit(drag: TokenElevDrag, gy: number): void {
-    const zoom     = canvasZoom();
-    const gridSize = canvas.grid?.size ?? 100;
-    const gridDist = gridDistance();
-    const deltaFeet = -(gy - drag.startGY) / (zoom * gridSize / gridDist);
-    const elev = Math.round(drag.startElev + deltaFeet);
-    const id = drag.token.id ?? '';
-    if (TokenElevGizmo.lastCommittedElev.get(id) === elev) return;
-    TokenElevGizmo.lastCommittedElev.set(id, elev);
-    void (drag.token.document as unknown as { update(d: object, o?: object): Promise<unknown> })
-      .update({ elevation: elev }, { animate: false, isUndo: true });
   }
 
 }
