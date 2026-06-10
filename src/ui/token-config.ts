@@ -1,5 +1,6 @@
 // Registers the isoroll Iso tab in the TokenConfig AppV2 sheet.
-import { MODULE_ID } from "../flags";
+
+import { MODULE_ID } from "../core";
 import { addIsorollTab, flagCheckbox } from "./tab-helpers";
 
 export function registerTokenConfigHook(): void {

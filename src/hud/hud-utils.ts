@@ -1,7 +1,6 @@
 // Façade to Foundry's HUD DOM. All direct HUD jQuery access lives here.
-import { MODULE_ID } from "../flags";
-import { canvasZoom } from "../util";
 
+import { MODULE_ID, canvasZoom } from "../core";
 export interface HudButtonOpts {
   cls:       string;     // CSS class e.g. "isoroll-gen-walls"
   tooltip:   string;     // Already-localized string

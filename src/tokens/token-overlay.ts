@@ -1,8 +1,9 @@
 // Image contour and 3D volume box overlay for selected tokens (merged from two classes).
-import { MODULE_ID, VolumeFlags } from "../flags";
-import { drawMeshContour, MeshLike } from "../draw/contour";
-import { computeTokenVerts, drawBox, drawAnchorLine } from "../draw/volume-box";
-import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
+
+import { MODULE_ID, VolumeFlags } from "../core";
+import type { MeshLike } from "../draw";
+import { drawMeshContour, computeTokenVerts, drawBox, drawAnchorLine } from "../draw";
+import { LayerManager, LAYER_KEYS } from "../render";
 
 export class TokenOverlay {
   private static boxes: Map<string, PIXI.Graphics> = new Map();

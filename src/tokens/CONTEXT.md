@@ -20,7 +20,8 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`token-elev-gizmo.ts`](token-elev-gizmo.ts) | — | — | Elevation handle for token volumes (orange circle, drag up/down changes elevation). |
-| [`token-gizmos.ts`](token-gizmos.ts) | — | — | Image offset + scale handles for tokens (bottom-left circle, top-right square). |
-| [`token-overlay.ts`](token-overlay.ts) | — | — | Image contour and 3D volume box overlay for selected tokens (merged from two classes). |
+| [`index.ts`](index.ts) | — | — | **facade** — Public API for the tokens module — token volume overlay and interactive gizmos |
+| [`token-elev-gizmo.ts`](token-elev-gizmo.ts) | [`token-elev-gizmo.d.ts`](token-elev-gizmo.d.ts) | — | Elevation handle for token volumes (orange circle, drag up/down changes elevation). |
+| [`token-gizmos.ts`](token-gizmos.ts) | [`token-gizmos.d.ts`](token-gizmos.d.ts) | — | Image offset + scale handles for tokens (bottom-left circle, top-right square). |
+| [`token-overlay.ts`](token-overlay.ts) | [`token-overlay.d.ts`](token-overlay.d.ts) | — | Image contour and 3D volume box overlay for selected tokens (merged from two classes). |
 <!-- routing:end -->

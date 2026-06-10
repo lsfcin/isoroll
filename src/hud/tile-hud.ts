@@ -1,5 +1,5 @@
 // TileHUD wall control buttons.
-import { WallManager } from "../walls/wall-manager";
+import { WallManager } from "../walls";
 import {
   hudButton, clearIsorollHud, appendHudButtons,
   onHudAction, onHudToggle, updateHudButton,

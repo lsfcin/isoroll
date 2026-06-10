@@ -1,8 +1,9 @@
 // Preset apply: compute update data, apply to doc, auto-apply from file/cache.
-import { MODULE_ID } from "../flags";
+
+import { MODULE_ID } from "../core";
 import { deriveKey, readPreset, getCachedPreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
-import { applyWallDefs } from "../walls/wall-crud";
+import { applyWallDefs } from "../walls";
 import { getSrc, isPresetEnabled, toScene, asUD, asTDp, gridSize as getGridSize, getSceneBg } from "./preset-ops";
 
 export function tilePresetData(preset: TilePreset): object {

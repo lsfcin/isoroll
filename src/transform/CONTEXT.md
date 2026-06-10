@@ -69,19 +69,20 @@ Curried API: `toWorld(params)(point)` / `fromWorld(params)(point)` in each `coor
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`bg-transform.ts`](bg-transform.ts) | — | `getBgYScale`, `setBgYScaleOverride` | Background sprite counter-transform: undistorted background while stage is isometric. |
-| [`constants.ts`](constants.ts) | — | `getProjection`, `currentProjection`, `PROJECTION_TYPES`, `DIMETRIC_2_1` | ← add first-line comment |
-| [`coord-debug.ts`](coord-debug.ts) | — | `drawCoordDebug`, `DEBUG_COORD`, `clearDOM`, `drawDOMText`, `drawDOM` | ← add first-line comment |
-| [`coord-map.ts`](coord-map.ts) | — | `transformCoord` | ← add first-line comment |
-| [`coord-sys-grid.ts`](coord-sys-grid.ts) | — | `toWorld`, `fromWorld` | GRID ↔ WORLD: scale by gridSize (canvas pixels per grid unit). |
-| [`coord-sys-image.ts`](coord-sys-image.ts) | — | `toWorld`, `fromWorld` | IMAGE ↔ WORLD: normalised [0,1]² texture space via PIXI mesh transform. |
-| [`coord-sys-iso3d.ts`](coord-sys-iso3d.ts) | — | `toWorld`, `fromWorld` | ISO3D ↔ WORLD: 3D isometric space with elevation via heightDir. |
-| [`coord-sys-screen.ts`](coord-sys-screen.ts) | — | `toWorld`, `fromWorld` | SCREEN ↔ WORLD: browser window pixels via viewport affine inverse. |
-| [`coord-sys-viewport.ts`](coord-sys-viewport.ts) | — | `toWorld`, `fromWorld` | VIEWPORT ↔ WORLD: affine matrix inverse/forward. |
-| [`coord-types.ts`](coord-types.ts) | — | — | ← add first-line comment |
-| [`object-transform.ts`](object-transform.ts) | — | — | ← add first-line comment |
-| [`ruler-patch.ts`](ruler-patch.ts) | — | `registerRulerPatch`, `patchRulerProto`, `patchTileHUDProto`, `patchTokenHUDProto` | ← add first-line comment |
-| [`stage-transform.ts`](stage-transform.ts) | — | — | Stage isometric transform coordinator: rotation/skew, preview override, object refresh. |
-| [`tile-transform.ts`](tile-transform.ts) | — | `onPreUpdateScene`, `onUpdateSceneGridRescale`, `onUpdateTileFlags`, `onRefreshTile`, `EPS` | Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers. |
-| [`token-transform.ts`](token-transform.ts) | — | `onRefreshToken` | Token counter-transform: refreshToken hook handler. |
+| [`index.ts`](index.ts) | — | — | **facade** — Public API for the transform module — stage, object, and coordinate transforms |
+| [`bg-transform.ts`](bg-transform.ts) | [`bg-transform.d.ts`](bg-transform.d.ts) | `getBgYScale`, `setBgYScaleOverride` | Background sprite counter-transform: undistorted background while stage is isometric. |
+| [`constants.ts`](constants.ts) | [`constants.d.ts`](constants.d.ts) | `getProjection`, `currentProjection`, `PROJECTION_TYPES`, `DIMETRIC_2_1` | ← add first-line comment |
+| [`coord-debug.ts`](coord-debug.ts) | [`coord-debug.d.ts`](coord-debug.d.ts) | `drawCoordDebug`, `DEBUG_COORD`, `clearDOM`, `drawDOMText`, `drawDOM` | ← add first-line comment |
+| [`coord-map.ts`](coord-map.ts) | [`coord-map.d.ts`](coord-map.d.ts) | `transformCoord` | ← add first-line comment |
+| [`coord-sys-grid.ts`](coord-sys-grid.ts) | [`coord-sys-grid.d.ts`](coord-sys-grid.d.ts) | `toWorld`, `fromWorld` | GRID ↔ WORLD: scale by gridSize (canvas pixels per grid unit). |
+| [`coord-sys-image.ts`](coord-sys-image.ts) | [`coord-sys-image.d.ts`](coord-sys-image.d.ts) | `toWorld`, `fromWorld` | IMAGE ↔ WORLD: normalised [0,1]² texture space via PIXI mesh transform. |
+| [`coord-sys-iso3d.ts`](coord-sys-iso3d.ts) | [`coord-sys-iso3d.d.ts`](coord-sys-iso3d.d.ts) | `toWorld`, `fromWorld` | ISO3D ↔ WORLD: 3D isometric space with elevation via heightDir. |
+| [`coord-sys-screen.ts`](coord-sys-screen.ts) | [`coord-sys-screen.d.ts`](coord-sys-screen.d.ts) | `toWorld`, `fromWorld` | SCREEN ↔ WORLD: browser window pixels via viewport affine inverse. |
+| [`coord-sys-viewport.ts`](coord-sys-viewport.ts) | [`coord-sys-viewport.d.ts`](coord-sys-viewport.d.ts) | `toWorld`, `fromWorld` | VIEWPORT ↔ WORLD: affine matrix inverse/forward. |
+| [`coord-types.ts`](coord-types.ts) | [`coord-types.d.ts`](coord-types.d.ts) | — | ← add first-line comment |
+| [`object-transform.ts`](object-transform.ts) | [`object-transform.d.ts`](object-transform.d.ts) | — | ← add first-line comment |
+| [`ruler-patch.ts`](ruler-patch.ts) | [`ruler-patch.d.ts`](ruler-patch.d.ts) | `registerRulerPatch`, `patchRulerProto`, `patchTileHUDProto`, `patchTokenHUDProto` | ← add first-line comment |
+| [`stage-transform.ts`](stage-transform.ts) | [`stage-transform.d.ts`](stage-transform.d.ts) | — | Stage isometric transform coordinator: rotation/skew, preview override, object refresh. |
+| [`tile-transform.ts`](tile-transform.ts) | [`tile-transform.d.ts`](tile-transform.d.ts) | `onPreUpdateScene`, `onUpdateSceneGridRescale`, `onUpdateTileFlags`, `onRefreshTile`, `EPS` | Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers. |
+| [`token-transform.ts`](token-transform.ts) | [`token-transform.d.ts`](token-transform.d.ts) | `onRefreshToken` | Token counter-transform: refreshToken hook handler. |
 <!-- routing:end -->

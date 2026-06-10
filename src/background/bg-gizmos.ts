@@ -1,13 +1,11 @@
 // Interactive handles + dashed contour for background image, shown only in GridConfig.
-import { currentProjection } from "../transform/constants";
-import { CanvasTransform } from "../transform/stage-transform";
-import { getBgYScale, setBgYScaleOverride } from "../transform/bg-transform";
-import { clientToGlobal } from "../gizmos/mesh-corners";
-import { startPointerDrag } from "../util";
-import { makeHandle, makeCircleHandle, makeMoveHandle, makeSquareCounterHandle } from "../gizmos/handle-draw";
-import { drawDashedContour } from "../draw/shapes";
+import { startPointerDrag } from "../core";
+import { currentProjection, CanvasTransform, getBgYScale, setBgYScaleOverride } from "../transform";
+import { clientToGlobal, makeHandle, makeCircleHandle, makeMoveHandle, makeSquareCounterHandle } from "../gizmos";
+
+import { drawDashedContour } from "../draw";
 import { BgDrag, commitBgDrag } from "./bg-drag";
-import { LayerManager, LAYER_KEYS } from "../render/layer-manager";
+import { LayerManager, LAYER_KEYS } from "../render";
 import { BgHtml } from "./bg-html";
 
 function bgCorner(

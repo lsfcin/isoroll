@@ -51,6 +51,7 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
+| [`core/index.ts`](core/index.ts) | — | — | **facade** — Public API for the core module — module ID, volume flags, and shared utilities |
 | [`flags.ts`](flags.ts) | [`flags.d.ts`](flags.d.ts) | `MODULE_ID` | ← add first-line comment |
 | [`module.ts`](module.ts) | [`module.d.ts`](module.d.ts) | — | ← add first-line comment |
 | [`settings.ts`](settings.ts) | [`settings.d.ts`](settings.d.ts) | `registerVolumeSettings` | ← add first-line comment |

@@ -1,4 +1,4 @@
-import type { WallDef } from "../walls/wall-types";
+import type { WallDef } from "../walls";
 export type { WallDef };
 
 export interface TilePreset {

@@ -1,6 +1,6 @@
 // PIXI drawing primitives for gizmo handles.
-import { currentProjection } from "../transform/constants";
-import { BLACK } from "../draw/constants";
+import { currentProjection } from "../transform";
+import { BLACK } from "../draw";
 export const HANDLE_SIZE = 9;
 export const HALF        = HANDLE_SIZE / 2;
 

@@ -1,7 +1,8 @@
-import { MODULE_ID } from "../flags";
+
+import { MODULE_ID } from "../core";
 import { addIsorollTab, flagCheckbox } from "./tab-helpers";
-import type { DoorBehavior } from "../walls/wall-types";
-import { WallManager } from "../walls/wall-manager";
+import type { DoorBehavior } from "../walls";
+import { WallManager } from "../walls";
 
 export function registerTileConfigHook(): void {
   Hooks.on("renderTileConfig", (app: { document: TileDocument }, html: JQuery) => {

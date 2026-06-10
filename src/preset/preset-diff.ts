@@ -1,6 +1,6 @@
 // Change-detection helpers: flag-key sets and changed-field predicates.
-import { MODULE_ID } from "../flags";
 
+import { MODULE_ID } from "../core";
 export const TILE_PRESET_KEYS  = new Set(["boundHeight","imageScale","imageYScale","imageOffset","tileFlipped","foregroundTile","linkedWallIds"]);
 export const TOKEN_PRESET_KEYS = new Set(["boundHeight","imageScale","imageYScale","imageOffset","tileFlipped"]);
 export const BG_PRESET_FLAG_KEYS = new Set(["backgroundYScale"]);

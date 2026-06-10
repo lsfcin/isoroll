@@ -1,7 +1,7 @@
 // Background sprite counter-transform: undistorted background while stage is isometric.
 // Also patches the GridConfig preview sprite's updateTransform for live GridConfig handles.
+import { MODULE_ID } from "../core";
 import { currentProjection } from "./constants";
-import { MODULE_ID } from "../flags";
 
 // Transient Y-scale override during GridConfig session. Set by BackgroundGizmos; null = use scene flag.
 let bgYScaleOverride: number | null = null;

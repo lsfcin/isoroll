@@ -1,6 +1,6 @@
 // Drag math for BackgroundGizmos: translate, uniform scale, Y-scale.
-import { canvasZoom, screenToCanvas } from "../util";
 
+import { canvasZoom, screenToCanvas } from "../core";
 export type BgDrag = {
   type: "bgScale" | "bgYScale" | "bgTranslate";
   startGX: number; startGY: number;
