@@ -1,3 +1,4 @@
+// Elevation drag logic for TokenElevGizmo — extracted to keep gizmo file under line limit.
 import { canvasZoom, gridDistance, startPointerDrag } from "../core";
 import { clientToGlobal } from "../gizmos";
 
