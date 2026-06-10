@@ -6,20 +6,7 @@
 
 ---
 
-## Phase 4 — Image Edit Mode 🔲 UX PENDING
-
-Handles and contour already work. Only the mode-switching UX is missing.
-
-- [ ] **Double-click enters image-edit mode** — volume handles hidden while active; image handles shown
-  - Entry point: `src/tiles/tile-gizmos.ts` (`VolumeGizmos`) and `src/tokens/token-gizmos.ts` (`TokenGizmos`)
-  - Need a per-tile/token `imageEditMode` state flag (in-memory, not persisted)
-  - On enter: hide volume handles, keep image handles; on exit: restore
-- [ ] **Fine-tune numeric text inputs for offset/scale** — `src/ui/tile-config.ts`, `src/ui/token-config.ts`
-- [ ] **ESC / click-outside exits image-edit mode** — keydown listener + pointerdown-outside check in gizmo classes
-
----
-
-## Phase 9 — Token Depth Refinement 🔲 PENDING
+## Phase 1 — Token Depth Refinement 🔲 PENDING
 
 **Problem:** `src/sorter/depth-sorter.ts` uses a single-pass sort with key `x/gs + y/gs + elev/gs` on all `canvas.primary.children`. Two tokens at the same grid cell and same elevation get identical keys → render order is arbitrary and may flicker every canvas refresh.
 
@@ -34,9 +21,9 @@ Handles and contour already work. Only the mode-switching UX is missing.
 
 ---
 
-## Phase 10 — Ground Shadow + Unselected Elevation Line 🔲 PENDING
+## Phase 2 — Ground Shadow + Unselected Elevation Line 🔲 PENDING
 
-Two new visuals for elevated tokens/tiles. Both drawn in our stage-level overlay layers (not in `canvas.primary`) — unaffected by the vision/fog masking issue in Phase 11.
+Two new visuals for elevated tokens/tiles. Both drawn in our stage-level overlay layers (not in `canvas.primary`) — unaffected by the vision/fog masking issue described in Phase 3.
 
 ### Ground shadow
 A circle or rounded-rectangle drawn at the token's ground position when elevated, indicating where on the floor the token stands.
@@ -61,9 +48,9 @@ A thin dashed black line from ground to token base, always visible when `elevati
 
 ---
 
-## Phase 11 — Separate Rendering Layer Architecture 🔲 PENDING (PREREQUISITE for Phase 12)
+## Phase 3 — Separate Rendering Layer Architecture 🔲 PENDING (PREREQUISITE for Phase 4)
 
-**This is a prerequisite for Phase 12 (fog-of-war) and fixes a fundamental display bug.**
+**This is a prerequisite for Phase 4 (fog-of-war) and fixes a fundamental display bug.**
 
 ### The problem
 
@@ -90,7 +77,7 @@ Create a new `PIXI.Container` added directly to `canvas.stage` (NOT a child of `
 1. Clone the mesh sprite into the Iso Sprite Layer with matching transforms (position, rotation, skew, scale, anchor, texture)
 2. Set the original mesh in `canvas.primary` to `alpha = 0` (hidden but Foundry still manages it for hit detection / mechanics)
 3. Manage depth ordering in the Iso Sprite Layer using the same sort key as `DepthSorter` (`x/gs + y/gs + elev/gs`)
-4. Manage visibility state manually (see Phase 12)
+4. Manage visibility state manually (see Phase 4)
 
 **Reference:** isometric-perspective fork `foreground.js`:
 - `setupContainers()` — adds container to `canvas.stage` directly
@@ -99,7 +86,7 @@ Create a new `PIXI.Container` added directly to `canvas.stage` (NOT a child of `
 
 **Hooks needed:** `drawToken`, `refreshToken`, `destroyToken`, `drawTile`, `refreshTile`, `destroyTile`, `canvasReady`, `updateScene`
 
-**Sync on refresh:** On every `refreshToken`/`refreshTile`, update the clone's transform to match the current mesh (position shifts during movement animation). Use the doc-state cache pattern already in `TokenElevGizmo` (see `lastState` map) to skip no-op refreshes.
+**Sync on refresh:** On every `refreshToken`/`refreshTile`, update the clone's transform to match the current mesh (position shifts during movement animation). Use the doc-state cache pattern already in `TokenElevGizmo` (see `lastState` map in `src/tokens/token-elev-gizmo.ts`) to skip no-op refreshes.
 
 **Our `LayerManager`** (`src/render/layer-manager.ts`) already manages stage-level containers — extend it or add the Iso Sprite Layer alongside existing keys in `LAYER_KEYS`.
 
@@ -112,7 +99,7 @@ Create a new `PIXI.Container` added directly to `canvas.stage` (NOT a child of `
 
 ---
 
-## Phase 12 — Fog-of-War Tile Integration 🔲 PENDING (requires Phase 11)
+## Phase 4 — Fog-of-War Tile Integration 🔲 PENDING (requires Phase 3)
 
 **Context:** isoroll tiles are 3D wall/prop objects. When a tile is not in the player's explored area it should behave like the background does — dimmed if explored-but-fogged, hidden if unexplored. This is especially important because tiles function as scene walls.
 
@@ -136,7 +123,7 @@ Create a new `PIXI.Container` added directly to `canvas.stage` (NOT a child of `
 
 ---
 
-## Phase 13 — Door Secondary Image 🔲 PENDING
+## Phase 5 — Door Secondary Image 🔲 PENDING
 
 **Context:** Tiles with linked door walls already support `hide`, `fade`, and `none` behavior when the door opens/closes (`src/walls/wall-door.ts` `applyDoorBehavior()`). This phase adds a fourth mode: swap to a secondary texture.
 
@@ -159,7 +146,7 @@ Create a new `PIXI.Container` added directly to `canvas.stage` (NOT a child of `
 
 ---
 
-## Phase 14 — Painter's Algorithm: Research + Design Guidelines 🔲 PENDING
+## Phase 6 — Painter's Algorithm: Research + Design Guidelines 🔲 PENDING
 
 **This is a research and documentation phase, not a full implementation.**
 
@@ -202,7 +189,20 @@ Our current `DepthSorter` (`src/sorter/depth-sorter.ts`) uses a single key and h
 
 ---
 
-## Phase 6 — Stance State Machine 🔲 PENDING
+## Phase 7 — Image Edit Mode UX 🔲 PENDING
+
+Handles and contour already work. Only the mode-switching UX is missing.
+
+- [ ] **Double-click enters image-edit mode** — volume handles hidden while active; image handles shown
+  - Entry point: `src/tiles/tile-gizmos.ts` (`VolumeGizmos`) and `src/tokens/token-gizmos.ts` (`TokenGizmos`)
+  - Need a per-tile/token `imageEditMode` state flag (in-memory, not persisted)
+  - On enter: hide volume handles, keep image handles; on exit: restore
+- [ ] **Fine-tune numeric text inputs for offset/scale** — `src/ui/tile-config.ts`, `src/ui/token-config.ts`
+- [ ] **ESC / click-outside exits image-edit mode** — keydown listener + pointerdown-outside check in gizmo classes
+
+---
+
+## Phase 8 — Stance State Machine 🔲 PENDING
 
 - [ ] dnd5e hook integration (attack, skill, condition changes)
 - [ ] Keyboard shortcut for manual stance override
@@ -210,14 +210,14 @@ Our current `DepthSorter` (`src/sorter/depth-sorter.ts`) uses a single key and h
 
 ---
 
-## Phase 7 — Template Scene 🔲 PENDING
+## Phase 9 — Template Scene 🔲 PENDING
 
 - [ ] Pre-built scene: ISO enabled, sample tiles placed
 - [ ] Demonstrates volume gizmos + occlusion
 
 ---
 
-## Phase 8 — Right-Click Context Menus 🔲 PENDING
+## Phase 10 — Right-Click Context Menus 🔲 PENDING
 
 - [ ] Redundant access to all controls (volume edit, image edit, presets)
 
