@@ -78,7 +78,7 @@
       "DoorFadeOpacity": "Fade opacity"
     },
     "ShadowShape": {
-      "Circle": "Circle (radial gradient)",
+      "Circle": "Circle",
       "Rect":   "Rectangle"
     },
     "ElevLineColor": {

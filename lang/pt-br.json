@@ -70,7 +70,7 @@
       "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um tile com esta imagem, e atualiza a predefinição ao editar este tile."
     },
     "ShadowShape": {
-      "Circle": "Círculo (gradiente radial)",
+      "Circle": "Círculo",
       "Rect":   "Retângulo"
     },
     "ElevLineColor": {
