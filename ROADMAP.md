@@ -116,7 +116,7 @@ Original mesh remains at `alpha=0` but fully interactive. Our clone in the Iso S
 - [x] Add Iso Sprite Layer container to `LayerManager` in `src/render/layer-manager.ts` (new key in `LAYER_KEYS`, added to `canvas.stage` directly)
 - [x] Implement `cloneSprite(mesh)` and `syncSprite(clone, mesh)` in new `src/render/iso-sprite-layer.ts`
 - [x] Hook `drawToken`, `refreshToken`, `destroyToken` — create/sync/destroy token clones
-- [ ] Hook `drawTile`, `refreshTile`, `destroyTile` — create/sync/destroy tile clones
+- [x] Hook `drawTile`, `refreshTile`, `destroyTile` — create/sync/destroy tile clones
 - [ ] Hook `canvasReady` — rebuild clones for all already-placed transformed objects
 - [ ] Wire Iso Sprite Layer sort into `DepthSorter.sort()`
 - [x] Set original mesh `alpha = 0` for counter-transformed objects; restore on destroy
