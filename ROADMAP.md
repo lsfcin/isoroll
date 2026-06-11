@@ -60,6 +60,12 @@ canvas.app.stage  ← isoroll applies rotation + skew here
   └── canvas.visibility  (CanvasVisibility — vision polygon texture)
 ```
 
+There is **no fix within `canvas.primary`** — the VisibilityFilter clips at geometry level. Moving sprites out is the only architectural option.
+
+### Why This Also Fixes Sorting
+
+With sprites inside `canvas.primary`, `DepthSorter` fights Foundry's own `zIndex` management on the same children. Moving counter-transformed objects to our own `PIXI.Container` gives us 100% sort ownership — no more fighting PCG's internal sort. The fork's `assignTileDepths()` + `computeTokenEntries()` pattern (tile-band → token-insertion model) also directly solves Phase 1's token-to-tile occlusion problem, making Phase 1 redundant after Phase 3.
+
 ### Solution
 
 Create a new `PIXI.Container` (the **Iso Sprite Layer**) added directly to `canvas.stage` — outside `VisibilityFilter` scope. For each counter-transformed token/tile:
@@ -69,23 +75,60 @@ Create a new `PIXI.Container` (the **Iso Sprite Layer**) added directly to `canv
 3. Sort the Iso Sprite Layer children by the same key as `DepthSorter`
 4. Manage visibility state manually (Phase 4)
 
+### Design Decisions (from assessment session 2026-06-11)
+
+**Incremental update, NOT full rebuild.**
+The fork (`foreground.js`) calls `foreground.removeChildren()` and re-clones everything on every hook fire (`refreshToken`, `refreshTile`, `updateToken`, `sightRefresh`, etc.). This allocates and GCs 20–200 `PIXI.Sprite` objects per call. Our approach: keep a `Map<id, PIXI.Sprite>` of live clones; on `refreshToken`/`refreshTile` update transforms in-place; only create/destroy on `drawToken`/`destroyToken`.
+
+Use the `lastState` cache pattern from `src/tokens/token-elev-gizmo.ts` to skip no-op refreshes.
+
+**`sortableChildren = false`, manual sort only.**
+Setting `sortableChildren = true` on the container triggers `Array.sort()` every render frame when any zIndex changes. Instead, set `sortableChildren = false`, assign `zIndex` manually, and call `.children.sort(...)` only inside our `DepthSorter.sort()` (triggered by position/elevation hooks, not every frame).
+
+**Do NOT replicate the fork's DB write.**
+`computeTokenEntries()` in the fork calls `canvas.scene.updateEmbeddedDocuments('Tile', updates)` inside a sort function — a database write per refresh. Never do this. Our sort is read-only.
+
+**Texture sharing is free.**
+`PIXI.Sprite(mesh.texture)` shares the WebGL texture handle — zero extra VRAM. Each clone is a separate draw call (no batching across containers), but at 20–50 objects with mixed textures Foundry is already batching-limited anyway. +50 draw calls at 60fps ≈ 0.8ms GPU, negligible on modern hardware.
+
+**Only counter-transformed objects go into the layer.**
+Check `flags.isoroll.transformToken` / `flags.isoroll.transformTile`. Non-transformed objects stay in `canvas.primary` with full VisibilityFilter coverage — correct behavior.
+
+**Hit detection stays in `canvas.primary`.**
+Original mesh remains at `alpha=0` but fully interactive. Our clone in the Iso Sprite Layer has `eventMode = "passive"` — no events.
+
+### Implementation Steps (one step = one test cycle)
+
+1. **Container bootstrap** — add `ISO_SPRITE_LAYER` to `LAYER_KEYS`, create `IsoSpriteLayer` class with `activate()` that creates the container on `canvasInit` and tears it down on `changeScene`. Test: verify container exists on `canvas.stage` in Foundry console.
+
+2. **Clone functions** — implement `cloneSprite(mesh)` pure function (shared by tile + token), `syncSprite(clone, mesh)` for transform updates. No hooks yet. Test: call manually from console.
+
+3. **Token lifecycle hooks** — `drawToken` → create clone + set mesh alpha=0; `refreshToken` → `syncSprite` (with lastState cache); `destroyToken` → remove clone + restore mesh alpha. Test: place/move/delete a token with `transformToken=true`.
+
+4. **Tile lifecycle hooks** — same pattern for `drawTile`/`refreshTile`/`destroyTile`. Test: place/move/delete a tile with `transformTile=true`.
+
+5. **Rebuild on canvas reload** — `canvasReady` → iterate existing placeables and create clones for any already-transformed objects. Test: reload scene, verify clones appear.
+
+6. **Sort wiring** — wire `IsoSpriteLayer.sort()` into `DepthSorter.sort()` using tile-band + token-insertion model from fork. Test: place tiles at different depths, verify z-order correct.
+
 ### Checklist
 
 - [ ] Add Iso Sprite Layer container to `LayerManager` in `src/render/layer-manager.ts` (new key in `LAYER_KEYS`, added to `canvas.stage` directly)
-- [ ] Implement `cloneTokenSprite()` — copy `position`, `anchor`, `angle`, `rotation`, `skew`, `scale`, `texture`, `alpha` from `token.mesh`
-- [ ] Implement `cloneTileSprite()` — same for tiles
+- [ ] Implement `cloneSprite(mesh)` and `syncSprite(clone, mesh)` in new `src/render/iso-sprite-layer.ts`
 - [ ] Hook `drawToken`, `refreshToken`, `destroyToken` — create/sync/destroy token clones
 - [ ] Hook `drawTile`, `refreshTile`, `destroyTile` — create/sync/destroy tile clones
-- [ ] Hook `canvasReady`, `updateScene` — rebuild layer on canvas reload
-- [ ] On `refreshToken`/`refreshTile`: update clone transform to match current mesh; use doc-state cache pattern to skip no-op refreshes
-- [ ] Wire Iso Sprite Layer sort into `DepthSorter.sort()` (run alongside `canvas.primary.children` sort)
+- [ ] Hook `canvasReady` — rebuild clones for all already-placed transformed objects
+- [ ] Wire Iso Sprite Layer sort into `DepthSorter.sort()`
 - [ ] Set original mesh `alpha = 0` for counter-transformed objects; restore on destroy
+- [ ] Add `IsoSpriteLayer.activate()` to `src/core/module.ts` + add `ISO_SPRITE_LAYER` to `declareOrder`
 
 ### Key Files
 
-- `src/render/layer-manager.ts` — `LayerManager`, `LAYER_KEYS` (existing stage-level container management)
+- `src/render/layer-manager.ts` — `LayerManager`, `LAYER_KEYS`
+- `src/render/iso-sprite-layer.ts` — new file, all clone/sync/hook logic
 - `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` (entry point for dual-layer sort)
 - `src/tokens/token-elev-gizmo.ts` — `lastState` map (doc-state cache pattern to reference)
+- `src/core/module.ts` — activate + declareOrder
 
 ### References
 
@@ -93,10 +136,13 @@ Create a new `PIXI.Container` (the **Iso Sprite Layer**) added directly to `canv
   - `setupContainers()` — adds container directly to `canvas.stage`
   - `cloneTileSprite()` (lines 223–241)
   - `cloneTokenSprite()` (lines 243–271)
+  - `assignTileDepths()` (lines 316–341) — tile-band depth model (use, but read-only)
+  - `computeTokenEntries()` (lines 354–406) — token insertion between tile bands (use, but read-only — NO DB writes)
+  - `updateAlwaysVisibleElements()` (lines 485–496) — full-rebuild pattern (DO NOT replicate — use incremental instead)
 
 ### Scope
 
-Only counter-transformed objects (tiles/tokens with isoroll flags set) go into the Iso Sprite Layer. Non-transformed objects stay native. Hit detection stays in `canvas.primary` (original mesh, `alpha=0` but still interactive). Iso Sprite Layer sits above `canvas.primary`, below HUD layers.
+Only counter-transformed objects (tiles/tokens with isoroll flags set) go into the Iso Sprite Layer. Non-transformed objects stay native. Hit detection stays in `canvas.primary` (original mesh, `alpha=0` but still interactive). Iso Sprite Layer sits above `canvas.primary`, below HUD layers. Fog visibility management is Phase 4.
 
 ---
 

@@ -38,6 +38,35 @@ in-place requires a two-point `transformCoord` difference. Not worth the complex
 
 **Workaround:** Re-select the tile after changing imageOffset.
 
+---
+
+## B26 — Native elevation tooltip (XXft) reappears on transformed tokens
+
+**Symptom:** Foundry's native `token.tooltip` (e.g. "5 ft") becomes visible for tokens
+with `transformToken = true` and `elevation > 0`. Our custom label is not shown for
+transformed tokens, so only the native tooltip is visible — but it should be suppressed
+everywhere in iso mode to prevent the duplicate display AND the GL_INVALID_OPERATION
+texture upload it can trigger.
+
+**Root cause:** Three code paths in `token-elev-gizmo.ts` return early for `transformToken = true`
+without suppressing the native tooltip:
+
+1. `onDrawToken` (line 58): `return` before any tooltip suppression → tooltip never hidden on draw.
+2. `onRefreshToken` (line 72): calls `hide(token.id)` which restores `nativeTooltip.visible = elev !== 0`, then returns — no subsequent `_draw()` to re-suppress.
+3. `onControlToken` (line 64–65): same `hide()`-then-return pattern.
+
+Non-transformed tokens are fine — `show()` → `_draw()` (line 162–164) suppresses the tooltip.
+The original fix in commit `5043635` only covered the non-transformed path.
+
+**Fix:** In each of the three branches above, after the early return decision, explicitly set
+`nativeTooltip.visible = false` before returning. No need to call `show()` or create any gizmo.
+
+**Confirmed pre-existing on `develop`** (not introduced by Phase 3 — diff vs `develop` shows
+only Phase 3 files differ; root cause traced to `5043635` which never patched the
+`transformToken = true` paths).
+
+**Affected:** `src/tokens/token-elev-gizmo.ts` — `onDrawToken` (line 58), `onRefreshToken` (line 72), `onControlToken` (line 64–65).
+
 **Affected:** `onRefreshTile` in `tile-transform.ts`; `onUpdateTileFlags`; drag commit in
 `tile-drag.ts` case `"imgOffset"`.
 
