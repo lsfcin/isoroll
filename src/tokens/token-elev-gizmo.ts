@@ -6,7 +6,7 @@ import { makeCircleHandle } from "../gizmos";
 import { beginElevDrag } from "./token-elev-drag";
 import { LayerManager, LAYER_KEYS } from "../render";
 
-type ElevHandleState = { x: number; y: number; elev: number; boundH: number; showElevUnsel: boolean; fs: string };
+type ElevHandleState = { x: number; y: number; elev: number; boundH: number; showElevUnsel: boolean; gs: string; ss: string };
 
 type UserLike = { isGM?: boolean; color?: { css?: string } | string };
 function resolveElevLineColor(token: Token): number {
@@ -74,13 +74,21 @@ export class TokenElevGizmo {
     const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
     const boundH = VolumeFlags.getTokenHeight(token.document);
     const showElevUnsel = VolumeFlags.getShowElevationUnselected(token.document);
-    const fs = `${+VolumeFlags.getShadowEnabled(token.document)},${VolumeFlags.getShadowShape(token.document)},${VolumeFlags.getShadowRadius(token.document)},${VolumeFlags.getShadowOpacity(token.document)},${+VolumeFlags.getElevLineEnabled(token.document)},${+VolumeFlags.getElevLineDashed(token.document)},${VolumeFlags.getElevLineColor(token.document)}`;
+    const ss = `${+VolumeFlags.getShadowEnabled(token.document)},${VolumeFlags.getShadowShape(token.document)},${VolumeFlags.getShadowRadius(token.document)},${VolumeFlags.getShadowOpacity(token.document)}`;
+    const gs = `${+VolumeFlags.getElevLineEnabled(token.document)},${+VolumeFlags.getElevLineDashed(token.document)},${VolumeFlags.getElevLineColor(token.document)}`;
     const last = TokenElevGizmo.lastState.get(token.id);
-    if (last && last.x === x && last.y === y && last.elev === elev && last.boundH === boundH && last.showElevUnsel === showElevUnsel && last.fs === fs) return;
-    TokenElevGizmo.lastState.set(token.id, { x, y, elev, boundH, showElevUnsel, fs });
+    const gm   = !!last && last.x===x && last.y===y && last.elev===elev && last.boundH===boundH && last.showElevUnsel===showElevUnsel && last.gs===gs;
+    if (gm && last!.ss===ss) return;
+    TokenElevGizmo.lastState.set(token.id, { x, y, elev, boundH, showElevUnsel, gs, ss });
+    if (gm) { TokenElevGizmo.updateShadow(token); return; }
     TokenElevGizmo.show(token, (token as unknown as { controlled?: boolean }).controlled ?? false);
   }
-
+  private static updateShadow(token: Token): void {
+    const prev = TokenElevGizmo.shadows.get(token.id); if (prev) { prev.parent?.removeChild(prev); (prev as PIXI.Container).destroy?.(); TokenElevGizmo.shadows.delete(token.id); }
+    const g = canvas.grid?.size ?? 100, d = token.document, tw = (d.width??1)*g, th = (d.height??1)*g, sr = VolumeFlags.getShadowRadius(d), el = (d as unknown as {elevation?:number}).elevation??0;
+    const ns = VolumeFlags.getShadowEnabled(d) ? drawGroundShadow((d.x??0)+tw/2, (d.y??0)+th/2, el, tw/2*sr, th/2*sr, VolumeFlags.getShadowOpacity(d), VolumeFlags.getShadowShape(d)) : null;
+    if (ns) { LayerManager.ensureLayer(LAYER_KEYS.TOKEN_SHADOW).addChild(ns); TokenElevGizmo.shadows.set(token.id, ns); }
+  }
   static show(token: Token, selected = false): void {
     TokenElevGizmo.hide(token.id);
     if (!VolumeFlags.getShowVolumeManipulation(token.document, true)) return;
@@ -99,15 +107,7 @@ export class TokenElevGizmo {
     const heightDir = proj.heightDir;
     const groundX   = tx + tw / 2, groundY = ty + th / 2;
 
-    // Ground shadow — own layer below volume box
-    if (VolumeFlags.getShadowEnabled(token.document)) {
-      const sRad = VolumeFlags.getShadowRadius(token.document);
-      const shadow = drawGroundShadow(groundX, groundY, elev, (tw / 2) * sRad, (th / 2) * sRad, VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
-      if (shadow) {
-        LayerManager.ensureLayer(LAYER_KEYS.TOKEN_SHADOW).addChild(shadow);
-        TokenElevGizmo.shadows.set(token.id, shadow);
-      }
-    }
+    TokenElevGizmo.updateShadow(token);
 
     const seMidX = tx + tw + heightDir.x * (elevPx + elevTopPx) / 2;
     const seMidY = ty + th + heightDir.y * (elevPx + elevTopPx) / 2;
