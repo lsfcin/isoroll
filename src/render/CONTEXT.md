@@ -19,6 +19,6 @@
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | — | — | **facade** — Public API for the render module — central PIXI layer registry |
-| [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | — | `cloneSprite`, `syncSprite`, `IsoSpriteLayer` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
+| [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | — | `cloneSprite`, `syncSprite`, `IsoSpriteLayer`, `needsTokenClone`, `docAlpha` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
 | [`layer-manager.ts`](layer-manager.ts) | [`layer-manager.d.ts`](layer-manager.d.ts) | `LayerManager`, `LAYER_KEYS`, `stage` | Central PIXI layer registry: creation, z-order policy, and teardown for all overlay layers. |
 <!-- routing:end -->

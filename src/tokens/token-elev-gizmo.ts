@@ -37,6 +37,7 @@ export class TokenElevGizmo {
     Hooks.on("drawToken",    TokenElevGizmo.onDrawToken);
     Hooks.on("controlToken", TokenElevGizmo.onControlToken);
     Hooks.on("refreshToken", TokenElevGizmo.onRefreshToken);
+    Hooks.on("destroyToken", (t: Token) => TokenElevGizmo.hide(t.id));
   }
 
   private static onCanvasReady(): void {
@@ -173,11 +174,8 @@ export class TokenElevGizmo {
   static hide(tokenId: string): void {
     const token = (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(tokenId);
     if (token) {
-      const nativeTooltip = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
-      if (nativeTooltip) {
-        const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
-        nativeTooltip.visible = elev !== 0;
-      }
+      const nt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
+      if (nt) nt.visible = ((token.document as unknown as { elevation?: number }).elevation ?? 0) !== 0;
     }
     const shadow = TokenElevGizmo.shadows.get(tokenId);
     if (shadow) { shadow.parent?.removeChild(shadow); (shadow as PIXI.Container).destroy?.(); TokenElevGizmo.shadows.delete(tokenId); }

@@ -1,6 +1,8 @@
 // Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope.
-// Counter-transformed token/tile clones live here; originals stay in canvas.primary at alpha=0.
+// Clones of counter-transformed (untransformed) tokens/tiles live here.
+// Originals stay in canvas.primary at alpha=0 for hit detection.
 
+import { MODULE_ID, VolumeFlags } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
 
 type Mesh = PIXI.DisplayObject & {
@@ -9,6 +11,8 @@ type Mesh = PIXI.DisplayObject & {
   skew?: PIXI.ObservablePoint;
   scale?: PIXI.ObservablePoint;
   alpha?: number;
+  rotation?: number;
+  visible?: boolean;
 };
 
 /** Create a PIXI.Sprite clone whose transforms mirror a PrimarySpriteMesh. */
@@ -20,29 +24,96 @@ export function cloneSprite(mesh: Mesh): PIXI.Sprite | null {
   return sprite;
 }
 
-/** Sync all visual transforms from mesh onto an existing clone sprite. */
+/** Sync all visual transforms from mesh onto an existing clone sprite.
+ *  Does NOT copy visible — caller sets that from token.visible, not mesh.visible,
+ *  so Foundry's drag mid-state (mesh.visible=false) doesn't hide the clone. */
 export function syncSprite(sprite: PIXI.Sprite, mesh: Mesh): void {
   sprite.texture = mesh.texture ?? PIXI.Texture.EMPTY;
   sprite.position.set(mesh.x, mesh.y);
   if (mesh.anchor) sprite.anchor.set(mesh.anchor.x, mesh.anchor.y);
   if (mesh.skew)   sprite.skew.set(mesh.skew.x, mesh.skew.y);
   if (mesh.scale)  sprite.scale.set(mesh.scale.x, mesh.scale.y);
-  // rotation is in radians; angle (degrees) derives from it — set rotation directly
-  sprite.rotation = (mesh as { rotation?: number }).rotation ?? 0;
-  sprite.alpha = mesh.alpha ?? 1;
+  sprite.rotation = mesh.rotation ?? 0;
+  sprite.alpha    = mesh.alpha ?? 1;
+}
+
+// ---- clone registries ----
+
+const tokenClones = new Map<string, PIXI.Sprite>();
+
+function needsTokenClone(token: Token): boolean {
+  return token.document.getFlag(MODULE_ID, "transformToken") !== true;
+}
+
+function docAlpha(doc: { alpha?: unknown }): number {
+  return typeof doc.alpha === "number" ? doc.alpha : 1;
+}
+
+function createTokenClone(token: Token): void {
+  removeTokenClone(token.id, token);
+  const mesh = (token as unknown as { mesh?: Mesh }).mesh;
+  if (!mesh?.texture) return;
+  const clone = cloneSprite(mesh);
+  if (!clone) return;
+  clone.visible = !!(token as unknown as { visible?: boolean }).visible;
+  mesh.alpha = 0;
+  IsoSpriteLayer.getLayer().addChild(clone);
+  tokenClones.set(token.id, clone);
+}
+
+function removeTokenClone(tokenId: string, token?: Token): void {
+  const clone = tokenClones.get(tokenId);
+  if (!clone) return;
+  clone.parent?.removeChild(clone);
+  clone.destroy();
+  tokenClones.delete(tokenId);
+  if (token) {
+    const mesh = (token as unknown as { mesh?: Mesh }).mesh;
+    if (mesh) mesh.alpha = docAlpha(token.document as unknown as { alpha?: unknown });
+  }
 }
 
 export const IsoSpriteLayer = {
   activate(): void {
-    Hooks.on("canvasInit", IsoSpriteLayer._onCanvasInit);
-    Hooks.on("changeScene", IsoSpriteLayer._teardown);
+    Hooks.on("canvasInit",    IsoSpriteLayer._onCanvasInit);
+    Hooks.on("changeScene",   IsoSpriteLayer._teardown);
+    Hooks.on("drawToken",     IsoSpriteLayer._onDrawToken);
+    Hooks.on("refreshToken",  IsoSpriteLayer._onRefreshToken);
+    Hooks.on("destroyToken",  IsoSpriteLayer._onDestroyToken);
   },
 
   getLayer(): PIXI.Container {
     return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITE_LAYER);
   },
 
+  // ---- token hooks ----
+
+  _onDrawToken(token: Token): void {
+    if (!VolumeFlags.isSceneEnabled()) return;
+    if (!needsTokenClone(token)) return;
+    createTokenClone(token);
+  },
+
+  _onRefreshToken(token: Token): void {
+    if (!VolumeFlags.isSceneEnabled()) return;
+    const clone = tokenClones.get(token.id);
+    if (!clone) return;
+    if (!needsTokenClone(token)) { removeTokenClone(token.id, token); return; }
+    const mesh = (token as unknown as { mesh?: Mesh }).mesh;
+    if (!mesh) return;
+    syncSprite(clone, mesh);
+    clone.visible = !!(token as unknown as { visible?: boolean }).visible;
+    mesh.alpha = 0;
+  },
+
+  _onDestroyToken(token: Token): void {
+    removeTokenClone(token.id, token);
+  },
+
+  // ---- lifecycle ----
+
   _onCanvasInit(): void {
+    tokenClones.clear();
     const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITE_LAYER);
     layer.sortableChildren = false;
     layer.eventMode = "passive";
@@ -50,6 +121,7 @@ export const IsoSpriteLayer = {
   },
 
   _teardown(): void {
+    tokenClones.clear();
     LayerManager.clearLayer(LAYER_KEYS.ISO_SPRITE_LAYER);
   },
 };

@@ -10,7 +10,7 @@ Phase 2 complete. Phase 1 is next priority.
 
 ## Backlog
 
-<!-- Unscheduled ideas not yet tied to a phase. -->
+- **Shadow params in presets** — shadow shape, radius, opacity, and enabled state should be included when saving/loading image presets for tiles and tokens. Currently presets only capture image transform fields.
 
 ---
 
