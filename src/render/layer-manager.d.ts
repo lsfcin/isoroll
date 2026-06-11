@@ -7,6 +7,8 @@ export declare const LayerManager: {
     enforceOrder(): void;
 };
 export declare const LAYER_KEYS: {
+    readonly TILE_SHADOW: "tile-shadow";
+    readonly TOKEN_SHADOW: "token-shadow";
     readonly VOLUME_OVERLAY: "volume-overlay";
     readonly VOLUME_GIZMOS: "volume-gizmos";
     readonly TOKEN_OVERLAY: "token-overlay";
