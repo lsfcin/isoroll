@@ -185,7 +185,6 @@ export class TokenElevGizmo {
     c.parent?.removeChild(c);
     c.destroy({ children: true });
     TokenElevGizmo.sets.delete(tokenId);
-    TokenElevGizmo.lastState.delete(tokenId);
     TokenElevGizmo.lastCommittedElev.delete(tokenId);
   }
 
