@@ -19,16 +19,15 @@ function circleTexture(): PIXI.Texture {
 let _rectTex: PIXI.Texture | null = null;
 function rectTexture(): PIXI.Texture {
   if (_rectTex) return _rectTex;
-  const size = 128, half = size / 2;
+  const size = 128, pad = 28;
   const cv = document.createElement("canvas");
   cv.width = cv.height = size;
   const ctx = cv.getContext("2d")!;
-  // gradient to corner covers full square — softer rect appearance vs circle
-  const grad = ctx.createRadialGradient(half, half, 0, half, half, half * Math.SQRT2);
-  grad.addColorStop(0, "rgba(0,0,0,1)");
-  grad.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, size, size);
+  // Canvas shadowBlur gives natural soft rect edges — cached once, zero runtime cost.
+  ctx.shadowColor = "black";
+  ctx.shadowBlur  = pad;
+  ctx.fillStyle   = "black";
+  ctx.fillRect(pad, pad, size - pad * 2, size - pad * 2);
   _rectTex = PIXI.Texture.from(cv);
   return _rectTex;
 }
