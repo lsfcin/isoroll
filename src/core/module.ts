@@ -31,6 +31,7 @@ Hooks.once("init", () => {
   PresetManager.activate();
   WallManager.activate();
   LayerManager.declareOrder([
+    LAYER_KEYS.TILE_SHADOW,
     LAYER_KEYS.TOKEN_SHADOW,
     LAYER_KEYS.VOLUME_OVERLAY, LAYER_KEYS.VOLUME_GIZMOS,
     LAYER_KEYS.TOKEN_OVERLAY,

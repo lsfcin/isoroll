@@ -1,4 +1,4 @@
-// Renders a 3D bounding box on selected tiles (VOLUME_OVERLAY) + always-on shadow (TOKEN_SHADOW).
+// Renders a 3D bounding box on selected tiles (VOLUME_OVERLAY) + always-on shadow (TILE_SHADOW).
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import type { MeshLike } from "../draw";
@@ -47,7 +47,11 @@ export class VolumeOverlay {
 
   private static onRefreshTile(tile: Tile): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    if (!tile?.document || !tile.id) return;
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) { VolumeOverlay.hide(tile.id); VolumeOverlay.hideShadow(tile.id); return; }
+    // Force re-render if the shadow sprite was orphaned (its layer was cleared externally)
+    const existing = VolumeOverlay.shadows.get(tile.id);
+    if (existing && !existing.parent) VolumeOverlay.shadowState.delete(tile.id);
     // Shadow always-on: redraw when state changed
     const snap = VolumeOverlay.shadowSnap(tile);
     if (VolumeOverlay.shadowState.get(tile.id) !== snap) VolumeOverlay.showShadow(tile);
@@ -72,7 +76,7 @@ export class VolumeOverlay {
     const rx = (d.width  ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
     const ry = (d.height ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
     const s  = drawGroundShadow(v.ground.x, v.ground.y, v.elevation, rx, ry, VolumeFlags.getShadowOpacity(d), VolumeFlags.getShadowShape(d));
-    if (s) { LayerManager.ensureLayer(LAYER_KEYS.TOKEN_SHADOW).addChild(s); VolumeOverlay.shadows.set(tile.id, s); }
+    if (s) { LayerManager.ensureLayer(LAYER_KEYS.TILE_SHADOW).addChild(s); VolumeOverlay.shadows.set(tile.id, s); }
   }
 
   private static hideShadow(id: string): void {

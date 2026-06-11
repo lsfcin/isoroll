@@ -64,6 +64,7 @@ export const LayerManager = {
 
 // String keys for all overlay layers. Use these instead of raw strings.
 export const LAYER_KEYS = {
+  TILE_SHADOW:         "tile-shadow",
   TOKEN_SHADOW:        "token-shadow",
   VOLUME_OVERLAY:      "volume-overlay",
   VOLUME_GIZMOS:       "volume-gizmos",
