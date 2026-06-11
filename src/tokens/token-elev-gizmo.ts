@@ -9,9 +9,10 @@ import { LayerManager, LAYER_KEYS } from "../render";
 type ElevHandleState = { x: number; y: number; elev: number; boundH: number; showElevUnsel: boolean };
 
 export class TokenElevGizmo {
-  private static sets: Map<string, PIXI.Container> = new Map();
+  private static sets:    Map<string, PIXI.Container>    = new Map();
+  private static shadows: Map<string, PIXI.DisplayObject> = new Map();
   private static lastState: Map<string, ElevHandleState> = new Map();
-  private static lastCommittedElev: Map<string, number> = new Map();
+  private static lastCommittedElev: Map<string, number>  = new Map();
 
   static activate(): void {
     Hooks.on("canvasReady",  TokenElevGizmo.onCanvasReady);
@@ -66,31 +67,37 @@ export class TokenElevGizmo {
     TokenElevGizmo.hide(token.id);
     if (!VolumeFlags.getShowVolumeManipulation(token.document, true)) return;
 
-    const gridSize = canvas.grid?.size ?? 100;
-    const gridDist = gridDistance();
-    const tw       = (token.document.width  ?? 1) * gridSize;
-    const th       = (token.document.height ?? 1) * gridSize;
-    const tx       = token.document.x ?? 0;
-    const ty       = token.document.y ?? 0;
-    const proj     = currentProjection();
-    const elev     = (token.document as unknown as { elevation?: number }).elevation ?? 0;
-    const boundH   = VolumeFlags.getTokenHeight(token.document);
-    const elevPx   = elevToCanvas(elev, gridSize, gridDist);
+    const gridSize  = canvas.grid?.size ?? 100;
+    const gridDist  = gridDistance();
+    const tw        = (token.document.width  ?? 1) * gridSize;
+    const th        = (token.document.height ?? 1) * gridSize;
+    const tx        = token.document.x ?? 0;
+    const ty        = token.document.y ?? 0;
+    const proj      = currentProjection();
+    const elev      = (token.document as unknown as { elevation?: number }).elevation ?? 0;
+    const boundH    = VolumeFlags.getTokenHeight(token.document);
+    const elevPx    = elevToCanvas(elev, gridSize, gridDist);
     const elevTopPx = elevPx + boundH * gridSize;
     const heightDir = proj.heightDir;
+    const groundX   = tx + tw / 2, groundY = ty + th / 2;
 
-    // Midpoint of SE vertical edge (same formula as tile elevation handle)
+    // Ground shadow — own layer below volume box
+    if (VolumeFlags.getShadowEnabled(token.document)) {
+      const shadow = drawGroundShadow(groundX, groundY, elev, (gridSize / 2) * VolumeFlags.getShadowRadius(token.document), VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
+      if (shadow) {
+        LayerManager.ensureLayer(LAYER_KEYS.TOKEN_SHADOW).addChild(shadow);
+        TokenElevGizmo.shadows.set(token.id, shadow);
+      }
+    }
+
     const seMidX = tx + tw + heightDir.x * (elevPx + elevTopPx) / 2;
     const seMidY = ty + th + heightDir.y * (elevPx + elevTopPx) / 2;
-
-    const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
+    const layer     = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
     const container = new PIXI.Container();
 
-    // Handle — only when selected
     if (selected) {
       const handle = makeCircleHandle(0xff9829);
-      handle.x = seMidX;
-      handle.y = seMidY;
+      handle.x = seMidX; handle.y = seMidY;
       handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
         e.stopPropagation();
         beginElevDrag(TokenElevGizmo.lastCommittedElev, token, e.global.x, e.global.y, elev);
@@ -98,40 +105,25 @@ export class TokenElevGizmo {
       container.addChild(handle);
     }
 
-    const groundX = tx + tw / 2, groundY = ty + th / 2;
-
-    // Ground shadow — always visible when elevated
-    if (VolumeFlags.getShadowEnabled(token.document)) {
-      const shadow = drawGroundShadow(groundX, groundY, elev, (gridSize / 2) * VolumeFlags.getShadowRadius(token.document), VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
-      if (shadow) container.addChild(shadow);
-    }
-
-    // Dashed elevation line — unselected only, shows when elev !== 0
+    // Dashed elevation line — unselected only
     if (!selected && elev !== 0) {
       const baseCX = groundX + heightDir.x * elevPx;
       const baseCY = groundY + heightDir.y * elevPx;
-      const lineG = new PIXI.Graphics();
+      const lineG  = new PIXI.Graphics();
       lineG.eventMode = "none";
       lineG.lineStyle(1, 0x000000, 0.35);
       drawDash(lineG, groundX, groundY, baseCX, baseCY, ANCHOR_DASH, ANCHOR_GAP);
       container.addChild(lineG);
     }
 
-    // Elevation label — counter-transformed so it reads flat on screen, same as the handle.
-    // Visible only when elev !== 0; alpha reflects selection state.
+    // Elevation label
     const gridUnits = (canvas.grid as unknown as { units?: string }).units ?? "ft";
     const label = new PIXI.Text(`${elev} ${gridUnits}`, new PIXI.TextStyle({
-      fontFamily: "Signika, sans-serif",
-      fontSize: 14,
-      fill: 0xffffff,
-      stroke: 0x000000,
-      strokeThickness: 3,
-      lineJoin: "round",
+      fontFamily: "Signika, sans-serif", fontSize: 14,
+      fill: 0xffffff, stroke: 0x000000, strokeThickness: 3, lineJoin: "round",
     }));
-    label.anchor.set(0.5, 0.5);
-    label.x = 0; label.y = 0;
-    label.eventMode = "none";
-    label.alpha = selected ? 0.95 : 0.3;
+    label.anchor.set(0.5, 0.5); label.x = 0; label.y = 0; label.eventMode = "none";
+    label.alpha   = selected ? 0.95 : 0.3;
     label.visible = elev !== 0 && (selected || VolumeFlags.getShowElevationUnselected(token.document));
     const texSrc = (label.texture as unknown as { source?: { autoGenerateMipmaps: boolean }; baseTexture?: { mipmap: number } });
     if (texSrc.source)      texSrc.source.autoGenerateMipmaps = false;
@@ -154,7 +146,6 @@ export class TokenElevGizmo {
   }
 
   static hide(tokenId: string): void {
-    // Restore Foundry's native tooltip visibility (mirrors its own logic: visible when elev !== 0).
     const token = (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(tokenId);
     if (token) {
       const nativeTooltip = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
@@ -163,6 +154,8 @@ export class TokenElevGizmo {
         nativeTooltip.visible = elev !== 0;
       }
     }
+    const shadow = TokenElevGizmo.shadows.get(tokenId);
+    if (shadow) { shadow.parent?.removeChild(shadow); (shadow as PIXI.Container).destroy?.(); TokenElevGizmo.shadows.delete(tokenId); }
     const c = TokenElevGizmo.sets.get(tokenId);
     if (!c) return;
     c.parent?.removeChild(c);
@@ -175,6 +168,7 @@ export class TokenElevGizmo {
   static clearAll(): void {
     for (const id of Array.from(TokenElevGizmo.sets.keys())) TokenElevGizmo.hide(id);
     TokenElevGizmo.lastState.clear();
+    LayerManager.clearLayer(LAYER_KEYS.TOKEN_SHADOW);
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
   }
 
