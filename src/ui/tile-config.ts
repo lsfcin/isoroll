@@ -93,6 +93,16 @@ export function registerTileConfigHook(): void {
           const opacity = parseFloat((e.target as HTMLInputElement).value) || 0.2;
           WallManager.setDoorBehavior(d, { mode: "fade", opacity }).catch(console.warn);
         });
+        // Live preview: persist isoroll flags on change so canvas redraws immediately
+        $h.on("change", `[name^='flags.${MODULE_ID}.']`, (e) => {
+          const el = e.target as HTMLInputElement | HTMLSelectElement;
+          const key = el.name.slice(`flags.${MODULE_ID}.`.length);
+          const val: unknown = el.type === "checkbox" ? (el as HTMLInputElement).checked : el.type === "number" ? parseFloat((el as HTMLInputElement).value) : el.value;
+          (d as unknown as { setFlag(m: string, k: string, v: unknown): Promise<unknown> }).setFlag(MODULE_ID, key, val).catch(() => {});
+        });
+        // Disable shadow sub-controls when shadow is off
+        const togShadow = () => $h.find("#isoroll-shadowShape,#isoroll-shadowRadius,#isoroll-shadowOpacity").prop("disabled", !$h.find("#isoroll-shadowEnabled").prop("checked"));
+        $h.on("change", "#isoroll-shadowEnabled", togShadow); togShadow();
       });
   });
 }

@@ -6,20 +6,23 @@ import { makeCircleHandle } from "../gizmos";
 import { beginElevDrag } from "./token-elev-drag";
 import { LayerManager, LAYER_KEYS } from "../render";
 
-type ElevHandleState = { x: number; y: number; elev: number; boundH: number; showElevUnsel: boolean };
+type ElevHandleState = { x: number; y: number; elev: number; boundH: number; showElevUnsel: boolean; fs: string };
 
 type UserLike = { isGM?: boolean; color?: { css?: string } | string };
 function resolveElevLineColor(token: Token): number {
   if (VolumeFlags.getElevLineColor(token.document) !== "player") return 0x000000;
+  const toHex = (u: UserLike): number | null => { const c = typeof u.color === "string" ? u.color : (u.color as {css?:string}|undefined)?.css; return c ? parseInt(c.replace("#",""),16) : null; };
   const own = ((token.document as unknown as { actor?: { ownership?: Record<string, number> } }).actor?.ownership) ?? {};
+  let gm: number | null = null;
   for (const [uid, lvl] of Object.entries(own)) {
     if (lvl < 3) continue;
-    const u = (game.users as unknown as { get(id: string): UserLike | undefined }).get(uid);
-    if (!u || u.isGM) continue;
-    const c = typeof u.color === "string" ? u.color : (u.color as { css?: string } | undefined)?.css;
-    if (c) return parseInt(c.replace("#", ""), 16);
+    const u = (game.users as unknown as { get(id: string): UserLike|undefined }).get(uid);
+    const h = u ? toHex(u) : null;
+    if (h === null) continue;
+    if (!u!.isGM) return h;
+    gm = h;
   }
-  return 0x000000;
+  return gm ?? toHex(game.user as unknown as UserLike) ?? 0x000000;
 }
 
 export class TokenElevGizmo {
@@ -71,9 +74,10 @@ export class TokenElevGizmo {
     const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;
     const boundH = VolumeFlags.getTokenHeight(token.document);
     const showElevUnsel = VolumeFlags.getShowElevationUnselected(token.document);
+    const fs = `${+VolumeFlags.getShadowEnabled(token.document)},${VolumeFlags.getShadowShape(token.document)},${VolumeFlags.getShadowRadius(token.document)},${VolumeFlags.getShadowOpacity(token.document)},${+VolumeFlags.getElevLineEnabled(token.document)},${+VolumeFlags.getElevLineDashed(token.document)},${VolumeFlags.getElevLineColor(token.document)}`;
     const last = TokenElevGizmo.lastState.get(token.id);
-    if (last && last.x === x && last.y === y && last.elev === elev && last.boundH === boundH && last.showElevUnsel === showElevUnsel) return;
-    TokenElevGizmo.lastState.set(token.id, { x, y, elev, boundH, showElevUnsel });
+    if (last && last.x === x && last.y === y && last.elev === elev && last.boundH === boundH && last.showElevUnsel === showElevUnsel && last.fs === fs) return;
+    TokenElevGizmo.lastState.set(token.id, { x, y, elev, boundH, showElevUnsel, fs });
     TokenElevGizmo.show(token, (token as unknown as { controlled?: boolean }).controlled ?? false);
   }
 

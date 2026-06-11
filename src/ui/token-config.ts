@@ -37,7 +37,27 @@ export function registerTokenConfigHook(): void {
         `</fieldset>` +
         `<fieldset><legend>${t("ISOROLL.TokenConfig.PresetHeading")}</legend>` +
         flagCheckbox("presetEnabled", "TokenConfig", d.getFlag(MODULE_ID, "presetEnabled") !== false) +
-        `</fieldset>`);
+        `</fieldset>`,
+        ($h) => {
+          // Live preview: persist flag on every change so canvas redraws immediately
+          const setFlag = (key: string, val: unknown) =>
+            (d as unknown as { setFlag(m: string, k: string, v: unknown): Promise<unknown> }).setFlag(MODULE_ID, key, val).catch(() => {});
+          $h.on("change", `[name^='flags.${MODULE_ID}.']`, (e) => {
+            const el = e.target as HTMLInputElement | HTMLSelectElement;
+            const key = el.name.slice(`flags.${MODULE_ID}.`.length);
+            const val: unknown = el.type === "checkbox" ? (el as HTMLInputElement).checked
+                               : el.type === "number"   ? parseFloat((el as HTMLInputElement).value)
+                               : el.value;
+            setFlag(key, val);
+          });
+          // Disable dependent controls when parent checkbox is unchecked
+          const toggleGroup = (cbId: string, ...deps: string[]) => {
+            const upd = () => $h.find(deps.map(i => `#${i}`).join(",")).prop("disabled", !$h.find(`#${cbId}`).prop("checked"));
+            $h.on("change", `#${cbId}`, upd); upd();
+          };
+          toggleGroup("isoroll-shadowEnabled",  "isoroll-shadowShape",    "isoroll-shadowRadius",  "isoroll-shadowOpacity");
+          toggleGroup("isoroll-elevLineEnabled", "isoroll-elevLineDashed", "isoroll-elevLineColor");
+        });
     },
   );
 }
