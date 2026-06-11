@@ -39,9 +39,10 @@ export function registerTokenConfigHook(): void {
         flagCheckbox("presetEnabled", "TokenConfig", d.getFlag(MODULE_ID, "presetEnabled") !== false) +
         `</fieldset>`,
         ($h) => {
-          // Live preview: persist flag on every change so canvas redraws immediately
+          // Live preview: update flag with render:false to avoid resetting the active tab
           const setFlag = (key: string, val: unknown) =>
-            (d as unknown as { setFlag(m: string, k: string, v: unknown): Promise<unknown> }).setFlag(MODULE_ID, key, val).catch(() => {});
+            (d as unknown as { update(data: Record<string, unknown>, opts?: { render?: boolean }): Promise<unknown> })
+              .update({ [`flags.${MODULE_ID}.${key}`]: val }, { render: false }).catch(() => {});
           $h.on("change", `[name^='flags.${MODULE_ID}.']`, (e) => {
             const el = e.target as HTMLInputElement | HTMLSelectElement;
             const key = el.name.slice(`flags.${MODULE_ID}.`.length);

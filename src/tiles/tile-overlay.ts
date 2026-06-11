@@ -63,7 +63,7 @@ export class VolumeOverlay {
 
   private static shadowSnap(tile: Tile): string {
     const d = tile.document;
-    return `${d.x},${d.y},${d.width},${d.height},${(d as unknown as {elevation?:number}).elevation??0},${+VolumeFlags.getShadowEnabled(d)},${VolumeFlags.getShadowShape(d)},${VolumeFlags.getShadowRadius(d)},${VolumeFlags.getShadowOpacity(d)}`;
+    return `${d.x},${d.y},${d.width},${d.height},${(d as unknown as {elevation?:number}).elevation??0},${+VolumeFlags.getShadowEnabled(d,false)},${VolumeFlags.getShadowShape(d,"rect")},${VolumeFlags.getShadowRadius(d)},${VolumeFlags.getShadowOpacity(d,0.5)}`;
   }
 
   private static showShadow(tile: Tile): void {
@@ -71,11 +71,11 @@ export class VolumeOverlay {
     const snap = VolumeOverlay.shadowSnap(tile);
     VolumeOverlay.shadowState.set(tile.id, snap);
     const d = tile.document;
-    if (!VolumeFlags.getShadowEnabled(d)) return;
+    if (!VolumeFlags.getShadowEnabled(d, false)) return;
     const v  = computeVerts(tile);
     const rx = (d.width  ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
     const ry = (d.height ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
-    const s  = drawGroundShadow(v.ground.x, v.ground.y, v.elevation, rx, ry, VolumeFlags.getShadowOpacity(d), VolumeFlags.getShadowShape(d));
+    const s  = drawGroundShadow(v.ground.x, v.ground.y, v.elevation, rx, ry, VolumeFlags.getShadowOpacity(d, 0.5), VolumeFlags.getShadowShape(d, "rect"));
     if (s) { LayerManager.ensureLayer(LAYER_KEYS.TILE_SHADOW).addChild(s); VolumeOverlay.shadows.set(tile.id, s); }
   }
 

@@ -93,20 +93,22 @@ export class VolumeFlags {
     return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
   }
 
-  static getShadowEnabled(doc: { getFlag(s: string, k: string): unknown }): boolean {
-    return doc.getFlag(MODULE_ID, "shadowEnabled") !== false;
+  static getShadowEnabled(doc: { getFlag(s: string, k: string): unknown }, defaultOn = true): boolean {
+    const v = doc.getFlag(MODULE_ID, "shadowEnabled");
+    if (v === undefined || v === null) return defaultOn;
+    return v !== false;
   }
 
-  static getShadowShape(doc: { getFlag(s: string, k: string): unknown }): "circle" | "rect" {
-    return (doc.getFlag(MODULE_ID, "shadowShape") as "circle" | "rect" | undefined) ?? "circle";
+  static getShadowShape(doc: { getFlag(s: string, k: string): unknown }, defaultShape: "circle" | "rect" = "circle"): "circle" | "rect" {
+    return (doc.getFlag(MODULE_ID, "shadowShape") as "circle" | "rect" | undefined) ?? defaultShape;
   }
 
   static getShadowRadius(doc: { getFlag(s: string, k: string): unknown }): number {
     return (doc.getFlag(MODULE_ID, "shadowRadius") as number | undefined) ?? 1.0;
   }
 
-  static getShadowOpacity(doc: { getFlag(s: string, k: string): unknown }): number {
-    return (doc.getFlag(MODULE_ID, "shadowOpacity") as number | undefined) ?? 0.3;
+  static getShadowOpacity(doc: { getFlag(s: string, k: string): unknown }, defaultOpacity = 0.3): number {
+    return (doc.getFlag(MODULE_ID, "shadowOpacity") as number | undefined) ?? defaultOpacity;
   }
 
   static getElevLineEnabled(doc: { getFlag(s: string, k: string): unknown }): boolean {
