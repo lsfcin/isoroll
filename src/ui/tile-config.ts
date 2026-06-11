@@ -54,7 +54,7 @@ export function registerTileConfigHook(): void {
       `</fieldset>` +
       `<fieldset><legend>${t("ISOROLL.TileConfig.ManipulationHeading")}</legend>` +
       flagCheckbox("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
-      flagCheckbox("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
+      flagCheckbox("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false, 'style="white-space:nowrap"') +
       `</fieldset>` +
       `<fieldset><legend>${t("ISOROLL.TileConfig.ShadowHeading")}</legend>` +
       flagCheckbox("shadowEnabled", "TileConfig", VolumeFlags.getShadowEnabled(d)) +

@@ -1,4 +1,4 @@
-// Renders a 3D dashed bounding box on selected tiles via a PIXI overlay layer.
+// Renders a 3D bounding box on selected tiles (VOLUME_OVERLAY) + always-on shadow (TOKEN_SHADOW).
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import type { MeshLike } from "../draw";
@@ -7,20 +7,36 @@ import { LayerManager, LAYER_KEYS } from "../render";
 import { DEBUG_COORD, drawCoordDebug } from "../transform";
 
 export class VolumeOverlay {
-  private static boxes: Map<string, PIXI.Container> = new Map();
+  private static boxes:       Map<string, PIXI.Container>    = new Map();
+  private static shadows:     Map<string, PIXI.DisplayObject> = new Map();
+  private static shadowState: Map<string, string>             = new Map();
 
   static activate(): void {
     Hooks.on("canvasReady",   VolumeOverlay.onCanvasReady);
     Hooks.on("updateScene",   VolumeOverlay.onUpdateScene);
+    Hooks.on("drawTile",      VolumeOverlay.onDrawTile);
     Hooks.on("controlTile",   VolumeOverlay.onControlTile);
     Hooks.on("refreshTile",   VolumeOverlay.onRefreshTile);
   }
 
-  private static onCanvasReady(): void { VolumeOverlay.clearAll(); }
+  private static onCanvasReady(): void {
+    VolumeOverlay.clearAll();
+    if (!VolumeFlags.isSceneEnabled()) return;
+    for (const tile of (canvas.tiles?.placeables ?? []) as Tile[]) {
+      if (tile.document.getFlag(MODULE_ID, "transformTile") === true) continue;
+      VolumeOverlay.showShadow(tile);
+    }
+  }
 
   private static onUpdateScene(scene: Scene): void {
     if (scene.id !== canvas.scene?.id) return;
     VolumeOverlay.clearAll();
+  }
+
+  private static onDrawTile(tile: Tile): void {
+    if (!VolumeFlags.isSceneEnabled()) return;
+    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
+    VolumeOverlay.showShadow(tile);
   }
 
   private static onControlTile(tile: Tile, controlled: boolean): void {
@@ -31,12 +47,38 @@ export class VolumeOverlay {
 
   private static onRefreshTile(tile: Tile): void {
     if (!VolumeFlags.isSceneEnabled()) return;
-    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) { VolumeOverlay.hide(tile.id); return; }
+    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) { VolumeOverlay.hide(tile.id); VolumeOverlay.hideShadow(tile.id); return; }
+    // Shadow always-on: redraw when state changed
+    const snap = VolumeOverlay.shadowSnap(tile);
+    if (VolumeOverlay.shadowState.get(tile.id) !== snap) VolumeOverlay.showShadow(tile);
+    // Box overlay selected-only
     if (!VolumeOverlay.boxes.has(tile.id)) return;
-    // Skip while drag-preview clone exists: server update fires refreshState on the original
-    // tile (old doc position) before the clone is cleared, causing a 1-frame blink.
     if ((tile as unknown as { hasPreview?: boolean }).hasPreview) return;
     VolumeOverlay.show(tile);
+  }
+
+  private static shadowSnap(tile: Tile): string {
+    const d = tile.document;
+    return `${d.x},${d.y},${d.width},${d.height},${(d as unknown as {elevation?:number}).elevation??0},${+VolumeFlags.getShadowEnabled(d)},${VolumeFlags.getShadowShape(d)},${VolumeFlags.getShadowRadius(d)},${VolumeFlags.getShadowOpacity(d)}`;
+  }
+
+  private static showShadow(tile: Tile): void {
+    VolumeOverlay.hideShadow(tile.id);
+    const snap = VolumeOverlay.shadowSnap(tile);
+    VolumeOverlay.shadowState.set(tile.id, snap);
+    const d = tile.document;
+    if (!VolumeFlags.getShadowEnabled(d)) return;
+    const v  = computeVerts(tile);
+    const rx = (d.width  ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
+    const ry = (d.height ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
+    const s  = drawGroundShadow(v.ground.x, v.ground.y, v.elevation, rx, ry, VolumeFlags.getShadowOpacity(d), VolumeFlags.getShadowShape(d));
+    if (s) { LayerManager.ensureLayer(LAYER_KEYS.TOKEN_SHADOW).addChild(s); VolumeOverlay.shadows.set(tile.id, s); }
+  }
+
+  private static hideShadow(id: string): void {
+    const s = VolumeOverlay.shadows.get(id);
+    if (s) { s.parent?.removeChild(s); (s as PIXI.Container).destroy?.(); VolumeOverlay.shadows.delete(id); }
+    VolumeOverlay.shadowState.delete(id);
   }
 
   static show(tile: Tile): void {
@@ -60,6 +102,7 @@ export class VolumeOverlay {
 
   static clearAll(): void {
     for (const id of Array.from(VolumeOverlay.boxes.keys())) VolumeOverlay.hide(id);
+    for (const id of Array.from(VolumeOverlay.shadows.keys())) VolumeOverlay.hideShadow(id);
     LayerManager.clearLayer(LAYER_KEYS.VOLUME_OVERLAY);
   }
 
@@ -67,13 +110,6 @@ export class VolumeOverlay {
     const showVol = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImg = VolumeFlags.getShowImageManipulation(tile.document, true);
     const v = computeVerts(tile);
-
-    if (showVol && VolumeFlags.getShadowEnabled(tile.document)) {
-      const gridSize = canvas.grid?.size ?? 100;
-      const shadow = drawGroundShadow(v.ground.x, v.ground.y, v.elevation, (gridSize / 2) * VolumeFlags.getShadowRadius(tile.document), VolumeFlags.getShadowOpacity(tile.document), VolumeFlags.getShadowShape(tile.document));
-      if (shadow) c.addChild(shadow);
-    }
-
     const g = new PIXI.Graphics();
     g.eventMode = "none";
     if (showImg) drawMeshContour(g, tile.mesh as unknown as MeshLike);

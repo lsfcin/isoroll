@@ -101,7 +101,8 @@ export class TokenElevGizmo {
 
     // Ground shadow — own layer below volume box
     if (VolumeFlags.getShadowEnabled(token.document)) {
-      const shadow = drawGroundShadow(groundX, groundY, elev, (gridSize / 2) * VolumeFlags.getShadowRadius(token.document), VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
+      const sRad = VolumeFlags.getShadowRadius(token.document);
+      const shadow = drawGroundShadow(groundX, groundY, elev, (tw / 2) * sRad, (th / 2) * sRad, VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
       if (shadow) {
         LayerManager.ensureLayer(LAYER_KEYS.TOKEN_SHADOW).addChild(shadow);
         TokenElevGizmo.shadows.set(token.id, shadow);
