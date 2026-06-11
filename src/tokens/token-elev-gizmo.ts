@@ -43,6 +43,7 @@ export class TokenElevGizmo {
     TokenElevGizmo.clearAll();
     if (!VolumeFlags.isSceneEnabled()) return;
     for (const token of (canvas.tokens?.placeables ?? []) as Token[]) {
+      const nt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip; if (nt) nt.visible = false;
       if (token.document.getFlag(MODULE_ID, "transformToken") === true) continue;
       TokenElevGizmo.show(token, (token as unknown as { controlled?: boolean }).controlled ?? false);
     }
@@ -55,20 +56,20 @@ export class TokenElevGizmo {
 
   private static onDrawToken(token: Token): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    const nt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip; if (nt) nt.visible = false;
     if (token.document.getFlag(MODULE_ID, "transformToken") === true) return;
     TokenElevGizmo.show(token, (token as unknown as { controlled?: boolean }).controlled ?? false);
   }
 
   private static onControlToken(token: Token, controlled: boolean): void {
     if (!VolumeFlags.isSceneEnabled()) return;
-    if (token.document.getFlag(MODULE_ID, "transformToken") === true) {
-      TokenElevGizmo.hide(token.id); return;
-    }
+    if (token.document.getFlag(MODULE_ID, "transformToken") === true) { TokenElevGizmo.hide(token.id); return; }
     TokenElevGizmo.show(token, controlled);
   }
 
   private static onRefreshToken(token: Token): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    const nt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip; if (nt) nt.visible = false;
     if (token.document.getFlag(MODULE_ID, "transformToken") === true) { TokenElevGizmo.hide(token.id); return; }
     const x = token.document.x ?? 0, y = token.document.y ?? 0;
     const elev = (token.document as unknown as { elevation?: number }).elevation ?? 0;

@@ -40,7 +40,7 @@ in-place requires a two-point `transformCoord` difference. Not worth the complex
 
 ---
 
-## B26 — Native elevation tooltip (XXft) reappears on transformed tokens
+## ~~B26~~ — Native elevation tooltip (XXft) reappears on tokens ✅ FIXED
 
 **Symptom:** Foundry's native `token.tooltip` (e.g. "5 ft") becomes visible for tokens
 with `transformToken = true` and `elevation > 0`. Our custom label is not shown for
