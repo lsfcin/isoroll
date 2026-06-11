@@ -1,6 +1,6 @@
 
-import { MODULE_ID } from "../core";
-import { addIsorollTab, flagCheckbox } from "./tab-helpers";
+import { MODULE_ID, VolumeFlags } from "../core";
+import { addIsorollTab, flagCheckbox, flagNumber, flagSelect } from "./tab-helpers";
 import type { DoorBehavior } from "../walls";
 import { WallManager } from "../walls";
 
@@ -55,6 +55,15 @@ export function registerTileConfigHook(): void {
       `<fieldset><legend>${t("ISOROLL.TileConfig.ManipulationHeading")}</legend>` +
       flagCheckbox("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
       flagCheckbox("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
+      `</fieldset>` +
+      `<fieldset><legend>${t("ISOROLL.TileConfig.ShadowHeading")}</legend>` +
+      flagCheckbox("shadowEnabled", "TileConfig", VolumeFlags.getShadowEnabled(d)) +
+      flagSelect("shadowShape", "TileConfig", VolumeFlags.getShadowShape(d), [
+        { value: "circle", label: t("ISOROLL.ShadowShape.Circle") },
+        { value: "rect",   label: t("ISOROLL.ShadowShape.Rect") },
+      ]) +
+      flagNumber("shadowRadius",  "TileConfig", VolumeFlags.getShadowRadius(d),  0.1, 4.0, 0.1) +
+      flagNumber("shadowOpacity", "TileConfig", VolumeFlags.getShadowOpacity(d), 0.0, 1.0, 0.05) +
       `</fieldset>` +
       `<fieldset><legend>${t("ISOROLL.TileConfig.PresetHeading")}</legend>` +
       flagCheckbox("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +

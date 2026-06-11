@@ -17,6 +17,8 @@
     "TokenConfig": {
       "TransformationHeading": "Transformação",
       "ManipulationHeading": "Manipulação",
+      "ShadowHeading": "Sombra no Chão",
+      "ElevLineHeading": "Linha de Elevação",
       "PresetHeading": "Predefinição",
       "TransformToken": "Transformar Token",
       "TransformTokenHint": "Aplica a transformação isométrica do palco ao token. Quando desmarcado (padrão), o sprite do token aparece sem distorção independente da rotação do palco.",
@@ -26,12 +28,27 @@
       "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e a alça de elevação quando o token está selecionado.",
       "ShowElevationUnselected": "Exibir Elevação Quando Não Selecionado",
       "ShowElevationUnselectedHint": "Exibe o rótulo de elevação próximo ao token mesmo quando ele não está selecionado.",
+      "ShadowEnabled": "Sombra",
+      "ShadowEnabledHint": "Exibe uma sombra no chão abaixo do token de acordo com sua elevação.",
+      "ShadowShape": "Forma",
+      "ShadowShapeHint": "Formato da sombra: gradiente radial suave ou retângulo.",
+      "ShadowRadius": "Raio",
+      "ShadowRadiusHint": "Multiplicador do raio da sombra em relação ao tamanho da grade (1.0 = raio de uma célula da grade).",
+      "ShadowOpacity": "Opacidade",
+      "ShadowOpacityHint": "Opacidade base da sombra ao nível do chão (0.0–1.0).",
+      "ElevLineEnabled": "Exibir Linha",
+      "ElevLineEnabledHint": "Desenha uma linha do token até sua posição no chão quando não selecionado.",
+      "ElevLineDashed": "Tracejada",
+      "ElevLineDashedHint": "Desenha a linha de elevação como tracejada em vez de sólida.",
+      "ElevLineColor": "Cor",
+      "ElevLineColorHint": "Cor da linha de elevação: preto sólido ou a cor do jogador controlador.",
       "PresetEnabled": "Usar Predefinição de Imagem",
       "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um token com esta imagem, e atualiza a predefinição ao editar este token."
     },
     "TileConfig": {
       "TransformationHeading": "Transformação",
       "ManipulationHeading": "Manipulação",
+      "ShadowHeading": "Sombra no Chão",
       "PresetHeading": "Predefinição",
       "ForegroundTile": "Tile de Primeiro Plano",
       "ForegroundTileHint": "Trata como objeto 3D de primeiro plano. Tamanho e posição escalam com mudanças no tamanho da grade, como tokens. Desmarque para tiles de fundo ou chão que devem permanecer visualmente fixos.",
@@ -41,8 +58,24 @@
       "ShowImageManipulationHint": "Exibe as alças de deslocamento/escala da imagem (círculo e quadrado brancos) e o contorno tracejado da imagem quando o tile está selecionado.",
       "ShowVolumeManipulation": "Manipulação de Volume",
       "ShowVolumeManipulationHint": "Exibe a caixa de contorno 3D e todas as alças de volume (tamanho, elevação, movimento) quando o tile está selecionado.",
+      "ShadowEnabled": "Sombra",
+      "ShadowEnabledHint": "Exibe uma sombra no chão abaixo do tile de acordo com sua elevação.",
+      "ShadowShape": "Forma",
+      "ShadowShapeHint": "Formato da sombra: gradiente radial suave ou retângulo.",
+      "ShadowRadius": "Raio",
+      "ShadowRadiusHint": "Multiplicador do raio da sombra em relação ao tamanho da grade (1.0 = raio de uma célula da grade).",
+      "ShadowOpacity": "Opacidade",
+      "ShadowOpacityHint": "Opacidade base da sombra ao nível do chão (0.0–1.0).",
       "PresetEnabled": "Usar Predefinição de Imagem",
       "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um tile com esta imagem, e atualiza a predefinição ao editar este tile."
+    },
+    "ShadowShape": {
+      "Circle": "Círculo (gradiente radial)",
+      "Rect":   "Retângulo"
+    },
+    "ElevLineColor": {
+      "Black":  "Preto",
+      "Player": "Cor do Jogador"
     },
     "Projection": {
       "Dimetric21": "Dimétrico 2:1 (padrão)",

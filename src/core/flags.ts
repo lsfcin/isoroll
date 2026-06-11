@@ -108,4 +108,16 @@ export class VolumeFlags {
   static getShadowOpacity(doc: { getFlag(s: string, k: string): unknown }): number {
     return (doc.getFlag(MODULE_ID, "shadowOpacity") as number | undefined) ?? 0.3;
   }
+
+  static getElevLineEnabled(doc: { getFlag(s: string, k: string): unknown }): boolean {
+    return doc.getFlag(MODULE_ID, "elevLineEnabled") !== false;
+  }
+
+  static getElevLineDashed(doc: { getFlag(s: string, k: string): unknown }): boolean {
+    return doc.getFlag(MODULE_ID, "elevLineDashed") !== false;
+  }
+
+  static getElevLineColor(doc: { getFlag(s: string, k: string): unknown }): "black" | "player" {
+    return (doc.getFlag(MODULE_ID, "elevLineColor") as "black" | "player" | undefined) ?? "black";
+  }
 }

@@ -8,6 +8,20 @@ import { LayerManager, LAYER_KEYS } from "../render";
 
 type ElevHandleState = { x: number; y: number; elev: number; boundH: number; showElevUnsel: boolean };
 
+type UserLike = { isGM?: boolean; color?: { css?: string } | string };
+function resolveElevLineColor(token: Token): number {
+  if (VolumeFlags.getElevLineColor(token.document) !== "player") return 0x000000;
+  const own = ((token.document as unknown as { actor?: { ownership?: Record<string, number> } }).actor?.ownership) ?? {};
+  for (const [uid, lvl] of Object.entries(own)) {
+    if (lvl < 3) continue;
+    const u = (game.users as unknown as { get(id: string): UserLike | undefined }).get(uid);
+    if (!u || u.isGM) continue;
+    const c = typeof u.color === "string" ? u.color : (u.color as { css?: string } | undefined)?.css;
+    if (c) return parseInt(c.replace("#", ""), 16);
+  }
+  return 0x000000;
+}
+
 export class TokenElevGizmo {
   private static sets:    Map<string, PIXI.Container>    = new Map();
   private static shadows: Map<string, PIXI.DisplayObject> = new Map();
@@ -105,14 +119,19 @@ export class TokenElevGizmo {
       container.addChild(handle);
     }
 
-    // Dashed elevation line — unselected only
-    if (!selected && elev !== 0) {
-      const baseCX = groundX + heightDir.x * elevPx;
-      const baseCY = groundY + heightDir.y * elevPx;
-      const lineG  = new PIXI.Graphics();
+    // Elevation line — unselected only
+    if (!selected && elev !== 0 && VolumeFlags.getElevLineEnabled(token.document)) {
+      const baseCX    = groundX + heightDir.x * elevPx;
+      const baseCY    = groundY + heightDir.y * elevPx;
+      const lineG     = new PIXI.Graphics();
       lineG.eventMode = "none";
-      lineG.lineStyle(1, 0x000000, 0.35);
-      drawDash(lineG, groundX, groundY, baseCX, baseCY, ANCHOR_DASH, ANCHOR_GAP);
+      const lineColor = resolveElevLineColor(token);
+      lineG.lineStyle(1, lineColor, 0.35);
+      if (VolumeFlags.getElevLineDashed(token.document)) {
+        drawDash(lineG, groundX, groundY, baseCX, baseCY, ANCHOR_DASH, ANCHOR_GAP);
+      } else {
+        lineG.moveTo(groundX, groundY); lineG.lineTo(baseCX, baseCY);
+      }
       container.addChild(lineG);
     }
 

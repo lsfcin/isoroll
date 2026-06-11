@@ -49,6 +49,31 @@ export function addIsorollTab(
   onFirstInject?.($html);
 }
 
+export function flagNumber(flagKey: string, ns: string, value: number, min: number, max: number, step: number): string {
+  const k  = flagKey.charAt(0).toUpperCase() + flagKey.slice(1);
+  const id = `isoroll-${flagKey}`;
+  return (
+    `<div class="form-group">` +
+    `<label for="${id}">${game.i18n.localize(`ISOROLL.${ns}.${k}`)}</label>` +
+    `<div class="form-fields"><input type="number" id="${id}" name="flags.${MODULE_ID}.${flagKey}" min="${min}" max="${max}" step="${step}" value="${value}"></div>` +
+    `<p class="hint">${game.i18n.localize(`ISOROLL.${ns}.${k}Hint`)}</p>` +
+    `</div>`
+  );
+}
+
+export function flagSelect(flagKey: string, ns: string, value: string, options: Array<{ value: string; label: string }>): string {
+  const k    = flagKey.charAt(0).toUpperCase() + flagKey.slice(1);
+  const id   = `isoroll-${flagKey}`;
+  const opts = options.map(o => `<option value="${o.value}"${value === o.value ? " selected" : ""}>${o.label}</option>`).join("");
+  return (
+    `<div class="form-group">` +
+    `<label for="${id}">${game.i18n.localize(`ISOROLL.${ns}.${k}`)}</label>` +
+    `<div class="form-fields"><select id="${id}" name="flags.${MODULE_ID}.${flagKey}">${opts}</select></div>` +
+    `<p class="hint">${game.i18n.localize(`ISOROLL.${ns}.${k}Hint`)}</p>` +
+    `</div>`
+  );
+}
+
 export function flagCheckbox(flagKey: string, ns: string, checked: boolean, labelAttrs = ""): string {
   const k  = flagKey.charAt(0).toUpperCase() + flagKey.slice(1);
   const id = `isoroll-${flagKey}`;
