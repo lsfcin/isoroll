@@ -24,9 +24,9 @@ export function cloneSprite(mesh: Mesh): PIXI.Sprite | null {
   return sprite;
 }
 
-/** Sync all visual transforms from mesh onto an existing clone sprite.
- *  Does NOT copy visible — caller sets that from token.visible, not mesh.visible,
- *  so Foundry's drag mid-state (mesh.visible=false) doesn't hide the clone. */
+/** Sync geometry transforms from mesh onto an existing clone sprite.
+ *  Does NOT copy alpha or visible — mesh.alpha is 0 (we set it); both come
+ *  from the document instead so transient Foundry states don't hide the clone. */
 export function syncSprite(sprite: PIXI.Sprite, mesh: Mesh): void {
   sprite.texture = mesh.texture ?? PIXI.Texture.EMPTY;
   sprite.position.set(mesh.x, mesh.y);
@@ -34,7 +34,6 @@ export function syncSprite(sprite: PIXI.Sprite, mesh: Mesh): void {
   if (mesh.skew)   sprite.skew.set(mesh.skew.x, mesh.skew.y);
   if (mesh.scale)  sprite.scale.set(mesh.scale.x, mesh.scale.y);
   sprite.rotation = mesh.rotation ?? 0;
-  sprite.alpha    = mesh.alpha ?? 1;
 }
 
 // ---- clone registries ----
@@ -49,13 +48,20 @@ function docAlpha(doc: { alpha?: unknown }): number {
   return typeof doc.alpha === "number" ? doc.alpha : 1;
 }
 
+type TokenDoc = { alpha?: unknown; hidden?: unknown };
+
+function applyDocState(clone: PIXI.Sprite, doc: TokenDoc): void {
+  clone.alpha   = docAlpha(doc);
+  clone.visible = !doc.hidden;
+}
+
 function createTokenClone(token: Token): void {
   removeTokenClone(token.id, token);
   const mesh = (token as unknown as { mesh?: Mesh }).mesh;
   if (!mesh?.texture) return;
   const clone = cloneSprite(mesh);
   if (!clone) return;
-  clone.visible = !!(token as unknown as { visible?: boolean }).visible;
+  applyDocState(clone, token.document as unknown as TokenDoc);
   mesh.alpha = 0;
   IsoSpriteLayer.getLayer().addChild(clone);
   tokenClones.set(token.id, clone);
@@ -102,7 +108,7 @@ export const IsoSpriteLayer = {
     const mesh = (token as unknown as { mesh?: Mesh }).mesh;
     if (!mesh) return;
     syncSprite(clone, mesh);
-    clone.visible = !!(token as unknown as { visible?: boolean }).visible;
+    applyDocState(clone, token.document as unknown as TokenDoc);
     mesh.alpha = 0;
   },
 
