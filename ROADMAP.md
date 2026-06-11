@@ -6,7 +6,7 @@
 
 ## Status
 
-All phases pending. Phase 1 is next priority.
+Phase 2 complete. Phase 1 is next priority.
 
 ## Backlog
 
@@ -40,44 +40,6 @@ After the main sort, run a pairwise epsilon-offset pass over tokens with close s
 ### Scope
 
 Only token-to-token ordering. Tile-to-tile and tile-to-token ordering handled by main sort key (elevation-aware, correct for non-overlapping objects).
-
----
-
-## Phase 2 — Ground Shadow + Unselected Elevation Line 🔲 PENDING
-
-### Problem
-
-Elevated tokens/tiles have no visual cue indicating their ground position or height when unselected. The existing orange anchor line only shows when selected.
-
-### Solution
-
-Two new overlay visuals drawn in stage-level overlay layers (not in `canvas.primary`) — unaffected by the vision/fog masking issue described in Phase 3.
-
-**Ground shadow:** circle or rounded-rect drawn at the token's ground position when elevated.
-
-**Unselected elevation line:** thin dashed black line from ground to token base, visible when `elevation > 0` and token is NOT selected.
-
-### Checklist
-
-- [ ] Add `drawGroundShadow(g, v)` in `src/draw/volume-box.ts` using `v.ground` (computed by `buildBoxVerts`)
-- [ ] Call `drawGroundShadow` from `TokenOverlay.show()` in `src/tokens/token-overlay.ts`
-- [ ] Call `drawGroundShadow` from `VolumeOverlay.draw()` in `src/tiles/tile-overlay.ts`
-- [ ] Add shadow flags to `VolumeFlags` in `src/flags.ts`: `shadowEnabled` (bool, default `true`), `shadowShape` (`"circle"|"rect"`, default `"circle"`), `shadowRadius` (number, multiplier of `gridSize/2`, default `1.0`), `shadowOpacity` (number 0–1, default `0.3`)
-- [ ] Add shadow controls to Iso tab in `src/ui/token-config.ts` and `src/ui/tile-config.ts`
-- [ ] Add dashed elevation line in `TokenElevGizmo.show()` in `src/tokens/token-elev-gizmo.ts`, gated by `selected === false && elev > 0`
-
-### Key Files
-
-- `src/draw/volume-box.ts` — `drawAnchorLine()` (reference for existing line drawing), `buildBoxVerts()` (computes `v.ground`, `v.baseCenter`)
-- `src/tokens/token-overlay.ts` — `TokenOverlay.show()`
-- `src/tiles/tile-overlay.ts` — `VolumeOverlay.draw()`
-- `src/tokens/token-elev-gizmo.ts` — `TokenElevGizmo.show()` (already renders unselected; manages elevation label)
-- `src/flags.ts` — `VolumeFlags` type
-- `src/ui/token-config.ts`, `src/ui/tile-config.ts` — Iso tab config forms
-
-### Scope
-
-Dashed line is unselected-only. Existing orange anchor line in `drawAnchorLine()` (selected state, constant `ORANGE`) stays unchanged.
 
 ---
 
