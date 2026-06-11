@@ -17,6 +17,8 @@
     "TokenConfig": {
       "TransformationHeading": "Transformation",
       "ManipulationHeading": "Manipulation",
+      "ShadowHeading": "Ground Shadow",
+      "ElevLineHeading": "Elevation Line",
       "PresetHeading": "Preset",
       "TransformToken": "Transform Token",
       "TransformTokenHint": "Apply the isometric stage transform to this token. When unchecked (default), the token sprite appears undistorted regardless of stage rotation.",
@@ -26,12 +28,27 @@
       "ShowVolumeManipulationHint": "Show the 3D bounding box and the elevation handle when the token is selected.",
       "ShowElevationUnselected": "Show Elevation When Unselected",
       "ShowElevationUnselectedHint": "Display the elevation label next to the token even when it is not selected.",
+      "ShadowEnabled": "Shadow",
+      "ShadowEnabledHint": "Show a ground shadow beneath this token based on its elevation.",
+      "ShadowShape": "Shape",
+      "ShadowShapeHint": "Shadow footprint: soft radial gradient circle or flat rectangle.",
+      "ShadowRadius": "Radius",
+      "ShadowRadiusHint": "Shadow radius multiplier relative to the token grid size (1.0 = one grid cell radius).",
+      "ShadowOpacity": "Opacity",
+      "ShadowOpacityHint": "Base opacity of the shadow at ground level (0.0–1.0).",
+      "ElevLineEnabled": "Show Line",
+      "ElevLineEnabledHint": "Draw a line from the token to its ground position when unselected.",
+      "ElevLineDashed": "Dashed",
+      "ElevLineDashedHint": "Draw the elevation line as a dashed line instead of solid.",
+      "ElevLineColor": "Color",
+      "ElevLineColorHint": "Elevation line color: solid black or the controlling player's color.",
       "PresetEnabled": "Use Image Preset",
       "PresetEnabledHint": "Automatically apply saved configuration when a token with this image is placed, and update the preset when you edit this token."
     },
     "TileConfig": {
       "TransformationHeading": "Transformation",
       "ManipulationHeading": "Manipulation",
+      "ShadowHeading": "Ground Shadow",
       "PresetHeading": "Preset",
       "ForegroundTile": "Foreground Tile",
       "ForegroundTileHint": "Treats this tile as a 3D foreground object, scaling with the grid like tokens. Disable for static background or floor tiles.",
@@ -41,6 +58,14 @@
       "ShowImageManipulationHint": "Show the image offset/scale handles (white circle and square) and the dashed image contour when the tile is selected.",
       "ShowVolumeManipulation": "Volume Manipulation",
       "ShowVolumeManipulationHint": "Show the 3D bounding box and all volume handles (size, elevation, move) when the tile is selected.",
+      "ShadowEnabled": "Shadow",
+      "ShadowEnabledHint": "Show a ground shadow beneath this tile based on its elevation.",
+      "ShadowShape": "Shape",
+      "ShadowShapeHint": "Shadow footprint: soft radial gradient circle or flat rectangle.",
+      "ShadowRadius": "Radius",
+      "ShadowRadiusHint": "Shadow radius multiplier relative to the tile grid size (1.0 = one grid cell radius).",
+      "ShadowOpacity": "Opacity",
+      "ShadowOpacityHint": "Base opacity of the shadow at ground level (0.0–1.0).",
       "PresetEnabled": "Use Image Preset",
       "PresetEnabledHint": "Automatically apply saved configuration when a tile with this image is placed, and update the preset when you edit this tile.",
       "WallsHeading": "Walls",
@@ -51,6 +76,14 @@
       "DoorModeHide": "Hide tile",
       "DoorModeFade": "Fade tile",
       "DoorFadeOpacity": "Fade opacity"
+    },
+    "ShadowShape": {
+      "Circle": "Circle",
+      "Rect":   "Rectangle"
+    },
+    "ElevLineColor": {
+      "Black":  "Black",
+      "Player": "Player Color"
     },
     "Projection": {
       "Dimetric21": "Dimetric 2:1 (default)",

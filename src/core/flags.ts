@@ -92,4 +92,34 @@ export class VolumeFlags {
   static isSceneEnabled(): boolean {
     return canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
   }
+
+  static getShadowEnabled(doc: { getFlag(s: string, k: string): unknown }, defaultOn = true): boolean {
+    const v = doc.getFlag(MODULE_ID, "shadowEnabled");
+    if (v === undefined || v === null) return defaultOn;
+    return v !== false;
+  }
+
+  static getShadowShape(doc: { getFlag(s: string, k: string): unknown }, defaultShape: "circle" | "rect" = "circle"): "circle" | "rect" {
+    return (doc.getFlag(MODULE_ID, "shadowShape") as "circle" | "rect" | undefined) ?? defaultShape;
+  }
+
+  static getShadowRadius(doc: { getFlag(s: string, k: string): unknown }): number {
+    return (doc.getFlag(MODULE_ID, "shadowRadius") as number | undefined) ?? 1.0;
+  }
+
+  static getShadowOpacity(doc: { getFlag(s: string, k: string): unknown }, defaultOpacity = 0.3): number {
+    return (doc.getFlag(MODULE_ID, "shadowOpacity") as number | undefined) ?? defaultOpacity;
+  }
+
+  static getElevLineEnabled(doc: { getFlag(s: string, k: string): unknown }): boolean {
+    return doc.getFlag(MODULE_ID, "elevLineEnabled") !== false;
+  }
+
+  static getElevLineDashed(doc: { getFlag(s: string, k: string): unknown }): boolean {
+    return doc.getFlag(MODULE_ID, "elevLineDashed") !== false;
+  }
+
+  static getElevLineColor(doc: { getFlag(s: string, k: string): unknown }): "black" | "player" {
+    return (doc.getFlag(MODULE_ID, "elevLineColor") as "black" | "player" | undefined) ?? "black";
+  }
 }

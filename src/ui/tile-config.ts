@@ -1,6 +1,6 @@
 
-import { MODULE_ID } from "../core";
-import { addIsorollTab, flagCheckbox } from "./tab-helpers";
+import { MODULE_ID, VolumeFlags } from "../core";
+import { addIsorollTab, flagCheckbox, flagNumber, flagSelect } from "./tab-helpers";
 import type { DoorBehavior } from "../walls";
 import { WallManager } from "../walls";
 
@@ -54,7 +54,16 @@ export function registerTileConfigHook(): void {
       `</fieldset>` +
       `<fieldset><legend>${t("ISOROLL.TileConfig.ManipulationHeading")}</legend>` +
       flagCheckbox("showImageManipulation", "TileConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
-      flagCheckbox("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false) +
+      flagCheckbox("showVolumeManipulation","TileConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false, 'style="white-space:nowrap"') +
+      `</fieldset>` +
+      `<fieldset><legend>${t("ISOROLL.TileConfig.ShadowHeading")}</legend>` +
+      flagCheckbox("shadowEnabled", "TileConfig", VolumeFlags.getShadowEnabled(d, false)) +
+      flagSelect("shadowShape", "TileConfig", VolumeFlags.getShadowShape(d, "rect"), [
+        { value: "circle", label: t("ISOROLL.ShadowShape.Circle") },
+        { value: "rect",   label: t("ISOROLL.ShadowShape.Rect") },
+      ]) +
+      flagNumber("shadowRadius",  "TileConfig", VolumeFlags.getShadowRadius(d),       0.1, 4.0, 0.1) +
+      flagNumber("shadowOpacity", "TileConfig", VolumeFlags.getShadowOpacity(d, 0.5), 0.0, 1.0, 0.05) +
       `</fieldset>` +
       `<fieldset><legend>${t("ISOROLL.TileConfig.PresetHeading")}</legend>` +
       flagCheckbox("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +
@@ -84,6 +93,17 @@ export function registerTileConfigHook(): void {
           const opacity = parseFloat((e.target as HTMLInputElement).value) || 0.2;
           WallManager.setDoorBehavior(d, { mode: "fade", opacity }).catch(console.warn);
         });
+        // Live preview: update flag with render:false to avoid resetting the active tab
+        $h.on("change", `[name^='flags.${MODULE_ID}.']`, (e) => {
+          const el = e.target as HTMLInputElement | HTMLSelectElement;
+          const key = el.name.slice(`flags.${MODULE_ID}.`.length);
+          const val: unknown = el.type === "checkbox" ? (el as HTMLInputElement).checked : el.type === "number" ? parseFloat((el as HTMLInputElement).value) : el.value;
+          (d as unknown as { update(data: Record<string, unknown>, opts?: { render?: boolean }): Promise<unknown> })
+            .update({ [`flags.${MODULE_ID}.${key}`]: val }, { render: false }).catch(() => {});
+        });
+        // Disable shadow sub-controls when shadow is off
+        const togShadow = () => $h.find("#isoroll-shadowShape,#isoroll-shadowRadius,#isoroll-shadowOpacity").prop("disabled", !$h.find("#isoroll-shadowEnabled").prop("checked"));
+        $h.on("change", "#isoroll-shadowEnabled", togShadow); togShadow();
       });
   });
 }
