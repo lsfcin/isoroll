@@ -19,15 +19,20 @@ function circleTexture(): PIXI.Texture {
 let _rectTex: PIXI.Texture | null = null;
 function rectTexture(): PIXI.Texture {
   if (_rectTex) return _rectTex;
-  const size = 128, pad = 28;
+  const size = 128;
   const cv = document.createElement("canvas");
   cv.width = cv.height = size;
   const ctx = cv.getContext("2d")!;
-  // Canvas shadowBlur gives natural soft rect edges — cached once, zero runtime cost.
-  ctx.shadowColor = "black";
-  ctx.shadowBlur  = pad;
-  ctx.fillStyle   = "black";
-  ctx.fillRect(pad, pad, size - pad * 2, size - pad * 2);
+  // Two perpendicular linear gradients, multiplied via destination-in.
+  // Result: rectangular shape with gradient fade on all four edges.
+  const h = ctx.createLinearGradient(0, 0, size, 0);
+  h.addColorStop(0, "rgba(0,0,0,0)"); h.addColorStop(0.25, "rgba(0,0,0,1)");
+  h.addColorStop(0.75, "rgba(0,0,0,1)"); h.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = h; ctx.fillRect(0, 0, size, size);
+  const v = ctx.createLinearGradient(0, 0, 0, size);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(0.25, "rgba(0,0,0,1)");
+  v.addColorStop(0.75, "rgba(0,0,0,1)"); v.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.globalCompositeOperation = "destination-in"; ctx.fillStyle = v; ctx.fillRect(0, 0, size, size);
   _rectTex = PIXI.Texture.from(cv);
   return _rectTex;
 }
