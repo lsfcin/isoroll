@@ -103,9 +103,9 @@ export function drawGroundShadow(
   radius: number, opacity: number, shape: "circle" | "rect",
 ): PIXI.DisplayObject | null {
   if (elevation < 0) return null;
-  const elevScale      = Math.min(2.5, 0.5 + Math.sqrt(Math.max(0, elevation)) * 0.17);
+  const elevScale      = Math.min(2.5, 0.6 + Math.sqrt(Math.max(0, elevation)) * 0.1);
   const effectiveR     = radius * elevScale;
-  const effectiveAlpha = Math.min(1, opacity * 4 * Math.max(0.1, 1 / (1 + elevation * 0.04)));
+  const effectiveAlpha = Math.min(1, opacity * 1.5 * Math.max(0.1, 1 / (1 + elevation * 0.05)));
   if (shape === "circle") {
     const sprite = new PIXI.Sprite(shadowTexture());
     sprite.anchor.set(0.5);
