@@ -43,7 +43,7 @@ Only token-to-token ordering. Tile-to-tile and tile-to-token ordering handled by
 
 ---
 
-## Phase 3 — Separate Rendering Layer Architecture 🔲 PENDING
+## Phase 3 — Separate Rendering Layer Architecture 🔄 IN PROGRESS
 
 **Prerequisite for Phase 4. Fixes a fundamental fog-of-war display bug.**
 
