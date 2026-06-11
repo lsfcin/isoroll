@@ -133,6 +133,31 @@ export const IsoSpriteLayer = {
 
   _onDestroyTile(tile: Tile): void { removeTileClone(tile.id, tile); },
 
+  // ---- sort ----
+
+  /** Sort IsoSpriteLayer clones by isometric depth.
+   *  Tiles: primary key = doc.sort band; secondary = bottom-right corner.
+   *  Tokens: x + y + elevation, same axis as DepthSorter. */
+  _sort(): void {
+    const layer = IsoSpriteLayer.getLayer();
+    const g = canvas.grid?.size ?? 100;
+    const BAND = 1e6;
+    for (const t of (canvas.tokens?.placeables ?? []) as Token[]) {
+      const clone = tokenClones.get(t.id); if (!clone) continue;
+      const d = t.document;
+      clone.zIndex = (d.x ?? 0) / g + (d.y ?? 0) / g + ((d as unknown as { elevation?: number }).elevation ?? 0) / g;
+    }
+    for (const t of (canvas.tiles?.placeables ?? []) as Tile[]) {
+      const clone = tileClones.get(t.id); if (!clone) continue;
+      const d = t.document;
+      const sort = (d as unknown as { sort?: number }).sort ?? 0;
+      clone.zIndex = sort * BAND + ((d.y ?? 0) + (d.height ?? g)) / g + ((d.x ?? 0) + (d.width ?? g)) / g;
+    }
+    layer.sortableChildren = true;
+    layer.sortChildren();
+    layer.sortableChildren = false;
+  },
+
   // ---- lifecycle ----
 
   _onCanvasReady(): void {

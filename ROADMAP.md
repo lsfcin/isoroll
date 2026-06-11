@@ -43,7 +43,7 @@ Only token-to-token ordering. Tile-to-tile and tile-to-token ordering handled by
 
 ---
 
-## Phase 3 — Separate Rendering Layer Architecture 🔄 IN PROGRESS
+## Phase 3 — Separate Rendering Layer Architecture ✅ COMPLETE
 
 **Prerequisite for Phase 4. Fixes a fundamental fog-of-war display bug.**
 
@@ -118,7 +118,7 @@ Original mesh remains at `alpha=0` but fully interactive. Our clone in the Iso S
 - [x] Hook `drawToken`, `refreshToken`, `destroyToken` — create/sync/destroy token clones
 - [x] Hook `drawTile`, `refreshTile`, `destroyTile` — create/sync/destroy tile clones
 - [x] Hook `canvasReady` — rebuild clones for all already-placed transformed objects
-- [ ] Wire Iso Sprite Layer sort into `DepthSorter.sort()`
+- [x] Wire Iso Sprite Layer sort into `DepthSorter.sort()`
 - [x] Set original mesh `alpha = 0` for counter-transformed objects; restore on destroy
 - [x] Add `IsoSpriteLayer.activate()` to `src/core/module.ts` + add `ISO_SPRITE_LAYER` to `declareOrder`
 
