@@ -255,31 +255,121 @@ Add a fourth door behavior mode `"image"` that swaps `tile.mesh.texture` to a co
 
 ### Problem
 
-The painter's algorithm (z-sort by key) breaks with cyclic occlusion: Tile A in front of B, B in front of C, C in front of A — no linear z-order satisfies all three. Inherent to isometric projection with arbitrarily-sized objects. Current `DepthSorter` has no cycle detection.
+The painter's algorithm (z-sort by key) breaks with cyclic occlusion: Tile A in front of B, B in front of C, C in front of A — no linear z-order satisfies all three. Inherent to isometric projection with arbitrarily-sized objects. Acute for multi-cell tiles: a single tile occupies multiple depth bands simultaneously, so one `zIndex` value is correct for part of the tile and wrong for the rest.
 
-### Solution
+Current `IsoSpriteLayer._sort()` is a stub (Phase 3 wiring only). No sort algorithm runs yet.
 
-Research phase only — no full implementation. Evaluate solutions, assess costs at scene scale (20–200 tiles), and produce guidelines/recommendations for SPECS.md.
+### Core Design: Iso-Diagonal Slice Model
+
+**Insight (session 2026-06-11):** If every rendered object fits inside exactly one grid cell, painter's algorithm works — ties don't matter because adjacent cells never cyclically occlude each other. Multi-cell tiles break this because they straddle multiple depth bands simultaneously.
+
+**Solution: slice each multi-cell tile into per-iso-column strips, sort each strip independently.**
+
+#### Frontier Cells
+
+For a tile with footprint W×H grid cells (col 0..W-1, row 0..H-1), **frontier cells** are those on the SE-facing edges visible to the camera:
+
+```
+frontier(c, r) = (c == W-1) OR (r == H-1)
+```
+
+Example — 3×3 tile (iso projection, camera SE, depth = col+row):
+
+```
+iso-depth 0:      N              ← (0,0)  interior
+iso-depth 1:    N   N            ← (1,0),(0,1)  interior
+iso-depth 2:  F   N   F          ← (2,0),(1,1),(0,2)  edges=F, center=N
+iso-depth 3:    F   F            ← (2,1),(1,2)  both frontier
+iso-depth 4:      F              ← (2,2)  SE corner
+```
+
+Frontier count = W + H - 1. For 3×3: 5 frontier cells, 4 interior.
+
+#### Iso-Diagonal Columns (slices)
+
+In SE isometric projection, "iso-diagonal columns" are diagonals at constant `col - row`. For a W×H tile there are `W + H - 1` such diagonals (iso columns), indexed `k = 0..(W+H-2)`.
+
+Each iso column k contains all grid cells where `c - r = k - (H-1)`, clipped to the footprint. Sorting depth for iso column k = `tile_col + tile_row + k` (a continuous, monotonically increasing sequence across the tile).
+
+**Slicing maps tile image columns to iso-diagonal columns.** For an untransformed (counter-transformed) tile, the image x-axis aligns with the world's east direction, so image-space x increases monotonically with iso depth. This means:
+
+- Vertical cuts in image space at `W + H - 1` equally-spaced x-positions produce `W + H - 1` rectangular slices
+- Each slice i gets depth key = `tile_base_depth + i`
+- Adjacent slices are in strict depth order — no ties, no cycles within the tile itself
+- Each slice is an independent `PIXI.Sprite` (sub-frame of shared base texture, zero extra VRAM)
+
+#### Cut Point Calculation
+
+For an untransformed tile, the iso projection maps grid cell (c, r) to image-space x:
+
+```
+x_img(c, r) = img_width * (c * cos_θ - r * sin_θ + offset) / projected_tile_width
+```
+
+where θ is the iso stage rotation angle, and `projected_tile_width` is the tile's full width in iso-projected image space.
+
+Simpler approximation for implementation:
+- Iso column k → image x cut at `x_k = img_width * k / (W + H - 1)`
+- This is correct when imageOffset = 0 and the tile exactly fills its footprint
+- With imageOffset: shift all cut points by `imageOffset.x * gridSize / img_width`
+
+**Recompute when:** tile is dropped after drag, `imageOffset` changes, or scene gridSize changes. Not per-frame. Cache as `flags.isoroll.sliceCuts: number[]` (or compute on demand from flag values at draw time).
+
+#### Slice Depth Assignment
+
+```
+slice[i].zIndex = (tile_col + tile_row) * BAND + i
+```
+
+where `BAND` is large enough to separate tile sort bands without collision (e.g. `BAND = W + H` rounded up to next power of 2, or a fixed `BAND = 256` safe for tiles up to 256 cells wide).
+
+#### Token Insertion
+
+After tile slices have depth keys, insert each token clone between the slices it belongs between:
+
+- Token at `(tx, ty)` with size `(tw, th)` — compute its iso column: `k_token = tx/gridSize - ty/gridSize + (H - 1)` relative to the tile
+- Token depth = `(tile_col + tile_row) * BAND + k_token + 0.5` (float, between two slice keys)
+- Token renders in front of all slices at iso columns < k_token, behind all slices at iso columns > k_token
+
+#### Cyclic Occlusion (residual problem)
+
+Slicing eliminates within-tile cycles. Cross-tile cycles (Tile A slice in front of Tile B, but another slice of B in front of A) can still occur with overlapping tiles. This is inherent to painter's algorithm — Phase 6 research evaluates whether cycle detection or user-facing `document.sort` bands are the right mitigation.
+
+### Implementation Changes vs Phase 3
+
+| Phase 3 | Phase 6 |
+|---------|---------|
+| `tileClones: Map<string, PIXI.Sprite>` | `tileSlices: Map<string, PIXI.Sprite[]>` |
+| one Sprite per tile | `W+H-1` Sprites per tile, shared base texture |
+| `createTileClone(t)` | `createTileSlices(t)` — creates N sprites with `texture.frame` sub-rects |
+| `syncSprite(clone, mesh)` | `syncSlice(slices, mesh)` — update positions of all slices |
+| single `clone.zIndex` | each slice has its own zIndex |
+| `removeClone(...)` | destroy all slice sprites |
+
+`tokenClones` structure unchanged — tokens are already 1-cell sorted (or small enough that depth error is imperceptible).
 
 ### Checklist
 
-- [ ] Research topological sort + cycle detection + breaking (DAG of occlusion relationships, DFS cycle detection, break weakest edge by overlap area; cost O(n²))
-- [ ] Research tile splitting (subdivide at overlap boundaries; guarantees correct sort but multiplies object count)
-- [ ] Research BSP tree (classic technique; expensive to maintain with dynamic objects)
-- [ ] Evaluate Foundry's `document.sort` property as a user-facing sort-band control (fork uses `TILE_STRIDE = 10000` bands)
-- [ ] Assess cost of O(n²) topological sort at scene scale
-- [ ] Write recommendations to SPECS.md: which approach to pursue, or whether sort-band UI is sufficient mitigation
+- [ ] Verify iso projection → image-space x mapping formula (check against actual isoroll stage transform params in `src/transform/`)
+- [ ] Implement `createTileSlices(tile)` using `PIXI.Texture` frame sub-rects
+- [ ] Implement `syncSlices(slices, mesh)` — position all slices, keep them clipped to the corresponding image band
+- [ ] Implement token depth insertion between tile slices
+- [ ] Handle `imageOffset` shift in cut point calculation
+- [ ] Research cyclic occlusion between different tiles (topological sort vs. `document.sort` bands)
+- [ ] Write recommendations: at what tile count does O(n²) cycle detection become expensive?
 - [ ] If sort-band UI is viable: add sort-band field to Iso tab in `src/ui/tile-config.ts`
 
 ### Key Files
 
-- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` (entry point for any changes)
+- `src/render/iso-sprite-layer.ts` — `_sort()` stub, `tileClones` (becomes `tileSlices`)
+- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` calls `IsoSpriteLayer._sort()`
+- `src/transform/` — iso projection params needed for cut point formula
 
 ### References
 
 - isometric-perspective fork `foreground.js`:
-  - `assignTileDepths()` (lines 316–341) — banded depth model
-  - `computeTokenEntries()` (lines 354–406) — second-pass violation correction
+  - `assignTileDepths()` (lines 316–341) — banded depth model (no slicing — tiles treated as single units, which is the problem we're solving)
+  - `computeTokenEntries()` (lines 354–406) — token insertion between tile bands
 
 ---
 
