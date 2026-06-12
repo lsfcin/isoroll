@@ -9,7 +9,7 @@ import { registerSceneConfigHook, registerTileConfigHook, registerTokenConfigHoo
 import { TileHud, TokenHud } from "../hud";
 import { PresetManager } from "../preset";
 import { WallManager, WallOverlay } from "../walls";
-import { LayerManager, LAYER_KEYS } from "../render";
+import { LayerManager, LAYER_KEYS, IsoSpriteLayer } from "../render";
 
 Hooks.once("init", () => {
   registerVolumeSettings();
@@ -30,7 +30,9 @@ Hooks.once("init", () => {
   Occluder.activate();
   PresetManager.activate();
   WallManager.activate();
+  IsoSpriteLayer.activate();
   LayerManager.declareOrder([
+    LAYER_KEYS.ISO_SPRITE_LAYER,
     LAYER_KEYS.TILE_SHADOW,
     LAYER_KEYS.TOKEN_SHADOW,
     LAYER_KEYS.VOLUME_OVERLAY, LAYER_KEYS.VOLUME_GIZMOS,
