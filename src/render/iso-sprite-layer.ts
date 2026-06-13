@@ -15,6 +15,7 @@ type Mesh = PIXI.DisplayObject & {
 };
 
 type PlaceableDoc = { alpha?: unknown; hidden?: unknown };
+type Center = { x: number; y: number };
 
 /** Create a PIXI.Sprite clone whose transforms mirror a PrimarySpriteMesh. */
 export function cloneSprite(mesh: Mesh): PIXI.Sprite | null {
@@ -41,6 +42,15 @@ export function syncSprite(sprite: PIXI.Sprite, mesh: Mesh): void {
 function getMesh(obj: unknown): Mesh | undefined { return (obj as { mesh?: Mesh }).mesh; }
 function docAlpha(doc: PlaceableDoc): number { return typeof doc.alpha === "number" ? doc.alpha : 1; }
 function applyDocState(s: PIXI.Sprite, doc: PlaceableDoc): void { s.alpha = docAlpha(doc); s.visible = !doc.hidden; }
+function tokenCenter(t: Token): Center { return (t as unknown as { center?: Center }).center ?? { x: t.x, y: t.y }; }
+function tileCenter(t: Tile): Center   { return { x: t.x + (t.w ?? 0) / 2, y: t.y + (t.h ?? 0) / 2 }; }
+/** Fog-aware visibility. Only call from sightRefresh — testVisibility is expensive per-frame. */
+function applyFogState(s: PIXI.Sprite, doc: PlaceableDoc, p: Center, obj: Token | Tile): void {
+  if (doc.hidden) { s.visible = false; return; }
+  s.alpha = docAlpha(doc);
+  s.visible = !canvas.scene?.tokenVision || !!(game.user as { isGM?: boolean })?.isGM
+    || !!(canvas.visibility?.testVisibility(p, { object: obj }));
+}
 
 function createClone(map: Map<string, PIXI.Sprite>, id: string, mesh: Mesh | undefined, doc: PlaceableDoc): void {
   const old = map.get(id); if (old) { old.parent?.removeChild(old); old.destroy(); map.delete(id); }
@@ -85,6 +95,7 @@ export const IsoSpriteLayer = {
     Hooks.on("canvasReady",   IsoSpriteLayer._onCanvasReady);
     Hooks.on("updateScene",   IsoSpriteLayer._onUpdateScene);
     Hooks.on("changeScene",   IsoSpriteLayer._teardown);
+    Hooks.on("sightRefresh",  IsoSpriteLayer._onSightRefresh);
     Hooks.on("drawToken",     IsoSpriteLayer._onDrawToken);
     Hooks.on("refreshToken",  IsoSpriteLayer._onRefreshToken);
     Hooks.on("destroyToken",  IsoSpriteLayer._onDestroyToken);
@@ -133,21 +144,32 @@ export const IsoSpriteLayer = {
 
   _onDestroyTile(tile: Tile): void { removeTileClone(tile.id, tile); },
 
-  // ---- sort ----
+  _onSightRefresh(): void {
+    if (!VolumeFlags.isSceneEnabled()) return;
+    for (const t of (canvas.tokens?.placeables ?? []) as Token[]) {
+      const clone = tokenClones.get(t.id); if (!clone) continue;
+      applyFogState(clone, t.document as unknown as PlaceableDoc, tokenCenter(t), t);
+    }
+    for (const t of (canvas.tiles?.placeables ?? []) as Tile[]) {
+      const clone = tileClones.get(t.id); if (!clone) continue;
+      applyFogState(clone, t.document as unknown as PlaceableDoc, tileCenter(t), t);
+    }
+  },
 
-  /** Stub — wiring in place for Phase 6.
-   *  Full painter's algorithm (tile-band + token-insertion) is Phase 6 work.
-   *  Clones render in draw order until then. */
   _sort(): void { /* Phase 6 */ },
 
-  // ---- lifecycle ----
+  /** Runs every frame at LOW priority — after Foundry adds fog containers — to keep isoroll layers above fog. */
+  _onTick(): void { LayerManager.enforceOrder(); },
 
   _onCanvasReady(): void {
+    canvas.app?.ticker.remove(IsoSpriteLayer._onTick);
+    canvas.app?.ticker.add(IsoSpriteLayer._onTick, null, -25);
     if (!VolumeFlags.isSceneEnabled()) return;
     for (const t of (canvas.tokens?.placeables ?? []) as Token[])
       if (needsTokenClone(t) && !tokenClones.has(t.id)) createTokenClone(t);
     for (const t of (canvas.tiles?.placeables ?? []) as Tile[])
       if (needsTileClone(t) && !tileClones.has(t.id)) createTileClone(t);
+    IsoSpriteLayer._onSightRefresh();
   },
 
   _onUpdateScene(scene: Scene): void {
@@ -163,10 +185,12 @@ export const IsoSpriteLayer = {
     layer.sortableChildren = false;
     layer.eventMode = "passive";
     layer.name = "isoroll-iso-sprite-layer";
+    layer.zIndex = 500;
   },
 
   _teardown(): void {
     tokenClones.clear(); tileClones.clear();
+    canvas.app?.ticker.remove(IsoSpriteLayer._onTick);
     LayerManager.clearLayer(LAYER_KEYS.ISO_SPRITE_LAYER);
   },
 };

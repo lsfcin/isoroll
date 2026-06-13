@@ -27,7 +27,14 @@ export class TokenGizmos {
     Hooks.on("refreshToken", TokenGizmos.onRefreshToken);
   }
 
-  private static onCanvasReady(): void { TokenGizmos.clearAll(); }
+  private static onCanvasReady(): void {
+    TokenGizmos.clearAll();
+    if (!VolumeFlags.isSceneEnabled()) return;
+    for (const token of (canvas.tokens?.placeables ?? []) as Token[]) {
+      if (token.document.getFlag(MODULE_ID, "transformToken") === true) continue;
+      if ((token as unknown as { controlled?: boolean }).controlled) TokenGizmos.show(token);
+    }
+  }
 
   private static onUpdateScene(scene: Scene): void {
     if (scene.id !== canvas.scene?.id) return;

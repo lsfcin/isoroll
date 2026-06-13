@@ -62,6 +62,15 @@ export const LayerManager = {
   },
 };
 
+// Removes and destroys a mapped PIXI container by id. No-op if id not in map.
+export function destroyMapped(map: Map<string, PIXI.Container>, id: string): void {
+  const c = map.get(id);
+  if (!c) return;
+  c.parent?.removeChild(c);
+  c.destroy({ children: true });
+  map.delete(id);
+}
+
 // String keys for all overlay layers. Use these instead of raw strings.
 export const LAYER_KEYS = {
   ISO_SPRITE_LAYER:    "iso-sprite-layer",

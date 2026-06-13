@@ -123,3 +123,16 @@ export class VolumeFlags {
     return (doc.getFlag(MODULE_ID, "elevLineColor") as "black" | "player" | undefined) ?? "black";
   }
 }
+
+// Standalone doc helpers — not flag-specific, used across token/tile renderers.
+export function getElevation(doc: object): number {
+  return (doc as unknown as { elevation?: number }).elevation ?? 0;
+}
+
+export function isTransformedToken(token: Token): boolean {
+  return token.document.getFlag(MODULE_ID, "transformToken") === true;
+}
+
+export function isTransformedTile(tile: Tile): boolean {
+  return tile.document.getFlag(MODULE_ID, "transformTile") === true;
+}
