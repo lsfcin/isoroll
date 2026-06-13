@@ -124,6 +124,18 @@ export class TokenElevGizmo {
         beginElevDrag(TokenElevGizmo.lastCommittedElev, token, e.global.x, e.global.y, elev);
       });
       container.addChild(handle);
+
+      // DIAGNOSTIC: counter-transformed sprite in same layer/container as gizmo
+      const _testWrap = new PIXI.Container();
+      _testWrap.position.set(tx - tw, ty);
+      _testWrap.rotation = proj.reverseRotation;
+      _testWrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
+      _testWrap.eventMode = "none";
+      const _testTex = PIXI.Texture.from(`modules/${MODULE_ID}/assets/chars/rogue/rogue_idle_SE.png`);
+      const _testSprite = new PIXI.Sprite(_testTex);
+      _testSprite.eventMode = "none";
+      _testWrap.addChild(_testSprite);
+      container.addChild(_testWrap);
     }
 
     // Elevation line — unselected only
