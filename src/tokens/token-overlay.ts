@@ -4,9 +4,10 @@ import { MODULE_ID, VolumeFlags } from "../core";
 import type { MeshLike } from "../draw";
 import { drawMeshContour, computeTokenVerts, drawBox, drawAnchorLine } from "../draw";
 import { LayerManager, LAYER_KEYS } from "../render";
+import { TokenElevGizmo } from "./token-elev-gizmo";
 
 export class TokenOverlay {
-  private static boxes: Map<string, PIXI.Graphics> = new Map();
+  private static boxes: Map<string, PIXI.Container> = new Map();
 
   static activate(): void {
     Hooks.on("canvasReady",  TokenOverlay.onCanvasReady);
@@ -15,7 +16,14 @@ export class TokenOverlay {
     Hooks.on("refreshToken", TokenOverlay.onRefreshToken);
   }
 
-  private static onCanvasReady(): void { TokenOverlay.clearAll(); }
+  private static onCanvasReady(): void {
+    TokenOverlay.clearAll();
+    if (!VolumeFlags.isSceneEnabled()) return;
+    for (const token of (canvas.tokens?.placeables ?? []) as Token[]) {
+      if (token.document.getFlag(MODULE_ID, "transformToken") === true) continue;
+      if ((token as unknown as { controlled?: boolean }).controlled) TokenOverlay.show(token);
+    }
+  }
 
   private static onUpdateScene(scene: Scene): void {
     if (scene.id !== canvas.scene?.id) return;
@@ -43,6 +51,7 @@ export class TokenOverlay {
     const showVol = VolumeFlags.getShowVolumeManipulation(token.document, true);
     if (!showImg && !showVol) return;
     const layer = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_OVERLAY);
+    const wrapper = new PIXI.Container();
     const g = new PIXI.Graphics();
     g.eventMode = "passive";
     if (showImg) drawMeshContour(g, token.mesh as unknown as MeshLike);
@@ -52,16 +61,18 @@ export class TokenOverlay {
       drawBox(g, v);
       if (v.elevation < 0) drawAnchorLine(g, v);
     }
-    layer.addChild(g);
-    TokenOverlay.boxes.set(token.id, g);
+    wrapper.addChild(g);
+    if (showVol) TokenElevGizmo.buildSelectedHandles(token, wrapper);
+    layer.addChild(wrapper);
+    TokenOverlay.boxes.set(token.id, wrapper);
     LayerManager.bringToTop(LAYER_KEYS.TOKEN_OVERLAY);
   }
 
   static hide(tokenId: string): void {
-    const g = TokenOverlay.boxes.get(tokenId);
-    if (!g) return;
-    g.parent?.removeChild(g);
-    g.destroy();
+    const c = TokenOverlay.boxes.get(tokenId);
+    if (!c) return;
+    c.parent?.removeChild(c);
+    c.destroy({ children: true });
     TokenOverlay.boxes.delete(tokenId);
   }
 

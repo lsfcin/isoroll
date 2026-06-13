@@ -103,40 +103,14 @@ export class TokenElevGizmo {
     const ty        = token.document.y ?? 0;
     const proj      = currentProjection();
     const elev      = (token.document as unknown as { elevation?: number }).elevation ?? 0;
-    const boundH    = VolumeFlags.getTokenHeight(token.document);
     const elevPx    = elevToCanvas(elev, gridSize, gridDist);
-    const elevTopPx = elevPx + boundH * gridSize;
     const heightDir = proj.heightDir;
     const groundX   = tx + tw / 2, groundY = ty + th / 2;
 
     TokenElevGizmo.updateShadow(token);
 
-    const seMidX = tx + tw + heightDir.x * (elevPx + elevTopPx) / 2;
-    const seMidY = ty + th + heightDir.y * (elevPx + elevTopPx) / 2;
     const layer     = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
     const container = new PIXI.Container();
-
-    if (selected) {
-      const handle = makeCircleHandle(0xff9829);
-      handle.x = seMidX; handle.y = seMidY;
-      handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
-        e.stopPropagation();
-        beginElevDrag(TokenElevGizmo.lastCommittedElev, token, e.global.x, e.global.y, elev);
-      });
-      container.addChild(handle);
-
-      // DIAGNOSTIC: counter-transformed sprite in same layer/container as gizmo
-      const _testWrap = new PIXI.Container();
-      _testWrap.position.set(tx - tw, ty);
-      _testWrap.rotation = proj.reverseRotation;
-      _testWrap.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
-      _testWrap.eventMode = "none";
-      const _testTex = PIXI.Texture.from(`modules/${MODULE_ID}/assets/chars/rogue/rogue_idle_SE.png`);
-      const _testSprite = new PIXI.Sprite(_testTex);
-      _testSprite.eventMode = "none";
-      _testWrap.addChild(_testSprite);
-      container.addChild(_testWrap);
-    }
 
     // Elevation line — unselected only
     if (!selected && elev !== 0 && VolumeFlags.getElevLineEnabled(token.document)) {
@@ -181,6 +155,45 @@ export class TokenElevGizmo {
     layer.addChild(container);
     TokenElevGizmo.sets.set(token.id, container);
     LayerManager.bringToTop(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
+  }
+
+  static buildSelectedHandles(token: Token, container: PIXI.Container): void {
+    const gridSize  = canvas.grid?.size ?? 100;
+    const gridDist  = gridDistance();
+    const tw        = (token.document.width  ?? 1) * gridSize;
+    const th        = (token.document.height ?? 1) * gridSize;
+    const tx        = token.document.x ?? 0;
+    const ty        = token.document.y ?? 0;
+    const proj      = currentProjection();
+    const elev      = (token.document as unknown as { elevation?: number }).elevation ?? 0;
+    const boundH    = VolumeFlags.getTokenHeight(token.document);
+    const elevPx    = elevToCanvas(elev, gridSize, gridDist);
+    const elevTopPx = elevPx + boundH * gridSize;
+    const heightDir = proj.heightDir;
+    const seMidX    = tx + tw + heightDir.x * (elevPx + elevTopPx) / 2;
+    const seMidY    = ty + th + heightDir.y * (elevPx + elevTopPx) / 2;
+
+    const handle = makeCircleHandle(0xff9829);
+    handle.x = seMidX; handle.y = seMidY;
+    handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
+      e.stopPropagation();
+      beginElevDrag(TokenElevGizmo.lastCommittedElev, token, e.global.x, e.global.y, elev);
+    });
+    container.addChild(handle);
+
+    // Diagnostic: test sprite using mesh transforms (Point 1 — fog-free layer validation)
+    type Pt = { x: number; y: number };
+    type MeshT = { x?: number; y?: number; anchor?: Pt; scale?: Pt; rotation?: number; skew?: Pt };
+    const mesh = token.mesh as unknown as MeshT | null | undefined;
+    const _testTex = PIXI.Texture.from(`modules/${MODULE_ID}/assets/chars/rogue/rogue_idle_SE.png`);
+    const _testSprite = new PIXI.Sprite(_testTex);
+    _testSprite.position.set((mesh?.x ?? tx) - tw, mesh?.y ?? ty);
+    if (mesh?.anchor) _testSprite.anchor.set(mesh.anchor.x, mesh.anchor.y);
+    if (mesh?.skew)   _testSprite.skew.set(mesh.skew.x, mesh.skew.y);
+    if (mesh?.scale)  _testSprite.scale.set(mesh.scale.x, mesh.scale.y);
+    _testSprite.rotation = mesh?.rotation ?? 0;
+    _testSprite.eventMode = "none";
+    container.addChild(_testSprite);
   }
 
   static hide(tokenId: string): void {
