@@ -1,6 +1,6 @@
 // Always-visible token indicators: ground shadow, elevation line, unselected label, and sprite clone.
 
-import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken } from "../core";
+import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, isPreviewClone } from "../core";
 import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, tokenFootprint, makeCounterWrapper, suppressMipmap } from "../draw";
 import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
 import { currentProjection } from "../transform";
@@ -29,8 +29,11 @@ type BgState = { geoKey: string; shadowKey: string };
 function getState(token: Token): BgState {
   const d = token.document;
   const elev = getElevation(d);
+  const selected = +((token as unknown as { controlled?: boolean }).controlled ?? false);
   return {
-    geoKey:    `${d.x ?? 0},${d.y ?? 0},${elev},${VolumeFlags.getTokenHeight(d)},${+VolumeFlags.getElevLineEnabled(d)},${+VolumeFlags.getElevLineDashed(d)},${VolumeFlags.getElevLineColor(d)}`,
+    // selected included: preview (unselected) vs original (selected) differ at same position,
+    // forcing rebuild on drop so elevation line hides correctly for selected token.
+    geoKey:    `${d.x ?? 0},${d.y ?? 0},${elev},${VolumeFlags.getTokenHeight(d)},${+VolumeFlags.getElevLineEnabled(d)},${+VolumeFlags.getElevLineDashed(d)},${VolumeFlags.getElevLineColor(d)},${selected}`,
     shadowKey: `${+VolumeFlags.getShadowEnabled(d)},${VolumeFlags.getShadowShape(d)},${VolumeFlags.getShadowRadius(d)},${VolumeFlags.getShadowOpacity(d)}`,
   };
 }
@@ -42,6 +45,8 @@ function getMesh(token: Token): MeshT | undefined {
 }
 
 export class TokenBackground {
+  static readonly handlesPreview = true; // shadow + elevation line follow cursor during drag
+
   private static shadows:    Map<string, PIXI.Container> = new Map();
   private static indicators: Map<string, PIXI.Container> = new Map();
   private static sprites:    Map<string, PIXI.Sprite>    = new Map();
@@ -77,7 +82,8 @@ export class TokenBackground {
     if (last && last.geoKey === state.geoKey && last.shadowKey === state.shadowKey) return;
     TokenBackground.lastState.set(token.id, state);
     if (last && last.geoKey === state.geoKey) { TokenBackground.updateShadow(token); return; }
-    const controlled = (token as unknown as { controlled?: boolean }).controlled ?? false;
+    // During drag, preview clone is controlled=true but we want elevation line visible at destination.
+    const controlled = isPreviewClone(token) ? false : ((token as unknown as { controlled?: boolean }).controlled ?? false);
     TokenBackground.show(token, controlled);
   }
 
