@@ -1,5 +1,7 @@
 export declare class TokenGizmos {
     private static sets;
+    private static shadows;
+    static lastCommittedElev: Map<string, number>;
     static activate(): void;
     private static onCanvasReady;
     private static onUpdateScene;

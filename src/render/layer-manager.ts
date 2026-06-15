@@ -78,7 +78,7 @@ export const LAYER_KEYS = {
   TOKEN_SHADOW:        "token-shadow",
   VOLUME_OVERLAY:      "volume-overlay",
   VOLUME_GIZMOS:       "volume-gizmos",
-  TOKEN_OVERLAY:       "token-overlay",
+  TOKEN_SPRITE_CLONE:  "token-sprite-clone",
   TOKEN_GIZMOS:        "token-gizmos",
   TOKEN_VOLUME_GIZMOS: "token-volume-gizmos",
   BG_GIZMOS:           "bg-gizmos",

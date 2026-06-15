@@ -1,7 +1,7 @@
 import "../../styles/isoroll.scss";
 import { registerVolumeSettings } from "./settings";
 import { VolumeOverlay, VolumeGizmos } from "../tiles";
-import { TokenVolume, TokenBackground, TokenGizmos } from "../tokens";
+import { TokenBackground, TokenSpriteClone, TokenGizmos } from "../tokens";
 import { Occluder } from "../occluder";
 import { CanvasTransform, ObjectTransform, registerRulerPatch } from "../transform";
 import { BackgroundGizmos } from "../background";
@@ -24,8 +24,8 @@ Hooks.once("init", () => {
   ObjectTransform.activate();
   VolumeOverlay.activate();
   VolumeGizmos.activate();
-  TokenVolume.activate();
   TokenBackground.activate();
+  TokenSpriteClone.activate();
   TokenGizmos.activate();
   Occluder.activate();
   PresetManager.activate();
@@ -36,7 +36,7 @@ Hooks.once("init", () => {
     LAYER_KEYS.TILE_SHADOW,
     LAYER_KEYS.TOKEN_SHADOW,
     LAYER_KEYS.VOLUME_OVERLAY, LAYER_KEYS.VOLUME_GIZMOS,
-    LAYER_KEYS.TOKEN_OVERLAY,
+    LAYER_KEYS.TOKEN_SPRITE_CLONE,
     LAYER_KEYS.TOKEN_GIZMOS,   LAYER_KEYS.TOKEN_VOLUME_GIZMOS,
     LAYER_KEYS.BG_GIZMOS,
     LAYER_KEYS.WALL_OVERLAY,
@@ -44,8 +44,8 @@ Hooks.once("init", () => {
   Hooks.on("renderGridConfig", () => {
     VolumeOverlay.clearAll();
     VolumeGizmos.clearAll();
-    TokenVolume.clearAll();
     TokenBackground.clearAll();
+    TokenSpriteClone.clearAll();
     TokenGizmos.clearAll();
     WallOverlay.clearAll();
   });

@@ -1,7 +1,6 @@
-// Always-visible token indicators: ground shadow and elevation line/label.
-// Shown regardless of selection; must be hidden/shown based on fog visibility.
+// Always-visible token indicators: ground shadow, elevation line, and unselected elevation label.
 
-import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip } from "../core";
+import { VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip } from "../core";
 import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, tokenFootprint, makeCounterWrapper, suppressMipmap } from "../draw";
 import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
 import { currentProjection } from "../transform";
@@ -38,7 +37,7 @@ function getState(token: Token): BgState {
 
 export class TokenBackground {
   private static shadows:    Map<string, PIXI.Container> = new Map();
-  private static indicators: Map<string, PIXI.Container> = new Map(); // elevation line + unselected label
+  private static indicators: Map<string, PIXI.Container> = new Map();
   private static lastState:  Map<string, BgState>        = new Map();
 
   static activate(): void {
@@ -47,7 +46,6 @@ export class TokenBackground {
     Hooks.on("drawToken",    TokenBackground.onDrawToken);
     Hooks.on("controlToken", TokenBackground.onControlToken);
     Hooks.on("refreshToken", TokenBackground.onRefreshToken);
-    Hooks.on("destroyToken", (t: Token) => TokenBackground.hide(t.id));
   }
 
   private static onCanvasReady(): void {
@@ -76,7 +74,7 @@ export class TokenBackground {
   private static onControlToken(token: Token, controlled: boolean): void {
     if (!VolumeFlags.isSceneEnabled()) return;
     if (isTransformedToken(token)) { TokenBackground.hide(token.id); return; }
-    // Selection changes elevation line visibility — rebuild indicators only.
+    // Selection changes elevation line visibility — rebuild indicators only, shadow unchanged.
     TokenBackground.rebuildIndicators(token, controlled);
   }
 
@@ -130,9 +128,9 @@ export class TokenBackground {
 
     // Elevation line — unselected + elevated tokens only
     if (!selected && elev !== 0 && VolumeFlags.getElevLineEnabled(token.document)) {
-      const baseCX    = groundX + heightDir.x * elevPx;
-      const baseCY    = groundY + heightDir.y * elevPx;
-      const lineG     = new PIXI.Graphics();
+      const baseCX = groundX + heightDir.x * elevPx;
+      const baseCY = groundY + heightDir.y * elevPx;
+      const lineG  = new PIXI.Graphics();
       lineG.eventMode = "none";
       lineG.lineStyle(1, resolveElevLineColor(token), 0.35);
       if (VolumeFlags.getElevLineDashed(token.document)) {
@@ -178,7 +176,6 @@ export class TokenBackground {
     if (shadow) { shadow.parent?.removeChild(shadow); shadow.destroy({ children: true }); TokenBackground.shadows.delete(tokenId); }
     destroyMapped(TokenBackground.indicators, tokenId);
     TokenBackground.lastState.delete(tokenId);
-    // Restore Foundry tooltip when token is hidden.
     const token = (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(tokenId);
     if (token) {
       const tt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
@@ -187,7 +184,11 @@ export class TokenBackground {
   }
 
   static clearAll(): void {
-    for (const id of [...TokenBackground.shadows.keys()]) TokenBackground.hide(id);
+    for (const id of [...TokenBackground.shadows.keys()]) {
+      const s = TokenBackground.shadows.get(id);
+      if (s) { s.parent?.removeChild(s); s.destroy({ children: true }); }
+    }
+    TokenBackground.shadows.clear();
     for (const id of [...TokenBackground.indicators.keys()]) destroyMapped(TokenBackground.indicators, id);
     TokenBackground.lastState.clear();
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_SHADOW);

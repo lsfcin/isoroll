@@ -11,7 +11,7 @@ export declare const LAYER_KEYS: {
     readonly TOKEN_SHADOW: "token-shadow";
     readonly VOLUME_OVERLAY: "volume-overlay";
     readonly VOLUME_GIZMOS: "volume-gizmos";
-    readonly TOKEN_OVERLAY: "token-overlay";
+    readonly TOKEN_SPRITE_CLONE: "token-sprite-clone";
     readonly TOKEN_GIZMOS: "token-gizmos";
     readonly TOKEN_VOLUME_GIZMOS: "token-volume-gizmos";
     readonly BG_GIZMOS: "bg-gizmos";
