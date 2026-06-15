@@ -4,6 +4,8 @@
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
+import type { TokenRenderer } from "./token-renderer";
+import type { TileRenderer } from "./tile-renderer";
 
 type Mesh = PIXI.DisplayObject & {
   texture?: PIXI.Texture;
@@ -39,11 +41,15 @@ export function syncSprite(sprite: PIXI.Sprite, mesh: Mesh): void {
 
 // ---- shared clone utilities ----
 
-function getMesh(obj: unknown): Mesh | undefined { return (obj as { mesh?: Mesh }).mesh; }
+function getMesh(obj: unknown): Mesh | undefined {
+  const m = (obj as { mesh?: Mesh }).mesh;
+  return m?.texture ? m : undefined;
+}
 function docAlpha(doc: PlaceableDoc): number { return typeof doc.alpha === "number" ? doc.alpha : 1; }
 function applyDocState(s: PIXI.Sprite, doc: PlaceableDoc): void { s.alpha = docAlpha(doc); s.visible = !doc.hidden; }
 function tokenCenter(t: Token): Center { return (t as unknown as { center?: Center }).center ?? { x: t.x, y: t.y }; }
 function tileCenter(t: Tile): Center   { return { x: t.x + (t.w ?? 0) / 2, y: t.y + (t.h ?? 0) / 2 }; }
+
 /** Fog-aware visibility. Only call from sightRefresh — testVisibility is expensive per-frame. */
 function applyFogState(s: PIXI.Sprite, doc: PlaceableDoc, p: Center, obj: Token | Tile): void {
   if (doc.hidden) { s.visible = false; return; }
@@ -77,110 +83,117 @@ const tileClones  = new Map<string, PIXI.Sprite>();
 function needsTokenClone(t: Token): boolean { return t.document.getFlag(MODULE_ID, "transformToken") !== true; }
 function needsTileClone(t: Tile):   boolean { return t.document.getFlag(MODULE_ID, "transformTile")  !== true; }
 
-function createTokenClone(t: Token): void { createClone(tokenClones, t.id, getMesh(t), t.document as unknown as PlaceableDoc); }
-function createTileClone(t: Tile):   void { createClone(tileClones,  t.id, getMesh(t), t.document as unknown as PlaceableDoc); }
-
-function removeTokenClone(id: string, t?: Token): void {
-  removeClone(tokenClones, id, t && getMesh(t), t?.document as unknown as PlaceableDoc | undefined);
+function getToken(id: string): Token | undefined {
+  return (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(id);
 }
-function removeTileClone(id: string, t?: Tile): void {
-  removeClone(tileClones, id, t && getMesh(t), t?.document as unknown as PlaceableDoc | undefined);
+function getTile(id: string): Tile | undefined {
+  return (canvas.tiles as unknown as { get?(id: string): Tile | undefined })?.get?.(id);
 }
 
-// ---- main export ----
+// ---- token renderer ----
 
-export const IsoSpriteLayer = {
-  activate(): void {
-    Hooks.on("canvasInit",    IsoSpriteLayer._onCanvasInit);
-    Hooks.on("canvasReady",   IsoSpriteLayer._onCanvasReady);
-    Hooks.on("updateScene",   IsoSpriteLayer._onUpdateScene);
-    Hooks.on("changeScene",   IsoSpriteLayer._teardown);
-    Hooks.on("sightRefresh",  IsoSpriteLayer._onSightRefresh);
-    Hooks.on("drawToken",     IsoSpriteLayer._onDrawToken);
-    Hooks.on("refreshToken",  IsoSpriteLayer._onRefreshToken);
-    Hooks.on("destroyToken",  IsoSpriteLayer._onDestroyToken);
-    Hooks.on("drawTile",      IsoSpriteLayer._onDrawTile);
-    Hooks.on("refreshTile",   IsoSpriteLayer._onRefreshTile);
-    Hooks.on("destroyTile",   IsoSpriteLayer._onDestroyTile);
+export const IsoTokenRenderer: TokenRenderer = {
+  handlesPreview: true,
+
+  create(token: Token): void {
+    if (!needsTokenClone(token)) return;
+    createClone(tokenClones, token.id, getMesh(token), token.document as unknown as PlaceableDoc);
   },
 
-  getLayer(): PIXI.Container { return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITE_LAYER); },
-
-  // ---- token hooks ----
-
-  _onDrawToken(token: Token): void {
-    if (!VolumeFlags.isSceneEnabled() || !needsTokenClone(token)) return;
-    createTokenClone(token);
-  },
-
-  _onRefreshToken(token: Token): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
+  sync(token: Token): void {
     const clone = tokenClones.get(token.id); if (!clone) return;
-    if (!needsTokenClone(token)) { removeTokenClone(token.id, token); return; }
-    const mesh = getMesh(token); if (!mesh) return;
+    const mesh  = getMesh(token); if (!mesh) return;
     syncSprite(clone, mesh);
     applyDocState(clone, token.document as unknown as PlaceableDoc);
     mesh.alpha = 0;
   },
 
-  _onDestroyToken(token: Token): void { removeTokenClone(token.id, token); },
-
-  // ---- tile hooks ----
-
-  _onDrawTile(tile: Tile): void {
-    if (!VolumeFlags.isSceneEnabled() || !needsTileClone(tile)) return;
-    createTileClone(tile);
+  rebuild(token: Token): void {
+    if (!needsTokenClone(token)) IsoTokenRenderer.hide(token.id);
   },
 
-  _onRefreshTile(tile: Tile): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    const clone = tileClones.get(tile.id); if (!clone) return;
-    if (!needsTileClone(tile)) { removeTileClone(tile.id, tile); return; }
-    const mesh = getMesh(tile); if (!mesh) return;
-    syncSprite(clone, mesh);
-    applyDocState(clone, tile.document as unknown as PlaceableDoc);
-    mesh.alpha = 0;
-  },
+  onControl(_token: Token, _controlled: boolean): void { /* ISO has no selection behavior */ },
 
-  _onDestroyTile(tile: Tile): void { removeTileClone(tile.id, tile); },
+  onDestroy(id: string): void { IsoTokenRenderer.hide(id); },
 
-  _onSightRefresh(): void {
+  onSightRefresh(): void {
     if (!VolumeFlags.isSceneEnabled()) return;
     for (const t of (canvas.tokens?.placeables ?? []) as Token[]) {
       const clone = tokenClones.get(t.id); if (!clone) continue;
       applyFogState(clone, t.document as unknown as PlaceableDoc, tokenCenter(t), t);
     }
+  },
+
+  hide(id: string): void {
+    const token = getToken(id);
+    removeClone(tokenClones, id, getMesh(token), token?.document as unknown as PlaceableDoc | undefined);
+  },
+
+  clearAll(): void {
+    for (const [, c] of tokenClones) { c.parent?.removeChild(c); c.destroy(); }
+    tokenClones.clear();
+  },
+};
+
+// ---- tile renderer ----
+
+export const IsoTileRenderer: TileRenderer = {
+  handlesPreview: true,
+
+  create(tile: Tile): void {
+    if (!needsTileClone(tile)) return;
+    createClone(tileClones, tile.id, getMesh(tile), tile.document as unknown as PlaceableDoc);
+  },
+
+  sync(tile: Tile): void {
+    const clone = tileClones.get(tile.id); if (!clone) return;
+    const mesh  = getMesh(tile); if (!mesh) return;
+    syncSprite(clone, mesh);
+    applyDocState(clone, tile.document as unknown as PlaceableDoc);
+    mesh.alpha = 0;
+  },
+
+  rebuild(tile: Tile): void {
+    if (!needsTileClone(tile)) IsoTileRenderer.hide(tile.id);
+  },
+
+  onControl(_tile: Tile, _controlled: boolean): void { /* ISO has no selection behavior */ },
+
+  onDestroy(id: string): void { IsoTileRenderer.hide(id); },
+
+  onSightRefresh(): void {
+    if (!VolumeFlags.isSceneEnabled()) return;
     for (const t of (canvas.tiles?.placeables ?? []) as Tile[]) {
       const clone = tileClones.get(t.id); if (!clone) continue;
       applyFogState(clone, t.document as unknown as PlaceableDoc, tileCenter(t), t);
     }
   },
 
-  _sort(): void { /* Phase 6 */ },
+  hide(id: string): void {
+    const tile = getTile(id);
+    removeClone(tileClones, id, getMesh(tile), tile?.document as unknown as PlaceableDoc | undefined);
+  },
+
+  clearAll(): void {
+    for (const [, c] of tileClones) { c.parent?.removeChild(c); c.destroy(); }
+    tileClones.clear();
+  },
+};
+
+// ---- layer infrastructure ----
+
+export const IsoSpriteLayer = {
+  token: IsoTokenRenderer,
+  tile:  IsoTileRenderer,
+
+  getLayer(): PIXI.Container { return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITE_LAYER); },
 
   /** Runs every frame at LOW priority — after Foundry adds fog containers — to keep isoroll layers above fog. */
   _onTick(): void { LayerManager.enforceOrder(); },
 
-  _onCanvasReady(): void {
-    canvas.app?.ticker.remove(IsoSpriteLayer._onTick);
-    canvas.app?.ticker.add(IsoSpriteLayer._onTick, null, -25);
-    if (!VolumeFlags.isSceneEnabled()) return;
-    for (const t of (canvas.tokens?.placeables ?? []) as Token[])
-      if (needsTokenClone(t) && !tokenClones.has(t.id)) createTokenClone(t);
-    for (const t of (canvas.tiles?.placeables ?? []) as Tile[])
-      if (needsTileClone(t) && !tileClones.has(t.id)) createTileClone(t);
-    IsoSpriteLayer._onSightRefresh();
-  },
-
-  _onUpdateScene(scene: Scene): void {
-    if ((scene as unknown as { id?: string }).id !== canvas.scene?.id) return;
-    for (const [id, c] of tokenClones) { c.parent?.removeChild(c); c.destroy(); tokenClones.delete(id); }
-    for (const [id, c] of tileClones)  { c.parent?.removeChild(c); c.destroy(); tileClones.delete(id); }
-    IsoSpriteLayer._onCanvasReady();
-  },
-
   _onCanvasInit(): void {
-    tokenClones.clear(); tileClones.clear();
+    IsoTokenRenderer.clearAll();
+    IsoTileRenderer.clearAll();
     const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITE_LAYER);
     layer.sortableChildren = false;
     layer.eventMode = "passive";
@@ -189,8 +202,20 @@ export const IsoSpriteLayer = {
   },
 
   _teardown(): void {
-    tokenClones.clear(); tileClones.clear();
+    IsoTokenRenderer.clearAll();
+    IsoTileRenderer.clearAll();
     canvas.app?.ticker.remove(IsoSpriteLayer._onTick);
     LayerManager.clearLayer(LAYER_KEYS.ISO_SPRITE_LAYER);
+  },
+
+  /** Registers ticker (layer-order enforcement) and infrastructure hooks only.
+   *  Foundry render hooks are handled by the gate via IsoSpriteLayer.token / .tile. */
+  activate(): void {
+    Hooks.on("canvasInit",  IsoSpriteLayer._onCanvasInit);
+    Hooks.on("canvasReady", () => {
+      canvas.app?.ticker.remove(IsoSpriteLayer._onTick);
+      canvas.app?.ticker.add(IsoSpriteLayer._onTick, null, -25);
+    });
+    Hooks.on("changeScene", IsoSpriteLayer._teardown);
   },
 };

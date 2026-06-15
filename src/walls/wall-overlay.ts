@@ -40,21 +40,33 @@ export class WallOverlay {
   private static pendingRefresh: Set<string> = new Set();
   private static rafId: number | null = null;
 
+  // ---- TileRenderer interface ----
+
+  static create(_tile: Tile): void { /* walls only shown on selection */ }
+
+  static sync(_tile: Tile): void { /* no per-frame mesh sync */ }
+
+  // Preview clone fires with cursor doc.x/y — rebuild walls at new position.
+  // Normal refresh uses RAF batching to coalesce rapid state-change redraws.
+  static rebuild(tile: Tile): void {
+    if (WallOverlay.boxes.size > 0) LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
+    if (!WallOverlay.boxes.has(tile.id)) return;
+    if (isPreviewClone(tile)) { WallOverlay.show(tile, true); return; }
+    WallOverlay.refresh(tile);
+  }
+
+  static onControl(tile: Tile, controlled: boolean): void {
+    if (controlled) WallOverlay.show(tile);
+    else { WallOverlay.selectTile = null; WallOverlay.hide(tile.id); }
+  }
+
+  /** Registers window event listeners only — Foundry hooks handled by RenderGate. */
   static activate(): void {
-    Hooks.on("canvasReady", () => WallOverlay.clearAll());
-    Hooks.on("controlTile", (tile: Tile, controlled: boolean) => {
-      if (controlled) WallOverlay.show(tile);
-      else { WallOverlay.selectTile = null; WallOverlay.hide(tile.id); }
-    });
-    Hooks.on("refreshTile", (rawTile: unknown) => {
-      if (WallOverlay.boxes.size > 0) LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
-      // Preview clone fires refreshTile with cursor doc.x/y — redraw walls at new position.
-      const tile = rawTile as Tile;
-      if (WallOverlay.boxes.has(tile.id) && isPreviewClone(tile)) WallOverlay.show(tile, true);
-    });
     window.addEventListener("keydown", e => { if (e.altKey) WallOverlay.setAltMode(true); });
     window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay.setAltMode(false); });
   }
+
+  // ---- PIXI helpers ----
 
   static show(tile: Tile, isDrag = false): void {
     WallOverlay.hide(tile.id);

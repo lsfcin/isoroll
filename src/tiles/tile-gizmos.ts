@@ -1,5 +1,5 @@
 // Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button.
-import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas, startPointerDrag, hasActiveClone } from "../core";
+import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas, startPointerDrag } from "../core";
 import { currentProjection } from "../transform";
 
 import { LayerManager, LAYER_KEYS } from "../render";
@@ -10,35 +10,24 @@ export class VolumeGizmos {
   private static sets: Map<string, PIXI.Container> = new Map();
   private static blockers: Map<string, PIXI.Graphics> = new Map();
 
-  static activate(): void {
-    Hooks.on("canvasReady",   VolumeGizmos.onCanvasReady);
-    Hooks.on("updateScene",   VolumeGizmos.onUpdateScene);
-    Hooks.on("controlTile",   VolumeGizmos.onControlTile);
-    Hooks.on("refreshTile",   VolumeGizmos.onRefreshTile);
-  }
+  // ---- TileRenderer interface ----
 
-  private static onCanvasReady(): void { VolumeGizmos.clearAll(); }
+  static create(_tile: Tile): void { /* gizmos only appear on selection */ }
 
-  private static onUpdateScene(scene: Scene): void {
-    if (scene.id !== canvas.scene?.id) return;
-    VolumeGizmos.clearAll();
-  }
+  static sync(_tile: Tile): void { /* gizmos have no per-frame mesh sync */ }
 
-  private static onControlTile(tile: Tile, controlled: boolean): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    if (controlled && tile.document.getFlag(MODULE_ID, "transformTile") !== true) {
-      VolumeGizmos.show(tile); VolumeGizmos.suppressRotateHandle(tile);
-    } else { VolumeGizmos.hide(tile.id); }
-  }
-
-  private static onRefreshTile(tile: Tile): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) { VolumeGizmos.hide(tile.id); return; }
+  static rebuild(tile: Tile): void {
     if (!VolumeGizmos.sets.has(tile.id)) return;
-    if (hasActiveClone(tile)) return; // original firing during drag — stale doc position
     VolumeGizmos.show(tile);
     VolumeGizmos.suppressRotateHandle(tile);
   }
+
+  static onControl(tile: Tile, controlled: boolean): void {
+    if (controlled) { VolumeGizmos.show(tile); VolumeGizmos.suppressRotateHandle(tile); }
+    else VolumeGizmos.hide(tile.id);
+  }
+
+  // ---- PIXI helpers ----
 
   private static suppressRotateHandle(tile: Tile): void {
     const old = VolumeGizmos.blockers.get(tile.id);

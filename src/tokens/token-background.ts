@@ -1,6 +1,6 @@
 // Always-visible token indicators: ground shadow, elevation line, unselected label, and sprite clone.
 
-import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, isPreviewClone, hasActiveClone } from "../core";
+import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken } from "../core";
 import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, tokenFootprint, makeCounterWrapper, suppressMipmap } from "../draw";
 import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
 import { currentProjection } from "../transform";
@@ -47,84 +47,46 @@ export class TokenBackground {
   private static sprites:    Map<string, PIXI.Sprite>    = new Map();
   private static lastState:  Map<string, BgState>        = new Map();
 
-  static activate(): void {
-    Hooks.on("canvasReady",  TokenBackground.onCanvasReady);
-    Hooks.on("updateScene",  TokenBackground.onUpdateScene);
-    Hooks.on("drawToken",    TokenBackground.onDrawToken);
-    Hooks.on("controlToken", TokenBackground.onControlToken);
-    Hooks.on("refreshToken", TokenBackground.onRefreshToken);
-    // NO destroyToken hook — intentional. Shadow/sprite must survive drag-drop preview teardown.
-  }
+  // ---- TokenRenderer interface ----
 
-  private static onCanvasReady(): void {
-    TokenBackground.clearAll();
-    if (!VolumeFlags.isSceneEnabled()) return;
-    for (const token of (canvas.tokens?.placeables ?? []) as Token[]) {
-      suppressTooltip(token);
-      if (isTransformedToken(token)) continue;
-      const selected = (token as unknown as { controlled?: boolean }).controlled ?? false;
-      TokenBackground.show(token, selected);
-    }
-  }
-
-  private static onUpdateScene(scene: Scene): void {
-    if (scene.id !== canvas.scene?.id) return;
-    TokenBackground.clearAll();
-  }
-
-  private static onDrawToken(token: Token): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    suppressTooltip(token);
+  static create(token: Token): void {
     if (isTransformedToken(token)) return;
-    if (isPreviewClone(token)) return; // clone handled by onRefreshToken path
-    TokenBackground.show(token, (token as unknown as { controlled?: boolean }).controlled ?? false);
+    const selected = (token as unknown as { controlled?: boolean }).controlled ?? false;
+    TokenBackground.show(token, selected);
   }
 
-  private static onControlToken(token: Token, controlled: boolean): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    if (isTransformedToken(token)) { TokenBackground.hide(token.id); return; }
-    if (hasActiveClone(token)) return; // original firing during drag — stale doc position
-    // Selection changes elevation line visibility — rebuild indicators only, shadow/sprite unchanged.
-    TokenBackground.rebuildIndicators(token, controlled);
+  static sync(token: Token): void {
+    const sprite = TokenBackground.sprites.get(token.id);
+    const mesh   = getMesh(token);
+    if (!sprite || !mesh) return;
+    const { tw } = tokenFootprint(token);
+    sprite.position.set(mesh.x + tw, mesh.y);
+    if (mesh.anchor) sprite.anchor.set(mesh.anchor.x, mesh.anchor.y);
+    if (mesh.skew)   sprite.skew.set(mesh.skew.x, mesh.skew.y);
+    if (mesh.scale)  sprite.scale.set(mesh.scale.x, mesh.scale.y);
+    sprite.rotation = mesh.rotation ?? 0;
   }
 
-  private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    suppressTooltip(token);
-    if (isTransformedToken(token)) { TokenBackground.hide(token.id); return; }
+  static rebuild(token: Token): void {
     const hasAny = TokenBackground.shadows.has(token.id)
                 || TokenBackground.indicators.has(token.id)
                 || TokenBackground.sprites.has(token.id);
     if (!hasAny) return;
-
-    // Sprite sync: runs on EVERY refreshToken (no skip) — mirrors IsoSpriteLayer pattern.
-    const sprite = TokenBackground.sprites.get(token.id);
-    const mesh   = getMesh(token);
-    if (sprite && mesh) {
-      const { tw } = tokenFootprint(token);
-      sprite.position.set(mesh.x + tw, mesh.y);
-      if (mesh.anchor) sprite.anchor.set(mesh.anchor.x, mesh.anchor.y);
-      if (mesh.skew)   sprite.skew.set(mesh.skew.x, mesh.skew.y);
-      if (mesh.scale)  sprite.scale.set(mesh.scale.x, mesh.scale.y);
-      sprite.rotation = mesh.rotation ?? 0;
-    }
-
-    // Original fires while clone alive — doc.x/y is stale pre-drag position, would blink.
-    if (hasActiveClone(token)) return;
-
-    // Shadow/indicator: skip on mesh-only frames (no position commit) and when state unchanged.
-    if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
     const state = getState(token);
     const last  = TokenBackground.lastState.get(token.id);
     if (last && last.geoKey === state.geoKey && last.shadowKey === state.shadowKey) return;
     TokenBackground.lastState.set(token.id, state);
-    if (last && last.geoKey === state.geoKey) {
-      TokenBackground.updateShadow(token);
-      return;
-    }
+    if (last && last.geoKey === state.geoKey) { TokenBackground.updateShadow(token); return; }
     const controlled = (token as unknown as { controlled?: boolean }).controlled ?? false;
     TokenBackground.show(token, controlled);
   }
+
+  // Selection state changes elevation line visibility — rebuild indicators only.
+  static onControl(token: Token, controlled: boolean): void {
+    TokenBackground.rebuildIndicators(token, controlled);
+  }
+
+  // ---- PIXI helpers ----
 
   private static updateShadow(token: Token): void {
     const prev = TokenBackground.shadows.get(token.id);

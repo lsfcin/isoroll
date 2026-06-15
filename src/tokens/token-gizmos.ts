@@ -1,6 +1,6 @@
 // Selection overlay for tokens: image handles, volume box, image contour, elevation handle/label, test sprite, ground shadow.
 
-import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag, hasActiveClone } from "../core";
+import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag } from "../core";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale, makeCircleHandle, makeSquareCounterHandle } from "../gizmos";
 import type { MeshLike } from "../draw";
 import { drawMeshContour, computeTokenVerts, tokenFootprint, drawBox, drawAnchorLine, makeCounterWrapper, suppressMipmap } from "../draw";
@@ -23,41 +23,20 @@ export class TokenGizmos {
   private static sets: Map<string, PIXI.Container> = new Map();
   static lastCommittedElev: Map<string, number> = new Map();
 
-  static activate(): void {
-    Hooks.on("canvasReady",  TokenGizmos.onCanvasReady);
-    Hooks.on("updateScene",  TokenGizmos.onUpdateScene);
-    Hooks.on("controlToken", TokenGizmos.onControlToken);
-    Hooks.on("refreshToken", TokenGizmos.onRefreshToken);
+  // ---- TokenRenderer interface ----
+
+  static create(_token: Token): void { /* gizmos only appear on selection */ }
+
+  static sync(_token: Token): void { /* gizmos have no per-frame mesh sync */ }
+
+  static rebuild(token: Token): void {
+    if (!TokenGizmos.sets.has(token.id)) return;
+    TokenGizmos.show(token);
   }
 
-  private static onCanvasReady(): void {
-    TokenGizmos.clearAll();
-    if (!VolumeFlags.isSceneEnabled()) return;
-    for (const token of (canvas.tokens?.placeables ?? []) as Token[]) {
-      if (isTransformedToken(token)) continue;
-      if ((token as unknown as { controlled?: boolean }).controlled) TokenGizmos.show(token);
-    }
-  }
-
-  private static onUpdateScene(scene: Scene): void {
-    if (scene.id !== canvas.scene?.id) return;
-    TokenGizmos.clearAll();
-  }
-
-  private static onControlToken(token: Token, controlled: boolean): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    if (hasActiveClone(token)) return; // original firing during drag — stale doc position
+  static onControl(token: Token, controlled: boolean): void {
     if (controlled && !isTransformedToken(token)) TokenGizmos.show(token);
     else TokenGizmos.hide(token.id);
-  }
-
-  private static onRefreshToken(token: Token, flags?: Record<string, boolean>): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    if (isTransformedToken(token)) { TokenGizmos.hide(token.id); return; }
-    if (!TokenGizmos.sets.has(token.id)) return;
-    if (hasActiveClone(token)) return; // original firing during drag — stale doc position
-    if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
-    TokenGizmos.show(token);
   }
 
   static show(token: Token): void {
