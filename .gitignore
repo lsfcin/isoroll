@@ -8,3 +8,6 @@ dist/
 
 # Facade interface files are redundant (index.ts is already minimal)
 src/**/index.d.ts
+
+# codegraph local index
+.codegraph/
