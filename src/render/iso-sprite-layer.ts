@@ -109,7 +109,8 @@ export const IsoTokenRenderer: TokenRenderer = {
   },
 
   rebuild(token: Token): void {
-    if (!needsTokenClone(token)) IsoTokenRenderer.hide(token.id);
+    if (!needsTokenClone(token)) { IsoTokenRenderer.hide(token.id); return; }
+    if (!tokenClones.has(token.id)) IsoTokenRenderer.create(token);
   },
 
   onControl(_token: Token, _controlled: boolean): void { /* ISO has no selection behavior */ },
@@ -154,7 +155,8 @@ export const IsoTileRenderer: TileRenderer = {
   },
 
   rebuild(tile: Tile): void {
-    if (!needsTileClone(tile)) IsoTileRenderer.hide(tile.id);
+    if (!needsTileClone(tile)) { IsoTileRenderer.hide(tile.id); return; }
+    if (!tileClones.has(tile.id)) IsoTileRenderer.create(tile);
   },
 
   onControl(_tile: Tile, _controlled: boolean): void { /* ISO has no selection behavior */ },

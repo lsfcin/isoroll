@@ -97,6 +97,13 @@ export class RenderGate {
     const state = classifyToken(token);
     if (state === "disabled" || state === "transformed") { this.tokenRenderers.forEach(r => r.hide(token.id)); return; }
     if (state === "pending") return; // stale mesh.x/y at origin — skip all to avoid blink
+    if (state === "preview") {
+      // Only ISO (handlesPreview=true) follows cursor — other overlays stay at origin.
+      const preview = this.tokenRenderers.filter(r => r.handlesPreview);
+      preview.forEach(r => r.sync(token));
+      if (!(flags?.["refreshMesh"] && !flags?.["refreshPosition"])) preview.forEach(r => r.rebuild(token));
+      return;
+    }
     this.tokenRenderers.forEach(r => r.sync(token));
     if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return; // animation frame, no position commit
     this.tokenRenderers.forEach(r => r.rebuild(token));
