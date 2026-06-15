@@ -1,5 +1,5 @@
 // Interactive square handles for tile volume (width, height, boundHeight, elevation) + Flip button.
-import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas, startPointerDrag } from "../core";
+import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas, startPointerDrag, hasActiveClone } from "../core";
 import { currentProjection } from "../transform";
 
 import { LayerManager, LAYER_KEYS } from "../render";
@@ -35,9 +35,7 @@ export class VolumeGizmos {
     if (!VolumeFlags.isSceneEnabled()) return;
     if (tile.document.getFlag(MODULE_ID, "transformTile") === true) { VolumeGizmos.hide(tile.id); return; }
     if (!VolumeGizmos.sets.has(tile.id)) return;
-    // Skip while drag-preview clone exists: server update fires refreshState on the original
-    // tile (old doc position) before the clone is cleared, causing a 1-frame blink.
-    if ((tile as unknown as { hasPreview?: boolean }).hasPreview) return;
+    if (hasActiveClone(tile)) return; // original firing during drag — stale doc position
     VolumeGizmos.show(tile);
     VolumeGizmos.suppressRotateHandle(tile);
   }

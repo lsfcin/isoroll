@@ -1,6 +1,6 @@
 // Renders a 3D bounding box on selected tiles (VOLUME_OVERLAY) + always-on shadow (TILE_SHADOW).
 
-import { MODULE_ID, VolumeFlags } from "../core";
+import { MODULE_ID, VolumeFlags, hasActiveClone } from "../core";
 import type { MeshLike } from "../draw";
 import { computeVerts, drawGroundShadow, drawBox, drawAnchorLine, drawMeshContour } from "../draw";
 import { LayerManager, LAYER_KEYS } from "../render";
@@ -57,7 +57,7 @@ export class VolumeOverlay {
     if (VolumeOverlay.shadowState.get(tile.id) !== snap) VolumeOverlay.showShadow(tile);
     // Box overlay selected-only
     if (!VolumeOverlay.boxes.has(tile.id)) return;
-    if ((tile as unknown as { hasPreview?: boolean }).hasPreview) return;
+    if (hasActiveClone(tile)) return; // original firing during drag — stale doc position
     VolumeOverlay.show(tile);
   }
 

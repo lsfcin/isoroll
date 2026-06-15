@@ -41,6 +41,17 @@ export function screenPointToCanvas(
   };
 }
 
+// Foundry v14 drag-preview guards — work for both Token and Tile (same pattern, different types).
+// During drag, Foundry creates a preview clone (isPreview=true) with the same id as the original.
+// The original fires refreshToken/refreshTile with hasPreview=true while the clone still exists,
+// carrying the stale pre-drag document position. Rebuilding overlays there causes a 1-frame blink.
+export function isPreviewClone(p: unknown): boolean {
+  return !!(p as { isPreview?: boolean }).isPreview;
+}
+export function hasActiveClone(p: unknown): boolean {
+  return !!(p as { hasPreview?: boolean }).hasPreview;
+}
+
 export function startPointerDrag<T>(
   drag: T,
   onMove: (drag: T, e: PointerEvent) => void,

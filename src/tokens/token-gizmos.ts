@@ -1,6 +1,6 @@
 // Selection overlay for tokens: image handles, volume box, image contour, elevation handle/label, test sprite, ground shadow.
 
-import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag } from "../core";
+import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag, hasActiveClone } from "../core";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale, makeCircleHandle, makeSquareCounterHandle } from "../gizmos";
 import type { MeshLike } from "../draw";
 import { drawMeshContour, computeTokenVerts, tokenFootprint, drawBox, drawAnchorLine, makeCounterWrapper, suppressMipmap } from "../draw";
@@ -46,6 +46,7 @@ export class TokenGizmos {
 
   private static onControlToken(token: Token, controlled: boolean): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    if (hasActiveClone(token)) return; // original firing during drag — stale doc position
     if (controlled && !isTransformedToken(token)) TokenGizmos.show(token);
     else TokenGizmos.hide(token.id);
   }
@@ -54,6 +55,7 @@ export class TokenGizmos {
     if (!VolumeFlags.isSceneEnabled()) return;
     if (isTransformedToken(token)) { TokenGizmos.hide(token.id); return; }
     if (!TokenGizmos.sets.has(token.id)) return;
+    if (hasActiveClone(token)) return; // original firing during drag — stale doc position
     if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
     TokenGizmos.show(token);
   }

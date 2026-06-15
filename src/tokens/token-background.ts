@@ -1,6 +1,6 @@
 // Always-visible token indicators: ground shadow, elevation line, unselected label, and sprite clone.
 
-import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip } from "../core";
+import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, isPreviewClone, hasActiveClone } from "../core";
 import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, tokenFootprint, makeCounterWrapper, suppressMipmap } from "../draw";
 import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
 import { currentProjection } from "../transform";
@@ -76,12 +76,14 @@ export class TokenBackground {
     if (!VolumeFlags.isSceneEnabled()) return;
     suppressTooltip(token);
     if (isTransformedToken(token)) return;
+    if (isPreviewClone(token)) return; // clone handled by onRefreshToken path
     TokenBackground.show(token, (token as unknown as { controlled?: boolean }).controlled ?? false);
   }
 
   private static onControlToken(token: Token, controlled: boolean): void {
     if (!VolumeFlags.isSceneEnabled()) return;
     if (isTransformedToken(token)) { TokenBackground.hide(token.id); return; }
+    if (hasActiveClone(token)) return; // original firing during drag — stale doc position
     // Selection changes elevation line visibility — rebuild indicators only, shadow/sprite unchanged.
     TokenBackground.rebuildIndicators(token, controlled);
   }
@@ -106,6 +108,9 @@ export class TokenBackground {
       if (mesh.scale)  sprite.scale.set(mesh.scale.x, mesh.scale.y);
       sprite.rotation = mesh.rotation ?? 0;
     }
+
+    // Original fires while clone alive — doc.x/y is stale pre-drag position, would blink.
+    if (hasActiveClone(token)) return;
 
     // Shadow/indicator: skip on mesh-only frames (no position commit) and when state unchanged.
     if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;

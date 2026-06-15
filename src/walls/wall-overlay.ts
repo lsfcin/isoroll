@@ -1,6 +1,6 @@
 // PIXI overlay: shows linked walls when tile is selected, with select-mode picking.
 
-import { MODULE_ID } from "../core";
+import { MODULE_ID, isPreviewClone } from "../core";
 import { getLinkedWallIds } from "./wall-flags";
 import { wallsLayer, imageRect, anchorToCanvas, type WallDoc, type TileDoc } from "./wall-coords";
 import { addEndpointHandles, addLineHover, addSelectInteraction, addWallDblClick } from "./wall-overlay-ops";
@@ -48,9 +48,9 @@ export class WallOverlay {
     });
     Hooks.on("refreshTile", (rawTile: unknown) => {
       if (WallOverlay.boxes.size > 0) LayerManager.bringToTop(LAYER_KEYS.WALL_OVERLAY);
-      // Preview clone fires refreshTile with drag-updated doc.x/y — redraw walls at new position.
-      const t = rawTile as { id: string; hasPreview?: boolean; isPreview?: boolean };
-      if (WallOverlay.boxes.has(t.id) && !t.hasPreview && t.isPreview) WallOverlay.show(rawTile as any, true);
+      // Preview clone fires refreshTile with cursor doc.x/y — redraw walls at new position.
+      const tile = rawTile as Tile;
+      if (WallOverlay.boxes.has(tile.id) && isPreviewClone(tile)) WallOverlay.show(tile, true);
     });
     window.addEventListener("keydown", e => { if (e.altKey) WallOverlay.setAltMode(true); });
     window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay.setAltMode(false); });
