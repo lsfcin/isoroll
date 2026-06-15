@@ -1,7 +1,7 @@
 import "../../styles/isoroll.scss";
 import { registerVolumeSettings } from "./settings";
 import { VolumeOverlay, VolumeGizmos } from "../tiles";
-import { TokenBackground, TokenSpriteClone, TokenGizmos } from "../tokens";
+import { TokenBackground, TokenGizmos } from "../tokens";
 import { Occluder } from "../occluder";
 import { CanvasTransform, ObjectTransform, registerRulerPatch } from "../transform";
 import { BackgroundGizmos } from "../background";
@@ -25,7 +25,6 @@ Hooks.once("init", () => {
   VolumeOverlay.activate();
   VolumeGizmos.activate();
   TokenBackground.activate();
-  TokenSpriteClone.activate();
   TokenGizmos.activate();
   Occluder.activate();
   PresetManager.activate();
@@ -45,7 +44,6 @@ Hooks.once("init", () => {
     VolumeOverlay.clearAll();
     VolumeGizmos.clearAll();
     TokenBackground.clearAll();
-    TokenSpriteClone.clearAll();
     TokenGizmos.clearAll();
     WallOverlay.clearAll();
   });
