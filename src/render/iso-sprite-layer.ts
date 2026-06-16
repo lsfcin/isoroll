@@ -165,6 +165,6 @@ export const IsoSpriteLayer = {
       canvas.app?.ticker.add(IsoSpriteLayer._onTick, null, -25);
     });
     Hooks.on("changeScene", IsoSpriteLayer._teardown);
-    Hooks.on("resetFogOfWar", clearSeenTiles);
+    Hooks.on("resetFogOfWar", () => { clearSeenTiles(); IsoTileRenderer.onSightRefresh(); });
   },
 };
