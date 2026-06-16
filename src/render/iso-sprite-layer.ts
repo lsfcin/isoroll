@@ -4,6 +4,7 @@
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
+import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, clearSeenTiles } from "./fog-helpers";
 import type { TokenRenderer } from "./token-renderer";
 import type { TileRenderer } from "./tile-renderer";
 
@@ -15,7 +16,6 @@ type Mesh = PIXI.DisplayObject & {
   alpha?: number;
   rotation?: number;
 };
-type PlaceableDoc = { alpha?: unknown; hidden?: unknown };
 type Center = { x: number; y: number };
 
 export function cloneSprite(mesh: Mesh): PIXI.Sprite | null {
@@ -34,17 +34,7 @@ export function syncSprite(sprite: PIXI.Sprite, mesh: Mesh): void {
 function getMesh(obj: unknown): Mesh | undefined {
   const m = (obj as { mesh?: Mesh }).mesh; return m?.texture ? m : undefined;
 }
-function docAlpha(doc: PlaceableDoc): number { return typeof doc.alpha === "number" ? doc.alpha : 1; }
-function applyDocState(s: PIXI.Sprite, doc: PlaceableDoc): void { s.alpha = docAlpha(doc); s.visible = !doc.hidden; }
 function tokenCenter(t: Token): Center { return (t as unknown as { center?: Center }).center ?? { x: t.x, y: t.y }; }
-function tileCenter(t: Tile):   Center { return { x: t.x + (t.w ?? 0) / 2, y: t.y + (t.h ?? 0) / 2 }; }
-
-function applyFogState(s: PIXI.Sprite, doc: PlaceableDoc, p: Center, obj: Token | Tile): void {
-  if (doc.hidden) { s.visible = false; return; }
-  s.alpha = docAlpha(doc);
-  s.visible = !canvas.scene?.tokenVision || !!(game.user as { isGM?: boolean })?.isGM
-    || !!(canvas.visibility?.testVisibility(p, { object: obj }));
-}
 
 function createClone(map: Map<string, PIXI.Sprite>, id: string, mesh: Mesh | undefined, doc: PlaceableDoc): void {
   const old = map.get(id); if (old) { old.parent?.removeChild(old); old.destroy(); map.delete(id); }
@@ -91,7 +81,7 @@ export const IsoTokenRenderer: TokenRenderer = {
     if (!VolumeFlags.isSceneEnabled()) return;
     for (const t of (canvas.tokens?.placeables ?? []) as Token[]) {
       const clone = tokenClones.get(t.id); if (!clone) continue;
-      applyFogState(clone, t.document as unknown as PlaceableDoc, tokenCenter(t), t);
+      applyTokenFog(clone, t.document as unknown as PlaceableDoc, tokenCenter(t));
     }
   },
   hide(id: string): void {
@@ -123,7 +113,11 @@ export const IsoTileRenderer: TileRenderer = {
     if (!VolumeFlags.isSceneEnabled()) return;
     for (const t of (canvas.tiles?.placeables ?? []) as Tile[]) {
       const clone = tileClones.get(t.id); if (!clone) continue;
-      applyFogState(clone, t.document as unknown as PlaceableDoc, tileCenter(t), t);
+      const w = t.document.width ?? 0, h = t.document.height ?? 0;
+      // v14: doc.x/y is center; top-left = center - size/2
+      applyTileFog(clone, t.document as unknown as PlaceableDoc, t.id,
+        (t.document.x ?? 0) - w / 2, (t.document.y ?? 0) - h / 2, w, h,
+        VolumeFlags.getHideOnFog(t.document));
     }
   },
   hide(id: string): void {
@@ -140,7 +134,7 @@ export const IsoSpriteLayer = {
   getLayer(): PIXI.Container { return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES); },
   _onTick(): void { LayerManager.enforceOrder(); },
   _onCanvasInit(): void {
-    IsoTokenRenderer.clearAll(); IsoTileRenderer.clearAll();
+    IsoTokenRenderer.clearAll(); IsoTileRenderer.clearAll(); clearSeenTiles();
     const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
     layer.sortableChildren = false; layer.eventMode = "passive";
     layer.name = "isoroll-iso-sprite-layer"; layer.zIndex = 500;
@@ -157,5 +151,6 @@ export const IsoSpriteLayer = {
       canvas.app?.ticker.add(IsoSpriteLayer._onTick, null, -25);
     });
     Hooks.on("changeScene", IsoSpriteLayer._teardown);
+    Hooks.on("resetFogOfWar", clearSeenTiles);
   },
 };

@@ -122,6 +122,10 @@ export class VolumeFlags {
   static getElevLineColor(doc: { getFlag(s: string, k: string): unknown }): "black" | "player" {
     return (doc.getFlag(MODULE_ID, "elevLineColor") as "black" | "player" | undefined) ?? "black";
   }
+
+  static getHideOnFog(doc: { getFlag(s: string, k: string): unknown }): boolean {
+    return doc.getFlag(MODULE_ID, "hideOnFog") === true;
+  }
 }
 
 // Standalone doc helpers — not flag-specific, used across token/tile renderers.
