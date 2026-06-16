@@ -4,7 +4,7 @@
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
-import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, getViewers } from "./fog-helpers";
+import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, clearSeenTiles, getViewers } from "./fog-helpers";
 import type { TokenRenderer } from "./token-renderer";
 import type { TileRenderer } from "./tile-renderer";
 
@@ -148,7 +148,7 @@ export const IsoSpriteLayer = {
   getLayer(): PIXI.Container { return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES); },
   _onTick(): void { LayerManager.enforceOrder(); },
   _onCanvasInit(): void {
-    IsoTokenRenderer.clearAll(); IsoTileRenderer.clearAll();
+    IsoTokenRenderer.clearAll(); IsoTileRenderer.clearAll(); clearSeenTiles();
     const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
     layer.sortableChildren = false; layer.eventMode = "passive";
     layer.name = "isoroll-iso-sprite-layer"; layer.zIndex = 500;
@@ -165,5 +165,6 @@ export const IsoSpriteLayer = {
       canvas.app?.ticker.add(IsoSpriteLayer._onTick, null, -25);
     });
     Hooks.on("changeScene", IsoSpriteLayer._teardown);
+    Hooks.on("resetFogOfWar", clearSeenTiles);
   },
 };

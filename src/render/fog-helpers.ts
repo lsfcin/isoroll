@@ -1,9 +1,13 @@
 // Fog-of-war visibility helpers for IsoSpriteLayer.
-// All vision testing and fog state management lives here — iso-sprite-layer imports these.
+// ISO sprite layer renders above canvas.visibility — fog state managed entirely here.
 
 export type PlaceableDoc = { alpha?: unknown; hidden?: unknown };
 export function docAlpha(doc: PlaceableDoc): number { return typeof doc.alpha === "number" ? doc.alpha : 1; }
 export function applyDocState(s: PIXI.Sprite, doc: PlaceableDoc): void { s.alpha = docAlpha(doc); s.visible = !doc.hidden; }
+
+// In-memory explored registry — cleared on fog reset and canvas init.
+const seenTileIds = new Set<string>();
+export function clearSeenTiles(): void { seenTileIds.clear(); }
 
 // Viewer resolution: controlled tokens first, then player-owned tokens as fallback.
 // GM with nothing controlled → returns [] so GM bypass fires and everything stays visible.
@@ -50,23 +54,32 @@ export function applyTokenFog(s: PIXI.Sprite, doc: PlaceableDoc, p: { x: number;
   s.visible = testPointVisible(p, viewers);
 }
 
-// Tile clone fog: canvas.visibility is a global compositing pass on canvas.stage that
-// already handles explored-fog dimming for our external layer — no tint/filter needed.
-// We only manage visibility explicitly for hideOnFog tiles; all others stay visible and
-// let canvas.visibility darken them correctly.
-// viewers pre-computed by caller.
+// Tile fog tint: ISO layer is above canvas.visibility so we own all three states:
+//   visible      → full brightness (tint 0xffffff)
+//   explored+fog → darken via tint (matches explored-fog appearance of floor tiles)
+//   never seen   → hide completely
+// Tint not a filter — no intermediate RT, no z-order issues.
+const EXPLORED_TINT = 0x808080; // ~50% brightness — approximates canvas.visibility explored dim
+
+// Tile clone fog state machine. x/y = top-left px; w/h = tile pixel size. viewers pre-computed.
 export function applyTileFog(
-  s: PIXI.Sprite, doc: PlaceableDoc, _tileId: string,
+  s: PIXI.Sprite, doc: PlaceableDoc, tileId: string,
   x: number, y: number, w: number, h: number, hideOnFog: boolean, viewers: Token[]
 ): void {
   if (doc.hidden) { s.visible = false; s.tint = 0xffffff; s.filters = null; return; }
-  s.alpha = docAlpha(doc); s.tint = 0xffffff; s.filters = null;
-  if (!canvas.scene?.tokenVision || (isGM() && viewers.length === 0)) { s.visible = true; return; }
-  if (!hideOnFog) { s.visible = true; return; } // canvas.visibility handles fog dimming
-  // hideOnFog: only show when currently in vision — hide completely otherwise.
+  s.alpha = docAlpha(doc); s.filters = null;
+  if (!canvas.scene?.tokenVision) { s.visible = true; s.tint = 0xffffff; return; }
+  if (isGM() && viewers.length === 0) { s.visible = true; s.tint = 0xffffff; return; }
   const gs = canvas.grid?.size ?? 100;
   const vis = (w > gs || h > gs)
     ? testPerimeterVisible(x, y, w, h, viewers)
     : testPointVisible({ x: x + w / 2, y: y + h / 2 }, viewers);
-  s.visible = vis;
+  if (vis) {
+    seenTileIds.add(tileId);
+    s.visible = true; s.tint = 0xffffff;
+  } else if (!hideOnFog && seenTileIds.has(tileId) && canvas.scene?.fogExploration) {
+    s.visible = true; s.tint = EXPLORED_TINT;
+  } else {
+    s.visible = false; s.tint = 0xffffff;
+  }
 }
