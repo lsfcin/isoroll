@@ -104,6 +104,9 @@ export class RenderGate {
     if (state === "transformed") { this.tokenRenderers.forEach(r => r.hide(token.id)); return; }
     if (state === "preview" || state === "pending") return;
     this.tokenRenderers.forEach(r => r.onControl(token, controlled));
+    // sightRefresh may not fire on selection change alone — re-evaluate ISO fog immediately.
+    this.tokenRenderers.forEach(r => r.onSightRefresh?.());
+    this.tileRenderers.forEach(r => r.onSightRefresh?.());
   }
 
   private onRefreshToken(token: Token, flags?: Record<string, boolean>): void {

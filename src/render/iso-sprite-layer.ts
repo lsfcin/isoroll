@@ -4,7 +4,7 @@
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
-import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, clearSeenTiles } from "./fog-helpers";
+import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, clearSeenTiles, getViewers } from "./fog-helpers";
 import type { TokenRenderer } from "./token-renderer";
 import type { TileRenderer } from "./tile-renderer";
 
@@ -79,9 +79,14 @@ export const IsoTokenRenderer: TokenRenderer = {
   onDestroy(id: string): void { IsoTokenRenderer.hide(id); },
   onSightRefresh(): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    const viewers = getViewers();
+    const viewerIds = new Set(viewers.map(v => v.id));
     for (const t of (canvas.tokens?.placeables ?? []) as Token[]) {
       const clone = tokenClones.get(t.id); if (!clone) continue;
-      applyTokenFog(clone, t.document as unknown as PlaceableDoc, tokenCenter(t));
+      const doc = t.document as unknown as PlaceableDoc;
+      // Viewer tokens always see themselves — never hide the token the player controls.
+      if (viewerIds.has(t.id)) { applyDocState(clone, doc); continue; }
+      applyTokenFog(clone, doc, tokenCenter(t), viewers);
     }
   },
   hide(id: string): void {
@@ -111,13 +116,14 @@ export const IsoTileRenderer: TileRenderer = {
   onDestroy(id: string): void { IsoTileRenderer.hide(id); },
   onSightRefresh(): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    const viewers = getViewers();
     for (const t of (canvas.tiles?.placeables ?? []) as Tile[]) {
       const clone = tileClones.get(t.id); if (!clone) continue;
       const w = t.document.width ?? 0, h = t.document.height ?? 0;
       // v14: doc.x/y is center; top-left = center - size/2
       applyTileFog(clone, t.document as unknown as PlaceableDoc, t.id,
         (t.document.x ?? 0) - w / 2, (t.document.y ?? 0) - h / 2, w, h,
-        VolumeFlags.getHideOnFog(t.document));
+        VolumeFlags.getHideOnFog(t.document), viewers);
     }
   },
   hide(id: string): void {

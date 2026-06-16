@@ -57,25 +57,23 @@ function testPerimeterVisible(x: number, y: number, w: number, h: number, viewer
 function isGM(): boolean { return !!(game.user as { isGM?: boolean })?.isGM; }
 
 // Token clone: show if in vision, hide otherwise. No explored-fog state for tokens.
-export function applyTokenFog(s: PIXI.Sprite, doc: PlaceableDoc, p: { x: number; y: number }): void {
+// viewers must be pre-computed by caller; viewer tokens always show themselves (caller responsibility).
+export function applyTokenFog(s: PIXI.Sprite, doc: PlaceableDoc, p: { x: number; y: number }, viewers: Token[]): void {
   if (doc.hidden) { s.visible = false; return; }
   s.alpha = docAlpha(doc);
   if (!canvas.scene?.tokenVision) { s.visible = true; return; }
-  const viewers = getViewers();
-  // GM bypass only when no token selected; with selection, show GM the same perspective as players.
   if (isGM() && viewers.length === 0) { s.visible = true; return; }
   s.visible = testPointVisible(p, viewers);
 }
 
 // Tile clone: full vis → bright; explored+fogged → darken filter; never seen → hide.
-// x/y = top-left corner in canvas px; w/h = tile pixel size.
+// x/y = top-left corner in canvas px; w/h = tile pixel size. viewers pre-computed by caller.
 export function applyTileFog(
   s: PIXI.Sprite, doc: PlaceableDoc, tileId: string,
-  x: number, y: number, w: number, h: number, hideOnFog: boolean
+  x: number, y: number, w: number, h: number, hideOnFog: boolean, viewers: Token[]
 ): void {
   if (doc.hidden) { s.visible = false; s.filters = null; return; }
   if (!canvas.scene?.tokenVision) { s.visible = true; s.alpha = docAlpha(doc); s.filters = null; return; }
-  const viewers = getViewers();
   if (isGM() && viewers.length === 0) { s.visible = true; s.alpha = docAlpha(doc); s.filters = null; return; }
   const gs = canvas.grid?.size ?? 100;
   const vis = (w > gs || h > gs)
