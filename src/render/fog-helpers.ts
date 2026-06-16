@@ -77,9 +77,10 @@ export function applyTileFog(
   if (vis) {
     seenTileIds.add(tileId);
     s.visible = true; s.tint = 0xffffff;
-  } else if (!hideOnFog && seenTileIds.has(tileId) && canvas.scene?.fogExploration) {
+  } else if (!hideOnFog && seenTileIds.has(tileId)) {
     s.visible = true; s.tint = EXPLORED_TINT;
   } else {
+    console.debug(`[fog tile] hidden tileId=${tileId} seen=${seenTileIds.has(tileId)} hideOnFog=${hideOnFog}`);
     s.visible = false; s.tint = 0xffffff;
   }
 }
