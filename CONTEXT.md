@@ -67,12 +67,6 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - `isoroll-content/` repo — AI art pipeline (private)
 - `/foundry` skill — Foundry v14 gotchas, coordinate systems, hooks, component hierarchy
 
-## Routing
-
-| Subdirectory | Description |
-|--------------|-------------|
-| [`src/`](src/CONTEXT.md) | All TypeScript source — entry point, flags, settings, util, all subsystems |
-
 <!-- routing:start -->
 ## Routing
 
