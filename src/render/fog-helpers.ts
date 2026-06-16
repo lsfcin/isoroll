@@ -5,10 +5,6 @@ export type PlaceableDoc = { alpha?: unknown; hidden?: unknown };
 export function docAlpha(doc: PlaceableDoc): number { return typeof doc.alpha === "number" ? doc.alpha : 1; }
 export function applyDocState(s: PIXI.Sprite, doc: PlaceableDoc): void { s.alpha = docAlpha(doc); s.visible = !doc.hidden; }
 
-// In-memory explored registry — cleared on fog reset and canvas init.
-const seenTileIds = new Set<string>();
-export function clearSeenTiles(): void { seenTileIds.clear(); }
-
 // Viewer resolution: controlled tokens first, then player-owned tokens as fallback.
 // GM with nothing controlled → returns [] so GM bypass fires and everything stays visible.
 export function getViewers(): Token[] {
@@ -54,30 +50,23 @@ export function applyTokenFog(s: PIXI.Sprite, doc: PlaceableDoc, p: { x: number;
   s.visible = testPointVisible(p, viewers);
 }
 
-// Explored-fog darkening: use tint (not a filter) so the clone stays in the normal PIXI render
-// pipeline and renders above the hard-fog layer. Filters create an intermediate render texture
-// that gets composited behind Foundry's fog overlay.
-const FOG_TINT = 0x666666; // ~40% brightness — explored-but-not-visible state
-
-// Tile clone: full vis → bright; explored+fogged → darken via tint; never seen → hide.
-// x/y = top-left corner in canvas px; w/h = tile pixel size. viewers pre-computed by caller.
+// Tile clone fog: canvas.visibility is a global compositing pass on canvas.stage that
+// already handles explored-fog dimming for our external layer — no tint/filter needed.
+// We only manage visibility explicitly for hideOnFog tiles; all others stay visible and
+// let canvas.visibility darken them correctly.
+// viewers pre-computed by caller.
 export function applyTileFog(
-  s: PIXI.Sprite, doc: PlaceableDoc, tileId: string,
+  s: PIXI.Sprite, doc: PlaceableDoc, _tileId: string,
   x: number, y: number, w: number, h: number, hideOnFog: boolean, viewers: Token[]
 ): void {
   if (doc.hidden) { s.visible = false; s.tint = 0xffffff; s.filters = null; return; }
-  if (!canvas.scene?.tokenVision) { s.visible = true; s.alpha = docAlpha(doc); s.tint = 0xffffff; s.filters = null; return; }
-  if (isGM() && viewers.length === 0) { s.visible = true; s.alpha = docAlpha(doc); s.tint = 0xffffff; s.filters = null; return; }
+  s.alpha = docAlpha(doc); s.tint = 0xffffff; s.filters = null;
+  if (!canvas.scene?.tokenVision || (isGM() && viewers.length === 0)) { s.visible = true; return; }
+  if (!hideOnFog) { s.visible = true; return; } // canvas.visibility handles fog dimming
+  // hideOnFog: only show when currently in vision — hide completely otherwise.
   const gs = canvas.grid?.size ?? 100;
   const vis = (w > gs || h > gs)
     ? testPerimeterVisible(x, y, w, h, viewers)
     : testPointVisible({ x: x + w / 2, y: y + h / 2 }, viewers);
-  if (vis) {
-    seenTileIds.add(tileId);
-    s.visible = true; s.alpha = docAlpha(doc); s.tint = 0xffffff; s.filters = null;
-  } else if (!hideOnFog && seenTileIds.has(tileId) && canvas.scene?.fogExploration) {
-    s.visible = true; s.alpha = docAlpha(doc); s.tint = FOG_TINT; s.filters = null;
-  } else {
-    s.visible = false; s.tint = 0xffffff; s.filters = null;
-  }
+  s.visible = vis;
 }
