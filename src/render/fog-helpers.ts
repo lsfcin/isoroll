@@ -22,9 +22,11 @@ function getFogFilter(): CMF {
 }
 
 // Viewer resolution: controlled tokens first, then player-owned tokens as fallback.
+// GM with nothing controlled → returns [] so GM bypass fires and everything stays visible.
 export function getViewers(): Token[] {
   const controlled = (canvas.tokens?.controlled ?? []) as Token[];
   if (controlled.length > 0) return controlled;
+  if (isGM()) return []; // GM owns all tokens — fallback would return everything
   return ((canvas.tokens?.placeables ?? []) as Token[]).filter(
     t => (t.document as unknown as { isOwner?: boolean }).isOwner
   );
@@ -58,8 +60,11 @@ function isGM(): boolean { return !!(game.user as { isGM?: boolean })?.isGM; }
 export function applyTokenFog(s: PIXI.Sprite, doc: PlaceableDoc, p: { x: number; y: number }): void {
   if (doc.hidden) { s.visible = false; return; }
   s.alpha = docAlpha(doc);
-  if (!canvas.scene?.tokenVision || isGM()) { s.visible = true; return; }
-  s.visible = testPointVisible(p, getViewers());
+  if (!canvas.scene?.tokenVision) { s.visible = true; return; }
+  const viewers = getViewers();
+  // GM bypass only when no token selected; with selection, show GM the same perspective as players.
+  if (isGM() && viewers.length === 0) { s.visible = true; return; }
+  s.visible = testPointVisible(p, viewers);
 }
 
 // Tile clone: full vis → bright; explored+fogged → darken filter; never seen → hide.
@@ -69,10 +74,9 @@ export function applyTileFog(
   x: number, y: number, w: number, h: number, hideOnFog: boolean
 ): void {
   if (doc.hidden) { s.visible = false; s.filters = null; return; }
-  if (!canvas.scene?.tokenVision || isGM()) {
-    s.visible = true; s.alpha = docAlpha(doc); s.filters = null; return;
-  }
+  if (!canvas.scene?.tokenVision) { s.visible = true; s.alpha = docAlpha(doc); s.filters = null; return; }
   const viewers = getViewers();
+  if (isGM() && viewers.length === 0) { s.visible = true; s.alpha = docAlpha(doc); s.filters = null; return; }
   const gs = canvas.grid?.size ?? 100;
   const vis = (w > gs || h > gs)
     ? testPerimeterVisible(x, y, w, h, viewers)
