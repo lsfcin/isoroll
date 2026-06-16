@@ -1,3 +1,4 @@
+// Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE
 import { defineConfig } from "vite";
 import { resolve } from "path";
 

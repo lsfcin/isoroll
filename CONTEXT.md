@@ -80,7 +80,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | [`ROADMAP.md`](ROADMAP.md) | — | — | isoroll — Roadmap |
 | [`SETUP.md`](SETUP.md) | — | — | isoroll — Development Setup |
 | [`SPECS.md`](SPECS.md) | — | — | isoroll — Specs |
-| [`eslint.config.js`](eslint.config.js) | — | — | ← add first-line comment |
+| [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module source |
 | [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | ← add first-line comment |
-| [`vite.config.ts`](vite.config.ts) | — | — | ← add first-line comment |
+| [`vite.config.ts`](vite.config.ts) | — | — | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
 <!-- routing:end -->
