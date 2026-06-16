@@ -71,13 +71,13 @@ export class VolumeOverlay {
 
   static show(tile: Tile): void {
     VolumeOverlay.removeBox(tile.id);
-    const layer = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_OVERLAY);
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.TILE_OVERLAY);
     const c = new PIXI.Container();
     c.eventMode = "passive";
     VolumeOverlay.draw(c, tile);
     layer.addChild(c);
     VolumeOverlay.boxes.set(tile.id, c);
-    LayerManager.bringToTop(LAYER_KEYS.VOLUME_OVERLAY);
+    LayerManager.bringToTop(LAYER_KEYS.TILE_OVERLAY);
   }
 
   // Full cleanup — hides both box and shadow (used by gate for disabled/transformed tiles).
@@ -89,7 +89,7 @@ export class VolumeOverlay {
   static clearAll(): void {
     for (const id of Array.from(VolumeOverlay.boxes.keys())) VolumeOverlay.removeBox(id);
     for (const id of Array.from(VolumeOverlay.shadows.keys())) VolumeOverlay.hideShadow(id);
-    LayerManager.clearLayer(LAYER_KEYS.VOLUME_OVERLAY);
+    LayerManager.clearLayer(LAYER_KEYS.TILE_OVERLAY);
   }
 
   private static draw(c: PIXI.Container, tile: Tile): void {

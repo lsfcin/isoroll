@@ -32,7 +32,7 @@ export class VolumeGizmos {
   private static suppressRotateHandle(tile: Tile): void {
     const old = VolumeGizmos.blockers.get(tile.id);
     if (old) { old.parent?.removeChild(old); old.destroy(); VolumeGizmos.blockers.delete(tile.id); }
-    const layer = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_GIZMOS);
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.TILE_GIZMOS);
     const blocker = createRotateBlocker(tile, layer as unknown as PIXI.Container);
     if (!blocker) return;
     layer.addChild(blocker);
@@ -41,7 +41,7 @@ export class VolumeGizmos {
 
   static show(tile: Tile): void {
     VolumeGizmos.hide(tile.id);
-    const layer    = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_GIZMOS);
+    const layer    = LayerManager.ensureLayer(LAYER_KEYS.TILE_GIZMOS);
     const tw       = tile.document.width  ?? 0;
     const th       = tile.document.height ?? 0;
     const tx       = (tile.document.x ?? 0) - tw / 2;
@@ -89,7 +89,7 @@ export class VolumeGizmos {
     }
     layer.addChild(container);
     VolumeGizmos.sets.set(tile.id, container);
-    LayerManager.bringToTop(LAYER_KEYS.VOLUME_GIZMOS);
+    LayerManager.bringToTop(LAYER_KEYS.TILE_GIZMOS);
   }
 
   static hide(tileId: string): void {
@@ -101,7 +101,7 @@ export class VolumeGizmos {
 
   static clearAll(): void {
     for (const id of Array.from(VolumeGizmos.sets.keys())) VolumeGizmos.hide(id);
-    LayerManager.clearLayer(LAYER_KEYS.VOLUME_GIZMOS);
+    LayerManager.clearLayer(LAYER_KEYS.TILE_GIZMOS);
   }
 
   private static swapSide(tile: Tile): void {

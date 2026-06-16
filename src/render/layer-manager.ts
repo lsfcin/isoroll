@@ -73,15 +73,14 @@ export function destroyMapped(map: Map<string, PIXI.Container>, id: string): voi
 
 // String keys for all overlay layers. Use these instead of raw strings.
 export const LAYER_KEYS = {
-  ISO_SPRITE_LAYER:    "iso-sprite-layer",
+  ISO_SPRITES:         "iso-sprites",
   TILE_SHADOW:         "tile-shadow",
   TOKEN_SHADOW:        "token-shadow",
-  VOLUME_OVERLAY:      "volume-overlay",
-  VOLUME_GIZMOS:       "volume-gizmos",
-  TOKEN_SPRITE_CLONE:  "token-sprite-clone",
+  TILE_OVERLAY:        "tile-overlay",
+  TILE_GIZMOS:         "tile-gizmos",
+  TOKEN_INDICATORS:    "token-indicators",
   TOKEN_GIZMOS:        "token-gizmos",
-  TOKEN_VOLUME_GIZMOS: "token-volume-gizmos",
-  TOKEN_ELEV_LABEL:    "token-elev-label",
+  TOKEN_LABEL:         "token-label",
   BG_GIZMOS:           "bg-gizmos",
   WALL_OVERLAY:        "wall-overlay",
 } as const;

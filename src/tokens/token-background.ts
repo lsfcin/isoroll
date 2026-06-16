@@ -128,9 +128,9 @@ export class TokenBackground {
     }
 
     if (!hasContent) return;
-    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS).addChild(container);
+    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_INDICATORS).addChild(container);
     TokenBackground.indicators.set(token.id, container);
-    LayerManager.bringToTop(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
+    LayerManager.bringToTop(LAYER_KEYS.TOKEN_INDICATORS);
   }
 
   private static rebuildLabel(token: Token, selected: boolean): void {
@@ -152,9 +152,9 @@ export class TokenBackground {
     suppressMipmap(label.texture);
     const wrap = makeCounterWrapper(proj, tx + tw / 2 + heightDir.x * elevPx, ty + th + heightDir.y * elevPx);
     wrap.addChild(label);
-    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_ELEV_LABEL).addChild(wrap);
+    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_LABEL).addChild(wrap);
     TokenBackground.labels.set(token.id, wrap);
-    LayerManager.bringToTop(LAYER_KEYS.TOKEN_ELEV_LABEL);
+    LayerManager.bringToTop(LAYER_KEYS.TOKEN_LABEL);
   }
 
   static show(token: Token, selected = false): void {
@@ -188,7 +188,7 @@ export class TokenBackground {
     for (const id of [...TokenBackground.labels.keys()])     destroyMapped(TokenBackground.labels, id);
     TokenBackground.lastState.clear();
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_SHADOW);
-    LayerManager.clearLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
-    LayerManager.clearLayer(LAYER_KEYS.TOKEN_ELEV_LABEL);
+    LayerManager.clearLayer(LAYER_KEYS.TOKEN_INDICATORS);
+    LayerManager.clearLayer(LAYER_KEYS.TOKEN_LABEL);
   }
 }
