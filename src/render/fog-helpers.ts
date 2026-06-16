@@ -71,14 +71,20 @@ export function applyTileFog(
   if (!canvas.scene?.tokenVision) { s.visible = true; s.tint = 0xffffff; return; }
   if (isGM() && viewers.length === 0) { s.visible = true; s.tint = 0xffffff; return; }
   const gs = canvas.grid?.size ?? 100;
+  const cx = x + w / 2, cy = y + h / 2;
   const vis = (w > gs || h > gs)
     ? testPerimeterVisible(x, y, w, h, viewers)
-    : testPointVisible({ x: x + w / 2, y: y + h / 2 }, viewers);
+    : testPointVisible({ x: cx, y: cy }, viewers);
   if (vis) {
     seenTileIds.add(tileId);
     s.visible = true; s.tint = 0xffffff;
-  } else if (!hideOnFog && seenTileIds.has(tileId)) {
-    s.visible = true; s.tint = EXPLORED_TINT;
+  } else if (!hideOnFog) {
+    // isPointExplored is truth source: returns false after fog reset (empty pixels) and true after
+    // F5 reload (server-persisted exploration). Falls back to seenTileIds when fog API unavailable.
+    const fog = canvas.fog as unknown as { isPointExplored?(p: { x: number; y: number }): boolean };
+    const explored = fog?.isPointExplored?.({ x: cx, y: cy }) ?? seenTileIds.has(tileId);
+    if (explored) { seenTileIds.add(tileId); s.visible = true; s.tint = EXPLORED_TINT; }
+    else { seenTileIds.delete(tileId); s.visible = false; s.tint = 0xffffff; }
   } else {
     s.visible = false; s.tint = 0xffffff;
   }
