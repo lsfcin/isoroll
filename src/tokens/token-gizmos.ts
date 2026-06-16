@@ -3,7 +3,7 @@
 import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag } from "../core";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale, makeCircleHandle, makeSquareCounterHandle } from "../gizmos";
 import type { MeshLike } from "../draw";
-import { drawMeshContour, computeTokenVerts, tokenFootprint, drawBox, drawAnchorLine, makeCounterWrapper, suppressMipmap } from "../draw";
+import { drawMeshContour, computeTokenVerts, tokenFootprint, drawBox, drawAnchorLine } from "../draw";
 import { beginElevDrag } from "./token-elev-drag";
 import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
 import { currentProjection } from "../transform";
@@ -82,20 +82,6 @@ export class TokenGizmos {
         beginElevDrag(TokenGizmos.lastCommittedElev, token, e.global.x, e.global.y, elev);
       });
       container.addChild(elevHandle);
-
-      // Elevation label — counter-transformed so it reads upright in screen space
-      const gridUnits = (canvas.grid as unknown as { units?: string }).units ?? "ft";
-      const label = new PIXI.Text(`${elev} ${gridUnits}`, new PIXI.TextStyle({
-        fontFamily: "Signika, sans-serif", fontSize: 14,
-        fill: 0xffffff, stroke: 0x000000, strokeThickness: 3, lineJoin: "round",
-      }));
-      label.anchor.set(0.5, 0.5); label.eventMode = "none";
-      label.visible = elev !== 0;
-      suppressMipmap(label.texture);
-      const labelWrap = makeCounterWrapper(proj, tx + tw / 2 + heightDir.x * elevPx, ty + th + heightDir.y * elevPx);
-      labelWrap.addChild(label);
-      container.addChild(labelWrap);
-
     }
 
     // Image manipulation handles (white circle + 2 squares)

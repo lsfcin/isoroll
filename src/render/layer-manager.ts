@@ -81,6 +81,7 @@ export const LAYER_KEYS = {
   TOKEN_SPRITE_CLONE:  "token-sprite-clone",
   TOKEN_GIZMOS:        "token-gizmos",
   TOKEN_VOLUME_GIZMOS: "token-volume-gizmos",
+  TOKEN_ELEV_LABEL:    "token-elev-label",
   BG_GIZMOS:           "bg-gizmos",
   WALL_OVERLAY:        "wall-overlay",
 } as const;

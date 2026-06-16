@@ -43,6 +43,7 @@ export class TokenBackground {
 
   private static shadows:    Map<string, PIXI.Container> = new Map();
   private static indicators: Map<string, PIXI.Container> = new Map();
+  private static labels:     Map<string, PIXI.Container> = new Map();
   private static lastState:  Map<string, BgState>        = new Map();
 
   // ---- TokenRenderer interface ----
@@ -57,7 +58,8 @@ export class TokenBackground {
 
   static rebuild(token: Token): void {
     const hasAny = TokenBackground.shadows.has(token.id)
-                || TokenBackground.indicators.has(token.id);
+                || TokenBackground.indicators.has(token.id)
+                || TokenBackground.labels.has(token.id);
     if (!hasAny) return;
     const state = getState(token);
     const last  = TokenBackground.lastState.get(token.id);
@@ -72,6 +74,7 @@ export class TokenBackground {
   // Selection state changes elevation line visibility — rebuild indicators only.
   static onControl(token: Token, controlled: boolean): void {
     TokenBackground.rebuildIndicators(token, controlled);
+    TokenBackground.rebuildLabel(token, controlled);
   }
 
   // ---- PIXI helpers ----
@@ -124,24 +127,34 @@ export class TokenBackground {
       hasContent = true;
     }
 
-    if (!selected && elev !== 0 && VolumeFlags.getShowElevationUnselected(token.document)) {
-      const gridUnits = (canvas.grid as unknown as { units?: string }).units ?? "ft";
-      const label = new PIXI.Text(`${elev} ${gridUnits}`, new PIXI.TextStyle({
-        fontFamily: "Signika, sans-serif", fontSize: 14,
-        fill: 0xffffff, stroke: 0x000000, strokeThickness: 3, lineJoin: "round",
-      }));
-      label.anchor.set(0.5, 0.5); label.eventMode = "none"; label.alpha = 0.3;
-      suppressMipmap(label.texture);
-      const labelWrap = makeCounterWrapper(proj, tx + tw / 2 + heightDir.x * elevPx, ty + th + heightDir.y * elevPx);
-      labelWrap.addChild(label);
-      container.addChild(labelWrap);
-      hasContent = true;
-    }
-
     if (!hasContent) return;
     LayerManager.ensureLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS).addChild(container);
     TokenBackground.indicators.set(token.id, container);
     LayerManager.bringToTop(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
+  }
+
+  private static rebuildLabel(token: Token, selected: boolean): void {
+    destroyMapped(TokenBackground.labels, token.id);
+    const { tx, ty, tw, th } = tokenFootprint(token);
+    const gridSize  = canvas.grid?.size ?? 100;
+    const gridDist  = gridDistance();
+    const proj      = currentProjection();
+    const elev      = getElevation(token.document);
+    if (elev === 0) return;
+    const elevPx    = elevToCanvas(elev, gridSize, gridDist);
+    const heightDir = proj.heightDir;
+    const gridUnits = (canvas.grid as unknown as { units?: string }).units ?? "ft";
+    const label = new PIXI.Text(`${elev} ${gridUnits}`, new PIXI.TextStyle({
+      fontFamily: "Signika, sans-serif", fontSize: 14,
+      fill: 0xffffff, stroke: 0x000000, strokeThickness: 3, lineJoin: "round",
+    }));
+    label.anchor.set(0.5, 0.5); label.eventMode = "none"; label.alpha = selected ? 1.0 : 0.3;
+    suppressMipmap(label.texture);
+    const wrap = makeCounterWrapper(proj, tx + tw / 2 + heightDir.x * elevPx, ty + th + heightDir.y * elevPx);
+    wrap.addChild(label);
+    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_ELEV_LABEL).addChild(wrap);
+    TokenBackground.labels.set(token.id, wrap);
+    LayerManager.bringToTop(LAYER_KEYS.TOKEN_ELEV_LABEL);
   }
 
   static show(token: Token, selected = false): void {
@@ -149,12 +162,14 @@ export class TokenBackground {
     TokenBackground.lastState.set(token.id, getState(token));
     TokenBackground.updateShadow(token);
     TokenBackground.rebuildIndicators(token, selected);
+    TokenBackground.rebuildLabel(token, selected);
   }
 
   static hide(tokenId: string): void {
     const shadow = TokenBackground.shadows.get(tokenId);
     if (shadow) { shadow.parent?.removeChild(shadow); shadow.destroy({ children: true }); TokenBackground.shadows.delete(tokenId); }
     destroyMapped(TokenBackground.indicators, tokenId);
+    destroyMapped(TokenBackground.labels, tokenId);
     TokenBackground.lastState.delete(tokenId);
     const token = (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(tokenId);
     if (token) {
@@ -170,8 +185,10 @@ export class TokenBackground {
     }
     TokenBackground.shadows.clear();
     for (const id of [...TokenBackground.indicators.keys()]) destroyMapped(TokenBackground.indicators, id);
+    for (const id of [...TokenBackground.labels.keys()])     destroyMapped(TokenBackground.labels, id);
     TokenBackground.lastState.clear();
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_SHADOW);
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
+    LayerManager.clearLayer(LAYER_KEYS.TOKEN_ELEV_LABEL);
   }
 }
