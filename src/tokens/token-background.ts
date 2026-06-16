@@ -1,6 +1,6 @@
 // Always-visible token indicators: ground shadow, elevation line, elevation label.
 
-import { VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, isPreviewClone } from "../core";
+import { VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, isPreviewClone, suppressTooltip } from "../core";
 import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, tokenFootprint, makeCounterWrapper, suppressMipmap } from "../draw";
 import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
 import { currentProjection } from "../transform";
@@ -145,7 +145,7 @@ export class TokenBackground {
     const elevPx    = elevToCanvas(elev, gridSize, gridDist);
     const heightDir = proj.heightDir;
     const gridUnits = (canvas.grid as unknown as { units?: string }).units ?? "ft";
-    const label = new PIXI.Text(`${elev} ${gridUnits}`, new PIXI.TextStyle({
+    const label = new PIXI.Text(`${Math.round(elev)} ${gridUnits}`, new PIXI.TextStyle({
       fontFamily: "Signika, sans-serif", fontSize: 14,
       fill: 0xffffff, stroke: 0x000000, strokeThickness: 3, lineJoin: "round",
     }));
@@ -167,6 +167,7 @@ export class TokenBackground {
     TokenBackground.updateShadow(token);
     TokenBackground.rebuildIndicators(token, selected);
     TokenBackground.rebuildLabel(token, selected);
+    suppressTooltip(token);
   }
 
   static hide(tokenId: string): void {

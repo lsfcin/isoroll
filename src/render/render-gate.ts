@@ -98,6 +98,7 @@ export class RenderGate {
   }
 
   private onControlToken(token: Token, controlled: boolean): void {
+    suppressTooltip(token);
     const state = classifyToken(token);
     if (state === "disabled") return;
     if (state === "transformed") { this.tokenRenderers.forEach(r => r.hide(token.id)); return; }
