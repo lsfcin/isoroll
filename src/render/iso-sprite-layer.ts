@@ -69,7 +69,11 @@ export const IsoTokenRenderer: TokenRenderer = {
   sync(token: Token): void {
     const clone = tokenClones.get(token.id); if (!clone) return;
     const mesh  = getMesh(token); if (!mesh) return;
-    syncSprite(clone, mesh); applyDocState(clone, token.document as unknown as PlaceableDoc); mesh.alpha = 0;
+    syncSprite(clone, mesh); mesh.alpha = 0;
+    const doc = token.document as unknown as PlaceableDoc;
+    clone.alpha = docAlpha(doc);
+    if (doc.hidden) clone.visible = false;
+    // visible preserved — fog state owned by onSightRefresh
   },
   rebuild(token: Token): void {
     if (!needsTokenClone(token)) { IsoTokenRenderer.hide(token.id); return; }
@@ -80,7 +84,6 @@ export const IsoTokenRenderer: TokenRenderer = {
   onSightRefresh(): void {
     if (!VolumeFlags.isSceneEnabled()) return;
     const viewers = getViewers();
-    console.debug(`[isoroll fog] onSightRefresh viewers=[${viewers.map(v=>v.name).join(",")}]`);
     const viewerIds = new Set(viewers.map(v => v.id));
     for (const t of (canvas.tokens?.placeables ?? []) as Token[]) {
       const clone = tokenClones.get(t.id); if (!clone) continue;
@@ -107,7 +110,11 @@ export const IsoTileRenderer: TileRenderer = {
   sync(tile: Tile): void {
     const clone = tileClones.get(tile.id); if (!clone) return;
     const mesh  = getMesh(tile); if (!mesh) return;
-    syncSprite(clone, mesh); applyDocState(clone, tile.document as unknown as PlaceableDoc); mesh.alpha = 0;
+    syncSprite(clone, mesh); mesh.alpha = 0;
+    const doc = tile.document as unknown as PlaceableDoc;
+    clone.alpha = docAlpha(doc);
+    if (doc.hidden) { clone.visible = false; clone.tint = 0xffffff; clone.filters = null; }
+    // visible/tint/filters preserved — fog state owned by onSightRefresh
   },
   rebuild(tile: Tile): void {
     if (!needsTileClone(tile)) { IsoTileRenderer.hide(tile.id); return; }

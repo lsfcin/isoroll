@@ -9,18 +9,6 @@ export function applyDocState(s: PIXI.Sprite, doc: PlaceableDoc): void { s.alpha
 const seenTileIds = new Set<string>();
 export function clearSeenTiles(): void { seenTileIds.clear(); }
 
-// Darkening filter for explored-but-not-visible tile clones.
-type CMF = PIXI.Filter & { matrix: number[] };
-let _fogFilter: CMF | undefined;
-function getFogFilter(): CMF {
-  if (!_fogFilter) {
-    const Ctor = (PIXI as unknown as { filters: { ColorMatrixFilter: new() => CMF } }).filters.ColorMatrixFilter;
-    _fogFilter = new Ctor();
-    _fogFilter.matrix = [1,0,0,0,-0.4, 0,1,0,0,-0.4, 0,0,1,0,-0.4, 0,0,0,1,0];
-  }
-  return _fogFilter;
-}
-
 // Viewer resolution: controlled tokens first, then player-owned tokens as fallback.
 // GM with nothing controlled → returns [] so GM bypass fires and everything stays visible.
 export function getViewers(): Token[] {
@@ -35,11 +23,8 @@ export function getViewers(): Token[] {
 // Pass the VIEWER as object (not the subject) — correct Foundry testVisibility pattern.
 function testPointVisible(p: { x: number; y: number }, viewers: Token[]): boolean {
   try {
-    for (const v of viewers) {
-      const r = canvas.visibility?.testVisibility(p, { object: v });
-      console.debug(`[isoroll fog] testVis (${p.x|0},${p.y|0}) viewer=${v.name} → ${r} | tokenVision=${canvas.scene?.tokenVision} | sources=${(canvas.visibility as unknown as {visionSources?:{size?:number}})?.visionSources?.size}`);
-      if (r) return true;
-    }
+    for (const v of viewers)
+      if (canvas.visibility?.testVisibility(p, { object: v })) return true;
   } catch { return true; }
   return false;
 }
@@ -69,25 +54,30 @@ export function applyTokenFog(s: PIXI.Sprite, doc: PlaceableDoc, p: { x: number;
   s.visible = testPointVisible(p, viewers);
 }
 
-// Tile clone: full vis → bright; explored+fogged → darken filter; never seen → hide.
+// Explored-fog darkening: use tint (not a filter) so the clone stays in the normal PIXI render
+// pipeline and renders above the hard-fog layer. Filters create an intermediate render texture
+// that gets composited behind Foundry's fog overlay.
+const FOG_TINT = 0x666666; // ~40% brightness — explored-but-not-visible state
+
+// Tile clone: full vis → bright; explored+fogged → darken via tint; never seen → hide.
 // x/y = top-left corner in canvas px; w/h = tile pixel size. viewers pre-computed by caller.
 export function applyTileFog(
   s: PIXI.Sprite, doc: PlaceableDoc, tileId: string,
   x: number, y: number, w: number, h: number, hideOnFog: boolean, viewers: Token[]
 ): void {
-  if (doc.hidden) { s.visible = false; s.filters = null; return; }
-  if (!canvas.scene?.tokenVision) { s.visible = true; s.alpha = docAlpha(doc); s.filters = null; return; }
-  if (isGM() && viewers.length === 0) { s.visible = true; s.alpha = docAlpha(doc); s.filters = null; return; }
+  if (doc.hidden) { s.visible = false; s.tint = 0xffffff; s.filters = null; return; }
+  if (!canvas.scene?.tokenVision) { s.visible = true; s.alpha = docAlpha(doc); s.tint = 0xffffff; s.filters = null; return; }
+  if (isGM() && viewers.length === 0) { s.visible = true; s.alpha = docAlpha(doc); s.tint = 0xffffff; s.filters = null; return; }
   const gs = canvas.grid?.size ?? 100;
   const vis = (w > gs || h > gs)
     ? testPerimeterVisible(x, y, w, h, viewers)
     : testPointVisible({ x: x + w / 2, y: y + h / 2 }, viewers);
   if (vis) {
     seenTileIds.add(tileId);
-    s.visible = true; s.alpha = docAlpha(doc); s.filters = null;
+    s.visible = true; s.alpha = docAlpha(doc); s.tint = 0xffffff; s.filters = null;
   } else if (!hideOnFog && seenTileIds.has(tileId) && canvas.scene?.fogExploration) {
-    s.visible = true; s.alpha = docAlpha(doc); s.filters = [getFogFilter()];
+    s.visible = true; s.alpha = docAlpha(doc); s.tint = FOG_TINT; s.filters = null;
   } else {
-    s.visible = false; s.filters = null;
+    s.visible = false; s.tint = 0xffffff; s.filters = null;
   }
 }
