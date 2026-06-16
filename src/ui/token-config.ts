@@ -14,9 +14,8 @@ export function registerTokenConfigHook(): void {
         flagCheckbox("transformToken", "TokenConfig", d.getFlag(MODULE_ID, "transformToken") === true) +
         `</fieldset>` +
         `<fieldset><legend>${t("ISOROLL.TokenConfig.ManipulationHeading")}</legend>` +
-        flagCheckbox("showImageManipulation",   "TokenConfig", d.getFlag(MODULE_ID, "showImageManipulation")   !== false) +
-        flagCheckbox("showVolumeManipulation",  "TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation")  !== false, 'style="white-space:nowrap"') +
-        flagCheckbox("showElevationUnselected", "TokenConfig", d.getFlag(MODULE_ID, "showElevationUnselected") !== false, 'style="white-space:nowrap"') +
+        flagCheckbox("showImageManipulation",  "TokenConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
+        flagCheckbox("showVolumeManipulation", "TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false, 'style="white-space:nowrap"') +
         `</fieldset>` +
         `<fieldset><legend>${t("ISOROLL.TokenConfig.ShadowHeading")}</legend>` +
         flagCheckbox("shadowEnabled", "TokenConfig", VolumeFlags.getShadowEnabled(d)) +
