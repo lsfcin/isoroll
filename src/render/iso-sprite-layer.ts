@@ -80,6 +80,7 @@ export const IsoTokenRenderer: TokenRenderer = {
   onSightRefresh(): void {
     if (!VolumeFlags.isSceneEnabled()) return;
     const viewers = getViewers();
+    console.debug(`[isoroll fog] onSightRefresh viewers=[${viewers.map(v=>v.name).join(",")}]`);
     const viewerIds = new Set(viewers.map(v => v.id));
     for (const t of (canvas.tokens?.placeables ?? []) as Token[]) {
       const clone = tokenClones.get(t.id); if (!clone) continue;

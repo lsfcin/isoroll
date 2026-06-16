@@ -35,8 +35,11 @@ export function getViewers(): Token[] {
 // Pass the VIEWER as object (not the subject) — correct Foundry testVisibility pattern.
 function testPointVisible(p: { x: number; y: number }, viewers: Token[]): boolean {
   try {
-    for (const v of viewers)
-      if (canvas.visibility?.testVisibility(p, { object: v })) return true;
+    for (const v of viewers) {
+      const r = canvas.visibility?.testVisibility(p, { object: v });
+      console.debug(`[isoroll fog] testVis (${p.x|0},${p.y|0}) viewer=${v.name} → ${r} | tokenVision=${canvas.scene?.tokenVision} | sources=${(canvas.visibility as unknown as {visionSources?:{size?:number}})?.visionSources?.size}`);
+      if (r) return true;
+    }
   } catch { return true; }
   return false;
 }
