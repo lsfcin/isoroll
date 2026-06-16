@@ -2,7 +2,7 @@
 // then dispatches to registered renderers — once, with a single authority for all guards.
 // Renderers contain pure PIXI logic; no Foundry preview/pending/disabled knowledge needed.
 
-import { VolumeFlags, isTransformedToken, isTransformedTile, suppressTooltip, isPreviewClone, hasActiveClone } from "../core";
+import { MODULE_ID, VolumeFlags, isTransformedToken, isTransformedTile, suppressTooltip, isPreviewClone, hasActiveClone } from "../core";
 import type { TokenRenderer } from "./token-renderer";
 import type { TileRenderer } from "./tile-renderer";
 
@@ -44,6 +44,19 @@ export class RenderGate {
     Hooks.on("controlTile",      (t: Tile, c: boolean) => this.onControlTile(t, c));
     Hooks.on("refreshTile",      (t: Tile, f?: Record<string, boolean>) => this.onRefreshTile(t, f));
     Hooks.on("destroyTile",      (t: Tile)       => this.tileRenderers.forEach(r => r.onDestroy?.(t.id)));
+    // updateToken fires before Foundry's render decision, so it catches render:false flag updates
+    // that refreshToken never sees — and elevation changes blocked by the animation-frame guard.
+    Hooks.on("updateToken", (doc: TokenDocument, changes: Record<string, unknown>) => {
+      if (!VolumeFlags.isSceneEnabled()) return;
+      const flags = (changes.flags as Record<string, unknown> | undefined)?.[MODULE_ID];
+      if (!flags && !("elevation" in changes)) return;
+      const token = (doc as unknown as { object?: Token }).object;
+      if (!token || isTransformedToken(token)) return;
+      const state = classifyToken(token);
+      // "pending" (cloned token) is safe to rebuild on flag changes — renderers use doc.x/y, not mesh.x/y
+      if (state === "disabled" || state === "transformed" || state === "preview") return;
+      this.tokenRenderers.forEach(r => r.rebuild(token));
+    });
   }
 
   private onCanvasReady(): void {

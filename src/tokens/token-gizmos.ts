@@ -22,6 +22,7 @@ interface TkDrag {
 export class TokenGizmos {
   private static sets: Map<string, PIXI.Container> = new Map();
   static lastCommittedElev: Map<string, number> = new Map();
+  static configOpen: Set<string> = new Set();
 
   // ---- TokenRenderer interface ----
 
@@ -30,13 +31,21 @@ export class TokenGizmos {
   static sync(_token: Token): void { /* gizmos have no per-frame mesh sync */ }
 
   static rebuild(token: Token): void {
-    if (!TokenGizmos.sets.has(token.id)) return;
+    const controlled = (token as unknown as { controlled?: boolean }).controlled ?? false;
+    const hasSet = TokenGizmos.sets.has(token.id), inConfig = TokenGizmos.configOpen.has(token.id);
+    if (!hasSet && !controlled && !inConfig) return;
     TokenGizmos.show(token);
   }
 
   static onControl(token: Token, controlled: boolean): void {
     if (controlled && !isTransformedToken(token)) TokenGizmos.show(token);
-    else TokenGizmos.hide(token.id);
+    else if (!TokenGizmos.configOpen.has(token.id)) TokenGizmos.hide(token.id);
+  }
+
+  static setConfigOpen(token: Token, open: boolean): void {
+    open ? TokenGizmos.configOpen.add(token.id) : TokenGizmos.configOpen.delete(token.id);
+    if (open) TokenGizmos.show(token);
+    else if (!((token as unknown as { controlled?: boolean }).controlled ?? false)) TokenGizmos.hide(token.id);
   }
 
   static show(token: Token): void {

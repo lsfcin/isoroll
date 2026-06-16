@@ -41,6 +41,7 @@ function getState(token: Token): BgState {
 export class TokenBackground {
   static readonly handlesPreview = true; // shadow + elevation line follow cursor during drag
 
+  static configOpen: Set<string> = new Set();
   private static shadows:    Map<string, PIXI.Container> = new Map();
   private static indicators: Map<string, PIXI.Container> = new Map();
   private static labels:     Map<string, PIXI.Container> = new Map();
@@ -68,7 +69,7 @@ export class TokenBackground {
     if (last && last.geoKey === state.geoKey) { TokenBackground.updateShadow(token); return; }
     // During drag, preview clone is controlled=true but we want elevation line visible at destination.
     const controlled = isPreviewClone(token) ? false : ((token as unknown as { controlled?: boolean }).controlled ?? false);
-    TokenBackground.show(token, controlled);
+    TokenBackground.show(token, controlled || TokenBackground.configOpen.has(token.id));
   }
 
   // Selection state changes elevation line visibility — rebuild indicators only.
@@ -157,6 +158,9 @@ export class TokenBackground {
     LayerManager.bringToTop(LAYER_KEYS.TOKEN_LABEL);
   }
 
+  static setConfigOpen(token: Token, open: boolean): void {
+    open ? TokenBackground.configOpen.add(token.id) : TokenBackground.configOpen.delete(token.id);
+    TokenBackground.show(token, open || ((token as unknown as { controlled?: boolean }).controlled ?? false)); }
   static show(token: Token, selected = false): void {
     TokenBackground.hide(token.id);
     TokenBackground.lastState.set(token.id, getState(token));
