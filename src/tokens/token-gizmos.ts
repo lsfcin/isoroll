@@ -96,47 +96,36 @@ export class TokenGizmos {
       labelWrap.addChild(label);
       container.addChild(labelWrap);
 
-      // DIAGNOSTIC: test sprite with mesh transforms (fog-free layer validation — remove when done)
-      type Pt = { x: number; y: number };
-      type MeshT = { x?: number; y?: number; anchor?: Pt; scale?: Pt; rotation?: number; skew?: Pt };
-      const mesh = token.mesh as unknown as MeshT | null | undefined;
-      const _testTex    = PIXI.Texture.from(`modules/${MODULE_ID}/assets/chars/rogue/rogue_idle_SE.png`);
-      const _testSprite = new PIXI.Sprite(_testTex);
-      _testSprite.position.set((mesh?.x ?? tx) - tw, mesh?.y ?? ty);
-      if (mesh?.anchor) _testSprite.anchor.set(mesh.anchor.x, mesh.anchor.y);
-      if (mesh?.skew)   _testSprite.skew.set(mesh.skew.x, mesh.skew.y);
-      if (mesh?.scale)  _testSprite.scale.set(mesh.scale.x, mesh.scale.y);
-      _testSprite.rotation = mesh?.rotation ?? 0;
-      _testSprite.eventMode = "none";
-      container.addChild(_testSprite);
     }
 
     // Image manipulation handles (white circle + 2 squares)
-    const tkMesh   = token.mesh as unknown as MeshLike | null | undefined;
-    const meshCX   = tkMesh?.x ?? (token.document.x ?? 0);
-    const meshCY   = tkMesh?.y ?? (token.document.y ?? 0);
-    const tkTexH   = tkMesh?.texture?.height ?? 100;
-    const tkScaleY = tkMesh?.scale?.y ?? 1;
-    const imgOff   = VolumeFlags.getImageOffset(token.document);
-    const imgScl   = VolumeFlags.getImageScale(token.document);
-    const imgYScl  = VolumeFlags.getImageYScale(token.document);
-    const gridSize = canvas.grid?.size ?? 100;
-    const tkImgHalfH = Math.max(1, tkTexH * Math.abs(tkScaleY) / (2 * Math.max(0.01, Math.abs(imgYScl))));
-    const bl = imageBottomLeft(token);
-    const tr = imageTopRight(token);
-    const tc = imageTopCenter(token);
-    const defs: Array<[PIXI.Container, "imgOffset" | "imgScale" | "imgYScale", { x: number; y: number } | null]> = [
-      [makeCircleHandle(0xffffff, "move"),               "imgOffset", bl],
-      [makeSquareCounterHandle(0xffffff, "nesw-resize"), "imgScale",  tr],
-      [makeSquareCounterHandle(0xffffff, "ns-resize"),   "imgYScale", tc],
-    ];
-    for (const [handle, type, pos] of defs) {
-      if (pos) { handle.x = pos.x; handle.y = pos.y; }
-      handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
-        e.stopPropagation();
-        TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gridSize, imgOff.y * gridSize, imgScl, imgYScl, tkImgHalfH, meshCX, meshCY);
-      });
-      container.addChild(handle);
+    if (showImg) {
+      const tkMesh   = token.mesh as unknown as MeshLike | null | undefined;
+      const meshCX   = tkMesh?.x ?? (token.document.x ?? 0);
+      const meshCY   = tkMesh?.y ?? (token.document.y ?? 0);
+      const tkTexH   = tkMesh?.texture?.height ?? 100;
+      const tkScaleY = tkMesh?.scale?.y ?? 1;
+      const imgOff   = VolumeFlags.getImageOffset(token.document);
+      const imgScl   = VolumeFlags.getImageScale(token.document);
+      const imgYScl  = VolumeFlags.getImageYScale(token.document);
+      const gridSize = canvas.grid?.size ?? 100;
+      const tkImgHalfH = Math.max(1, tkTexH * Math.abs(tkScaleY) / (2 * Math.max(0.01, Math.abs(imgYScl))));
+      const bl = imageBottomLeft(token);
+      const tr = imageTopRight(token);
+      const tc = imageTopCenter(token);
+      const defs: Array<[PIXI.Container, "imgOffset" | "imgScale" | "imgYScale", { x: number; y: number } | null]> = [
+        [makeCircleHandle(0xffffff, "move"),               "imgOffset", bl],
+        [makeSquareCounterHandle(0xffffff, "nesw-resize"), "imgScale",  tr],
+        [makeSquareCounterHandle(0xffffff, "ns-resize"),   "imgYScale", tc],
+      ];
+      for (const [handle, type, pos] of defs) {
+        if (pos) { handle.x = pos.x; handle.y = pos.y; }
+        handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
+          e.stopPropagation();
+          TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gridSize, imgOff.y * gridSize, imgScl, imgYScl, tkImgHalfH, meshCX, meshCY);
+        });
+        container.addChild(handle);
+      }
     }
 
     layer.addChild(container);

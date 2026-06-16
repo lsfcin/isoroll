@@ -1,6 +1,6 @@
-// Always-visible token indicators: ground shadow, elevation line, unselected label, and sprite clone.
+// Always-visible token indicators: ground shadow, elevation line, elevation label.
 
-import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, isPreviewClone } from "../core";
+import { VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, isPreviewClone } from "../core";
 import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, tokenFootprint, makeCounterWrapper, suppressMipmap } from "../draw";
 import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
 import { currentProjection } from "../transform";
@@ -38,18 +38,11 @@ function getState(token: Token): BgState {
   };
 }
 
-type MeshT = { x: number; y: number; anchor?: { x: number; y: number }; scale?: { x: number; y: number }; rotation?: number; skew?: { x: number; y: number }; texture?: unknown };
-function getMesh(token: Token): MeshT | undefined {
-  const m = (token as unknown as { mesh?: MeshT }).mesh;
-  return m?.texture ? m : undefined;
-}
-
 export class TokenBackground {
   static readonly handlesPreview = true; // shadow + elevation line follow cursor during drag
 
   private static shadows:    Map<string, PIXI.Container> = new Map();
   private static indicators: Map<string, PIXI.Container> = new Map();
-  private static sprites:    Map<string, PIXI.Sprite>    = new Map();
   private static lastState:  Map<string, BgState>        = new Map();
 
   // ---- TokenRenderer interface ----
@@ -60,22 +53,11 @@ export class TokenBackground {
     TokenBackground.show(token, selected);
   }
 
-  static sync(token: Token): void {
-    const sprite = TokenBackground.sprites.get(token.id);
-    const mesh   = getMesh(token);
-    if (!sprite || !mesh) return;
-    const { tw } = tokenFootprint(token);
-    sprite.position.set(mesh.x + tw, mesh.y);
-    if (mesh.anchor) sprite.anchor.set(mesh.anchor.x, mesh.anchor.y);
-    if (mesh.skew)   sprite.skew.set(mesh.skew.x, mesh.skew.y);
-    if (mesh.scale)  sprite.scale.set(mesh.scale.x, mesh.scale.y);
-    sprite.rotation = mesh.rotation ?? 0;
-  }
+  static sync(_token: Token): void { /* no per-frame sync needed */ }
 
   static rebuild(token: Token): void {
     const hasAny = TokenBackground.shadows.has(token.id)
-                || TokenBackground.indicators.has(token.id)
-                || TokenBackground.sprites.has(token.id);
+                || TokenBackground.indicators.has(token.id);
     if (!hasAny) return;
     const state = getState(token);
     const last  = TokenBackground.lastState.get(token.id);
@@ -110,7 +92,6 @@ export class TokenBackground {
 
   private static rebuildIndicators(token: Token, selected: boolean): void {
     destroyMapped(TokenBackground.indicators, token.id);
-    if (!VolumeFlags.getShowVolumeManipulation(token.document, true)) return;
     const { tx, ty, tw, th } = tokenFootprint(token);
     const gridSize  = canvas.grid?.size ?? 100;
     const gridDist  = gridDistance();
@@ -123,16 +104,21 @@ export class TokenBackground {
     const container = new PIXI.Container();
     let hasContent = false;
 
-    if (!selected && elev !== 0 && VolumeFlags.getElevLineEnabled(token.document)) {
+    if (elev !== 0 && VolumeFlags.getElevLineEnabled(token.document)) {
       const baseCX = groundX + heightDir.x * elevPx;
       const baseCY = groundY + heightDir.y * elevPx;
+      const dx = baseCX - groundX, dy = baseCY - groundY;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const gap = 7;
+      const startX = len > gap ? groundX + (dx / len) * gap : groundX;
+      const startY = len > gap ? groundY + (dy / len) * gap : groundY;
       const lineG  = new PIXI.Graphics();
       lineG.eventMode = "none";
       lineG.lineStyle(1, resolveElevLineColor(token), 0.35);
       if (VolumeFlags.getElevLineDashed(token.document)) {
-        drawDash(lineG, groundX, groundY, baseCX, baseCY, ANCHOR_DASH, ANCHOR_GAP);
+        drawDash(lineG, startX, startY, baseCX, baseCY, ANCHOR_DASH, ANCHOR_GAP);
       } else {
-        lineG.moveTo(groundX, groundY); lineG.lineTo(baseCX, baseCY);
+        lineG.moveTo(startX, startY); lineG.lineTo(baseCX, baseCY);
       }
       container.addChild(lineG);
       hasContent = true;
@@ -158,40 +144,17 @@ export class TokenBackground {
     LayerManager.bringToTop(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
   }
 
-  private static createSprite(token: Token): void {
-    const tex    = PIXI.Texture.from(`modules/${MODULE_ID}/assets/chars/rogue/rogue_idle_SE.png`);
-    const sprite = new PIXI.Sprite(tex);
-    sprite.eventMode = "none";
-    // Initial sync — may be wrong if mesh not yet ready; corrected on next refreshToken.
-    const mesh = getMesh(token);
-    if (mesh) {
-      const { tw } = tokenFootprint(token);
-      sprite.position.set(mesh.x + tw, mesh.y);
-      if (mesh.anchor) sprite.anchor.set(mesh.anchor.x, mesh.anchor.y);
-      if (mesh.skew)   sprite.skew.set(mesh.skew.x, mesh.skew.y);
-      if (mesh.scale)  sprite.scale.set(mesh.scale.x, mesh.scale.y);
-      sprite.rotation = mesh.rotation ?? 0;
-    }
-    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_SPRITE_CLONE).addChild(sprite);
-    TokenBackground.sprites.set(token.id, sprite);
-    LayerManager.bringToTop(LAYER_KEYS.TOKEN_SPRITE_CLONE);
-  }
-
   static show(token: Token, selected = false): void {
     TokenBackground.hide(token.id);
-    if (!VolumeFlags.getShowVolumeManipulation(token.document, true)) return;
     TokenBackground.lastState.set(token.id, getState(token));
     TokenBackground.updateShadow(token);
     TokenBackground.rebuildIndicators(token, selected);
-    TokenBackground.createSprite(token);
   }
 
   static hide(tokenId: string): void {
     const shadow = TokenBackground.shadows.get(tokenId);
     if (shadow) { shadow.parent?.removeChild(shadow); shadow.destroy({ children: true }); TokenBackground.shadows.delete(tokenId); }
     destroyMapped(TokenBackground.indicators, tokenId);
-    const sprite = TokenBackground.sprites.get(tokenId);
-    if (sprite) { sprite.parent?.removeChild(sprite); sprite.destroy(); TokenBackground.sprites.delete(tokenId); }
     TokenBackground.lastState.delete(tokenId);
     const token = (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(tokenId);
     if (token) {
@@ -207,14 +170,8 @@ export class TokenBackground {
     }
     TokenBackground.shadows.clear();
     for (const id of [...TokenBackground.indicators.keys()]) destroyMapped(TokenBackground.indicators, id);
-    for (const id of [...TokenBackground.sprites.keys()]) {
-      const s = TokenBackground.sprites.get(id);
-      if (s) { s.parent?.removeChild(s); s.destroy(); }
-    }
-    TokenBackground.sprites.clear();
     TokenBackground.lastState.clear();
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_SHADOW);
     LayerManager.clearLayer(LAYER_KEYS.TOKEN_VOLUME_GIZMOS);
-    LayerManager.clearLayer(LAYER_KEYS.TOKEN_SPRITE_CLONE);
   }
 }
