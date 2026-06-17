@@ -1,6 +1,6 @@
 // Thin Foundry hook subscriber. All dispatch and classification logic lives in render-lifecycle.ts.
 
-import { MODULE_ID, VolumeFlags } from '../core';
+import { MODULE_ID, VolumeFlags, isPreviewClone } from '../core';
 import type { TokenRenderer } from './token-renderer';
 import type { TileRenderer } from './tile-renderer';
 import {
@@ -23,11 +23,15 @@ export class RenderGate {
     Hooks.on("drawToken",        (t: Token)                               => onTokenDraw(t));
     Hooks.on("controlToken",     (t: Token, c: boolean)                   => c ? onTokenSelect(t) : onTokenDeselect(t));
     Hooks.on("refreshToken",     (t: Token, f?: Record<string, boolean>)  => onTokenRefresh(t, f));
-    Hooks.on("destroyToken",     (t: Token)                               => onTokenDestroy(t.id));
+    // Guard preview-clone destroy: clone shares id with original — must not trigger cleanup on original.
+    Hooks.on("destroyToken",     (t: Token) => { if (!isPreviewClone(t)) onTokenDestroy(t.id); });
     Hooks.on("drawTile",         (t: Tile)                                => onTileDraw(t));
     Hooks.on("controlTile",      (t: Tile, c: boolean)                    => c ? onTileSelect(t) : onTileDeselect(t));
     Hooks.on("refreshTile",      (t: Tile, f?: Record<string, boolean>)   => onTileRefresh(t, f));
-    Hooks.on("destroyTile",      (t: Tile)                                => onTileDestroy(t.id));
+    Hooks.on("destroyTile",      (t: Tile)  => { if (!isPreviewClone(t)) onTileDestroy(t.id); });
+    // Document delete hooks — belt-and-suspenders for cases where destroyTile/destroyToken don't fire.
+    Hooks.on("deleteTile",  (doc: unknown) => onTileDestroy((doc as { id?: string }).id ?? ""));
+    Hooks.on("deleteToken", (doc: unknown) => onTokenDestroy((doc as { id?: string }).id ?? ""));
     Hooks.on("updateToken", (doc: TokenDocument, changes: Record<string, unknown>) => {
       if (!VolumeFlags.isSceneEnabled()) return;
       const flags = (changes.flags as Record<string, unknown> | undefined)?.[MODULE_ID];
