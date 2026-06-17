@@ -4,7 +4,7 @@
 
 import { MODULE_ID, VolumeFlags } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
-import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, clearSeenTiles, getViewers } from "./fog-helpers";
+import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, clearSeenTiles, getViewers, tryRestoreFromStorage, maybeInvalidateRestoredTiles, saveSessionToStorage } from "./fog-helpers";
 import type { TokenRenderer } from "./token-renderer";
 import type { TileRenderer } from "./tile-renderer";
 
@@ -124,14 +124,19 @@ export const IsoTileRenderer: TileRenderer = {
   onDestroy(id: string): void { IsoTileRenderer.hide(id); },
   onSightRefresh(): void {
     if (!VolumeFlags.isSceneEnabled()) return;
+    maybeInvalidateRestoredTiles(); // clear restored data if in-session fog reset detected
+    tryRestoreFromStorage();         // one-time: populate restoredTileIds from localStorage after F5
     const viewers = getViewers();
     for (const t of (canvas.tiles?.placeables ?? []) as Tile[]) {
       const clone = tileClones.get(t.id); if (!clone) continue;
       const w = t.document.width ?? 0, h = t.document.height ?? 0;
+      const mesh = getMesh(t);
+      console.log(`[isoroll sr-before] id=${t.id} mesh.alpha=${(mesh as unknown as {alpha?:number})?.alpha} clone.visible=${clone.visible}`);
       // v14: doc.x/y is center; top-left = center - size/2
       applyTileFog(clone, t.document as unknown as PlaceableDoc, t.id,
         (t.document.x ?? 0) - w / 2, (t.document.y ?? 0) - h / 2, w, h,
         VolumeFlags.getHideOnFog(t.document), viewers);
+      console.log(`[isoroll sr-after] id=${t.id} mesh.alpha=${(mesh as unknown as {alpha?:number})?.alpha} clone.visible=${clone.visible}`);
     }
   },
   hide(id: string): void {
@@ -146,7 +151,17 @@ export const IsoSpriteLayer = {
   token: IsoTokenRenderer,
   tile:  IsoTileRenderer,
   getLayer(): PIXI.Container { return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES); },
-  _onTick(): void { LayerManager.enforceOrder(); },
+  _onTick(): void {
+    LayerManager.enforceOrder();
+    // Tile._refreshState() resets mesh.alpha=1 on every render flag cycle.
+    // This ticker runs at priority -25 (after _refreshState at OBJECTS:23, after sightRefresh at PERCEPTION:2,
+    // but before the GPU render), so it's the last word on mesh.alpha before each frame is drawn.
+    for (const [id] of tileClones) {
+      const tile = getTile(id);
+      const mesh = tile ? getMesh(tile) : undefined;
+      if (mesh) (mesh as unknown as { alpha: number }).alpha = 0;
+    }
+  },
   _onCanvasInit(): void {
     IsoTokenRenderer.clearAll(); IsoTileRenderer.clearAll(); clearSeenTiles();
     const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
@@ -166,5 +181,7 @@ export const IsoSpriteLayer = {
     });
     Hooks.on("changeScene", IsoSpriteLayer._teardown);
     Hooks.on("resetFogOfWar", () => { clearSeenTiles(); IsoTileRenderer.onSightRefresh(); });
+    // Save explored tile set before F5/reload so restored tiles appear darkened without the 2-sec fog save debounce.
+    window.addEventListener("beforeunload", saveSessionToStorage);
   },
 };

@@ -49,4 +49,28 @@ export declare class VolumeFlags {
         getFlag(s: string, k: string): unknown;
     }): boolean;
     static isSceneEnabled(): boolean;
+    static getShadowEnabled(doc: {
+        getFlag(s: string, k: string): unknown;
+    }, defaultOn?: boolean): boolean;
+    static getShadowShape(doc: {
+        getFlag(s: string, k: string): unknown;
+    }, defaultShape?: "circle" | "rect"): "circle" | "rect";
+    static getShadowRadius(doc: {
+        getFlag(s: string, k: string): unknown;
+    }): number;
+    static getShadowOpacity(doc: {
+        getFlag(s: string, k: string): unknown;
+    }, defaultOpacity?: number): number;
+    static getElevLineEnabled(doc: {
+        getFlag(s: string, k: string): unknown;
+    }): boolean;
+    static getElevLineDashed(doc: {
+        getFlag(s: string, k: string): unknown;
+    }): boolean;
+    static getElevLineColor(doc: {
+        getFlag(s: string, k: string): unknown;
+    }): "black" | "player";
 }
+export declare function getElevation(doc: object): number;
+export declare function isTransformedToken(token: Token): boolean;
+export declare function isTransformedTile(tile: Tile): boolean;

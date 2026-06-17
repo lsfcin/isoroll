@@ -1,3 +1,4 @@
+export declare function suppressTooltip(token: Token): void;
 export declare function scheduleWrap(fn: () => Promise<void>, label: string, delay?: number): void;
 export declare function canvasZoom(): number;
 export declare function gridDistance(): number;
@@ -22,4 +23,6 @@ export declare function screenPointToCanvas(sx: number, sy: number, wt: {
     x: number;
     y: number;
 };
+export declare function isPreviewClone(p: unknown): boolean;
+export declare function hasActiveClone(p: unknown): boolean;
 export declare function startPointerDrag<T>(drag: T, onMove: (drag: T, e: PointerEvent) => void, onUp: (drag: T, e: PointerEvent) => void): void;

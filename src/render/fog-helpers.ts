@@ -6,8 +6,55 @@ export function docAlpha(doc: PlaceableDoc): number { return typeof doc.alpha ==
 export function applyDocState(s: PIXI.Sprite, doc: PlaceableDoc): void { s.alpha = docAlpha(doc); s.visible = !doc.hidden; }
 
 // In-memory explored registry — cleared on fog reset and canvas init.
-const seenTileIds = new Set<string>();
-export function clearSeenTiles(): void { seenTileIds.clear(); }
+const seenTileIds   = new Set<string>();
+// Tiles loaded from localStorage on F5 reload — promoted to seenTileIds once fog.exploration is stable.
+const restoredTileIds = new Set<string>();
+let _restoreChecked = false;
+
+const STORAGE_KEY = (sceneId: string) => `isoroll-seen-${sceneId}`;
+
+export function clearSeenTiles(): void {
+  seenTileIds.clear();
+  restoredTileIds.clear();
+  _restoreChecked = false;
+  // Clear localStorage entry so in-session fog resets don't persist across F5.
+  const sceneId = (canvas.scene as unknown as { id?: string })?.id;
+  if (sceneId) { try { localStorage.removeItem(STORAGE_KEY(sceneId)); } catch { /* ignore */ } }
+}
+
+// Called from onSightRefresh before processing tiles. Saves seenTileIds so F5 reload can restore them.
+export function saveSessionToStorage(): void {
+  const sceneId = (canvas.scene as unknown as { id?: string })?.id;
+  if (!sceneId || seenTileIds.size === 0) return;
+  try { localStorage.setItem(STORAGE_KEY(sceneId), JSON.stringify({ sceneId, tileIds: [...seenTileIds] })); } catch { /* quota */ }
+}
+
+// Populate restoredTileIds from localStorage once per scene load (gate: _restoreChecked).
+export function tryRestoreFromStorage(): void {
+  if (_restoreChecked) return;
+  _restoreChecked = true;
+  const sceneId = (canvas.scene as unknown as { id?: string })?.id;
+  if (!sceneId) return;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY(sceneId));
+    if (!raw) return;
+    const data = JSON.parse(raw) as { sceneId: string; tileIds: string[] };
+    if (data.sceneId !== sceneId || !Array.isArray(data.tileIds)) return;
+    for (const id of data.tileIds) restoredTileIds.add(id);
+  } catch { /* parse error */ }
+}
+
+// If exploration=null while seenTileIds is non-empty, an in-session fog reset occurred.
+// Clear both sets so restored and in-session data don't survive the reset.
+export function maybeInvalidateRestoredTiles(): void {
+  if (seenTileIds.size === 0) return;  // post-F5 fresh start — nothing to invalidate
+  const fog = canvas.fog as unknown as { exploration: unknown; fogExploration: boolean };
+  if (fog.fogExploration && fog.exploration === null) {
+    seenTileIds.clear(); restoredTileIds.clear();
+    const sceneId = (canvas.scene as unknown as { id?: string })?.id;
+    if (sceneId) { try { localStorage.removeItem(STORAGE_KEY(sceneId)); } catch { /* ignore */ } }
+  }
+}
 
 // Viewer resolution: controlled tokens first, then player-owned tokens as fallback.
 // GM with nothing controlled → returns [] so GM bypass fires and everything stays visible.
@@ -30,16 +77,21 @@ function testPointVisible(p: { x: number; y: number }, viewers: Token[]): boolea
 }
 
 // Grid-cell-spaced perimeter sampling for tiles larger than one cell.
-function testPerimeterVisible(x: number, y: number, w: number, h: number, viewers: Token[]): boolean {
-  const gs = canvas.grid?.size ?? 100;
-  const pts: { x: number; y: number }[] = [];
+// Returns all perimeter points including the tile center.
+function buildPerimeterPoints(x: number, y: number, w: number, h: number, gs: number): { x: number; y: number }[] {
+  const pts: { x: number; y: number }[] = [{ x: x + w / 2, y: y + h / 2 }];
   for (let i = 0; i <= w; i += gs) {
     pts.push({ x: x+i+0.001, y: y+0.001 }); pts.push({ x: x+i+0.001, y: y+h+0.001 });
   }
   for (let j = gs; j < h; j += gs) {
     pts.push({ x: x+0.001, y: y+j+0.001 }); pts.push({ x: x+w+0.001, y: y+j+0.001 });
   }
-  return pts.some(p => testPointVisible(p, viewers));
+  return pts;
+}
+
+function testPerimeterVisible(x: number, y: number, w: number, h: number, viewers: Token[]): boolean {
+  const gs = canvas.grid?.size ?? 100;
+  return buildPerimeterPoints(x, y, w, h, gs).some(p => testPointVisible(p, viewers));
 }
 
 function isGM(): boolean { return !!(game.user as { isGM?: boolean })?.isGM; }
@@ -88,10 +140,22 @@ export function applyTileFog(
     } else if (seenTileIds.has(tileId)) {
       // Seen this session — trust in-memory state; isPointExplored is async/stale.
       s.visible = true; s.tint = EXPLORED_TINT;
+    } else if (restoredTileIds.has(tileId)) {
+      // Restored from localStorage (cross-F5 bridge for the 2-sec fog save debounce).
+      // Only reached when fog.exploration is stable (fogWasReset guard above passed).
+      seenTileIds.add(tileId); restoredTileIds.delete(tileId);
+      s.visible = true; s.tint = EXPLORED_TINT;
     } else {
       // seenTileIds empty (e.g. F5 reload): fall back to server-persisted pixels.
       // load() extracts pixels synchronously, so isPointExplored is reliable here.
-      if (fog?.isPointExplored?.({ x: cx, y: cy })) {
+      // Use perimeter sampling so partially-explored large tiles are detected correctly.
+      let anyExplored = false;
+      if (fog.isPointExplored) {
+        const pts = (w > gs || h > gs) ? buildPerimeterPoints(x, y, w, h, gs) : [{ x: cx, y: cy }];
+        anyExplored = pts.some(p => fog.isPointExplored!(p) === true);
+      }
+      console.log(`[isoroll fog-f5] tileId=${tileId} cx=${cx.toFixed(0)} cy=${cy.toFixed(0)} anyExplored=${anyExplored} fogExploration=${fog.fogExploration} explorationNull=${fog.exploration === null}`);
+      if (anyExplored) {
         seenTileIds.add(tileId); s.visible = true; s.tint = EXPLORED_TINT;
       } else {
         s.visible = false; s.tint = 0xffffff;
