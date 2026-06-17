@@ -6,7 +6,7 @@
 
 ## Status
 
-Phase 2 complete. Phase 1 is next priority.
+Phases 3 and 4 complete. Phase 5 is next priority. Phase 1 (token depth) still pending.
 
 ## Backlog
 
@@ -146,7 +146,7 @@ Only counter-transformed objects (tiles/tokens with isoroll flags set) go into t
 
 ---
 
-## Phase 4 — Fog-of-War Visibility Management 🔲 PENDING
+## Phase 4 — Fog-of-War Visibility Management ✅ COMPLETE
 
 **Requires Phase 3.**
 
@@ -194,19 +194,19 @@ Sample the footprint center; for tiles larger than 1 grid cell also sample corne
 ### Checklist
 
 **Tokens:**
-- [ ] On `refreshToken` and `sightRefresh`: run visibility check for all token clones; apply result to clone
-- [ ] Token clone: visible if in-vision; hidden if unexplored or `document.hidden`; fogged explored = hide by default (token shouldn't be revealed in explored fog)
+- [x] On `refreshToken` and `sightRefresh`: run visibility check for all token clones; apply result to clone
+- [x] Token clone: visible if in-vision; hidden if unexplored or `document.hidden`; fogged explored = hide by default (token shouldn't be revealed in explored fog)
 
 **Tiles:**
-- [ ] Add `flags.isoroll.hideOnFog` (bool, default `false`) to `VolumeFlags` in `src/flags.ts` — when true, tile hides in both fogged and unexplored states
-- [ ] On `refreshTile` and `sightRefresh`: run visibility check for all tile clones
-- [ ] Explored + visible → full alpha; explored + fogged → `ColorMatrixFilter` darken; unexplored → hide
-- [ ] Add `hideOnFog` toggle to Iso tab in `src/ui/tile-config.ts`
+- [x] Add `flags.isoroll.hideOnFog` (bool, default `false`) to `VolumeFlags` in `src/flags.ts` — when true, tile hides in both fogged and unexplored states
+- [x] On `refreshTile` and `sightRefresh`: run visibility check for all tile clones
+- [x] Explored + visible → full alpha; explored + fogged → tint 0x808080 darken; unexplored → hide
+- [x] Add `hideOnFog` toggle to Iso tab in `src/ui/tile-config.ts`
 
 **Shared:**
-- [ ] Trigger full visibility re-evaluation on: `sightRefresh`, `canvasReady`, `updateToken` (position changes affect whose vision covers which tiles)
-- [ ] Determine viewer tokens: controlled tokens → fallback to player-owned visible tokens
-- [ ] For GM (no fog): skip testVisibility, show everything
+- [x] Trigger full visibility re-evaluation on: `sightRefresh`, `canvasReady`, `updateToken`
+- [x] Determine viewer tokens: controlled tokens → fallback to player-owned visible tokens
+- [x] For GM (no fog): skip testVisibility, show everything
 
 ### Key Files
 
