@@ -1,11 +1,11 @@
-// Selection overlay for tokens: image handles, volume box, image contour, elevation handle/label, test sprite, ground shadow.
+// Selection overlay for tokens: image handles, volume box, image contour, elevation handle.
 
 import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag, CanvasEnv } from "../core";
-import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale, makeCircleHandle, makeSquareCounterHandle } from "../gizmos";
-import { drawMeshContour, drawBox, drawAnchorLine } from "../draw";
+import { HALF, HANDLE_SIZE, imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos";
+import { drawMeshContour, drawBox, drawAnchorLine, BLACK, ORANGE } from "../draw";
 import { beginElevDrag } from "./token-elev-drag";
-import { LayerManager, LAYER_KEYS, destroyMapped, IsoGeometry, MeshAccessor, IsoRenderer } from "../render";
-import type { RenderHandle, DrawAPI } from "../render";
+import { LAYER_KEYS, IsoGeometry, MeshAccessor, IsoRenderer } from "../render";
+import type { DrawAPI, ShapeSpec } from "../render";
 import { currentProjection } from "../transform";
 
 interface TkDrag {
@@ -20,10 +20,9 @@ interface TkDrag {
 }
 
 export class TokenGizmos {
-  private static sets:       Map<string, PIXI.Container> = new Map();
-  private static _boxHandles: Map<string, RenderHandle>   = new Map();
-  static lastCommittedElev:  Map<string, number>          = new Map();
-  static configOpen:         Set<string>                  = new Set();
+  private static _handleKeys: Map<string, Set<string>> = new Map();
+  static lastCommittedElev:   Map<string, number>      = new Map();
+  static configOpen:          Set<string>              = new Set();
 
   // ---- TokenRenderer interface ----
 
@@ -33,7 +32,7 @@ export class TokenGizmos {
 
   static rebuild(token: Token): void {
     const controlled = (token as unknown as { controlled?: boolean }).controlled ?? false;
-    const hasSet = TokenGizmos.sets.has(token.id), inConfig = TokenGizmos.configOpen.has(token.id);
+    const hasSet = TokenGizmos._handleKeys.has(token.id), inConfig = TokenGizmos.configOpen.has(token.id);
     if (!hasSet && !controlled && !inConfig) return;
     TokenGizmos.show(token);
   }
@@ -55,90 +54,81 @@ export class TokenGizmos {
     const showVol = VolumeFlags.getShowVolumeManipulation(token.document, true);
     if (!showImg && !showVol) return;
 
-    // Volume box + image contour via IsoRenderer (no raw PIXI)
-    TokenGizmos._boxHandles.set(token.id, IsoRenderer.render({
-      key: `token-${token.id}:box`, owner: { kind: "token", id: token.id },
+    const keys = new Set<string>();
+    const own  = { kind: "token" as const, id: token.id };
+    const strk = { color: BLACK, width: 0.5 };
+
+    keys.add(`token-${token.id}:box`);
+    IsoRenderer.render({
+      key: `token-${token.id}:box`, owner: own,
       visual: { kind: "lines", build: (g) => TokenGizmos._drawBox(g, token) },
       space: "WORLD", placement: { anchor: { x: 0, y: 0 } },
       layer: LAYER_KEYS.TOKEN_GIZMOS, z: "top",
-    }));
-
-    // Selection handles (TOKEN_GIZMOS layer)
-    const layer     = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_GIZMOS);
-    const container = new PIXI.Container();
+    });
 
     if (showVol) {
       const { tx, ty, tw, th } = IsoGeometry.footprint(token);
-      const gridSize  = CanvasEnv.gridSize();
-      const gridDist  = gridDistance();
-      const proj      = currentProjection();
-      const elev      = getElevation(token.document);
-      const boundH    = VolumeFlags.getTokenHeight(token.document);
-      const elevPx    = elevToCanvas(elev, gridSize, gridDist);
-      const elevTopPx = elevPx + boundH * gridSize;
-      const heightDir = proj.heightDir;
-
-      // Elevation handle — orange circle, drag to change elevation
-      const seMidX = tx + tw + heightDir.x * (elevPx + elevTopPx) / 2;
-      const seMidY = ty + th + heightDir.y * (elevPx + elevTopPx) / 2;
-      const elevHandle = makeCircleHandle(0xff9829);
-      elevHandle.x = seMidX; elevHandle.y = seMidY;
-      elevHandle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
-        e.stopPropagation();
-        beginElevDrag(TokenGizmos.lastCommittedElev, token, e.global.x, e.global.y, elev);
+      const gridSize = CanvasEnv.gridSize(), gridDist = gridDistance();
+      const elev = getElevation(token.document);
+      const boundH = VolumeFlags.getTokenHeight(token.document);
+      const elevPx = elevToCanvas(elev, gridSize, gridDist);
+      const heightDir = currentProjection().heightDir;
+      const seMidX = tx + tw + heightDir.x * (elevPx + elevPx + boundH * gridSize) / 2;
+      const seMidY = ty + th + heightDir.y * (elevPx + elevPx + boundH * gridSize) / 2;
+      keys.add(`token-${token.id}:elev`);
+      IsoRenderer.render({
+        key: `token-${token.id}:elev`, owner: own,
+        visual: { kind: "circle", radius: HALF * 0.945, fill: ORANGE, fillAlpha: 0.9, stroke: strk },
+        space: "WORLD", placement: { anchor: { x: seMidX, y: seMidY } },
+        layer: LAYER_KEYS.TOKEN_GIZMOS, flat: true,
+        interaction: { cursor: "n-resize",
+          onPointerDown: (e) => { e.stopPropagation(); beginElevDrag(TokenGizmos.lastCommittedElev, token, e.global.x, e.global.y, elev); } },
       });
-      container.addChild(elevHandle);
     }
 
-    // Image manipulation handles (white circle + 2 squares)
     if (showImg) {
-      const geo      = MeshAccessor.geometryOf(token);
-      const meshCX   = geo?.x ?? (token.document.x ?? 0);
-      const meshCY   = geo?.y ?? (token.document.y ?? 0);
-      const tkTexH   = geo?.height ?? 100;
-      const tkScaleY = geo?.scale.y ?? 1;
-      const imgOff   = VolumeFlags.getImageOffset(token.document);
-      const imgScl   = VolumeFlags.getImageScale(token.document);
-      const imgYScl  = VolumeFlags.getImageYScale(token.document);
+      const geo     = MeshAccessor.geometryOf(token);
+      const meshCX  = geo?.x ?? (token.document.x ?? 0);
+      const meshCY  = geo?.y ?? (token.document.y ?? 0);
+      const imgOff  = VolumeFlags.getImageOffset(token.document);
+      const imgScl  = VolumeFlags.getImageScale(token.document);
+      const imgYScl = VolumeFlags.getImageYScale(token.document);
       const gridSize = CanvasEnv.gridSize();
-      const tkImgHalfH = Math.max(1, tkTexH * Math.abs(tkScaleY) / (2 * Math.max(0.01, Math.abs(imgYScl))));
-      const bl = imageBottomLeft(token);
-      const tr = imageTopRight(token);
-      const tc = imageTopCenter(token);
-      const defs: Array<[PIXI.Container, "imgOffset" | "imgScale" | "imgYScale", { x: number; y: number } | null]> = [
-        [makeCircleHandle(0xffffff, "move"),               "imgOffset", bl],
-        [makeSquareCounterHandle(0xffffff, "nesw-resize"), "imgScale",  tr],
-        [makeSquareCounterHandle(0xffffff, "ns-resize"),   "imgYScale", tc],
+      const tkImgHalfH = Math.max(1, (geo?.height ?? 100) * Math.abs(geo?.scale.y ?? 1) / (2 * Math.max(0.01, Math.abs(imgYScl))));
+      const bl = imageBottomLeft(token), tr = imageTopRight(token), tc = imageTopCenter(token);
+      type ImgDef = [string, ShapeSpec, string, {x:number;y:number}|null, "imgOffset"|"imgScale"|"imgYScale"];
+      const imgDefs: ImgDef[] = [
+        [`token-${token.id}:imgOffset`, { kind: "circle", radius: HALF*0.945, fill: 0xffffff, fillAlpha: 0.9, stroke: strk }, "move",        bl, "imgOffset"],
+        [`token-${token.id}:imgScale`,  { kind: "rect", w: HANDLE_SIZE, h: HANDLE_SIZE, fill: 0xffffff, fillAlpha: 0.9, stroke: strk },  "nesw-resize", tr, "imgScale" ],
+        [`token-${token.id}:imgYScale`, { kind: "rect", w: HANDLE_SIZE, h: HANDLE_SIZE, fill: 0xffffff, fillAlpha: 0.9, stroke: strk },  "ns-resize",   tc, "imgYScale"],
       ];
-      for (const [handle, type, pos] of defs) {
-        if (pos) { handle.x = pos.x; handle.y = pos.y; }
-        handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
-          e.stopPropagation();
-          TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gridSize, imgOff.y * gridSize, imgScl, imgYScl, tkImgHalfH, meshCX, meshCY);
+      for (const [k, visual, cursor, pos, type] of imgDefs) {
+        keys.add(k);
+        IsoRenderer.render({
+          key: k, owner: own, visual, space: "WORLD",
+          placement: { anchor: pos ?? { x: 0, y: 0 } },
+          layer: LAYER_KEYS.TOKEN_GIZMOS, flat: true,
+          interaction: { cursor,
+            onPointerDown: (e) => { e.stopPropagation(); TokenGizmos.beginDrag(type, token, e.global.x, e.global.y, imgOff.x * gridSize, imgOff.y * gridSize, imgScl, imgYScl, tkImgHalfH, meshCX, meshCY); } },
         });
-        container.addChild(handle);
       }
     }
 
-    layer.addChild(container);
-    TokenGizmos.sets.set(token.id, container);
-    LayerManager.bringToTop(LAYER_KEYS.TOKEN_GIZMOS);
+    TokenGizmos._handleKeys.set(token.id, keys);
     suppressTooltip(token);
   }
 
   static onDestroy(id: string): void { TokenGizmos.hide(id); }
 
   static hide(tokenId: string): void {
-    TokenGizmos._boxHandles.get(tokenId)?.remove();
-    TokenGizmos._boxHandles.delete(tokenId);
-    destroyMapped(TokenGizmos.sets, tokenId);
+    for (const k of TokenGizmos._handleKeys.get(tokenId) ?? []) IsoRenderer.clear(k);
+    TokenGizmos._handleKeys.delete(tokenId);
     TokenGizmos.lastCommittedElev.delete(tokenId);
   }
 
   static clearAll(): void {
-    for (const id of Array.from(TokenGizmos.sets.keys())) destroyMapped(TokenGizmos.sets, id);
     IsoRenderer.clearLayer(LAYER_KEYS.TOKEN_GIZMOS);
-    TokenGizmos._boxHandles.clear();
+    TokenGizmos._handleKeys.clear();
     TokenGizmos.lastCommittedElev.clear();
   }
 

@@ -302,7 +302,7 @@ Gate on Phase 4. Validate the full API before committing the pattern to all othe
 - [x] `VolumeOverlay` (token) → IsoRenderer
 - [x] `TokenBackground` (indicator, label, shadow) → IsoRenderer
 - [x] `VolumeGizmos` (tile gizmos) → IsoRenderer
-- [ ] `TokenGizmos` → IsoRenderer
+- [x] `TokenGizmos` → IsoRenderer
 - [ ] `BackgroundGizmos` → IsoRenderer
 - [ ] `WallOverlay` → IsoRenderer
 - [ ] `Occluder` → IsoRenderer
