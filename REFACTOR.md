@@ -89,8 +89,7 @@ interface RenderSpec {
   visibility?: "always-visible" | "sight-tracked";  // default: "always-visible"
 
   // Apply inverse stage transform — visual appears screen-upright / undistorted
-  // [NAME TBD — candidates: billboard, upright, screenAligned, flat, screenUp]
-  screenUp?: boolean;
+  flat?: boolean;
 
   // Idempotency key — render() with same key REPLACES the prior visual for that key
   key: string;   // e.g. "tile-abc123:box", "token-xyz:shadow"
@@ -340,9 +339,7 @@ AppV2 + GridConfig + DOM have their own complexity. Do not start without an anal
 
 ## Open / Pending
 
-- `screenUp` property name is a working name — **user to choose from**:
-  `billboard`, `upright`, `screenAligned`, `flat`, `screenUp`, `unprojected`,
-  `facingScreen`, `orthoFixed`, `deproject`, `screenStable`
+- `flat` chosen for the inverse-stage-transform flag (CSS 3D intuition: not participating in the projection)
 
 - Phase 7 (UI + background) needs a dedicated analysis session before implementation.
 
