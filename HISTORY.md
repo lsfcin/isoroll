@@ -81,3 +81,32 @@ Archive of completed work and resolved issues.
   Foundry creates preview clone during drag with same `id` as original. `destroyTile(previewClone)` fired
   `onTileDestroy(id)` → cleared original's handles + sprite clones. Fixed by guarding `destroyTile`/
   `destroyToken` with `!isPreviewClone(t)`. `isPreviewClone` checks `t.isPreview` property. *(resolved)*
+
+---
+
+## Completed — 2026-06-17
+
+### IsoRenderer Refactor — Phase 6c: VolumeGizmos (tile handles) → IsoRenderer *(from REFACTOR.md)*
+
+- `iso-renderer.ts`: implemented `kind:"circle"`, `kind:"rect"`, `kind:"polygon"` in `_paint`; added `fillAlpha?` to all three
+- `iso-renderer.ts`: implemented `Interaction` — sets `c.eventMode="static"`, cursor, pointer event listeners on container
+- `iso-renderer.ts`: added `testPoint?: P2` to `RenderSpec`; `isoRendererSightRefresh` uses it instead of `placement.anchor` when set (needed for `kind:"lines"` specs where anchor is world origin but test point should be token center)
+- `tile-gizmos.ts`: PIXI container+handleTypeMap loop replaced with `IsoRenderer.render()` per handle; `_handleVisual()` / `_isFlat()` / `_cursor()` helpers; `_handleKeys` map replaces old `sets` map; rotate blocker retained in PIXI (needs `layer.toLocal()`)
+
+**Key debugging findings (interaction hit-testing):**
+- PIXI v7/v8 `_hitTestRecursive` only calls `containsPoint()` on `"static"`/`"dynamic"` objects — `"passive"` children are walked but never tested. Parent container with no `hitArea` and `"passive"` children = unhittable.
+- Fix: upgrade children to `"static"` in `render()` when `spec.interaction` is set. Events bubble child→container where listeners live.
+- Cursor must be set on the leaf hit target (child graphics), not just parent container. PIXI resolves cursor from the hit target outward, not inward.
+- Both fixes folded into the interaction block in `render()`: `c.children.forEach(ch => { el.eventMode="static"; if(cursor) el.cursor=cursor; })`
+
+### IsoRenderer Refactor — Phase 6d: TokenGizmos handles → IsoRenderer *(from REFACTOR.md)*
+
+- `token-gizmos.ts`: removed `sets` Map, `_boxHandles` Map, `destroyMapped`, `LayerManager`, `makeCircleHandle`, `makeSquareCounterHandle`
+- Single `_handleKeys: Map<string, Set<string>>` tracks all keys (box + elev + imgOffset + imgScale + imgYScale)
+- Elevation handle: `kind:"circle"` `flat:true` cursor `"n-resize"`; img handles: `kind:"circle"`/`"rect"` `flat:true` with respective cursors
+- `_drawBox`/`beginDrag`/`pushHistory`/`commit` unchanged
+
+### Bug fixes — Fog visibility for token overlays *(from REFACTOR.md Phase 6b/6c)*
+
+- **Indicator + label always visible in fog**: added `visibility:"sight-tracked"` to both; indicator uses `testPoint` at token center (anchor stays `{0,0}`)
+- **Controlled tokens couldn't see own overlays**: `applyTokenFogContainer` gains optional `tokenId?`; if that token is in `canvas.tokens.controlled`, bypass fog test entirely — matches token sprite behavior
