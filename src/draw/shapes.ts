@@ -42,7 +42,7 @@ export function drawDash(
 }
 
 export function drawDashedContour(
-  g: PIXI.Graphics, pts: { x: number; y: number }[],
+  g: DrawAPI, pts: { x: number; y: number }[],
   dash: number, gap: number, dashAlt = dash, gapAlt = gap,
 ): void {
   g.lineStyle(1.5, 0xffffff, 0.85);
