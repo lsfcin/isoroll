@@ -4,7 +4,8 @@ import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTra
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale, makeCircleHandle, makeSquareCounterHandle } from "../gizmos";
 import { drawMeshContour, drawBox, drawAnchorLine } from "../draw";
 import { beginElevDrag } from "./token-elev-drag";
-import { LayerManager, LAYER_KEYS, destroyMapped, IsoGeometry, MeshAccessor } from "../render";
+import { LayerManager, LAYER_KEYS, destroyMapped, IsoGeometry, MeshAccessor, IsoRenderer } from "../render";
+import type { RenderHandle, DrawAPI } from "../render";
 import { currentProjection } from "../transform";
 
 interface TkDrag {
@@ -19,9 +20,10 @@ interface TkDrag {
 }
 
 export class TokenGizmos {
-  private static sets: Map<string, PIXI.Container> = new Map();
-  static lastCommittedElev: Map<string, number> = new Map();
-  static configOpen: Set<string> = new Set();
+  private static sets:       Map<string, PIXI.Container> = new Map();
+  private static _boxHandles: Map<string, RenderHandle>   = new Map();
+  static lastCommittedElev:  Map<string, number>          = new Map();
+  static configOpen:         Set<string>                  = new Set();
 
   // ---- TokenRenderer interface ----
 
@@ -53,21 +55,17 @@ export class TokenGizmos {
     const showVol = VolumeFlags.getShowVolumeManipulation(token.document, true);
     if (!showImg && !showVol) return;
 
-    // Selection overlay + handles (TOKEN_GIZMOS layer)
+    // Volume box + image contour via IsoRenderer (no raw PIXI)
+    TokenGizmos._boxHandles.set(token.id, IsoRenderer.render({
+      key: `token-${token.id}:box`, owner: { kind: "token", id: token.id },
+      visual: { kind: "lines", build: (g) => TokenGizmos._drawBox(g, token) },
+      space: "WORLD", placement: { anchor: { x: 0, y: 0 } },
+      layer: LAYER_KEYS.TOKEN_GIZMOS, z: "top",
+    }));
+
+    // Selection handles (TOKEN_GIZMOS layer)
     const layer     = LayerManager.ensureLayer(LAYER_KEYS.TOKEN_GIZMOS);
     const container = new PIXI.Container();
-
-    // Graphics: image dashed contour + volume box lines
-    const g = new PIXI.Graphics();
-    g.eventMode = "passive";
-    if (showImg) drawMeshContour(g, MeshAccessor.geometryOf(token), CanvasEnv.worldTransform());
-    if (showVol) {
-      const v = IsoGeometry.tokenVerts(token);
-      if (v.elevation > 0) drawAnchorLine(g, v);
-      drawBox(g, v);
-      if (v.elevation < 0) drawAnchorLine(g, v);
-    }
-    container.addChild(g);
 
     if (showVol) {
       const { tx, ty, tw, th } = IsoGeometry.footprint(token);
@@ -128,15 +126,32 @@ export class TokenGizmos {
     suppressTooltip(token);
   }
 
+  static onDestroy(id: string): void { TokenGizmos.hide(id); }
+
   static hide(tokenId: string): void {
+    TokenGizmos._boxHandles.get(tokenId)?.remove();
+    TokenGizmos._boxHandles.delete(tokenId);
     destroyMapped(TokenGizmos.sets, tokenId);
     TokenGizmos.lastCommittedElev.delete(tokenId);
   }
 
   static clearAll(): void {
     for (const id of Array.from(TokenGizmos.sets.keys())) destroyMapped(TokenGizmos.sets, id);
+    IsoRenderer.clearLayer(LAYER_KEYS.TOKEN_GIZMOS);
+    TokenGizmos._boxHandles.clear();
     TokenGizmos.lastCommittedElev.clear();
-    LayerManager.clearLayer(LAYER_KEYS.TOKEN_GIZMOS);
+  }
+
+  private static _drawBox(g: DrawAPI, token: Token): void {
+    const showVol = VolumeFlags.getShowVolumeManipulation(token.document, true);
+    const showImg = VolumeFlags.getShowImageManipulation(token.document, true);
+    if (showImg) drawMeshContour(g, MeshAccessor.geometryOf(token), CanvasEnv.worldTransform());
+    if (showVol) {
+      const v = IsoGeometry.tokenVerts(token);
+      if (v.elevation > 0) drawAnchorLine(g, v);
+      drawBox(g, v);
+      if (v.elevation < 0) drawAnchorLine(g, v);
+    }
   }
 
   private static beginDrag(

@@ -289,17 +289,17 @@ Gate on Phase 4. Validate the full API before committing the pattern to all othe
       VolumeOverlay._drawInto(g: DrawAPI, tile) calls all draw utilities via DrawAPI only.
 - [ ] Wire shadow: same pattern — deferred to Phase 6 (shadow uses drawGroundShadow→PIXI.Sprite,
       needs kind:"sprite" support in IsoRenderer._paint which is not yet implemented)
-- [ ] Visual test checklist (requires live Foundry):
-      - [ ] Box appears on tile selection
-      - [ ] Box disappears on deselect
-      - [ ] Shadow renders correctly (unchanged — not migrated yet)
-      - [ ] Fog state transitions: visible → explored → unexplored
-      - [ ] Re-enable scene: box re-renders
-      - [ ] Delete tile: no orphan PIXI objects
-- [ ] If visual test passes: proceed to Phase 6. If not: fix IsoRenderer, do not proceed.
+- [x] Visual test checklist (requires live Foundry):
+      - [x] Box appears on tile selection
+      - [x] Box disappears on deselect
+      - [x] Shadow renders correctly (unchanged — not migrated yet)
+      - [x] Fog state transitions: visible → explored → unexplored
+      - [x] Re-enable scene: box re-renders
+      - [x] Delete tile: no orphan PIXI objects
+- [x] If visual test passes: proceed to Phase 6. If not: fix IsoRenderer, do not proceed.
 
 ### Phase 6 — Migrate remaining overlays (one PR per overlay)
-- [ ] `VolumeOverlay` (token) → IsoRenderer
+- [x] `VolumeOverlay` (token) → IsoRenderer
 - [ ] `TokenBackground` (indicator, label, shadow) → IsoRenderer
 - [ ] `VolumeGizmos` (tile gizmos) → IsoRenderer
 - [ ] `TokenGizmos` → IsoRenderer
