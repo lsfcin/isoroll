@@ -93,11 +93,13 @@ export class TokenBackground {
   private static _renderIndicator(token: Token): void {
     const d = token.document;
     if (getElevation(d) === 0 || !VolumeFlags.getElevLineEnabled(d)) return;
+    const { tx, ty, tw, th } = IsoGeometry.footprint(token);
     IsoRenderer.render({
       key: `token-${token.id}:indicator`, owner: { kind: "token", id: token.id },
       visual: { kind: "lines", build: (g) => TokenBackground._drawIndicator(g, token) },
       space: "WORLD", placement: { anchor: { x: 0, y: 0 } },
-      layer: LAYER_KEYS.TOKEN_INDICATORS,
+      layer: LAYER_KEYS.TOKEN_INDICATORS, visibility: "sight-tracked",
+      testPoint: { x: tx + tw / 2, y: ty + th / 2 },
     });
   }
 
@@ -135,7 +137,7 @@ export class TokenBackground {
                          fill: 0xffffff, stroke: 0x000000, strokeThickness: 3 },
                 alpha: selected ? 1.0 : 0.3 },
       space: "WORLD", placement: { anchor: { x: lx, y: ly } },
-      layer: LAYER_KEYS.TOKEN_LABEL, flat: true,
+      layer: LAYER_KEYS.TOKEN_LABEL, flat: true, visibility: "sight-tracked",
     });
   }
 

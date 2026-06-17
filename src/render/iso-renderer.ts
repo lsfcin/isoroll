@@ -60,6 +60,7 @@ export interface RenderSpec {
   layer?:       LayerKey;
   z?:           number | "top";
   visibility?:  VisibilityMode;
+  testPoint?:   P2;
   flat?:        boolean;
   key:          string;
 }
@@ -163,7 +164,7 @@ export const IsoRenderer = {
     const c = new PIXI.Container(); c.eventMode = "passive";
     _paint(c, spec.visual);
     if (spec.interaction) {
-      const i = spec.interaction; c.eventMode = "static"; if (i.cursor) c.cursor = i.cursor;
+      const i = spec.interaction; c.eventMode = "static"; if (i.cursor) c.cursor = i.cursor; c.children.forEach(ch => (ch as PIXI.Container).eventMode = "passive");
       if (i.onPointerDown) c.on("pointerdown", i.onPointerDown); if (i.onPointerMove) c.on("pointermove", i.onPointerMove); if (i.onPointerUp) c.on("pointerup", i.onPointerUp);
     }
     if (spec.flat) { const p = currentProjection(); c.rotation = p.reverseRotation; c.scale.set(p.counterFactor, p.ratio * p.counterFactor); }
@@ -192,7 +193,7 @@ export const IsoRenderer = {
 export function isoRendererSightRefresh(): void {
   for (const key of _sightTracked) {
     const e = _reg.get(key); if (!e) continue;
-    const a = e.spec.placement.anchor as P2;
+    const a = (e.spec.testPoint ?? e.spec.placement.anchor) as P2;
     applyTokenFogContainer(e.container, a.x, a.y);
   }
 }
