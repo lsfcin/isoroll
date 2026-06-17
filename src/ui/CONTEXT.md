@@ -26,7 +26,7 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`index.ts`](index.ts) | — | — | **facade** — Public API for the ui module — config form tab injection for SceneConfig, TileConfig, TokenConfig |
+| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the ui module — config form tab injection for SceneConfig, TileConfig, TokenConfig |
 | [`scene-config.ts`](scene-config.ts) | [`scene-config.d.ts`](scene-config.d.ts) | `registerSceneConfigHook`, `projectionOptions` | ← add first-line comment |
 | [`tab-helpers.ts`](tab-helpers.ts) | [`tab-helpers.d.ts`](tab-helpers.d.ts) | `addIsorollTab`, `flagNumber`, `flagSelect`, `flagCheckbox` | AppV2 tab injection and flag checkbox builder shared across TileConfig, TokenConfig, SceneConfig. |
 | [`tile-config.ts`](tile-config.ts) | [`tile-config.d.ts`](tile-config.d.ts) | `registerTileConfigHook` | ← add first-line comment |

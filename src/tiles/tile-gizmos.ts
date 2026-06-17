@@ -10,42 +10,29 @@ export class VolumeGizmos {
   private static sets: Map<string, PIXI.Container> = new Map();
   private static blockers: Map<string, PIXI.Graphics> = new Map();
 
-  static activate(): void {
-    Hooks.on("canvasReady",   VolumeGizmos.onCanvasReady);
-    Hooks.on("updateScene",   VolumeGizmos.onUpdateScene);
-    Hooks.on("controlTile",   VolumeGizmos.onControlTile);
-    Hooks.on("refreshTile",   VolumeGizmos.onRefreshTile);
-  }
+  // ---- TileRenderer interface ----
 
-  private static onCanvasReady(): void { VolumeGizmos.clearAll(); }
+  static create(_tile: Tile): void { /* gizmos only appear on selection */ }
 
-  private static onUpdateScene(scene: Scene): void {
-    if (scene.id !== canvas.scene?.id) return;
-    VolumeGizmos.clearAll();
-  }
+  static sync(_tile: Tile): void { /* gizmos have no per-frame mesh sync */ }
 
-  private static onControlTile(tile: Tile, controlled: boolean): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    if (controlled && tile.document.getFlag(MODULE_ID, "transformTile") !== true) {
-      VolumeGizmos.show(tile); VolumeGizmos.suppressRotateHandle(tile);
-    } else { VolumeGizmos.hide(tile.id); }
-  }
-
-  private static onRefreshTile(tile: Tile): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) { VolumeGizmos.hide(tile.id); return; }
+  static rebuild(tile: Tile): void {
     if (!VolumeGizmos.sets.has(tile.id)) return;
-    // Skip while drag-preview clone exists: server update fires refreshState on the original
-    // tile (old doc position) before the clone is cleared, causing a 1-frame blink.
-    if ((tile as unknown as { hasPreview?: boolean }).hasPreview) return;
     VolumeGizmos.show(tile);
     VolumeGizmos.suppressRotateHandle(tile);
   }
 
+  static onControl(tile: Tile, controlled: boolean): void {
+    if (controlled) { VolumeGizmos.show(tile); VolumeGizmos.suppressRotateHandle(tile); }
+    else VolumeGizmos.hide(tile.id);
+  }
+
+  // ---- PIXI helpers ----
+
   private static suppressRotateHandle(tile: Tile): void {
     const old = VolumeGizmos.blockers.get(tile.id);
     if (old) { old.parent?.removeChild(old); old.destroy(); VolumeGizmos.blockers.delete(tile.id); }
-    const layer = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_GIZMOS);
+    const layer = LayerManager.ensureLayer(LAYER_KEYS.TILE_GIZMOS);
     const blocker = createRotateBlocker(tile, layer as unknown as PIXI.Container);
     if (!blocker) return;
     layer.addChild(blocker);
@@ -54,7 +41,7 @@ export class VolumeGizmos {
 
   static show(tile: Tile): void {
     VolumeGizmos.hide(tile.id);
-    const layer    = LayerManager.ensureLayer(LAYER_KEYS.VOLUME_GIZMOS);
+    const layer    = LayerManager.ensureLayer(LAYER_KEYS.TILE_GIZMOS);
     const tw       = tile.document.width  ?? 0;
     const th       = tile.document.height ?? 0;
     const tx       = (tile.document.x ?? 0) - tw / 2;
@@ -102,7 +89,7 @@ export class VolumeGizmos {
     }
     layer.addChild(container);
     VolumeGizmos.sets.set(tile.id, container);
-    LayerManager.bringToTop(LAYER_KEYS.VOLUME_GIZMOS);
+    LayerManager.bringToTop(LAYER_KEYS.TILE_GIZMOS);
   }
 
   static hide(tileId: string): void {
@@ -114,7 +101,7 @@ export class VolumeGizmos {
 
   static clearAll(): void {
     for (const id of Array.from(VolumeGizmos.sets.keys())) VolumeGizmos.hide(id);
-    LayerManager.clearLayer(LAYER_KEYS.VOLUME_GIZMOS);
+    LayerManager.clearLayer(LAYER_KEYS.TILE_GIZMOS);
   }
 
   private static swapSide(tile: Tile): void {
