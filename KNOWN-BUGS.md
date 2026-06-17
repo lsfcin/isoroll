@@ -38,9 +38,6 @@ in-place requires a two-point `transformCoord` difference. Not worth the complex
 
 **Workaround:** Re-select the tile after changing imageOffset.
 
-**Affected:** `onRefreshTile` in `tile-transform.ts`; `onUpdateTileFlags`; drag commit in
-`tile-drag.ts` case `"imgOffset"`.
-
 ---
 
 ## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays

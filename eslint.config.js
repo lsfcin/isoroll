@@ -1,3 +1,4 @@
+// ESLint flat config — TypeScript rules for isoroll-module source
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 

@@ -1,3 +1,9 @@
+// Suppresses Foundry's native tooltip on a token — prevents GL_INVALID_OPERATION from texture upload.
+export function suppressTooltip(token: Token): void {
+  const tt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
+  if (tt) tt.visible = false;
+}
+
 // Shared async scheduling utility.
 export function scheduleWrap(fn: () => Promise<void>, label: string, delay = 0): void {
   setTimeout(() => fn().catch(e => console.warn(`isoroll | ${label} failed`, e)), delay);
@@ -33,6 +39,17 @@ export function screenPointToCanvas(
     x: ( (sx - wt.tx) * wt.d - (sy - wt.ty) * wt.c) / det,
     y: (-(sx - wt.tx) * wt.b + (sy - wt.ty) * wt.a) / det,
   };
+}
+
+// Foundry v14 drag-preview guards — work for both Token and Tile (same pattern, different types).
+// During drag, Foundry creates a preview clone (isPreview=true) with the same id as the original.
+// The original fires refreshToken/refreshTile with hasPreview=true while the clone still exists,
+// carrying the stale pre-drag document position. Rebuilding overlays there causes a 1-frame blink.
+export function isPreviewClone(p: unknown): boolean {
+  return !!(p as { isPreview?: boolean }).isPreview;
+}
+export function hasActiveClone(p: unknown): boolean {
+  return !!(p as { hasPreview?: boolean }).hasPreview;
 }
 
 export function startPointerDrag<T>(

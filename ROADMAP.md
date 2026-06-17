@@ -6,11 +6,11 @@
 
 ## Status
 
-All phases pending. Phase 1 is next priority.
+Phases 3 and 4 complete. Phase 5 is next priority. Phase 1 (token depth) still pending.
 
 ## Backlog
 
-<!-- Unscheduled ideas not yet tied to a phase. -->
+- **Shadow params in presets** — shadow shape, radius, opacity, and enabled state should be included when saving/loading image presets for tiles and tokens. Currently presets only capture image transform fields.
 
 ---
 
@@ -43,45 +43,7 @@ Only token-to-token ordering. Tile-to-tile and tile-to-token ordering handled by
 
 ---
 
-## Phase 2 — Ground Shadow + Unselected Elevation Line 🔲 PENDING
-
-### Problem
-
-Elevated tokens/tiles have no visual cue indicating their ground position or height when unselected. The existing orange anchor line only shows when selected.
-
-### Solution
-
-Two new overlay visuals drawn in stage-level overlay layers (not in `canvas.primary`) — unaffected by the vision/fog masking issue described in Phase 3.
-
-**Ground shadow:** circle or rounded-rect drawn at the token's ground position when elevated.
-
-**Unselected elevation line:** thin dashed black line from ground to token base, visible when `elevation > 0` and token is NOT selected.
-
-### Checklist
-
-- [ ] Add `drawGroundShadow(g, v)` in `src/draw/volume-box.ts` using `v.ground` (computed by `buildBoxVerts`)
-- [ ] Call `drawGroundShadow` from `TokenOverlay.show()` in `src/tokens/token-overlay.ts`
-- [ ] Call `drawGroundShadow` from `VolumeOverlay.draw()` in `src/tiles/tile-overlay.ts`
-- [ ] Add shadow flags to `VolumeFlags` in `src/flags.ts`: `shadowEnabled` (bool, default `true`), `shadowShape` (`"circle"|"rect"`, default `"circle"`), `shadowRadius` (number, multiplier of `gridSize/2`, default `1.0`), `shadowOpacity` (number 0–1, default `0.3`)
-- [ ] Add shadow controls to Iso tab in `src/ui/token-config.ts` and `src/ui/tile-config.ts`
-- [ ] Add dashed elevation line in `TokenElevGizmo.show()` in `src/tokens/token-elev-gizmo.ts`, gated by `selected === false && elev > 0`
-
-### Key Files
-
-- `src/draw/volume-box.ts` — `drawAnchorLine()` (reference for existing line drawing), `buildBoxVerts()` (computes `v.ground`, `v.baseCenter`)
-- `src/tokens/token-overlay.ts` — `TokenOverlay.show()`
-- `src/tiles/tile-overlay.ts` — `VolumeOverlay.draw()`
-- `src/tokens/token-elev-gizmo.ts` — `TokenElevGizmo.show()` (already renders unselected; manages elevation label)
-- `src/flags.ts` — `VolumeFlags` type
-- `src/ui/token-config.ts`, `src/ui/tile-config.ts` — Iso tab config forms
-
-### Scope
-
-Dashed line is unselected-only. Existing orange anchor line in `drawAnchorLine()` (selected state, constant `ORANGE`) stays unchanged.
-
----
-
-## Phase 3 — Separate Rendering Layer Architecture 🔲 PENDING
+## Phase 3 — Separate Rendering Layer Architecture ✅ COMPLETE
 
 **Prerequisite for Phase 4. Fixes a fundamental fog-of-war display bug.**
 
@@ -98,6 +60,12 @@ canvas.app.stage  ← isoroll applies rotation + skew here
   └── canvas.visibility  (CanvasVisibility — vision polygon texture)
 ```
 
+There is **no fix within `canvas.primary`** — the VisibilityFilter clips at geometry level. Moving sprites out is the only architectural option.
+
+### Why This Also Fixes Sorting
+
+With sprites inside `canvas.primary`, `DepthSorter` fights Foundry's own `zIndex` management on the same children. Moving counter-transformed objects to our own `PIXI.Container` gives us 100% sort ownership — no more fighting PCG's internal sort. The fork's `assignTileDepths()` + `computeTokenEntries()` pattern (tile-band → token-insertion model) also directly solves Phase 1's token-to-tile occlusion problem, making Phase 1 redundant after Phase 3.
+
 ### Solution
 
 Create a new `PIXI.Container` (the **Iso Sprite Layer**) added directly to `canvas.stage` — outside `VisibilityFilter` scope. For each counter-transformed token/tile:
@@ -107,23 +75,60 @@ Create a new `PIXI.Container` (the **Iso Sprite Layer**) added directly to `canv
 3. Sort the Iso Sprite Layer children by the same key as `DepthSorter`
 4. Manage visibility state manually (Phase 4)
 
+### Design Decisions (from assessment session 2026-06-11)
+
+**Incremental update, NOT full rebuild.**
+The fork (`foreground.js`) calls `foreground.removeChildren()` and re-clones everything on every hook fire (`refreshToken`, `refreshTile`, `updateToken`, `sightRefresh`, etc.). This allocates and GCs 20–200 `PIXI.Sprite` objects per call. Our approach: keep a `Map<id, PIXI.Sprite>` of live clones; on `refreshToken`/`refreshTile` update transforms in-place; only create/destroy on `drawToken`/`destroyToken`.
+
+Use the `lastState` cache pattern from `src/tokens/token-elev-gizmo.ts` to skip no-op refreshes.
+
+**`sortableChildren = false`, manual sort only.**
+Setting `sortableChildren = true` on the container triggers `Array.sort()` every render frame when any zIndex changes. Instead, set `sortableChildren = false`, assign `zIndex` manually, and call `.children.sort(...)` only inside our `DepthSorter.sort()` (triggered by position/elevation hooks, not every frame).
+
+**Do NOT replicate the fork's DB write.**
+`computeTokenEntries()` in the fork calls `canvas.scene.updateEmbeddedDocuments('Tile', updates)` inside a sort function — a database write per refresh. Never do this. Our sort is read-only.
+
+**Texture sharing is free.**
+`PIXI.Sprite(mesh.texture)` shares the WebGL texture handle — zero extra VRAM. Each clone is a separate draw call (no batching across containers), but at 20–50 objects with mixed textures Foundry is already batching-limited anyway. +50 draw calls at 60fps ≈ 0.8ms GPU, negligible on modern hardware.
+
+**Only counter-transformed objects go into the layer.**
+Check `flags.isoroll.transformToken` / `flags.isoroll.transformTile`. Non-transformed objects stay in `canvas.primary` with full VisibilityFilter coverage — correct behavior.
+
+**Hit detection stays in `canvas.primary`.**
+Original mesh remains at `alpha=0` but fully interactive. Our clone in the Iso Sprite Layer has `eventMode = "passive"` — no events.
+
+### Implementation Steps (one step = one test cycle)
+
+1. **Container bootstrap** — add `ISO_SPRITE_LAYER` to `LAYER_KEYS`, create `IsoSpriteLayer` class with `activate()` that creates the container on `canvasInit` and tears it down on `changeScene`. Test: verify container exists on `canvas.stage` in Foundry console.
+
+2. **Clone functions** — implement `cloneSprite(mesh)` pure function (shared by tile + token), `syncSprite(clone, mesh)` for transform updates. No hooks yet. Test: call manually from console.
+
+3. **Token lifecycle hooks** — `drawToken` → create clone + set mesh alpha=0; `refreshToken` → `syncSprite` (with lastState cache); `destroyToken` → remove clone + restore mesh alpha. Test: place/move/delete a token with `transformToken=true`.
+
+4. **Tile lifecycle hooks** — same pattern for `drawTile`/`refreshTile`/`destroyTile`. Test: place/move/delete a tile with `transformTile=true`.
+
+5. **Rebuild on canvas reload** — `canvasReady` → iterate existing placeables and create clones for any already-transformed objects. Test: reload scene, verify clones appear.
+
+6. **Sort wiring** — wire `IsoSpriteLayer.sort()` into `DepthSorter.sort()` using tile-band + token-insertion model from fork. Test: place tiles at different depths, verify z-order correct.
+
 ### Checklist
 
-- [ ] Add Iso Sprite Layer container to `LayerManager` in `src/render/layer-manager.ts` (new key in `LAYER_KEYS`, added to `canvas.stage` directly)
-- [ ] Implement `cloneTokenSprite()` — copy `position`, `anchor`, `angle`, `rotation`, `skew`, `scale`, `texture`, `alpha` from `token.mesh`
-- [ ] Implement `cloneTileSprite()` — same for tiles
-- [ ] Hook `drawToken`, `refreshToken`, `destroyToken` — create/sync/destroy token clones
-- [ ] Hook `drawTile`, `refreshTile`, `destroyTile` — create/sync/destroy tile clones
-- [ ] Hook `canvasReady`, `updateScene` — rebuild layer on canvas reload
-- [ ] On `refreshToken`/`refreshTile`: update clone transform to match current mesh; use doc-state cache pattern to skip no-op refreshes
-- [ ] Wire Iso Sprite Layer sort into `DepthSorter.sort()` (run alongside `canvas.primary.children` sort)
-- [ ] Set original mesh `alpha = 0` for counter-transformed objects; restore on destroy
+- [x] Add Iso Sprite Layer container to `LayerManager` in `src/render/layer-manager.ts` (new key in `LAYER_KEYS`, added to `canvas.stage` directly)
+- [x] Implement `cloneSprite(mesh)` and `syncSprite(clone, mesh)` in new `src/render/iso-sprite-layer.ts`
+- [x] Hook `drawToken`, `refreshToken`, `destroyToken` — create/sync/destroy token clones
+- [x] Hook `drawTile`, `refreshTile`, `destroyTile` — create/sync/destroy tile clones
+- [x] Hook `canvasReady` — rebuild clones for all already-placed transformed objects
+- [x] Wire Iso Sprite Layer sort into `DepthSorter.sort()`
+- [x] Set original mesh `alpha = 0` for counter-transformed objects; restore on destroy
+- [x] Add `IsoSpriteLayer.activate()` to `src/core/module.ts` + add `ISO_SPRITE_LAYER` to `declareOrder`
 
 ### Key Files
 
-- `src/render/layer-manager.ts` — `LayerManager`, `LAYER_KEYS` (existing stage-level container management)
+- `src/render/layer-manager.ts` — `LayerManager`, `LAYER_KEYS`
+- `src/render/iso-sprite-layer.ts` — new file, all clone/sync/hook logic
 - `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` (entry point for dual-layer sort)
 - `src/tokens/token-elev-gizmo.ts` — `lastState` map (doc-state cache pattern to reference)
+- `src/core/module.ts` — activate + declareOrder
 
 ### References
 
@@ -131,51 +136,90 @@ Create a new `PIXI.Container` (the **Iso Sprite Layer**) added directly to `canv
   - `setupContainers()` — adds container directly to `canvas.stage`
   - `cloneTileSprite()` (lines 223–241)
   - `cloneTokenSprite()` (lines 243–271)
+  - `assignTileDepths()` (lines 316–341) — tile-band depth model (use, but read-only)
+  - `computeTokenEntries()` (lines 354–406) — token insertion between tile bands (use, but read-only — NO DB writes)
+  - `updateAlwaysVisibleElements()` (lines 485–496) — full-rebuild pattern (DO NOT replicate — use incremental instead)
 
 ### Scope
 
-Only counter-transformed objects (tiles/tokens with isoroll flags set) go into the Iso Sprite Layer. Non-transformed objects stay native. Hit detection stays in `canvas.primary` (original mesh, `alpha=0` but still interactive). Iso Sprite Layer sits above `canvas.primary`, below HUD layers.
+Only counter-transformed objects (tiles/tokens with isoroll flags set) go into the Iso Sprite Layer. Non-transformed objects stay native. Hit detection stays in `canvas.primary` (original mesh, `alpha=0` but still interactive). Iso Sprite Layer sits above `canvas.primary`, below HUD layers. Fog visibility management is Phase 4.
 
 ---
 
-## Phase 4 — Fog-of-War Tile Integration 🔲 PENDING
+## Phase 4 — Fog-of-War Visibility Management ✅ COMPLETE
 
 **Requires Phase 3.**
 
 ### Problem
 
-Isoroll tiles function as 3D scene walls/props. Once in the Iso Sprite Layer (Phase 3), they are outside `VisibilityFilter` — they will always render regardless of fog state. Tiles need manual visibility management matching native Foundry fog behavior.
+Clones in the Iso Sprite Layer are outside `canvas.primary`'s `VisibilityFilter` (that's intentional — fixes the hard-clip bug). However, `canvas.visibility` is a **separate global compositing pass** that darkens/hides pixels EVERYWHERE on the stage based on the vision polygon — including our Iso Sprite Layer. Result: the parts of a token/tile sprite that extend beyond the grid footprint are darkened by fog even though the footprint itself is in vision.
 
-### Solution
+Observed: token footprint cell = bright; overflow pixels outside footprint = darkened by `canvas.visibility`. During Foundry drag preview, fog is temporarily bypassed → sprite appears fully lit → fog returns on drop. This is the expected Phase 4 problem, not a Phase 3 bug.
 
-Sample each tile's visibility state using `canvas.visibility.testVisibility()` and apply alpha/filter to the clone sprite accordingly.
+**Scope: both tokens AND tiles.** Tiles need it because they are 3D props. Tokens need it because their counter-transformed sprite overflows the footprint.
 
-| State | Behavior |
-|---|---|
-| Explored + visible | Full alpha |
-| Explored + fogged | Dim via `ColorMatrixFilter` |
-| Unexplored | Hide clone entirely |
+### Approach
+
+**Do NOT use `token.visible` / `tile.visible`** — these are transient PIXI properties that return `false` during drag mid-states and layer switches (learned in Phase 3; caused clone to disappear). Instead:
+
+- `document.hidden` → controls game-level visibility (GM hide)
+- `canvas.visibility.testVisibility()` → determines fog/vision state
+
+For tokens and tiles: sample `testVisibility()` at the footprint center (and perimeter for large objects). Apply result uniformly to the entire clone — the whole sprite is either in-vision or fogged, never per-pixel.
+
+### Visibility State Table
+
+| `document.hidden` | `testVisibility` result | Clone behavior |
+|---|---|---|
+| `true` | any | `visible = false` (GM hidden) |
+| `false` | fully visible | Full `document.alpha` |
+| `false` | explored + fogged | `ColorMatrixFilter` darken (tiles) / hide (tokens, unless setting allows) |
+| `false` | unexplored | `visible = false` |
+
+### `testVisibility()` call pattern (from fork `foreground.js` lines 511–518)
+
+```js
+// viewers = controlled tokens (or all player-owned visible tokens as fallback)
+for (const viewer of viewers) {
+  if (canvas.visibility?.testVisibility({ x, y }, { object: viewer })) return true;
+}
+```
+
+Sample the footprint center; for tiles larger than 1 grid cell also sample corners and perimeter edges at grid-step intervals (fork `applyVisibilityCulling` lines 520–532 for the perimeter loop pattern).
+
+### Phase 3 current state (baseline for Phase 4)
+
+`clone.visible = !document.hidden` — only GM-hidden is respected. Fog state is ignored entirely. Phase 4 replaces this with the full visibility table above.
 
 ### Checklist
 
-- [ ] Add `flags.isoroll.hideOnFog` (bool, default `false`) to `VolumeFlags` in `src/flags.ts` — when true, tile hides in both fogged and unexplored states
-- [ ] Implement per-tile visibility state check using `canvas.visibility.testVisibility({ object, tolerance })` sampling tile center (and optionally corners for large tiles)
-- [ ] Apply `ColorMatrixFilter` (darken) to clone sprite for fogged state
-- [ ] Hide clone (`alpha = 0`) for unexplored state
-- [ ] Trigger re-evaluation on hooks: `sightRefresh`, `updateToken`, `canvasReady`
-- [ ] Add `hideOnFog` toggle to Iso tab in `src/ui/tile-config.ts`
+**Tokens:**
+- [x] On `refreshToken` and `sightRefresh`: run visibility check for all token clones; apply result to clone
+- [x] Token clone: visible if in-vision; hidden if unexplored or `document.hidden`; fogged explored = hide by default (token shouldn't be revealed in explored fog)
+
+**Tiles:**
+- [x] Add `flags.isoroll.hideOnFog` (bool, default `false`) to `VolumeFlags` in `src/flags.ts` — when true, tile hides in both fogged and unexplored states
+- [x] On `refreshTile` and `sightRefresh`: run visibility check for all tile clones
+- [x] Explored + visible → full alpha; explored + fogged → tint 0x808080 darken; unexplored → hide
+- [x] Add `hideOnFog` toggle to Iso tab in `src/ui/tile-config.ts`
+
+**Shared:**
+- [x] Trigger full visibility re-evaluation on: `sightRefresh`, `canvasReady`, `updateToken`
+- [x] Determine viewer tokens: controlled tokens → fallback to player-owned visible tokens
+- [x] For GM (no fog): skip testVisibility, show everything
 
 ### Key Files
 
-- `src/flags.ts` — `VolumeFlags` type
-- `src/render/layer-manager.ts` — Iso Sprite Layer (Phase 3 output)
-- `src/ui/tile-config.ts` — Iso tab
+- `src/render/iso-sprite-layer.ts` — clone registries, hook into `sightRefresh`
+- `src/flags.ts` — `VolumeFlags` type (add `hideOnFog`)
+- `src/ui/tile-config.ts` — Iso tab (add `hideOnFog` toggle)
 
 ### References
 
 - isometric-perspective fork `foreground.js`:
   - `updateLayerOpacity()` (lines 185–221) — per-sprite alpha modulation pattern
-  - `applyVisibilityCulling()` (lines 500–612) — `testVisibility` sampling pattern
+  - `applyVisibilityCulling()` (lines 500–612) — `testVisibility` sampling, viewer resolution, perimeter loop, seenBy persistence
+  - `registerFogOfWarHooks()` (lines 84–101) — fog reset hook pattern (`resetFogOfWar`)
 
 ---
 
@@ -211,31 +255,121 @@ Add a fourth door behavior mode `"image"` that swaps `tile.mesh.texture` to a co
 
 ### Problem
 
-The painter's algorithm (z-sort by key) breaks with cyclic occlusion: Tile A in front of B, B in front of C, C in front of A — no linear z-order satisfies all three. Inherent to isometric projection with arbitrarily-sized objects. Current `DepthSorter` has no cycle detection.
+The painter's algorithm (z-sort by key) breaks with cyclic occlusion: Tile A in front of B, B in front of C, C in front of A — no linear z-order satisfies all three. Inherent to isometric projection with arbitrarily-sized objects. Acute for multi-cell tiles: a single tile occupies multiple depth bands simultaneously, so one `zIndex` value is correct for part of the tile and wrong for the rest.
 
-### Solution
+Current `IsoSpriteLayer._sort()` is a stub (Phase 3 wiring only). No sort algorithm runs yet.
 
-Research phase only — no full implementation. Evaluate solutions, assess costs at scene scale (20–200 tiles), and produce guidelines/recommendations for SPECS.md.
+### Core Design: Iso-Diagonal Slice Model
+
+**Insight (session 2026-06-11):** If every rendered object fits inside exactly one grid cell, painter's algorithm works — ties don't matter because adjacent cells never cyclically occlude each other. Multi-cell tiles break this because they straddle multiple depth bands simultaneously.
+
+**Solution: slice each multi-cell tile into per-iso-column strips, sort each strip independently.**
+
+#### Frontier Cells
+
+For a tile with footprint W×H grid cells (col 0..W-1, row 0..H-1), **frontier cells** are those on the SE-facing edges visible to the camera:
+
+```
+frontier(c, r) = (c == W-1) OR (r == H-1)
+```
+
+Example — 3×3 tile (iso projection, camera SE, depth = col+row):
+
+```
+iso-depth 0:      N              ← (0,0)  interior
+iso-depth 1:    N   N            ← (1,0),(0,1)  interior
+iso-depth 2:  F   N   F          ← (2,0),(1,1),(0,2)  edges=F, center=N
+iso-depth 3:    F   F            ← (2,1),(1,2)  both frontier
+iso-depth 4:      F              ← (2,2)  SE corner
+```
+
+Frontier count = W + H - 1. For 3×3: 5 frontier cells, 4 interior.
+
+#### Iso-Diagonal Columns (slices)
+
+In SE isometric projection, "iso-diagonal columns" are diagonals at constant `col - row`. For a W×H tile there are `W + H - 1` such diagonals (iso columns), indexed `k = 0..(W+H-2)`.
+
+Each iso column k contains all grid cells where `c - r = k - (H-1)`, clipped to the footprint. Sorting depth for iso column k = `tile_col + tile_row + k` (a continuous, monotonically increasing sequence across the tile).
+
+**Slicing maps tile image columns to iso-diagonal columns.** For an untransformed (counter-transformed) tile, the image x-axis aligns with the world's east direction, so image-space x increases monotonically with iso depth. This means:
+
+- Vertical cuts in image space at `W + H - 1` equally-spaced x-positions produce `W + H - 1` rectangular slices
+- Each slice i gets depth key = `tile_base_depth + i`
+- Adjacent slices are in strict depth order — no ties, no cycles within the tile itself
+- Each slice is an independent `PIXI.Sprite` (sub-frame of shared base texture, zero extra VRAM)
+
+#### Cut Point Calculation
+
+For an untransformed tile, the iso projection maps grid cell (c, r) to image-space x:
+
+```
+x_img(c, r) = img_width * (c * cos_θ - r * sin_θ + offset) / projected_tile_width
+```
+
+where θ is the iso stage rotation angle, and `projected_tile_width` is the tile's full width in iso-projected image space.
+
+Simpler approximation for implementation:
+- Iso column k → image x cut at `x_k = img_width * k / (W + H - 1)`
+- This is correct when imageOffset = 0 and the tile exactly fills its footprint
+- With imageOffset: shift all cut points by `imageOffset.x * gridSize / img_width`
+
+**Recompute when:** tile is dropped after drag, `imageOffset` changes, or scene gridSize changes. Not per-frame. Cache as `flags.isoroll.sliceCuts: number[]` (or compute on demand from flag values at draw time).
+
+#### Slice Depth Assignment
+
+```
+slice[i].zIndex = (tile_col + tile_row) * BAND + i
+```
+
+where `BAND` is large enough to separate tile sort bands without collision (e.g. `BAND = W + H` rounded up to next power of 2, or a fixed `BAND = 256` safe for tiles up to 256 cells wide).
+
+#### Token Insertion
+
+After tile slices have depth keys, insert each token clone between the slices it belongs between:
+
+- Token at `(tx, ty)` with size `(tw, th)` — compute its iso column: `k_token = tx/gridSize - ty/gridSize + (H - 1)` relative to the tile
+- Token depth = `(tile_col + tile_row) * BAND + k_token + 0.5` (float, between two slice keys)
+- Token renders in front of all slices at iso columns < k_token, behind all slices at iso columns > k_token
+
+#### Cyclic Occlusion (residual problem)
+
+Slicing eliminates within-tile cycles. Cross-tile cycles (Tile A slice in front of Tile B, but another slice of B in front of A) can still occur with overlapping tiles. This is inherent to painter's algorithm — Phase 6 research evaluates whether cycle detection or user-facing `document.sort` bands are the right mitigation.
+
+### Implementation Changes vs Phase 3
+
+| Phase 3 | Phase 6 |
+|---------|---------|
+| `tileClones: Map<string, PIXI.Sprite>` | `tileSlices: Map<string, PIXI.Sprite[]>` |
+| one Sprite per tile | `W+H-1` Sprites per tile, shared base texture |
+| `createTileClone(t)` | `createTileSlices(t)` — creates N sprites with `texture.frame` sub-rects |
+| `syncSprite(clone, mesh)` | `syncSlice(slices, mesh)` — update positions of all slices |
+| single `clone.zIndex` | each slice has its own zIndex |
+| `removeClone(...)` | destroy all slice sprites |
+
+`tokenClones` structure unchanged — tokens are already 1-cell sorted (or small enough that depth error is imperceptible).
 
 ### Checklist
 
-- [ ] Research topological sort + cycle detection + breaking (DAG of occlusion relationships, DFS cycle detection, break weakest edge by overlap area; cost O(n²))
-- [ ] Research tile splitting (subdivide at overlap boundaries; guarantees correct sort but multiplies object count)
-- [ ] Research BSP tree (classic technique; expensive to maintain with dynamic objects)
-- [ ] Evaluate Foundry's `document.sort` property as a user-facing sort-band control (fork uses `TILE_STRIDE = 10000` bands)
-- [ ] Assess cost of O(n²) topological sort at scene scale
-- [ ] Write recommendations to SPECS.md: which approach to pursue, or whether sort-band UI is sufficient mitigation
+- [ ] Verify iso projection → image-space x mapping formula (check against actual isoroll stage transform params in `src/transform/`)
+- [ ] Implement `createTileSlices(tile)` using `PIXI.Texture` frame sub-rects
+- [ ] Implement `syncSlices(slices, mesh)` — position all slices, keep them clipped to the corresponding image band
+- [ ] Implement token depth insertion between tile slices
+- [ ] Handle `imageOffset` shift in cut point calculation
+- [ ] Research cyclic occlusion between different tiles (topological sort vs. `document.sort` bands)
+- [ ] Write recommendations: at what tile count does O(n²) cycle detection become expensive?
 - [ ] If sort-band UI is viable: add sort-band field to Iso tab in `src/ui/tile-config.ts`
 
 ### Key Files
 
-- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` (entry point for any changes)
+- `src/render/iso-sprite-layer.ts` — `_sort()` stub, `tileClones` (becomes `tileSlices`)
+- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` calls `IsoSpriteLayer._sort()`
+- `src/transform/` — iso projection params needed for cut point formula
 
 ### References
 
 - isometric-perspective fork `foreground.js`:
-  - `assignTileDepths()` (lines 316–341) — banded depth model
-  - `computeTokenEntries()` (lines 354–406) — second-pass violation correction
+  - `assignTileDepths()` (lines 316–341) — banded depth model (no slicing — tiles treated as single units, which is the problem we're solving)
+  - `computeTokenEntries()` (lines 354–406) — token insertion between tile bands
 
 ---
 

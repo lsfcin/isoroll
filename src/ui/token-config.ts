@@ -1,9 +1,28 @@
 // Registers the isoroll Iso tab in the TokenConfig AppV2 sheet.
 
 import { MODULE_ID, VolumeFlags } from "../core";
+import { TokenBackground, TokenGizmos } from "../tokens";
 import { addIsorollTab, flagCheckbox, flagNumber, flagSelect } from "./tab-helpers";
 
+type ConfigApp = { document: { id?: string } };
+const getCanvasToken = (id: string) =>
+  (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(id);
+
 export function registerTokenConfigHook(): void {
+  // Track config-open so renderers show gizmos / keep label bright even when token is deselected.
+  Hooks.on("renderTokenConfig", (app: ConfigApp) => {
+    const id = app.document?.id; if (!id || !VolumeFlags.isSceneEnabled()) return;
+    const token = getCanvasToken(id); if (!token) return;
+    TokenGizmos.setConfigOpen(token, true);
+    TokenBackground.setConfigOpen(token, true);
+  });
+  Hooks.on("closeTokenConfig", (app: ConfigApp) => {
+    const id = app.document?.id; if (!id) return;
+    const token = getCanvasToken(id);
+    if (token) { TokenGizmos.setConfigOpen(token, false); TokenBackground.setConfigOpen(token, false); }
+    else { TokenGizmos.configOpen.delete(id); TokenBackground.configOpen.delete(id); }
+  });
+
   Hooks.on("renderTokenConfig",
     (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
@@ -14,9 +33,8 @@ export function registerTokenConfigHook(): void {
         flagCheckbox("transformToken", "TokenConfig", d.getFlag(MODULE_ID, "transformToken") === true) +
         `</fieldset>` +
         `<fieldset><legend>${t("ISOROLL.TokenConfig.ManipulationHeading")}</legend>` +
-        flagCheckbox("showImageManipulation",   "TokenConfig", d.getFlag(MODULE_ID, "showImageManipulation")   !== false) +
-        flagCheckbox("showVolumeManipulation",  "TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation")  !== false, 'style="white-space:nowrap"') +
-        flagCheckbox("showElevationUnselected", "TokenConfig", d.getFlag(MODULE_ID, "showElevationUnselected") !== false, 'style="white-space:nowrap"') +
+        flagCheckbox("showImageManipulation",  "TokenConfig", d.getFlag(MODULE_ID, "showImageManipulation")  !== false) +
+        flagCheckbox("showVolumeManipulation", "TokenConfig", d.getFlag(MODULE_ID, "showVolumeManipulation") !== false, 'style="white-space:nowrap"') +
         `</fieldset>` +
         `<fieldset><legend>${t("ISOROLL.TokenConfig.ShadowHeading")}</legend>` +
         flagCheckbox("shadowEnabled", "TokenConfig", VolumeFlags.getShadowEnabled(d)) +
@@ -39,10 +57,12 @@ export function registerTokenConfigHook(): void {
         flagCheckbox("presetEnabled", "TokenConfig", d.getFlag(MODULE_ID, "presetEnabled") !== false) +
         `</fieldset>`,
         ($h) => {
-          // Live preview: update flag with render:false to avoid resetting the active tab
-          const setFlag = (key: string, val: unknown) =>
-            (d as unknown as { update(data: Record<string, unknown>, opts?: { render?: boolean }): Promise<unknown> })
-              .update({ [`flags.${MODULE_ID}.${key}`]: val }, { render: false }).catch(() => {});
+          // Live preview: update flag with render:false to avoid resetting the active tab.
+          // RenderGate's updateToken hook picks up the change and calls rebuild() directly.
+          type DocLike = { update(data: Record<string, unknown>, opts?: { render?: boolean }): Promise<unknown> };
+          const setFlag = (key: string, val: unknown) => {
+            (d as unknown as DocLike).update({ [`flags.${MODULE_ID}.${key}`]: val }, { render: false }).catch(() => {});
+          };
           $h.on("change", `[name^='flags.${MODULE_ID}.']`, (e) => {
             const el = e.target as HTMLInputElement | HTMLSelectElement;
             const key = el.name.slice(`flags.${MODULE_ID}.`.length);

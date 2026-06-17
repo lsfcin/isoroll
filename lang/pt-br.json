@@ -66,6 +66,9 @@
       "ShadowRadiusHint": "Multiplicador do raio da sombra em relação ao tamanho da grade (1.0 = raio de uma célula da grade).",
       "ShadowOpacity": "Opacidade",
       "ShadowOpacityHint": "Opacidade base da sombra ao nível do chão (0.0–1.0).",
+      "FogHeading": "Névoa de Guerra",
+      "HideOnFog": "Ocultar na Névoa",
+      "HideOnFogHint": "Oculta completamente este tile em áreas inexploradas e cobertas pela névoa. Por padrão, tiles já vistos aparecem escurecidos na névoa explorada.",
       "PresetEnabled": "Usar Predefinição de Imagem",
       "PresetEnabledHint": "Aplica automaticamente a configuração salva ao posicionar um tile com esta imagem, e atualiza a predefinição ao editar este tile."
     },

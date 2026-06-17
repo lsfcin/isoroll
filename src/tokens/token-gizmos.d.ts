@@ -1,10 +1,10 @@
 export declare class TokenGizmos {
     private static sets;
-    static activate(): void;
-    private static onCanvasReady;
-    private static onUpdateScene;
-    private static onControlToken;
-    private static onRefreshToken;
+    static lastCommittedElev: Map<string, number>;
+    static create(_token: Token): void;
+    static sync(_token: Token): void;
+    static rebuild(token: Token): void;
+    static onControl(token: Token, controlled: boolean): void;
     static show(token: Token): void;
     static hide(tokenId: string): void;
     static clearAll(): void;

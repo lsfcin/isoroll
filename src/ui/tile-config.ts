@@ -65,6 +65,9 @@ export function registerTileConfigHook(): void {
       flagNumber("shadowRadius",  "TileConfig", VolumeFlags.getShadowRadius(d),       0.1, 4.0, 0.1) +
       flagNumber("shadowOpacity", "TileConfig", VolumeFlags.getShadowOpacity(d, 0.5), 0.0, 1.0, 0.05) +
       `</fieldset>` +
+      `<fieldset><legend>${t("ISOROLL.TileConfig.FogHeading")}</legend>` +
+      flagCheckbox("hideOnFog", "TileConfig", VolumeFlags.getHideOnFog(d)) +
+      `</fieldset>` +
       `<fieldset><legend>${t("ISOROLL.TileConfig.PresetHeading")}</legend>` +
       flagCheckbox("presetEnabled",         "TileConfig", d.getFlag(MODULE_ID, "presetEnabled")          !== false) +
       `</fieldset>` +

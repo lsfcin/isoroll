@@ -18,6 +18,12 @@ export type P = {
 };
 export declare function point(x: number, y: number): P;
 export declare function computeVerts(tile: Tile): BoxVerts;
+export declare function tokenFootprint(token: Token): {
+    tx: number;
+    ty: number;
+    tw: number;
+    th: number;
+};
 export declare function computeTokenVerts(token: Token): BoxVerts;
 export declare function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void;
 export declare function drawBox(g: PIXI.Graphics, v: BoxVerts): void;

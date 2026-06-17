@@ -16,6 +16,11 @@ export declare class WallOverlay {
     private static altMode;
     private static pendingRefresh;
     private static rafId;
+    static create(_tile: Tile): void;
+    static sync(_tile: Tile): void;
+    static rebuild(tile: Tile): void;
+    static onControl(tile: Tile, controlled: boolean): void;
+    /** Registers window event listeners only — Foundry hooks handled by RenderGate. */
     static activate(): void;
     static show(tile: Tile, isDrag?: boolean): void;
     static hide(tileId: string): void;

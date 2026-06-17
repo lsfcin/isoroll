@@ -7,6 +7,8 @@
  * Hooks into canvas primary layer sort after each render tick.
  */
 
+import { IsoSpriteLayer } from "../render";
+
 export class DepthSorter {
   static activate(): void {
     Hooks.on("refreshToken", DepthSorter.onRefresh);
@@ -33,6 +35,7 @@ export class DepthSorter {
       const keyB = DepthSorter.objectSortKey(b, gridSize);
       return keyA - keyB;
     });
+    IsoSpriteLayer._sort();
   }
 
   private static objectSortKey(obj: PIXI.DisplayObject, gridSize: number): number {

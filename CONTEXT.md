@@ -67,12 +67,6 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - `isoroll-content/` repo — AI art pipeline (private)
 - `/foundry` skill — Foundry v14 gotchas, coordinate systems, hooks, component hierarchy
 
-## Routing
-
-| Subdirectory | Description |
-|--------------|-------------|
-| [`src/`](src/CONTEXT.md) | All TypeScript source — entry point, flags, settings, util, all subsystems |
-
 <!-- routing:start -->
 ## Routing
 
@@ -86,7 +80,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | [`ROADMAP.md`](ROADMAP.md) | — | — | isoroll — Roadmap |
 | [`SETUP.md`](SETUP.md) | — | — | isoroll — Development Setup |
 | [`SPECS.md`](SPECS.md) | — | — | isoroll — Specs |
-| [`eslint.config.js`](eslint.config.js) | — | — | ← add first-line comment |
-| [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | ← add first-line comment |
-| [`vite.config.ts`](vite.config.ts) | — | — | ← add first-line comment |
+| [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module source |
+| [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
+| [`vite.config.ts`](vite.config.ts) | — | — | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
 <!-- routing:end -->
