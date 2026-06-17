@@ -79,13 +79,24 @@ export function applyTileFog(
     seenTileIds.add(tileId);
     s.visible = true; s.tint = 0xffffff;
   } else if (!hideOnFog) {
-    const fog = canvas.fog as unknown as { isPointExplored?(p: { x: number; y: number }): boolean };
-    const fogExplored = fog?.isPointExplored?.({ x: cx, y: cy });
-    const hadSeen = seenTileIds.has(tileId);
-    const explored = fogExplored ?? hadSeen;
-    console.log(`[isoroll fog] tileId=${tileId} fogExplored=${fogExplored} hadSeen=${hadSeen} => explored=${explored} clone.visible=${s.visible} clone.tint=0x${s.tint.toString(16)}`);
-    if (explored) { seenTileIds.add(tileId); s.visible = true; s.tint = EXPLORED_TINT; }
-    else { seenTileIds.delete(tileId); s.visible = false; s.tint = 0xffffff; }
+    const fog = canvas.fog as unknown as { exploration: unknown; fogExploration: boolean; isPointExplored?(p: { x: number; y: number }): boolean };
+    // Fog reset: #deactivate() sets exploration=null. fogExploration guard avoids false positive
+    // on scenes where fog persistence is disabled (exploration also stays null there).
+    const fogWasReset = fog.fogExploration && fog.exploration === null;
+    if (fogWasReset) {
+      seenTileIds.delete(tileId); s.visible = false; s.tint = 0xffffff;
+    } else if (seenTileIds.has(tileId)) {
+      // Seen this session — trust in-memory state; isPointExplored is async/stale.
+      s.visible = true; s.tint = EXPLORED_TINT;
+    } else {
+      // seenTileIds empty (e.g. F5 reload): fall back to server-persisted pixels.
+      // load() extracts pixels synchronously, so isPointExplored is reliable here.
+      if (fog?.isPointExplored?.({ x: cx, y: cy })) {
+        seenTileIds.add(tileId); s.visible = true; s.tint = EXPLORED_TINT;
+      } else {
+        s.visible = false; s.tint = 0xffffff;
+      }
+    }
   } else {
     s.visible = false; s.tint = 0xffffff;
   }
