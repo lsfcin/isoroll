@@ -32,7 +32,7 @@ Wall anchor points are stored in **IMAGE [0,1]² space** (same as `imageOffset` 
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`index.ts`](index.ts) | — | — | **facade** — Public API for the walls module — linked wall system |
+| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the walls module — linked wall system |
 | [`wall-coords.ts`](wall-coords.ts) | [`wall-coords.d.ts`](wall-coords.d.ts) | `wallsLayer`, `scene`, `tileRect`, `imageRect`, `anchorToCanvas` | Canvas coordinate helpers and Foundry shims for the walls system. |
 | [`wall-crud.ts`](wall-crud.ts) | [`wall-crud.d.ts`](wall-crud.d.ts) | `generateBaseWallDefs`, `createWallsFromDefs`, `deleteLinkedWalls`, `linkSelectedWalls`, `unlinkAllWalls` | Create, delete, link, and extract linked wall documents for a tile. |
 | [`wall-door.ts`](wall-door.ts) | [`wall-door.d.ts`](wall-door.d.ts) | `applyDoorBehavior`, `cycleDoorBehavior` | Door-behavior application and cycling for linked-wall tiles. |

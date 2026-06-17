@@ -1,6 +1,6 @@
 // Interactive helpers: endpoint handles, drag, select toggle.
 
-import { MODULE_ID, startPointerDrag, screenPointToCanvas } from "../core";
+import { MODULE_ID, startPointerDrag, screenPointToCanvas, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
 import { canvasToAnchor, wallsLayer, scene, type TileDoc } from "./wall-coords";
 import { WallHistory } from "./wall-history";
@@ -27,12 +27,12 @@ export function addWallDblClick(g: PIXI.Graphics, wallId: string): void {
 }
 
 function snapQuarter(x: number, y: number): { x: number; y: number } {
-  const q = ((canvas.grid as unknown as { size?: number })?.size ?? 100) / 4;
+  const q = CanvasEnv.gridSize() / 4;
   return { x: Math.round(x / q) * q, y: Math.round(y / q) * q };
 }
 
 function toSnapCanvas(e: PointerEvent): { x: number; y: number } {
-  const wt   = (canvas.app as unknown as { stage: { worldTransform: PIXI.Matrix } }).stage.worldTransform;
+  const wt   = CanvasEnv.worldTransform();
   const rect = (canvas.app!.view as HTMLCanvasElement).getBoundingClientRect();
   const raw  = screenPointToCanvas(e.clientX - rect.left, e.clientY - rect.top, wt);
   return snapQuarter(raw.x, raw.y);

@@ -230,16 +230,16 @@ Build must pass. Nothing calls them yet.
 
 ### Phase 2 — canvas-env goes live (mechanical, compiler-verified)
 Implement all `canvas-env.ts` accessors. Mechanical find-replace in non-boundary files — no logic change.
-- [ ] Implement accessors: `gridSize()`, `gridDistance()`, `gridUnits()`, `scene()`, `sceneFlag(key)`,
+- [x] Implement accessors: `gridSize()`, `gridDistance()`, `gridUnits()`, `scene()`, `sceneFlag(key)`,
       `tokens()`, `tiles()`, `dimensions()`, `worldTransform()`, `stage()`, `isGM()`,
       `tokenVision()`, `fogColors()`
-- [ ] Replace all scattered reads in non-boundary files:
-      `canvas.grid?.size ?? 100` → `CanvasEnv.gridSize()`
-      `canvas.app.stage.worldTransform` → `CanvasEnv.worldTransform()`
-      `canvas.scene.getFlag(MODULE_ID, k)` → `CanvasEnv.sceneFlag(k)`
-      `game.user.isGM` → `CanvasEnv.isGM()`
-      `canvas.dimensions` → `CanvasEnv.dimensions()`
-      (grep for each pattern, fix all non-boundary sites)
+- [x] Replace all scattered reads in non-boundary files:
+      `canvas.grid?.size ?? 100` → `CanvasEnv.gridSize()` (7 files: volume-box, depth-sorter, tile-gizmos, tile-drag, token-gizmos, token-background, token-elev-drag, wall-overlay-ops)
+      `canvas.app.stage.worldTransform` → `CanvasEnv.worldTransform()` (5 files: contour, tile-drag, token-gizmos, wall-overlay-ops, coord-debug)
+      `(canvas.grid as ...).units` → `CanvasEnv.gridUnits()` (token-background)
+      `canvas.grid?.distance` → `CanvasEnv.gridDistance()` (coord-debug)
+      Remaining patterns (sceneFlag, isGM, dimensions) had no non-boundary callsites in Phase 2 scope.
+      bg-drag.ts + bg-gizmos.ts worldTransform deferred to Phase 7 (background/ audit).
 - [ ] Build; smoke test: load scene, enable isoroll, verify tiles/tokens render
 
 ### Phase 3 — iso-geometry + mesh-accessor go live

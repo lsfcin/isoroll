@@ -1,6 +1,6 @@
 // Selection overlay for tokens: image handles, volume box, image contour, elevation handle/label, test sprite, ground shadow.
 
-import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag } from "../core";
+import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag, CanvasEnv } from "../core";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale, makeCircleHandle, makeSquareCounterHandle } from "../gizmos";
 import type { MeshLike } from "../draw";
 import { drawMeshContour, computeTokenVerts, tokenFootprint, drawBox, drawAnchorLine } from "../draw";
@@ -72,7 +72,7 @@ export class TokenGizmos {
 
     if (showVol) {
       const { tx, ty, tw, th } = tokenFootprint(token);
-      const gridSize  = canvas.grid?.size ?? 100;
+      const gridSize  = CanvasEnv.gridSize();
       const gridDist  = gridDistance();
       const proj      = currentProjection();
       const elev      = getElevation(token.document);
@@ -103,7 +103,7 @@ export class TokenGizmos {
       const imgOff   = VolumeFlags.getImageOffset(token.document);
       const imgScl   = VolumeFlags.getImageScale(token.document);
       const imgYScl  = VolumeFlags.getImageYScale(token.document);
-      const gridSize = canvas.grid?.size ?? 100;
+      const gridSize = CanvasEnv.gridSize();
       const tkImgHalfH = Math.max(1, tkTexH * Math.abs(tkScaleY) / (2 * Math.max(0.01, Math.abs(imgYScl))));
       const bl = imageBottomLeft(token);
       const tr = imageTopRight(token);
@@ -155,7 +155,7 @@ export class TokenGizmos {
   private static pushHistory(drag: TkDrag): void {
     const id = drag.token.id;
     if (!id) return;
-    const gridSize = canvas.grid?.size ?? 100;
+    const gridSize = CanvasEnv.gridSize();
     const original: Record<string, unknown> = { _id: id };
     if (drag.type === "imgOffset") original[`flags.${MODULE_ID}.imageOffset`] = { x: drag.startImgOffX / gridSize, y: drag.startImgOffY / gridSize };
     else if (drag.type === "imgYScale") original[`flags.${MODULE_ID}.imageYScale`] = drag.startImgYScale;
@@ -167,10 +167,10 @@ export class TokenGizmos {
 
   private static commit(drag: TkDrag, gx: number, gy: number): void {
     const dx = gx - drag.startGX, dy = gy - drag.startGY;
-    const wt = canvas.app!.stage.worldTransform;
+    const wt = CanvasEnv.worldTransform();
     const opts = { isUndo: true };
     if (drag.type === "imgOffset") {
-      const gridSize = canvas.grid?.size ?? 100;
+      const gridSize = CanvasEnv.gridSize();
       const { x, y } = projectImgOffset(dx, dy, wt, drag.startImgOffX, drag.startImgOffY);
       void drag.token.document.update({ [`flags.${MODULE_ID}.imageOffset`]: { x: x / gridSize, y: y / gridSize } }, opts);
     } else if (drag.type === "imgYScale") {

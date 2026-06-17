@@ -1,5 +1,6 @@
 // Unified dashed image-contour drawing shared by tile and token overlays.
 import { BLACK, DASH_LEN, GAP_LEN } from "./constants";
+import { CanvasEnv } from "../core";
 import { drawDash } from "./shapes";
 
 export interface MeshLike {
@@ -10,8 +11,6 @@ export interface MeshLike {
   texture?: { width: number; height: number };
   anchor?: { x: number; y: number };
 }
-
-type WorldTransform = { a: number; b: number; c: number; d: number };
 
 export function drawMeshContour(g: PIXI.Graphics, mesh: MeshLike): void {
   if (!mesh.texture) return;
@@ -29,7 +28,7 @@ export function drawMeshContour(g: PIXI.Graphics, mesh: MeshLike): void {
     x: mesh.x + cr*(c.x*sx) - sr*(c.y*sy),
     y: mesh.y + sr*(c.x*sx) + cr*(c.y*sy),
   }));
-  const wt = (canvas.app as unknown as { stage: { worldTransform: WorldTransform } }).stage.worldTransform;
+  const wt = CanvasEnv.worldTransform();
   for (let i = 0; i < 4; i++) {
     const a = pts[i], b = pts[(i+1)%4];
     const dx = b.x-a.x, dy = b.y-a.y;

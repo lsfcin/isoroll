@@ -1,5 +1,5 @@
 // Elevation drag logic for TokenElevGizmo — extracted to keep gizmo file under line limit.
-import { canvasZoom, gridDistance, startPointerDrag } from "../core";
+import { canvasZoom, gridDistance, startPointerDrag, CanvasEnv } from "../core";
 import { clientToGlobal } from "../gizmos";
 
 export interface TokenElevDrag {
@@ -31,7 +31,7 @@ function pushElevHistory(drag: TokenElevDrag): void {
 
 function commitElevDrag(lastCommittedElev: Map<string, number>, drag: TokenElevDrag, gy: number): void {
   const zoom      = canvasZoom();
-  const gridSize  = canvas.grid?.size ?? 100;
+  const gridSize  = CanvasEnv.gridSize();
   const gridDist  = gridDistance();
   const deltaFeet = -(gy - drag.startGY) / (zoom * gridSize / gridDist);
   const elev = Math.round(drag.startElev + deltaFeet);

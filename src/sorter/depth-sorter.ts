@@ -8,6 +8,7 @@
  */
 
 import { IsoSpriteLayer } from "../render";
+import { CanvasEnv } from "../core";
 
 export class DepthSorter {
   static activate(): void {
@@ -16,7 +17,7 @@ export class DepthSorter {
   }
 
   private static sortKey(gridX: number, gridY: number, elevation: number): number {
-    const gridSize = canvas.grid?.size ?? 100;
+    const gridSize = CanvasEnv.gridSize();
     return gridX + gridY + elevation / gridSize;
   }
 
@@ -28,7 +29,7 @@ export class DepthSorter {
     const primary = canvas.primary;
     if (!primary) return;
 
-    const gridSize = canvas.grid?.size ?? 100;
+    const gridSize = CanvasEnv.gridSize();
 
     primary.children.sort((a, b) => {
       const keyA = DepthSorter.objectSortKey(a, gridSize);

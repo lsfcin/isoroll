@@ -1,5 +1,5 @@
 // Geometry helpers for the 3D volume overlay: vertex computation and box drawing.
-import { VolumeFlags, gridDistance, elevToCanvas, getElevation } from "../core";
+import { VolumeFlags, gridDistance, elevToCanvas, getElevation, CanvasEnv } from "../core";
 import { currentProjection } from "../transform";
 
 import {
@@ -49,7 +49,7 @@ export function computeVerts(tile: Tile): BoxVerts {
   const ty = (tile.document.y ?? 0) - th / 2;
 
   const proj      = currentProjection();
-  const gridSize  = canvas.grid?.size ?? 100;
+  const gridSize  = CanvasEnv.gridSize();
   const gridDist  = gridDistance();
   const elevation = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
   const boundH    = VolumeFlags.getEffectiveTileHeight(tile.document);
@@ -64,7 +64,7 @@ export function computeVerts(tile: Tile): BoxVerts {
 // token.document.x/y = top-left (unlike tiles where it = center)
 // token.document.width/height = grid units (tiles use canvas pixels)
 export function tokenFootprint(token: Token): { tx: number; ty: number; tw: number; th: number } {
-  const gridSize = canvas.grid?.size ?? 100;
+  const gridSize = CanvasEnv.gridSize();
   return {
     tx: token.document.x ?? 0,
     ty: token.document.y ?? 0,
@@ -75,7 +75,7 @@ export function tokenFootprint(token: Token): { tx: number; ty: number; tw: numb
 
 export function computeTokenVerts(token: Token): BoxVerts {
   const { tx, ty, tw, th } = tokenFootprint(token);
-  const gridSize  = canvas.grid?.size ?? 100;
+  const gridSize  = CanvasEnv.gridSize();
   const gridDist  = gridDistance();
   const proj      = currentProjection();
   const elevation = getElevation(token.document);

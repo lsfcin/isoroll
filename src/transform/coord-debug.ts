@@ -1,4 +1,5 @@
 import { transformCoord, CoordSystem, TransformContext, P2, P3 } from "./coord-map";
+import { CanvasEnv } from "../core";
 
 export const DEBUG_COORD = false;
 
@@ -146,10 +147,10 @@ export function drawCoordDebug(g: any, tile: any, gizmoW: P2) {
   if (gImg) gImg.clear();
 
   const ctx: TransformContext = {
-    wt: (window as any).canvas.app!.stage.worldTransform,
+    wt: CanvasEnv.worldTransform(),
     mesh: mesh,
-    gridSize: (window as any).canvas.grid!.size,
-    gridDistance: (window as any).canvas.scene!.grid.distance,
+    gridSize: CanvasEnv.gridSize(),
+    gridDistance: CanvasEnv.gridDistance(),
     heightDir: { x: 1, y: -1 },
     elevation: tile.document.elevation ?? 0
   };
