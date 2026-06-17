@@ -243,13 +243,21 @@ Implement all `canvas-env.ts` accessors. Mechanical find-replace in non-boundary
 - [ ] Build; smoke test: load scene, enable isoroll, verify tiles/tokens render
 
 ### Phase 3 — iso-geometry + mesh-accessor go live
-- [ ] Implement `iso-geometry.ts`: `tileVerts(tile)`, `tokenVerts(token)`, `footprint(placeable)`
-      These read via `CanvasEnv.gridSize()` + `currentProjection()` — no raw `canvas.*`
-- [ ] Implement `mesh-accessor.ts`: `geometryOf(placeable): MeshGeometry | null`
-      Replaces all `as unknown as MeshLike` casts
-- [ ] Refactor `draw/volume-box.ts`: remove canvas reads, receive geometry as param — purely functional
-- [ ] Refactor `draw/contour.ts`: remove `canvas.app.stage.worldTransform` read, receive `wt` as param
-- [ ] Update overlays/gizmos to call iso-geometry + mesh-accessor instead of reading directly
+- [x] Implement `iso-geometry.ts`: `tileVerts(tile)`, `tokenVerts(token)`, `footprint(token)`
+      Absorbed computeVerts/computeTokenVerts/tokenFootprint logic from volume-box.ts.
+      Reads via CanvasEnv.gridSize()/gridDistance() + currentProjection() — no raw canvas.*.
+      Defines WorldBoxVerts (named vertex struct) and TileFootprint types.
+- [x] Implement `mesh-accessor.ts`: `geometryOf(placeable): MeshGeometry | null`
+      Safe read of tile/token mesh: returns null if no mesh or texture.
+- [x] Refactor `draw/volume-box.ts`: purely functional — drawBox + drawAnchorLine only.
+      Imports WorldBoxVerts from render; exports BoxVerts alias for backward compat.
+- [x] Refactor `draw/contour.ts`: drawMeshContour(g, geo: MeshGeometry|null, wt: PIXI.Matrix).
+      MeshLike interface kept (gizmos/mesh-corners.ts still uses it directly).
+- [x] Update callers:
+      tile-overlay.ts: computeVerts→IsoGeometry.tileVerts, MeshLike cast→MeshAccessor.geometryOf
+      token-gizmos.ts: computeTokenVerts/tokenFootprint→IsoGeometry, MeshLike casts→MeshAccessor
+      token-background.ts: tokenFootprint→IsoGeometry.footprint (3 sites)
+      Boundary-file MeshLike casts (token-transform.ts) untouched — correct to stay.
 - [ ] Build; visual test: 3D box outline, shadow, contour on tile and token
 
 ### Phase 4 — render-lifecycle.ts goes live

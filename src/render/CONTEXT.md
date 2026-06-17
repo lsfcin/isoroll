@@ -20,7 +20,7 @@
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the render module — central PIXI layer registry |
 | [`fog-helpers.ts`](fog-helpers.ts) | — | `docAlpha`, `applyDocState`, `clearSeenTiles`, `saveSessionToStorage`, `tryRestoreFromStorage` | Fog-of-war visibility helpers for IsoSpriteLayer. |
-| [`iso-geometry.ts`](iso-geometry.ts) | — | `IsoGeometry` | Footprint math for tiles and tokens. |
+| [`iso-geometry.ts`](iso-geometry.ts) | — | `IsoGeometry`, `pt`, `buildVerts` | Footprint math for tiles and tokens. |
 | [`iso-renderer.ts`](iso-renderer.ts) | — | `IsoRenderer` | Rendering façade — single entry point for all isoroll visuals. |
 | [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | [`iso-sprite-layer.d.ts`](iso-sprite-layer.d.ts) | `cloneSprite`, `syncSprite`, `IsoTokenRenderer`, `IsoTileRenderer`, `IsoSpriteLayer` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
 | [`layer-manager.ts`](layer-manager.ts) | [`layer-manager.d.ts`](layer-manager.d.ts) | `destroyMapped`, `LayerManager`, `LAYER_KEYS`, `stage` | Central PIXI layer registry: creation, z-order policy, and teardown for all overlay layers. |

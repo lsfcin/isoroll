@@ -1,9 +1,8 @@
 // Renders a 3D bounding box on selected tiles (VOLUME_OVERLAY) + always-on shadow (TILE_SHADOW).
 
-import { MODULE_ID, VolumeFlags } from "../core";
-import type { MeshLike } from "../draw";
-import { computeVerts, drawGroundShadow, drawBox, drawAnchorLine, drawMeshContour } from "../draw";
-import { LayerManager, LAYER_KEYS } from "../render";
+import { MODULE_ID, VolumeFlags, CanvasEnv } from "../core";
+import { drawGroundShadow, drawBox, drawAnchorLine, drawMeshContour } from "../draw";
+import { LayerManager, LAYER_KEYS, IsoGeometry, MeshAccessor } from "../render";
 import { DEBUG_COORD, drawCoordDebug } from "../transform";
 
 export class VolumeOverlay {
@@ -47,7 +46,7 @@ export class VolumeOverlay {
     VolumeOverlay.shadowState.set(tile.id, snap);
     const d = tile.document;
     if (!VolumeFlags.getShadowEnabled(d, false)) return;
-    const v  = computeVerts(tile);
+    const v  = IsoGeometry.tileVerts(tile);
     const rx = (d.width  ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
     const ry = (d.height ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
     const s  = drawGroundShadow(v.ground.x, v.ground.y, v.elevation, rx, ry, VolumeFlags.getShadowOpacity(d, 0.5), VolumeFlags.getShadowShape(d, "rect"));
@@ -95,10 +94,10 @@ export class VolumeOverlay {
   private static draw(c: PIXI.Container, tile: Tile): void {
     const showVol = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImg = VolumeFlags.getShowImageManipulation(tile.document, true);
-    const v = computeVerts(tile);
+    const v = IsoGeometry.tileVerts(tile);
     const g = new PIXI.Graphics();
     g.eventMode = "none";
-    if (showImg) drawMeshContour(g, tile.mesh as unknown as MeshLike);
+    if (showImg) drawMeshContour(g, MeshAccessor.geometryOf(tile), CanvasEnv.worldTransform());
     if (showVol) {
       if (v.elevation > 0) drawAnchorLine(g, v);
       drawBox(g, v);

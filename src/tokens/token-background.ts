@@ -1,8 +1,8 @@
 // Always-visible token indicators: ground shadow, elevation line, elevation label.
 
 import { VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, isPreviewClone, suppressTooltip, CanvasEnv } from "../core";
-import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, tokenFootprint, makeCounterWrapper, suppressMipmap } from "../draw";
-import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
+import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, makeCounterWrapper, suppressMipmap } from "../draw";
+import { LayerManager, LAYER_KEYS, destroyMapped, IsoGeometry } from "../render";
 import { currentProjection } from "../transform";
 
 type UserLike = { isGM?: boolean; color?: { css?: string } | string };
@@ -83,7 +83,7 @@ export class TokenBackground {
   private static updateShadow(token: Token): void {
     const prev = TokenBackground.shadows.get(token.id);
     if (prev) { prev.parent?.removeChild(prev); prev.destroy({ children: true }); TokenBackground.shadows.delete(token.id); }
-    const { tx, ty, tw, th } = tokenFootprint(token);
+    const { tx, ty, tw, th } = IsoGeometry.footprint(token);
     const elev = getElevation(token.document);
     const sr   = VolumeFlags.getShadowRadius(token.document);
     if (!VolumeFlags.getShadowEnabled(token.document)) return;
@@ -96,7 +96,7 @@ export class TokenBackground {
 
   private static rebuildIndicators(token: Token, selected: boolean): void {
     destroyMapped(TokenBackground.indicators, token.id);
-    const { tx, ty, tw, th } = tokenFootprint(token);
+    const { tx, ty, tw, th } = IsoGeometry.footprint(token);
     const gridSize  = CanvasEnv.gridSize();
     const gridDist  = gridDistance();
     const proj      = currentProjection();
@@ -136,7 +136,7 @@ export class TokenBackground {
 
   private static rebuildLabel(token: Token, selected: boolean): void {
     destroyMapped(TokenBackground.labels, token.id);
-    const { tx, ty, tw, th } = tokenFootprint(token);
+    const { tx, ty, tw, th } = IsoGeometry.footprint(token);
     const gridSize  = CanvasEnv.gridSize();
     const gridDist  = gridDistance();
     const proj      = currentProjection();

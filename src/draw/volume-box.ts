@@ -1,90 +1,9 @@
-// Geometry helpers for the 3D volume overlay: vertex computation and box drawing.
-import { VolumeFlags, gridDistance, elevToCanvas, getElevation, CanvasEnv } from "../core";
-import { currentProjection } from "../transform";
+// PIXI drawing utilities for the 3D volume box. Purely functional — no canvas reads.
+import { ORANGE, BLACK, ALPHA_FRONT_OUTLINE, ALPHA_FRONT_FILL, ALPHA_BACK_OUTLINE, ALPHA_BACK_FILL } from "./constants";
+import type { WorldBoxVerts } from '../render';
 
-import {
-  ORANGE, BLACK,
-  ALPHA_FRONT_OUTLINE, ALPHA_FRONT_FILL, ALPHA_BACK_OUTLINE, ALPHA_BACK_FILL,
-} from "./constants";
-
-export interface BoxVerts {
-  NW_base: P; NE_base: P; SW_base: P; SE_base: P;
-  NW_top:  P; NE_top:  P; SW_top:  P; SE_top:  P;
-  ground:     P;
-  baseCenter: P;
-  topCenter:  P;
-  elevation:  number;
-}
-
+export type BoxVerts = WorldBoxVerts;
 export type P = { x: number; y: number };
-
-export function point(x: number, y: number): P { return { x, y }; }
-
-function buildBoxVerts(
-  tx: number, ty: number, tw: number, th: number,
-  elevPx: number, elevTopPx: number, heightDirX: number, heightDirY: number,
-  elevation: number,
-): BoxVerts {
-  return {
-    NW_base: point(tx + heightDirX * elevPx,       ty + heightDirY * elevPx),
-    NE_base: point(tx + tw + heightDirX * elevPx,  ty + heightDirY * elevPx),
-    SW_base: point(tx + heightDirX * elevPx,       ty + th + heightDirY * elevPx),
-    SE_base: point(tx + tw + heightDirX * elevPx,  ty + th + heightDirY * elevPx),
-    NW_top:  point(tx + heightDirX * elevTopPx,      ty + heightDirY * elevTopPx),
-    NE_top:  point(tx + tw + heightDirX * elevTopPx, ty + heightDirY * elevTopPx),
-    SW_top:  point(tx + heightDirX * elevTopPx,      ty + th + heightDirY * elevTopPx),
-    SE_top:  point(tx + tw + heightDirX * elevTopPx, ty + th + heightDirY * elevTopPx),
-    ground:     point(tx + tw / 2,                  ty + th / 2),
-    baseCenter: point(tx + tw / 2 + heightDirX * elevPx,    ty + th / 2 + heightDirY * elevPx),
-    topCenter:  point(tx + tw / 2 + heightDirX * elevTopPx, ty + th / 2 + heightDirY * elevTopPx),
-    elevation,
-  };
-}
-
-export function computeVerts(tile: Tile): BoxVerts {
-  const tw = tile.document.width  ?? 0;
-  const th = tile.document.height ?? 0;
-  // document.x/y = tile CENTER in Foundry v14; subtract half-dims for top-left
-  const tx = (tile.document.x ?? 0) - tw / 2;
-  const ty = (tile.document.y ?? 0) - th / 2;
-
-  const proj      = currentProjection();
-  const gridSize  = CanvasEnv.gridSize();
-  const gridDist  = gridDistance();
-  const elevation = (tile.document as unknown as { elevation?: number }).elevation ?? 0;
-  const boundH    = VolumeFlags.getEffectiveTileHeight(tile.document);
-
-  const elevPx    = elevToCanvas(elevation, gridSize, gridDist);
-  const elevTopPx = elevPx + boundH * gridSize;
-  const heightDir = proj.heightDir;
-
-  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, heightDir.x, heightDir.y, elevation);
-}
-
-// token.document.x/y = top-left (unlike tiles where it = center)
-// token.document.width/height = grid units (tiles use canvas pixels)
-export function tokenFootprint(token: Token): { tx: number; ty: number; tw: number; th: number } {
-  const gridSize = CanvasEnv.gridSize();
-  return {
-    tx: token.document.x ?? 0,
-    ty: token.document.y ?? 0,
-    tw: (token.document.width  ?? 1) * gridSize,
-    th: (token.document.height ?? 1) * gridSize,
-  };
-}
-
-export function computeTokenVerts(token: Token): BoxVerts {
-  const { tx, ty, tw, th } = tokenFootprint(token);
-  const gridSize  = CanvasEnv.gridSize();
-  const gridDist  = gridDistance();
-  const proj      = currentProjection();
-  const elevation = getElevation(token.document);
-  const boundH    = VolumeFlags.getTokenHeight(token.document);
-  const elevPx    = elevToCanvas(elevation, gridSize, gridDist);
-  const elevTopPx = elevPx + boundH * gridSize;
-  const heightDir = proj.heightDir;
-  return buildBoxVerts(tx, ty, tw, th, elevPx, elevTopPx, heightDir.x, heightDir.y, elevation);
-}
 
 export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {
   if (Math.abs(v.elevation) < 0.01) return;

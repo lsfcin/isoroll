@@ -1,8 +1,9 @@
 // Unified dashed image-contour drawing shared by tile and token overlays.
 import { BLACK, DASH_LEN, GAP_LEN } from "./constants";
-import { CanvasEnv } from "../core";
 import { drawDash } from "./shapes";
+import type { MeshGeometry } from '../render';
 
+// Kept for gizmos/mesh-corners.ts which still casts directly.
 export interface MeshLike {
   x: number;
   y: number;
@@ -12,23 +13,22 @@ export interface MeshLike {
   anchor?: { x: number; y: number };
 }
 
-export function drawMeshContour(g: PIXI.Graphics, mesh: MeshLike): void {
-  if (!mesh.texture) return;
-  const texW = mesh.texture.width, texH = mesh.texture.height;
-  const ax = mesh.anchor?.x ?? 0.5, ay = mesh.anchor?.y ?? 0.5;
-  const sx = mesh.scale.x, sy = mesh.scale.y;
-  const cr = Math.cos(mesh.rotation), sr = Math.sin(mesh.rotation);
+export function drawMeshContour(g: PIXI.Graphics, geo: MeshGeometry | null, wt: PIXI.Matrix): void {
+  if (!geo || geo.width === 0 || geo.height === 0) return;
+  const texW = geo.width, texH = geo.height;
+  const ax = geo.anchor.x, ay = geo.anchor.y;
+  const sx = geo.scale.x, sy = geo.scale.y;
+  const cr = Math.cos(geo.rotation), sr = Math.sin(geo.rotation);
   const local = [
-    { x: -ax * texW,    y: -ay * texH    },
-    { x: (1-ax) * texW, y: -ay * texH    },
-    { x: (1-ax) * texW, y: (1-ay) * texH },
-    { x: -ax * texW,    y: (1-ay) * texH },
+    { x: -ax * texW,      y: -ay * texH      },
+    { x: (1-ax) * texW,   y: -ay * texH      },
+    { x: (1-ax) * texW,   y: (1-ay) * texH   },
+    { x: -ax * texW,      y: (1-ay) * texH   },
   ];
   const pts = local.map(c => ({
-    x: mesh.x + cr*(c.x*sx) - sr*(c.y*sy),
-    y: mesh.y + sr*(c.x*sx) + cr*(c.y*sy),
+    x: geo.x + cr*(c.x*sx) - sr*(c.y*sy),
+    y: geo.y + sr*(c.x*sx) + cr*(c.y*sy),
   }));
-  const wt = CanvasEnv.worldTransform();
   for (let i = 0; i < 4; i++) {
     const a = pts[i], b = pts[(i+1)%4];
     const dx = b.x-a.x, dy = b.y-a.y;

@@ -2,10 +2,9 @@
 
 import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, suppressTooltip, canvasZoom, startPointerDrag, CanvasEnv } from "../core";
 import { imageBottomLeft, imageTopRight, imageTopCenter, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale, makeCircleHandle, makeSquareCounterHandle } from "../gizmos";
-import type { MeshLike } from "../draw";
-import { drawMeshContour, computeTokenVerts, tokenFootprint, drawBox, drawAnchorLine } from "../draw";
+import { drawMeshContour, drawBox, drawAnchorLine } from "../draw";
 import { beginElevDrag } from "./token-elev-drag";
-import { LayerManager, LAYER_KEYS, destroyMapped } from "../render";
+import { LayerManager, LAYER_KEYS, destroyMapped, IsoGeometry, MeshAccessor } from "../render";
 import { currentProjection } from "../transform";
 
 interface TkDrag {
@@ -61,9 +60,9 @@ export class TokenGizmos {
     // Graphics: image dashed contour + volume box lines
     const g = new PIXI.Graphics();
     g.eventMode = "passive";
-    if (showImg) drawMeshContour(g, token.mesh as unknown as MeshLike);
+    if (showImg) drawMeshContour(g, MeshAccessor.geometryOf(token), CanvasEnv.worldTransform());
     if (showVol) {
-      const v = computeTokenVerts(token);
+      const v = IsoGeometry.tokenVerts(token);
       if (v.elevation > 0) drawAnchorLine(g, v);
       drawBox(g, v);
       if (v.elevation < 0) drawAnchorLine(g, v);
@@ -71,7 +70,7 @@ export class TokenGizmos {
     container.addChild(g);
 
     if (showVol) {
-      const { tx, ty, tw, th } = tokenFootprint(token);
+      const { tx, ty, tw, th } = IsoGeometry.footprint(token);
       const gridSize  = CanvasEnv.gridSize();
       const gridDist  = gridDistance();
       const proj      = currentProjection();
@@ -95,11 +94,11 @@ export class TokenGizmos {
 
     // Image manipulation handles (white circle + 2 squares)
     if (showImg) {
-      const tkMesh   = token.mesh as unknown as MeshLike | null | undefined;
-      const meshCX   = tkMesh?.x ?? (token.document.x ?? 0);
-      const meshCY   = tkMesh?.y ?? (token.document.y ?? 0);
-      const tkTexH   = tkMesh?.texture?.height ?? 100;
-      const tkScaleY = tkMesh?.scale?.y ?? 1;
+      const geo      = MeshAccessor.geometryOf(token);
+      const meshCX   = geo?.x ?? (token.document.x ?? 0);
+      const meshCY   = geo?.y ?? (token.document.y ?? 0);
+      const tkTexH   = geo?.height ?? 100;
+      const tkScaleY = geo?.scale.y ?? 1;
       const imgOff   = VolumeFlags.getImageOffset(token.document);
       const imgScl   = VolumeFlags.getImageScale(token.document);
       const imgYScl  = VolumeFlags.getImageYScale(token.document);
