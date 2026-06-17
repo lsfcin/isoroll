@@ -50,12 +50,12 @@ export class TokenBackground {
   // ---- TokenRenderer interface ----
 
   static create(token: Token): void {
-    if (isTransformedToken(token)) return;
-    const selected = (token as unknown as { controlled?: boolean }).controlled ?? false;
-    TokenBackground.show(token, selected);
+    if (!isTransformedToken(token)) TokenBackground.show(token, (token as unknown as { controlled?: boolean }).controlled ?? false);
   }
 
   static sync(_token: Token): void { /* no per-frame sync needed */ }
+
+  static onDestroy(id: string): void { TokenBackground.hide(id); }
 
   static rebuild(token: Token): void {
     const hasAny = TokenBackground.shadows.has(token.id)
