@@ -211,22 +211,22 @@ Example — `VolumeOverlay`:
 ## Phase Plan
 
 ### Phase 0 — Pre-flight (no logic change, zero risk)
-- [ ] Verify `sorter/depth-sorter.ts` `_sort()` reference: does `IsoSpriteLayer._sort()` exist?
-      Per analysis: method name may be `_onTick` or similar — confirm and fix dead reference.
-      (ROADMAP Phase 6 calls this "a stub" — reconcile with actual code before Phase 6 wiring.)
-- [ ] Confirm branch `refactor/iso-renderer` created off `develop` ✓ (done)
+- [x] Verify `sorter/depth-sorter.ts` `_sort()` reference: does `IsoSpriteLayer._sort()` exist?
+      Added `_sort(): void {}` stub to IsoSpriteLayer. Method did not exist; DepthSorter.sort() line 38
+      was a dead reference. Phase 6 fills in the stub when DepthSorter activates.
+- [x] Confirm branch `refactor/iso-renderer` created off `develop` ✓ (done)
 
 ### Phase 1 — Stub new files (zero runtime impact)
 All new files: full TypeScript interfaces, `throw new Error("not implemented")` bodies or empty.
 Build must pass. Nothing calls them yet.
-- [ ] `core/canvas-env.ts`
-- [ ] `render/iso-renderer.ts`
-- [ ] `render/iso-geometry.ts`
-- [ ] `render/mesh-accessor.ts`
-- [ ] `render/render-lifecycle.ts`
-- [ ] `core/history.ts`
-- [ ] Add new files to their module's `index.ts` facades (facade-gate requirement)
-- [ ] Build: `npm run build` passes
+- [x] `core/canvas-env.ts`
+- [x] `render/iso-renderer.ts`
+- [x] `render/iso-geometry.ts`
+- [x] `render/mesh-accessor.ts`
+- [x] `render/render-lifecycle.ts`
+- [x] `core/history.ts`
+- [x] Add new files to their module's `index.ts` facades (facade-gate requirement)
+- [x] Build: `npm run build` passes (83 modules, 145.72 kB — stubs tree-shaken, zero size impact)
 
 ### Phase 2 — canvas-env goes live (mechanical, compiler-verified)
 Implement all `canvas-env.ts` accessors. Mechanical find-replace in non-boundary files — no logic change.
