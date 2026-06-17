@@ -1,7 +1,7 @@
 // Unified dashed image-contour drawing shared by tile and token overlays.
 import { BLACK, DASH_LEN, GAP_LEN } from "./constants";
 import { drawDash } from "./shapes";
-import type { MeshGeometry } from '../render';
+import type { MeshGeometry, DrawAPI } from '../render';
 
 // Kept for gizmos/mesh-corners.ts which still casts directly.
 export interface MeshLike {
@@ -13,7 +13,7 @@ export interface MeshLike {
   anchor?: { x: number; y: number };
 }
 
-export function drawMeshContour(g: PIXI.Graphics, geo: MeshGeometry | null, wt: PIXI.Matrix): void {
+export function drawMeshContour(g: DrawAPI, geo: MeshGeometry | null, wt: PIXI.Matrix): void {
   if (!geo || geo.width === 0 || geo.height === 0) return;
   const texW = geo.width, texH = geo.height;
   const ax = geo.anchor.x, ay = geo.anchor.y;

@@ -2,6 +2,8 @@
 // Consumers declare what to draw; IsoRenderer owns PIXI Container lifecycle and sight-tracked state.
 // Only this file (a declared boundary) may use PIXI.* directly.
 
+import { LayerManager, LAYER_KEYS } from './layer-manager';
+
 export type P2 = { x: number; y: number };
 export type P3 = { x: number; y: number; z: number };
 export type Color = number;
@@ -15,14 +17,15 @@ export type LayerKey = string;
 export type VisibilityMode = "always-visible" | "sight-tracked";
 
 // DrawAPI wraps PIXI.Graphics so consumers using kind:"lines" never import PIXI directly.
+// Methods return void (not this) — PIXI.Graphics satisfies this interface structurally.
 export interface DrawAPI {
-  moveTo(x: number, y: number): this;
-  lineTo(x: number, y: number): this;
-  closePath(): this;
-  beginFill(color: Color, alpha?: number): this;
-  endFill(): this;
-  lineStyle(width: number, color: Color, alpha?: number): this;
-  clear(): this;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  closePath(): void;
+  beginFill(color: Color, alpha?: number): void;
+  endFill(): void;
+  lineStyle(width: number, color: Color, alpha?: number): void;
+  clear(): void;
 }
 
 export type ShapeSpec =
@@ -67,10 +70,96 @@ export interface RenderHandle {
   remove(): void;
 }
 
+// ---- Implementation ----
+
+type Entry = { container: PIXI.Container; spec: RenderSpec; layerKey: string };
+
+const _reg          = new Map<string, Entry>();
+const _owners       = new Map<string, Set<string>>();
+const _sightTracked = new Set<string>();
+
+function _defLayer(k: "tile" | "token" | "background"): string {
+  return k === "tile" ? LAYER_KEYS.TILE_OVERLAY
+       : k === "token" ? LAYER_KEYS.TOKEN_INDICATORS
+       : LAYER_KEYS.BG_GIZMOS;
+}
+
+class PixiDrawAPI implements DrawAPI {
+  constructor(private g: PIXI.Graphics) {}
+  moveTo(x: number, y: number): void          { this.g.moveTo(x, y); }
+  lineTo(x: number, y: number): void          { this.g.lineTo(x, y); }
+  closePath(): void                           { this.g.closePath(); }
+  beginFill(c: Color, a?: number): void       { this.g.beginFill(c, a); }
+  endFill(): void                             { this.g.endFill(); }
+  lineStyle(w: number, c: Color, a?: number): void { this.g.lineStyle(w, c, a); }
+  clear(): void                               { this.g.clear(); }
+}
+
+function _paint(c: PIXI.Container, v: ShapeSpec): void {
+  if (v.kind === "lines") {
+    const g = new PIXI.Graphics(); g.eventMode = "none";
+    v.build(new PixiDrawAPI(g)); c.addChild(g);
+  }
+  // rect / circle / polygon / 3d-box / text / sprite: future phases
+}
+
+function _drop(key: string): void {
+  const e = _reg.get(key); if (!e) return;
+  e.container.parent?.removeChild(e.container);
+  e.container.destroy({ children: true });
+  _owners.get(e.spec.owner.id)?.delete(key);
+  _sightTracked.delete(key);
+  _reg.delete(key);
+}
+
+function _handle(key: string): RenderHandle {
+  return {
+    get key() { return key; },
+    show():  void { const e = _reg.get(key); if (e) e.container.visible = true;  },
+    hide():  void { const e = _reg.get(key); if (e) e.container.visible = false; },
+    update(partial: Partial<RenderSpec>): void {
+      const e = _reg.get(key); if (!e) return;
+      e.container.removeChildren().forEach((ch: PIXI.DisplayObject) =>
+        (ch as PIXI.Container).destroy?.({ children: true }));
+      Object.assign(e.spec, partial);
+      if (partial.visual) _paint(e.container, e.spec.visual);
+    },
+    remove(): void { _drop(key); },
+  };
+}
+
 export const IsoRenderer = {
-  render(_spec: RenderSpec): RenderHandle { throw new Error("not implemented"); },
-  clear(_key: string): void { throw new Error("not implemented"); },
-  clearOwner(_ownerId: string): void { throw new Error("not implemented"); },
-  clearLayer(_layer: LayerKey): void { throw new Error("not implemented"); },
-  clearAll(): void { throw new Error("not implemented"); },
+  render(spec: RenderSpec): RenderHandle {
+    const lk = spec.layer ?? _defLayer(spec.owner.kind);
+    _drop(spec.key);
+    const c = new PIXI.Container(); c.eventMode = "passive";
+    _paint(c, spec.visual);
+    if (typeof spec.z === "number") c.zIndex = spec.z;
+    LayerManager.ensureLayer(lk).addChild(c);
+    if (spec.z === "top") LayerManager.bringToTop(lk);
+    _reg.set(spec.key, { container: c, spec, layerKey: lk });
+    if (!_owners.has(spec.owner.id)) _owners.set(spec.owner.id, new Set());
+    _owners.get(spec.owner.id)!.add(spec.key);
+    if (spec.visibility === "sight-tracked") _sightTracked.add(spec.key);
+    return _handle(spec.key);
+  },
+  clear(key: string): void { _drop(key); },
+  clearOwner(ownerId: string): void {
+    for (const k of [...(_owners.get(ownerId) ?? [])]) _drop(k);
+    _owners.delete(ownerId);
+  },
+  clearLayer(layer: LayerKey): void {
+    for (const [k, e] of [..._reg.entries()]) if (e.layerKey === layer) _drop(k);
+  },
+  clearAll(): void { for (const k of [..._reg.keys()]) _drop(k); },
 };
+
+// Called by render-lifecycle onSightRefresh for sight-tracked visuals.
+export function isoRendererSightRefresh(
+  applyFog: (key: string, spec: RenderSpec, c: PIXI.Container) => void,
+): void {
+  for (const key of _sightTracked) {
+    const e = _reg.get(key); if (!e) continue;
+    applyFog(key, e.spec, e.container);
+  }
+}

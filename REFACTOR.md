@@ -240,7 +240,7 @@ Implement all `canvas-env.ts` accessors. Mechanical find-replace in non-boundary
       `canvas.grid?.distance` → `CanvasEnv.gridDistance()` (coord-debug)
       Remaining patterns (sceneFlag, isGM, dimensions) had no non-boundary callsites in Phase 2 scope.
       bg-drag.ts + bg-gizmos.ts worldTransform deferred to Phase 7 (background/ audit).
-- [ ] Build; smoke test: load scene, enable isoroll, verify tiles/tokens render
+- [ ] Smoke test: load scene, enable isoroll, verify tiles/tokens render (⚠ requires Foundry — deferred)
 
 ### Phase 3 — iso-geometry + mesh-accessor go live
 - [x] Implement `iso-geometry.ts`: `tileVerts(tile)`, `tokenVerts(token)`, `footprint(token)`
@@ -258,29 +258,41 @@ Implement all `canvas-env.ts` accessors. Mechanical find-replace in non-boundary
       token-gizmos.ts: computeTokenVerts/tokenFootprint→IsoGeometry, MeshLike casts→MeshAccessor
       token-background.ts: tokenFootprint→IsoGeometry.footprint (3 sites)
       Boundary-file MeshLike casts (token-transform.ts) untouched — correct to stay.
-- [ ] Build; visual test: 3D box outline, shadow, contour on tile and token
+- [x] Build clean ✓ (146.53 kB; visual test: 3D box outline, shadow, contour passed — user confirmed)
 
 ### Phase 4 — render-lifecycle.ts goes live
-- [ ] Implement lifecycle functions — empty bodies initially (no rendering yet, just the function shells)
-- [ ] In `render-gate.ts`: move all `Hooks.on(...)` registrations to call lifecycle functions
-- [ ] Move RenderGate's current dispatch/classification logic into the lifecycle functions
+- [x] Implement lifecycle functions — real bodies calling existing overlays (no IsoRenderer.render() yet)
+      Added: onTileDraw, onTileDestroy, onTokenDraw, onTokenDestroy (helpers for gate wiring)
+      Added: registerTokenRenderer, registerTileRenderer (module-level registry replacing RenderGate arrays)
+      Added: classifyToken, classifyTile (moved from render-gate — all dispatch logic now in lifecycle)
+      New hooks wired: canvasTeardown, updateTile (onTileFlagsChange), renderGridConfig→onGridConfigOpen
+      CanvasEnv used for canvas reads: CanvasEnv.tokens/tiles/scene() instead of raw canvas.*
+- [x] In `render-gate.ts`: all Hooks.on registrations route to render-lifecycle functions.
+      RenderGate slimmed to ~50 lines (was 155). registerToken/registerTile forward to lifecycle registry.
+      updateToken and updateTile still pre-filter in gate (isSceneEnabled + flags guard) before calling lifecycle.
+- [x] Move RenderGate's current dispatch/classification logic into the lifecycle functions ✓
 - [ ] Verify all hook paths still fire correctly:
       canvasReady, refreshTile, refreshToken, sightRefresh, updateScene, updateToken, drawToken, drawTile
 - [ ] Build; smoke test: all interactions work (select, move, fog)
 
 ### Phase 5 — IsoRenderer proof: VolumeOverlay tile (one consumer end-to-end)
 Gate on Phase 4. Validate the full API before committing the pattern to all other overlays.
-- [ ] Implement `IsoRenderer` core:
+- [x] Implement `IsoRenderer` core:
       render/clear/clearOwner, RenderHandle, key→Container registry,
       LayerKey routing via LayerManager, z-order (zIndex + bringToTop),
-      sight-tracked state machine via fog-helpers on sightRefresh
-- [ ] Wire `VolumeOverlay` (tile only): replace ensureLayer/new PIXI/addChild/bringToTop/Map
-      with `IsoRenderer.render({ key: "tile-{id}:box", visual: { kind:"3d-box", ... }, ... })`
-- [ ] Wire shadow: same pattern with `kind:"sprite"` or `kind:"texture"`
-- [ ] Visual test checklist:
+      sight-tracked state machine (isoRendererSightRefresh export) via _sightTracked set
+- [x] Wire `VolumeOverlay` (tile only): replaced ensureLayer/new PIXI/addChild/bringToTop/Map
+      with `IsoRenderer.render({ key: "tile-{id}:box", visual: { kind:"lines", build: ... }, ... })`
+      Handles tracked in VolumeOverlay._handles Map; onDestroy added for clean tile-delete path.
+- [x] DrawAPI changes: drawBox/drawAnchorLine/drawMeshContour/drawDash now accept DrawAPI (not
+      PIXI.Graphics). PIXI.Graphics satisfies DrawAPI structurally — existing callers unchanged.
+      VolumeOverlay._drawInto(g: DrawAPI, tile) calls all draw utilities via DrawAPI only.
+- [ ] Wire shadow: same pattern — deferred to Phase 6 (shadow uses drawGroundShadow→PIXI.Sprite,
+      needs kind:"sprite" support in IsoRenderer._paint which is not yet implemented)
+- [ ] Visual test checklist (requires live Foundry):
       - [ ] Box appears on tile selection
       - [ ] Box disappears on deselect
-      - [ ] Shadow renders correctly
+      - [ ] Shadow renders correctly (unchanged — not migrated yet)
       - [ ] Fog state transitions: visible → explored → unexplored
       - [ ] Re-enable scene: box re-renders
       - [ ] Delete tile: no orphan PIXI objects

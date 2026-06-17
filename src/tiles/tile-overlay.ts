@@ -2,11 +2,12 @@
 
 import { MODULE_ID, VolumeFlags, CanvasEnv } from "../core";
 import { drawGroundShadow, drawBox, drawAnchorLine, drawMeshContour } from "../draw";
-import { LayerManager, LAYER_KEYS, IsoGeometry, MeshAccessor } from "../render";
+import { LayerManager, LAYER_KEYS, IsoGeometry, MeshAccessor, IsoRenderer } from "../render";
+import type { DrawAPI, RenderHandle } from "../render";
 import { DEBUG_COORD, drawCoordDebug } from "../transform";
 
 export class VolumeOverlay {
-  private static boxes:       Map<string, PIXI.Container>    = new Map();
+  private static _handles:    Map<string, RenderHandle>      = new Map();
   private static shadows:     Map<string, PIXI.DisplayObject> = new Map();
   private static shadowState: Map<string, string>             = new Map();
 
@@ -25,13 +26,15 @@ export class VolumeOverlay {
     if (existing && !existing.parent) VolumeOverlay.shadowState.delete(tile.id);
     const snap = VolumeOverlay.shadowSnap(tile);
     if (VolumeOverlay.shadowState.get(tile.id) !== snap) VolumeOverlay.showShadow(tile);
-    if (VolumeOverlay.boxes.has(tile.id)) VolumeOverlay.show(tile);
+    if (VolumeOverlay._handles.has(tile.id)) VolumeOverlay.show(tile);
   }
 
   static onControl(tile: Tile, controlled: boolean): void {
     if (controlled) VolumeOverlay.show(tile);
     else VolumeOverlay.removeBox(tile.id);
   }
+
+  static onDestroy(id: string): void { VolumeOverlay.hide(id); }
 
   // ---- PIXI helpers ----
 
@@ -59,24 +62,22 @@ export class VolumeOverlay {
     VolumeOverlay.shadowState.delete(id);
   }
 
-  // Remove selection box only (deselection path — shadow persists).
   private static removeBox(tileId: string): void {
-    const c = VolumeOverlay.boxes.get(tileId);
-    if (!c) return;
-    c.parent?.removeChild(c);
-    c.destroy({ children: true });
-    VolumeOverlay.boxes.delete(tileId);
+    VolumeOverlay._handles.get(tileId)?.remove();
+    VolumeOverlay._handles.delete(tileId);
   }
 
   static show(tile: Tile): void {
-    VolumeOverlay.removeBox(tile.id);
-    const layer = LayerManager.ensureLayer(LAYER_KEYS.TILE_OVERLAY);
-    const c = new PIXI.Container();
-    c.eventMode = "passive";
-    VolumeOverlay.draw(c, tile);
-    layer.addChild(c);
-    VolumeOverlay.boxes.set(tile.id, c);
-    LayerManager.bringToTop(LAYER_KEYS.TILE_OVERLAY);
+    const handle = IsoRenderer.render({
+      key:       `tile-${tile.id}:box`,
+      owner:     { kind: "tile", id: tile.id },
+      visual:    { kind: "lines", build: (g) => VolumeOverlay._drawInto(g, tile) },
+      space:     "WORLD",
+      placement: { anchor: { x: 0, y: 0 } },
+      layer:     LAYER_KEYS.TILE_OVERLAY,
+      z:         "top",
+    });
+    VolumeOverlay._handles.set(tile.id, handle);
   }
 
   // Full cleanup — hides both box and shadow (used by gate for disabled/transformed tiles).
@@ -86,24 +87,22 @@ export class VolumeOverlay {
   }
 
   static clearAll(): void {
-    for (const id of Array.from(VolumeOverlay.boxes.keys())) VolumeOverlay.removeBox(id);
+    IsoRenderer.clearLayer(LAYER_KEYS.TILE_OVERLAY);
+    VolumeOverlay._handles.clear();
     for (const id of Array.from(VolumeOverlay.shadows.keys())) VolumeOverlay.hideShadow(id);
-    LayerManager.clearLayer(LAYER_KEYS.TILE_OVERLAY);
   }
 
-  private static draw(c: PIXI.Container, tile: Tile): void {
+  private static _drawInto(g: DrawAPI, tile: Tile): void {
     const showVol = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImg = VolumeFlags.getShowImageManipulation(tile.document, true);
     const v = IsoGeometry.tileVerts(tile);
-    const g = new PIXI.Graphics();
-    g.eventMode = "none";
     if (showImg) drawMeshContour(g, MeshAccessor.geometryOf(tile), CanvasEnv.worldTransform());
     if (showVol) {
       if (v.elevation > 0) drawAnchorLine(g, v);
       drawBox(g, v);
       if (v.elevation < 0) drawAnchorLine(g, v);
     }
-    if (DEBUG_COORD) drawCoordDebug(g, tile, v.baseCenter);
-    c.addChild(g);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (DEBUG_COORD) drawCoordDebug(g as any, tile, v.baseCenter);
   }
 }

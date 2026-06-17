@@ -1,11 +1,11 @@
 // PIXI drawing utilities for the 3D volume box. Purely functional — no canvas reads.
 import { ORANGE, BLACK, ALPHA_FRONT_OUTLINE, ALPHA_FRONT_FILL, ALPHA_BACK_OUTLINE, ALPHA_BACK_FILL } from "./constants";
-import type { WorldBoxVerts } from '../render';
+import type { WorldBoxVerts, DrawAPI } from '../render';
 
 export type BoxVerts = WorldBoxVerts;
 export type P = { x: number; y: number };
 
-export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {
+export function drawAnchorLine(g: DrawAPI, v: BoxVerts): void {
   if (Math.abs(v.elevation) < 0.01) return;
   const dx = v.baseCenter.x - v.ground.x;
   const dy = v.baseCenter.y - v.ground.y;
@@ -21,7 +21,7 @@ export function drawAnchorLine(g: PIXI.Graphics, v: BoxVerts): void {
   g.moveTo(x1, y1); g.lineTo(x2, y2);
 }
 
-export function drawBox(g: PIXI.Graphics, v: BoxVerts): void {
+export function drawBox(g: DrawAPI, v: BoxVerts): void {
   const edges: Array<[P, P, boolean]> = [
     [v.SE_base, v.NE_base, true],
     [v.SE_base, v.SW_base, false],
