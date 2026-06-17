@@ -171,6 +171,7 @@ export const IsoSpriteLayer = {
     canvas.app?.ticker.remove(IsoSpriteLayer._onTick);
     LayerManager.clearLayer(LAYER_KEYS.ISO_SPRITES);
   },
+  _sort(): void {},
   activate(): void {
     Hooks.on("canvasInit",  IsoSpriteLayer._onCanvasInit);
     Hooks.on("canvasReady", () => {
