@@ -194,6 +194,6 @@ export function isoRendererSightRefresh(): void {
   for (const key of _sightTracked) {
     const e = _reg.get(key); if (!e) continue;
     const a = (e.spec.testPoint ?? e.spec.placement.anchor) as P2;
-    applyTokenFogContainer(e.container, a.x, a.y);
+    applyTokenFogContainer(e.container, a.x, a.y, e.spec.owner.kind === "token" ? e.spec.owner.id : undefined);
   }
 }

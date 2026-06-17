@@ -97,8 +97,9 @@ function testPerimeterVisible(x: number, y: number, w: number, h: number, viewer
 function isGM(): boolean { return !!(game.user as { isGM?: boolean })?.isGM; }
 
 // Sight-tracked IsoRenderer container (e.g. token shadow): binary visibility, no explored state.
-export function applyTokenFogContainer(c: PIXI.Container, x: number, y: number): void {
+export function applyTokenFogContainer(c: PIXI.Container, x: number, y: number, tokenId?: string): void {
   if (!canvas.scene?.tokenVision) { c.visible = true; return; }
+  if (tokenId && (canvas.tokens?.controlled as Token[])?.some(t => t.id === tokenId)) { c.visible = true; return; }
   const viewers = getViewers();
   if (isGM() && viewers.length === 0) { c.visible = true; return; }
   c.visible = testPointVisible({ x, y }, viewers);
