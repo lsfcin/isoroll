@@ -4,6 +4,21 @@ Archive of completed work and resolved issues.
 
 ---
 
+## Completed — 2026-06-16
+
+### Phase 3 — Separate Rendering Layer Architecture *(from ROADMAP)*
+
+- `IsoSpriteLayer` PIXI.Container added to `canvas.stage` directly (outside VisibilityFilter scope)
+- `cloneSprite(mesh)` + `syncSprite(clone, mesh)` in `src/render/iso-sprite-layer.ts`
+- Token lifecycle: `drawToken` → create clone + mesh alpha=0; `refreshToken` → syncSprite; `destroyToken` → restore
+- Tile lifecycle: same pattern for drawTile/refreshTile/destroyTile
+- `canvasReady` rebuilds all clones for already-placed transformed objects
+- `IsoSpriteLayer.sort()` wired into `DepthSorter.sort()` (tile-band + token-insertion model)
+- Clone has `eventMode = "passive"` — hit detection stays in canvas.primary (alpha=0 mesh)
+- Incremental update pattern (Map<id,Sprite>, update in-place) — NOT the fork's full-rebuild approach
+
+---
+
 ## Completed — 2026-06-17
 
 ### Phase 4 — Fog-of-War Visibility Management *(from ROADMAP)*
