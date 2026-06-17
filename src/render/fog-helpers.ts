@@ -79,10 +79,11 @@ export function applyTileFog(
     seenTileIds.add(tileId);
     s.visible = true; s.tint = 0xffffff;
   } else if (!hideOnFog) {
-    // isPointExplored is truth source: returns false after fog reset (empty pixels) and true after
-    // F5 reload (server-persisted exploration). Falls back to seenTileIds when fog API unavailable.
     const fog = canvas.fog as unknown as { isPointExplored?(p: { x: number; y: number }): boolean };
-    const explored = fog?.isPointExplored?.({ x: cx, y: cy }) ?? seenTileIds.has(tileId);
+    const fogExplored = fog?.isPointExplored?.({ x: cx, y: cy });
+    const hadSeen = seenTileIds.has(tileId);
+    const explored = fogExplored ?? hadSeen;
+    console.log(`[isoroll fog] tileId=${tileId} fogExplored=${fogExplored} hadSeen=${hadSeen} => explored=${explored} clone.visible=${s.visible} clone.tint=0x${s.tint.toString(16)}`);
     if (explored) { seenTileIds.add(tileId); s.visible = true; s.tint = EXPLORED_TINT; }
     else { seenTileIds.delete(tileId); s.visible = false; s.tint = 0xffffff; }
   } else {
