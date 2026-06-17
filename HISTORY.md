@@ -40,6 +40,44 @@ Archive of completed work and resolved issues.
 
 ---
 
+## Completed — 2026-06-17
+
+### IsoRenderer Refactor — Phase 4: render-lifecycle.ts goes live *(from REFACTOR.md)*
+
+- All lifecycle function bodies implemented (replaced `throw new Error("not implemented")` stubs)
+- `render-gate.ts` slimmed from 155 → ~50 lines; all dispatch/classification moved to lifecycle
+- New hooks wired: `canvasTeardown`, `updateTile` → `onTileFlagsChange`, `renderGridConfig` → `onGridConfigOpen`
+- New exports: `onTileDraw`, `onTileDestroy`, `onTokenDraw`, `onTokenDestroy`, `registerTokenRenderer`, `registerTileRenderer`
+- Module-level renderer registry (`_tokenRenderers[]`, `_tileRenderers[]`) replaces RenderGate instance arrays
+- `CanvasEnv` used for all canvas reads in lifecycle — no raw `canvas.*`
+
+### IsoRenderer Refactor — Phase 5: IsoRenderer core + VolumeOverlay tile box *(from REFACTOR.md)*
+
+- `IsoRenderer` fully implemented: `render/clear/clearOwner/clearLayer/clearAll`, key→Container registry,
+  owner index, sight-tracked set, z-order via LayerManager, `RenderHandle` (show/hide/update/remove)
+- `DrawAPI` interface methods changed to `void` returns — `PIXI.Graphics` satisfies structurally
+- `drawBox`, `drawAnchorLine` (`volume-box.ts`), `drawMeshContour` (`contour.ts`), `drawDash` (`shapes.ts`)
+  now accept `DrawAPI` instead of `PIXI.Graphics`; existing PIXI.Graphics callers unchanged
+- `VolumeOverlay` tile box migrated: `IsoRenderer.render(kind:"lines")` replaces manual
+  `ensureLayer/new Container/addChild/bringToTop/Map`; `_handles` Map tracks `RenderHandle` per tile;
+  `_drawInto(g: DrawAPI)` calls all draw utilities without touching PIXI; `onDestroy` added
+- Shadow NOT yet migrated (requires `kind:"sprite"` in `_paint` — Phase 6)
+- Build: 83 modules, 148.44 kB
+
+---
+
 ## Resolved Bugs — 2026-06-17
 
 - **B26** — Native elevation tooltip (XXft) reappears on tokens: fixed in `token-elev-gizmo.ts` — three early-return paths for `transformToken = true` now explicitly set `nativeTooltip.visible = false` *(resolved)*
+
+- **Phase 5 bug** — Deletion leaving sprite clones visible until F5:
+  Root cause: `getMesh(undefined)` in `iso-sprite-layer.ts` threw `TypeError` when `getTile(id)` returned
+  `undefined` (tile already removed from `canvas.tiles` at time of `deleteTile` hook). Error swallowed by
+  Foundry's hook system → `removeClone` never ran → clone persisted. Fix: null guard added to `getMesh`.
+  `deleteTile`/`deleteToken` document hooks in `render-gate.ts` provide the cleanup trigger (belt-and-suspenders
+  alongside `destroyTile`/`destroyToken`). *(resolved)*
+
+- **Phase 5 bug** — Moving tile causes volume box + contour lines to disappear until tile reselected:
+  Foundry creates preview clone during drag with same `id` as original. `destroyTile(previewClone)` fired
+  `onTileDestroy(id)` → cleared original's handles + sprite clones. Fixed by guarding `destroyTile`/
+  `destroyToken` with `!isPreviewClone(t)`. `isPreviewClone` checks `t.isPreview` property. *(resolved)*

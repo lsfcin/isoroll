@@ -32,6 +32,7 @@ export function syncSprite(sprite: PIXI.Sprite, mesh: Mesh): void {
 }
 
 function getMesh(obj: unknown): Mesh | undefined {
+  if (!obj) return undefined;
   const m = (obj as { mesh?: Mesh }).mesh; return m?.texture ? m : undefined;
 }
 function tokenCenter(t: Token): Center { return (t as unknown as { center?: Center }).center ?? { x: t.x, y: t.y }; }
