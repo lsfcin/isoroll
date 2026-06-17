@@ -8,18 +8,14 @@ import { applyTokenFogContainer } from './fog-helpers';
 
 export type P2 = { x: number; y: number };
 export type P3 = { x: number; y: number; z: number };
-export type Color = number;
+export type Color = number; export type LayerKey = string; export type CSSCursor = string;
+export type VisibilityMode = "always-visible" | "sight-tracked";
 export type Stroke = { color: Color; width: number; alpha?: number };
 export type TextStyleSpec = { fontSize?: number; fill?: Color; fontFamily?: string; stroke?: Color; strokeThickness?: number };
-export type TextureRef = string | PIXI.Texture;
-export type CSSCursor = string;
+export type TextureRef = string | PIXI.Texture; export type BoxVerts = P3[];
 export type CoordSystem = "WORLD" | "ISO3D" | "GRID" | "IMAGE" | "SCREEN" | "VIEWPORT";
-export type BoxVerts = P3[];
-export type LayerKey = string;
-export type VisibilityMode = "always-visible" | "sight-tracked";
 
-// DrawAPI wraps PIXI.Graphics so consumers using kind:"lines" never import PIXI directly.
-// Methods return void (not this) — PIXI.Graphics satisfies this interface structurally.
+// DrawAPI: wraps PIXI.Graphics for kind:"lines" build fns — PIXI.Graphics satisfies structurally.
 export interface DrawAPI {
   moveTo(x: number, y: number): void;
   lineTo(x: number, y: number): void;
@@ -27,6 +23,7 @@ export interface DrawAPI {
   beginFill(color: Color, alpha?: number): void;
   endFill(): void;
   lineStyle(width: number, color: Color, alpha?: number): void;
+  drawCircle(x: number, y: number, radius: number): void;
   clear(): void;
 }
 
@@ -44,6 +41,8 @@ export interface Interaction {
   onPointerDown?: (e: PIXI.FederatedPointerEvent) => void;
   onPointerMove?: (e: PIXI.FederatedPointerEvent) => void;
   onPointerUp?:   (e: PIXI.FederatedPointerEvent) => void;
+  onPointerOver?: (e: PIXI.FederatedPointerEvent) => void;
+  onPointerOut?:  (e: PIXI.FederatedPointerEvent) => void;
 }
 
 export interface Placement {
@@ -62,6 +61,7 @@ export interface RenderSpec {
   visibility?:  VisibilityMode;
   testPoint?:   P2;
   flat?:        boolean;
+  hitArea?:     P2[];
   key:          string;
 }
 
@@ -89,13 +89,10 @@ function _defLayer(k: "tile" | "token" | "background"): string {
 
 class PixiDrawAPI implements DrawAPI {
   constructor(private g: PIXI.Graphics) {}
-  moveTo(x: number, y: number): void          { this.g.moveTo(x, y); }
-  lineTo(x: number, y: number): void          { this.g.lineTo(x, y); }
-  closePath(): void                           { this.g.closePath(); }
-  beginFill(c: Color, a?: number): void       { this.g.beginFill(c, a); }
-  endFill(): void                             { this.g.endFill(); }
-  lineStyle(w: number, c: Color, a?: number): void { this.g.lineStyle(w, c, a); }
-  clear(): void                               { this.g.clear(); }
+  moveTo(x: number, y: number): void    { this.g.moveTo(x, y); }   lineTo(x: number, y: number): void { this.g.lineTo(x, y); }
+  closePath(): void                     { this.g.closePath(); }     beginFill(c: Color, a?: number): void { this.g.beginFill(c, a); }
+  endFill(): void                       { this.g.endFill(); }       lineStyle(w: number, c: Color, a?: number): void { this.g.lineStyle(w, c, a); }
+  drawCircle(x: number, y: number, r: number): void { this.g.drawCircle(x, y, r); } clear(): void { this.g.clear(); }
 }
 
 function _paint(c: PIXI.Container, v: ShapeSpec): void {
@@ -116,10 +113,8 @@ function _paint(c: PIXI.Container, v: ShapeSpec): void {
     }));
     t.anchor.set(0.5, 0.5); t.eventMode = "none";
     if (v.alpha !== undefined) t.alpha = v.alpha;
-    // Suppress mipmap to prevent GL_INVALID_OPERATION on text textures.
     const tx = t.texture as { source?: { autoGenerateMipmaps: boolean }; baseTexture?: { mipmap: number } };
-    if (tx?.source) tx.source.autoGenerateMipmaps = false;
-    if (tx?.baseTexture) tx.baseTexture.mipmap = 0;
+    if (tx?.source) tx.source.autoGenerateMipmaps = false; if (tx?.baseTexture) tx.baseTexture.mipmap = 0;
     c.addChild(t);
   } else if (v.kind === "circle" || v.kind === "rect" || v.kind === "polygon") {
     const g = new PIXI.Graphics(); g.eventMode = "none";
@@ -148,10 +143,13 @@ function _handle(key: string): RenderHandle {
     hide():  void { const e = _reg.get(key); if (e) e.container.visible = false; },
     update(partial: Partial<RenderSpec>): void {
       const e = _reg.get(key); if (!e) return;
-      e.container.removeChildren().forEach((ch: PIXI.DisplayObject) =>
-        (ch as PIXI.Container).destroy?.({ children: true }));
+      if (partial.visual) {
+        e.container.removeChildren().forEach((ch: PIXI.DisplayObject) =>
+          (ch as PIXI.Container).destroy?.({ children: true }));
+      }
       Object.assign(e.spec, partial);
       if (partial.visual) _paint(e.container, e.spec.visual);
+      if (partial.placement) { const a = partial.placement.anchor as P2; e.container.position.set(a.x, a.y); }
     },
     remove(): void { _drop(key); },
   };
@@ -166,7 +164,9 @@ export const IsoRenderer = {
     if (spec.interaction) {
       const i = spec.interaction; c.eventMode = "static"; if (i.cursor) c.cursor = i.cursor; c.children.forEach(ch => { const el = ch as PIXI.Container; el.eventMode = "static"; if (i.cursor) el.cursor = i.cursor; });
       if (i.onPointerDown) c.on("pointerdown", i.onPointerDown); if (i.onPointerMove) c.on("pointermove", i.onPointerMove); if (i.onPointerUp) c.on("pointerup", i.onPointerUp);
+      if (i.onPointerOver) c.on("pointerover", i.onPointerOver); if (i.onPointerOut) c.on("pointerout", i.onPointerOut);
     }
+    if (spec.hitArea) c.hitArea = new PIXI.Polygon(spec.hitArea.flatMap(p => [p.x, p.y]));
     if (spec.flat) { const p = currentProjection(); c.rotation = p.reverseRotation; c.scale.set(p.counterFactor, p.ratio * p.counterFactor); }
     const a = spec.placement.anchor as P2; c.position.set(a.x, a.y);
     if (typeof spec.z === "number") c.zIndex = spec.z;

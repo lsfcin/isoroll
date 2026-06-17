@@ -54,4 +54,10 @@ export const CanvasEnv = {
     const c = canvas.colors as unknown as { fogExplored?: number; fogUnexplored?: number };
     return { explored: c?.fogExplored ?? 0x000000, unexplored: c?.fogUnexplored ?? 0x000000 };
   },
+  getTile(id: string): Tile | undefined {
+    return (canvas.tiles as unknown as { get(id: string): Tile | undefined })?.get(id);
+  },
+  appView(): HTMLCanvasElement {
+    return canvas.app!.view as unknown as HTMLCanvasElement;
+  },
 };
