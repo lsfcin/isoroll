@@ -164,7 +164,7 @@ export const IsoRenderer = {
     const c = new PIXI.Container(); c.eventMode = "passive";
     _paint(c, spec.visual);
     if (spec.interaction) {
-      const i = spec.interaction; c.eventMode = "static"; if (i.cursor) c.cursor = i.cursor; c.children.forEach(ch => (ch as PIXI.Container).eventMode = "passive");
+      const i = spec.interaction; c.eventMode = "static"; if (i.cursor) c.cursor = i.cursor; c.children.forEach(ch => (ch as PIXI.Container).eventMode = "static");
       if (i.onPointerDown) c.on("pointerdown", i.onPointerDown); if (i.onPointerMove) c.on("pointermove", i.onPointerMove); if (i.onPointerUp) c.on("pointerup", i.onPointerUp);
     }
     if (spec.flat) { const p = currentProjection(); c.rotation = p.reverseRotation; c.scale.set(p.counterFactor, p.ratio * p.counterFactor); }
