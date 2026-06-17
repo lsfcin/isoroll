@@ -131,12 +131,10 @@ export const IsoTileRenderer: TileRenderer = {
       const clone = tileClones.get(t.id); if (!clone) continue;
       const w = t.document.width ?? 0, h = t.document.height ?? 0;
       const mesh = getMesh(t);
-      console.log(`[isoroll sr-before] id=${t.id} mesh.alpha=${(mesh as unknown as {alpha?:number})?.alpha} clone.visible=${clone.visible}`);
       // v14: doc.x/y is center; top-left = center - size/2
       applyTileFog(clone, t.document as unknown as PlaceableDoc, t.id,
         (t.document.x ?? 0) - w / 2, (t.document.y ?? 0) - h / 2, w, h,
         VolumeFlags.getHideOnFog(t.document), viewers);
-      console.log(`[isoroll sr-after] id=${t.id} mesh.alpha=${(mesh as unknown as {alpha?:number})?.alpha} clone.visible=${clone.visible}`);
     }
   },
   hide(id: string): void {

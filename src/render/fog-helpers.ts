@@ -154,7 +154,6 @@ export function applyTileFog(
         const pts = (w > gs || h > gs) ? buildPerimeterPoints(x, y, w, h, gs) : [{ x: cx, y: cy }];
         anyExplored = pts.some(p => fog.isPointExplored!(p) === true);
       }
-      console.log(`[isoroll fog-f5] tileId=${tileId} cx=${cx.toFixed(0)} cy=${cy.toFixed(0)} anyExplored=${anyExplored} fogExploration=${fog.fogExploration} explorationNull=${fog.exploration === null}`);
       if (anyExplored) {
         seenTileIds.add(tileId); s.visible = true; s.tint = EXPLORED_TINT;
       } else {
