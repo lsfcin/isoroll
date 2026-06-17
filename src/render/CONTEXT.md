@@ -21,12 +21,12 @@
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the render module — central PIXI layer registry |
 | [`fog-helpers.ts`](fog-helpers.ts) | — | `docAlpha`, `applyDocState`, `clearSeenTiles`, `saveSessionToStorage`, `tryRestoreFromStorage` | Fog-of-war visibility helpers for IsoSpriteLayer. |
 | [`iso-geometry.ts`](iso-geometry.ts) | — | `IsoGeometry`, `pt`, `buildVerts` | Footprint math for tiles and tokens. |
-| [`iso-renderer.ts`](iso-renderer.ts) | — | `IsoRenderer` | Rendering façade — single entry point for all isoroll visuals. |
+| [`iso-renderer.ts`](iso-renderer.ts) | — | `isoRendererSightRefresh`, `IsoRenderer`, `_defLayer`, `_paint`, `_drop` | Rendering façade — single entry point for all isoroll visuals. |
 | [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | [`iso-sprite-layer.d.ts`](iso-sprite-layer.d.ts) | `cloneSprite`, `syncSprite`, `IsoTokenRenderer`, `IsoTileRenderer`, `IsoSpriteLayer` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
 | [`layer-manager.ts`](layer-manager.ts) | [`layer-manager.d.ts`](layer-manager.d.ts) | `destroyMapped`, `LayerManager`, `LAYER_KEYS`, `stage` | Central PIXI layer registry: creation, z-order policy, and teardown for all overlay layers. |
 | [`mesh-accessor.ts`](mesh-accessor.ts) | — | `MeshAccessor` | Typed, null-safe reader of tile/token mesh geometry. |
-| [`render-gate.ts`](render-gate.ts) | [`render-gate.d.ts`](render-gate.d.ts) | `classifyToken`, `classifyTile` | Central hook dispatcher. Classifies each Foundry hook event into a PlaceableState, |
-| [`render-lifecycle.ts`](render-lifecycle.ts) | — | `onCanvasReady`, `onCanvasTeardown`, `onSceneChange`, `onTileRefresh`, `onTileFlagsChange` | Named lifecycle entry points for all rendering decisions. |
+| [`render-gate.ts`](render-gate.ts) | [`render-gate.d.ts`](render-gate.d.ts) | — | Thin Foundry hook subscriber. All dispatch and classification logic lives in render-lifecycle.ts. |
+| [`render-lifecycle.ts`](render-lifecycle.ts) | — | `registerTokenRenderer`, `registerTileRenderer`, `onCanvasReady`, `onCanvasTeardown`, `onSceneChange` | Named lifecycle entry points for all rendering decisions. |
 | [`tile-renderer.ts`](tile-renderer.ts) | [`tile-renderer.d.ts`](tile-renderer.d.ts) | — | ← add first-line comment |
 | [`token-renderer.ts`](token-renderer.ts) | [`token-renderer.d.ts`](token-renderer.d.ts) | — | ← add first-line comment |
 <!-- routing:end -->

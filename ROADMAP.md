@@ -6,7 +6,9 @@
 
 ## Status
 
-Phases 3 and 4 complete. Phase 5 is next priority. Phase 1 (token depth) still pending.
+Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 is next feature priority. Phase 1 (token depth) still pending.
+
+IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–3 complete, Phase 4 (render-lifecycle) is next refactor step (see REFACTOR.md).
 
 ## Backlog
 
@@ -40,84 +42,6 @@ After the main sort, run a pairwise epsilon-offset pass over tokens with close s
 ### Scope
 
 Only token-to-token ordering. Tile-to-tile and tile-to-token ordering handled by main sort key (elevation-aware, correct for non-overlapping objects).
-
----
-
-
-## Phase 4 — Fog-of-War Visibility Management ✅ COMPLETE
-
-**Requires Phase 3.**
-
-### Problem
-
-Clones in the Iso Sprite Layer are outside `canvas.primary`'s `VisibilityFilter` (that's intentional — fixes the hard-clip bug). However, `canvas.visibility` is a **separate global compositing pass** that darkens/hides pixels EVERYWHERE on the stage based on the vision polygon — including our Iso Sprite Layer. Result: the parts of a token/tile sprite that extend beyond the grid footprint are darkened by fog even though the footprint itself is in vision.
-
-Observed: token footprint cell = bright; overflow pixels outside footprint = darkened by `canvas.visibility`. During Foundry drag preview, fog is temporarily bypassed → sprite appears fully lit → fog returns on drop. This is the expected Phase 4 problem, not a Phase 3 bug.
-
-**Scope: both tokens AND tiles.** Tiles need it because they are 3D props. Tokens need it because their counter-transformed sprite overflows the footprint.
-
-### Approach
-
-**Do NOT use `token.visible` / `tile.visible`** — these are transient PIXI properties that return `false` during drag mid-states and layer switches (learned in Phase 3; caused clone to disappear). Instead:
-
-- `document.hidden` → controls game-level visibility (GM hide)
-- `canvas.visibility.testVisibility()` → determines fog/vision state
-
-For tokens and tiles: sample `testVisibility()` at the footprint center (and perimeter for large objects). Apply result uniformly to the entire clone — the whole sprite is either in-vision or fogged, never per-pixel.
-
-### Visibility State Table
-
-| `document.hidden` | `testVisibility` result | Clone behavior |
-|---|---|---|
-| `true` | any | `visible = false` (GM hidden) |
-| `false` | fully visible | Full `document.alpha` |
-| `false` | explored + fogged | `ColorMatrixFilter` darken (tiles) / hide (tokens, unless setting allows) |
-| `false` | unexplored | `visible = false` |
-
-### `testVisibility()` call pattern (from fork `foreground.js` lines 511–518)
-
-```js
-// viewers = controlled tokens (or all player-owned visible tokens as fallback)
-for (const viewer of viewers) {
-  if (canvas.visibility?.testVisibility({ x, y }, { object: viewer })) return true;
-}
-```
-
-Sample the footprint center; for tiles larger than 1 grid cell also sample corners and perimeter edges at grid-step intervals (fork `applyVisibilityCulling` lines 520–532 for the perimeter loop pattern).
-
-### Phase 3 current state (baseline for Phase 4)
-
-`clone.visible = !document.hidden` — only GM-hidden is respected. Fog state is ignored entirely. Phase 4 replaces this with the full visibility table above.
-
-### Checklist
-
-**Tokens:**
-- [x] On `refreshToken` and `sightRefresh`: run visibility check for all token clones; apply result to clone
-- [x] Token clone: visible if in-vision; hidden if unexplored or `document.hidden`; fogged explored = hide by default (token shouldn't be revealed in explored fog)
-
-**Tiles:**
-- [x] Add `flags.isoroll.hideOnFog` (bool, default `false`) to `VolumeFlags` in `src/flags.ts` — when true, tile hides in both fogged and unexplored states
-- [x] On `refreshTile` and `sightRefresh`: run visibility check for all tile clones
-- [x] Explored + visible → full alpha; explored + fogged → tint 0x808080 darken; unexplored → hide
-- [x] Add `hideOnFog` toggle to Iso tab in `src/ui/tile-config.ts`
-
-**Shared:**
-- [x] Trigger full visibility re-evaluation on: `sightRefresh`, `canvasReady`, `updateToken`
-- [x] Determine viewer tokens: controlled tokens → fallback to player-owned visible tokens
-- [x] For GM (no fog): skip testVisibility, show everything
-
-### Key Files
-
-- `src/render/iso-sprite-layer.ts` — clone registries, hook into `sightRefresh`
-- `src/flags.ts` — `VolumeFlags` type (add `hideOnFog`)
-- `src/ui/tile-config.ts` — Iso tab (add `hideOnFog` toggle)
-
-### References
-
-- isometric-perspective fork `foreground.js`:
-  - `updateLayerOpacity()` (lines 185–221) — per-sprite alpha modulation pattern
-  - `applyVisibilityCulling()` (lines 500–612) — `testVisibility` sampling, viewer resolution, perimeter loop, seenBy persistence
-  - `registerFogOfWarHooks()` (lines 84–101) — fog reset hook pattern (`resetFogOfWar`)
 
 ---
 
