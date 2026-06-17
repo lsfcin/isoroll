@@ -37,6 +37,14 @@ function rectTexture(): PIXI.Texture {
   return _rectTex;
 }
 
+export function shadowTexture(shape: "circle" | "rect"): PIXI.Texture {
+  return shape === "rect" ? rectTexture() : circleTexture();
+}
+
+export function shadowAlpha(elevation: number, opacity: number): number {
+  return Math.min(1, opacity * Math.max(0.1, 1 / (1 + elevation * 0.04)));
+}
+
 export function drawGroundShadow(
   groundX: number, groundY: number, elevation: number,
   radiusX: number, radiusY: number, opacity: number, shape: "circle" | "rect",

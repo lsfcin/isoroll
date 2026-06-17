@@ -3,12 +3,14 @@
 // Only this file (a declared boundary) may use PIXI.* directly.
 
 import { LayerManager, LAYER_KEYS } from './layer-manager';
+import { currentProjection } from '../transform';
+import { applyTokenFogContainer } from './fog-helpers';
 
 export type P2 = { x: number; y: number };
 export type P3 = { x: number; y: number; z: number };
 export type Color = number;
 export type Stroke = { color: Color; width: number; alpha?: number };
-export type TextStyleSpec = { fontSize?: number; fill?: Color; fontFamily?: string };
+export type TextStyleSpec = { fontSize?: number; fill?: Color; fontFamily?: string; stroke?: Color; strokeThickness?: number };
 export type TextureRef = string | PIXI.Texture;
 export type CSSCursor = string;
 export type CoordSystem = "WORLD" | "ISO3D" | "GRID" | "IMAGE" | "SCREEN" | "VIEWPORT";
@@ -34,8 +36,8 @@ export type ShapeSpec =
   | { kind: "polygon"; points: P2[];                fill?: Color; stroke?: Stroke }
   | { kind: "3d-box";  verts: BoxVerts;             fill?: Color; stroke?: Stroke }
   | { kind: "lines";   build: (g: DrawAPI) => void }
-  | { kind: "text";    content: string;             style: TextStyleSpec }
-  | { kind: "sprite";  texture: TextureRef;         anchor?: P2; scale?: P2 };
+  | { kind: "text";    content: string;             style: TextStyleSpec; alpha?: number }
+  | { kind: "sprite";  texture: TextureRef;         anchor?: P2; scale?: P2; alpha?: number };
 
 export interface Interaction {
   cursor?:        CSSCursor;
@@ -99,8 +101,27 @@ function _paint(c: PIXI.Container, v: ShapeSpec): void {
   if (v.kind === "lines") {
     const g = new PIXI.Graphics(); g.eventMode = "none";
     v.build(new PixiDrawAPI(g)); c.addChild(g);
+  } else if (v.kind === "sprite") {
+    const tex = typeof v.texture === "string" ? PIXI.Texture.from(v.texture) : v.texture as PIXI.Texture;
+    const s = new PIXI.Sprite(tex); s.eventMode = "none";
+    if (v.anchor) s.anchor.set(v.anchor.x, v.anchor.y);
+    if (v.scale)  { s.width = v.scale.x; s.height = v.scale.y; }
+    if (v.alpha !== undefined) s.alpha = v.alpha;
+    c.addChild(s);
+  } else if (v.kind === "text") {
+    const t = new PIXI.Text(v.content, new PIXI.TextStyle({
+      fontFamily: v.style.fontFamily, fontSize: v.style.fontSize, fill: v.style.fill,
+      stroke: v.style.stroke, strokeThickness: v.style.strokeThickness, lineJoin: "round",
+    }));
+    t.anchor.set(0.5, 0.5); t.eventMode = "none";
+    if (v.alpha !== undefined) t.alpha = v.alpha;
+    // Suppress mipmap to prevent GL_INVALID_OPERATION on text textures.
+    const tx = t.texture as { source?: { autoGenerateMipmaps: boolean }; baseTexture?: { mipmap: number } };
+    if (tx?.source) tx.source.autoGenerateMipmaps = false;
+    if (tx?.baseTexture) tx.baseTexture.mipmap = 0;
+    c.addChild(t);
   }
-  // rect / circle / polygon / 3d-box / text / sprite: future phases
+  // rect / circle / polygon / 3d-box: future phases
 }
 
 function _drop(key: string): void {
@@ -134,6 +155,8 @@ export const IsoRenderer = {
     _drop(spec.key);
     const c = new PIXI.Container(); c.eventMode = "passive";
     _paint(c, spec.visual);
+    if (spec.flat) { const p = currentProjection(); c.rotation = p.reverseRotation; c.scale.set(p.counterFactor, p.ratio * p.counterFactor); }
+    const a = spec.placement.anchor as P2; c.position.set(a.x, a.y);
     if (typeof spec.z === "number") c.zIndex = spec.z;
     LayerManager.ensureLayer(lk).addChild(c);
     if (spec.z === "top") LayerManager.bringToTop(lk);
@@ -154,12 +177,11 @@ export const IsoRenderer = {
   clearAll(): void { for (const k of [..._reg.keys()]) _drop(k); },
 };
 
-// Called by render-lifecycle onSightRefresh for sight-tracked visuals.
-export function isoRendererSightRefresh(
-  applyFog: (key: string, spec: RenderSpec, c: PIXI.Container) => void,
-): void {
+// Called by render-lifecycle onSightRefresh — updates visibility for all sight-tracked visuals.
+export function isoRendererSightRefresh(): void {
   for (const key of _sightTracked) {
     const e = _reg.get(key); if (!e) continue;
-    applyFog(key, e.spec, e.container);
+    const a = e.spec.placement.anchor as P2;
+    applyTokenFogContainer(e.container, a.x, a.y);
   }
 }

@@ -1,8 +1,9 @@
-// Always-visible token indicators: ground shadow, elevation line, elevation label.
+// Always-visible token indicators: ground shadow (sight-tracked), elevation line, elevation label.
 
 import { VolumeFlags, elevToCanvas, gridDistance, getElevation, isTransformedToken, isPreviewClone, suppressTooltip, CanvasEnv } from "../core";
-import { drawGroundShadow, drawDash, ANCHOR_DASH, ANCHOR_GAP, makeCounterWrapper, suppressMipmap } from "../draw";
-import { LayerManager, LAYER_KEYS, destroyMapped, IsoGeometry } from "../render";
+import { drawDash, ANCHOR_DASH, ANCHOR_GAP, shadowTexture, shadowAlpha } from "../draw";
+import { LAYER_KEYS, IsoGeometry, IsoRenderer } from "../render";
+import type { DrawAPI } from "../render";
 import { currentProjection } from "../transform";
 
 type UserLike = { isGM?: boolean; color?: { css?: string } | string };
@@ -31,21 +32,16 @@ function getState(token: Token): BgState {
   const elev = getElevation(d);
   const selected = +((token as unknown as { controlled?: boolean }).controlled ?? false);
   return {
-    // selected included: preview (unselected) vs original (selected) differ at same position,
-    // forcing rebuild on drop so elevation line hides correctly for selected token.
     geoKey:    `${d.x ?? 0},${d.y ?? 0},${elev},${VolumeFlags.getTokenHeight(d)},${+VolumeFlags.getElevLineEnabled(d)},${+VolumeFlags.getElevLineDashed(d)},${VolumeFlags.getElevLineColor(d)},${selected}`,
     shadowKey: `${+VolumeFlags.getShadowEnabled(d)},${VolumeFlags.getShadowShape(d)},${VolumeFlags.getShadowRadius(d)},${VolumeFlags.getShadowOpacity(d)}`,
   };
 }
 
 export class TokenBackground {
-  static readonly handlesPreview = true; // shadow + elevation line follow cursor during drag
+  static readonly handlesPreview = true;
 
-  static configOpen: Set<string> = new Set();
-  private static shadows:    Map<string, PIXI.Container> = new Map();
-  private static indicators: Map<string, PIXI.Container> = new Map();
-  private static labels:     Map<string, PIXI.Container> = new Map();
-  private static lastState:  Map<string, BgState>        = new Map();
+  static configOpen: Set<string>    = new Set();
+  private static lastState: Map<string, BgState> = new Map();
 
   // ---- TokenRenderer interface ----
 
@@ -58,123 +54,111 @@ export class TokenBackground {
   static onDestroy(id: string): void { TokenBackground.hide(id); }
 
   static rebuild(token: Token): void {
-    const hasAny = TokenBackground.shadows.has(token.id)
-                || TokenBackground.indicators.has(token.id)
-                || TokenBackground.labels.has(token.id);
-    if (!hasAny) return;
+    if (!TokenBackground.lastState.has(token.id)) return;
     const state = getState(token);
     const last  = TokenBackground.lastState.get(token.id);
     if (last && last.geoKey === state.geoKey && last.shadowKey === state.shadowKey) return;
     TokenBackground.lastState.set(token.id, state);
-    if (last && last.geoKey === state.geoKey) { TokenBackground.updateShadow(token); return; }
-    // During drag, preview clone is controlled=true but we want elevation line visible at destination.
+    if (last && last.geoKey === state.geoKey) { TokenBackground._renderShadow(token); return; }
     const controlled = isPreviewClone(token) ? false : ((token as unknown as { controlled?: boolean }).controlled ?? false);
     TokenBackground.show(token, controlled || TokenBackground.configOpen.has(token.id));
   }
 
-  // Selection state changes elevation line visibility — rebuild indicators only.
   static onControl(token: Token, controlled: boolean): void {
-    TokenBackground.rebuildIndicators(token, controlled);
-    TokenBackground.rebuildLabel(token, controlled);
+    IsoRenderer.clear(`token-${token.id}:indicator`);
+    IsoRenderer.clear(`token-${token.id}:label`);
+    TokenBackground._renderIndicator(token);
+    TokenBackground._renderLabel(token, controlled);
   }
 
-  // ---- PIXI helpers ----
+  // ---- Private render helpers ----
 
-  private static updateShadow(token: Token): void {
-    const prev = TokenBackground.shadows.get(token.id);
-    if (prev) { prev.parent?.removeChild(prev); prev.destroy({ children: true }); TokenBackground.shadows.delete(token.id); }
+  private static _renderShadow(token: Token): void {
+    const d = token.document;
+    if (!VolumeFlags.getShadowEnabled(d)) return;
+    const { tx, ty, tw, th } = IsoGeometry.footprint(token);
+    const elev = getElevation(d);
+    if (elev < 0) return;
+    const sr = VolumeFlags.getShadowRadius(d);
+    IsoRenderer.render({
+      key: `token-${token.id}:shadow`, owner: { kind: "token", id: token.id },
+      visual: { kind: "sprite", texture: shadowTexture(VolumeFlags.getShadowShape(d)),
+                anchor: { x: 0.5, y: 0.5 }, scale: { x: tw * sr, y: th * sr },
+                alpha: shadowAlpha(elev, VolumeFlags.getShadowOpacity(d)) },
+      space: "WORLD", placement: { anchor: { x: tx + tw / 2, y: ty + th / 2 } },
+      layer: LAYER_KEYS.TOKEN_SHADOW, visibility: "sight-tracked",
+    });
+  }
+
+  private static _renderIndicator(token: Token): void {
+    const d = token.document;
+    if (getElevation(d) === 0 || !VolumeFlags.getElevLineEnabled(d)) return;
+    IsoRenderer.render({
+      key: `token-${token.id}:indicator`, owner: { kind: "token", id: token.id },
+      visual: { kind: "lines", build: (g) => TokenBackground._drawIndicator(g, token) },
+      space: "WORLD", placement: { anchor: { x: 0, y: 0 } },
+      layer: LAYER_KEYS.TOKEN_INDICATORS,
+    });
+  }
+
+  private static _drawIndicator(g: DrawAPI, token: Token): void {
     const { tx, ty, tw, th } = IsoGeometry.footprint(token);
     const elev = getElevation(token.document);
-    const sr   = VolumeFlags.getShadowRadius(token.document);
-    if (!VolumeFlags.getShadowEnabled(token.document)) return;
-    const shadow = drawGroundShadow(tx + tw / 2, ty + th / 2, elev, tw / 2 * sr, th / 2 * sr,
-      VolumeFlags.getShadowOpacity(token.document), VolumeFlags.getShadowShape(token.document));
-    if (!shadow) return;
-    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_SHADOW).addChild(shadow as unknown as PIXI.Container);
-    TokenBackground.shadows.set(token.id, shadow as unknown as PIXI.Container);
+    const elevPx = elevToCanvas(elev, CanvasEnv.gridSize(), gridDistance());
+    const proj = currentProjection();
+    const groundX = tx + tw / 2, groundY = ty + th / 2;
+    const baseCX = groundX + proj.heightDir.x * elevPx;
+    const baseCY = groundY + proj.heightDir.y * elevPx;
+    const dx = baseCX - groundX, dy = baseCY - groundY;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const gap = 7;
+    const startX = len > gap ? groundX + (dx / len) * gap : groundX;
+    const startY = len > gap ? groundY + (dy / len) * gap : groundY;
+    g.lineStyle(1, resolveElevLineColor(token), 0.35);
+    if (VolumeFlags.getElevLineDashed(token.document)) drawDash(g, startX, startY, baseCX, baseCY, ANCHOR_DASH, ANCHOR_GAP);
+    else { g.moveTo(startX, startY); g.lineTo(baseCX, baseCY); }
   }
 
-  private static rebuildIndicators(token: Token, selected: boolean): void {
-    destroyMapped(TokenBackground.indicators, token.id);
-    const { tx, ty, tw, th } = IsoGeometry.footprint(token);
-    const gridSize  = CanvasEnv.gridSize();
-    const gridDist  = gridDistance();
-    const proj      = currentProjection();
-    const elev      = getElevation(token.document);
-    const elevPx    = elevToCanvas(elev, gridSize, gridDist);
-    const heightDir = proj.heightDir;
-    const groundX   = tx + tw / 2, groundY = ty + th / 2;
-
-    const container = new PIXI.Container();
-    let hasContent = false;
-
-    if (elev !== 0 && VolumeFlags.getElevLineEnabled(token.document)) {
-      const baseCX = groundX + heightDir.x * elevPx;
-      const baseCY = groundY + heightDir.y * elevPx;
-      const dx = baseCX - groundX, dy = baseCY - groundY;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const gap = 7;
-      const startX = len > gap ? groundX + (dx / len) * gap : groundX;
-      const startY = len > gap ? groundY + (dy / len) * gap : groundY;
-      const lineG  = new PIXI.Graphics();
-      lineG.eventMode = "none";
-      lineG.lineStyle(1, resolveElevLineColor(token), 0.35);
-      if (VolumeFlags.getElevLineDashed(token.document)) {
-        drawDash(lineG, startX, startY, baseCX, baseCY, ANCHOR_DASH, ANCHOR_GAP);
-      } else {
-        lineG.moveTo(startX, startY); lineG.lineTo(baseCX, baseCY);
-      }
-      container.addChild(lineG);
-      hasContent = true;
-    }
-
-    if (!hasContent) return;
-    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_INDICATORS).addChild(container);
-    TokenBackground.indicators.set(token.id, container);
-    LayerManager.bringToTop(LAYER_KEYS.TOKEN_INDICATORS);
-  }
-
-  private static rebuildLabel(token: Token, selected: boolean): void {
-    destroyMapped(TokenBackground.labels, token.id);
-    const { tx, ty, tw, th } = IsoGeometry.footprint(token);
-    const gridSize  = CanvasEnv.gridSize();
-    const gridDist  = gridDistance();
-    const proj      = currentProjection();
-    const elev      = getElevation(token.document);
+  private static _renderLabel(token: Token, selected: boolean): void {
+    const d = token.document;
+    const elev = getElevation(d);
     if (elev === 0) return;
-    const elevPx    = elevToCanvas(elev, gridSize, gridDist);
-    const heightDir = proj.heightDir;
-    const gridUnits = CanvasEnv.gridUnits();
-    const label = new PIXI.Text(`${Math.round(elev)} ${gridUnits}`, new PIXI.TextStyle({
-      fontFamily: "Signika, sans-serif", fontSize: 14,
-      fill: 0xffffff, stroke: 0x000000, strokeThickness: 3, lineJoin: "round",
-    }));
-    label.anchor.set(0.5, 0.5); label.eventMode = "none"; label.alpha = selected ? 1.0 : 0.3;
-    suppressMipmap(label.texture);
-    const wrap = makeCounterWrapper(proj, tx + tw / 2 + heightDir.x * elevPx, ty + th + heightDir.y * elevPx);
-    wrap.addChild(label);
-    LayerManager.ensureLayer(LAYER_KEYS.TOKEN_LABEL).addChild(wrap);
-    TokenBackground.labels.set(token.id, wrap);
-    LayerManager.bringToTop(LAYER_KEYS.TOKEN_LABEL);
+    const { tx, ty, tw, th } = IsoGeometry.footprint(token);
+    const elevPx = elevToCanvas(elev, CanvasEnv.gridSize(), gridDistance());
+    const proj = currentProjection();
+    const lx = tx + tw / 2 + proj.heightDir.x * elevPx;
+    const ly = ty + th + proj.heightDir.y * elevPx;
+    IsoRenderer.render({
+      key: `token-${token.id}:label`, owner: { kind: "token", id: token.id },
+      visual: { kind: "text", content: `${Math.round(elev)} ${CanvasEnv.gridUnits()}`,
+                style: { fontFamily: "Signika, sans-serif", fontSize: 14,
+                         fill: 0xffffff, stroke: 0x000000, strokeThickness: 3 },
+                alpha: selected ? 1.0 : 0.3 },
+      space: "WORLD", placement: { anchor: { x: lx, y: ly } },
+      layer: LAYER_KEYS.TOKEN_LABEL, flat: true,
+    });
   }
+
+  // ---- Lifecycle ----
 
   static setConfigOpen(token: Token, open: boolean): void {
     open ? TokenBackground.configOpen.add(token.id) : TokenBackground.configOpen.delete(token.id);
-    TokenBackground.show(token, open || ((token as unknown as { controlled?: boolean }).controlled ?? false)); }
+    TokenBackground.show(token, open || ((token as unknown as { controlled?: boolean }).controlled ?? false));
+  }
+
   static show(token: Token, selected = false): void {
     TokenBackground.hide(token.id);
     TokenBackground.lastState.set(token.id, getState(token));
-    TokenBackground.updateShadow(token);
-    TokenBackground.rebuildIndicators(token, selected);
-    TokenBackground.rebuildLabel(token, selected);
+    TokenBackground._renderShadow(token);
+    TokenBackground._renderIndicator(token);
+    TokenBackground._renderLabel(token, selected);
     suppressTooltip(token);
   }
 
   static hide(tokenId: string): void {
-    const shadow = TokenBackground.shadows.get(tokenId);
-    if (shadow) { shadow.parent?.removeChild(shadow); shadow.destroy({ children: true }); TokenBackground.shadows.delete(tokenId); }
-    destroyMapped(TokenBackground.indicators, tokenId);
-    destroyMapped(TokenBackground.labels, tokenId);
+    IsoRenderer.clear(`token-${tokenId}:shadow`);
+    IsoRenderer.clear(`token-${tokenId}:indicator`);
+    IsoRenderer.clear(`token-${tokenId}:label`);
     TokenBackground.lastState.delete(tokenId);
     const token = (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(tokenId);
     if (token) {
@@ -184,16 +168,9 @@ export class TokenBackground {
   }
 
   static clearAll(): void {
-    for (const id of [...TokenBackground.shadows.keys()]) {
-      const s = TokenBackground.shadows.get(id);
-      if (s) { s.parent?.removeChild(s); s.destroy({ children: true }); }
-    }
-    TokenBackground.shadows.clear();
-    for (const id of [...TokenBackground.indicators.keys()]) destroyMapped(TokenBackground.indicators, id);
-    for (const id of [...TokenBackground.labels.keys()])     destroyMapped(TokenBackground.labels, id);
+    IsoRenderer.clearLayer(LAYER_KEYS.TOKEN_SHADOW);
+    IsoRenderer.clearLayer(LAYER_KEYS.TOKEN_INDICATORS);
+    IsoRenderer.clearLayer(LAYER_KEYS.TOKEN_LABEL);
     TokenBackground.lastState.clear();
-    LayerManager.clearLayer(LAYER_KEYS.TOKEN_SHADOW);
-    LayerManager.clearLayer(LAYER_KEYS.TOKEN_INDICATORS);
-    LayerManager.clearLayer(LAYER_KEYS.TOKEN_LABEL);
   }
 }

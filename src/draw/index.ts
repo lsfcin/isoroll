@@ -5,4 +5,4 @@ export { drawMeshContour } from './contour';
 export { drawDash, drawDashedContour, makeCounterWrapper, suppressMipmap } from './shapes';
 export type { BoxVerts, P } from './volume-box';
 export { drawAnchorLine, drawBox } from './volume-box';
-export { drawGroundShadow } from './shadow';
+export { drawGroundShadow, shadowTexture, shadowAlpha } from './shadow';

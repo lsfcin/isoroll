@@ -5,6 +5,7 @@
 import { MODULE_ID, VolumeFlags, isTransformedToken, isTransformedTile, suppressTooltip, isPreviewClone, hasActiveClone, CanvasEnv } from '../core';
 import type { TokenRenderer } from './token-renderer';
 import type { TileRenderer } from './tile-renderer';
+import { isoRendererSightRefresh } from './iso-renderer';
 
 type PlaceableState = "disabled" | "transformed" | "preview" | "pending" | "normal";
 
@@ -164,6 +165,7 @@ export function onTokenMove(_token: Token): void {
 export function onTokenDestroy(id: string): void { _tokenRenderers.forEach(r => r.onDestroy?.(id)); }
 
 export function onSightRefresh(): void {
+  isoRendererSightRefresh();
   _tokenRenderers.forEach(r => r.onSightRefresh?.());
   _tileRenderers.forEach(r => r.onSightRefresh?.());
 }
