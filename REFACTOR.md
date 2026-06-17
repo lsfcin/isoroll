@@ -301,7 +301,7 @@ Gate on Phase 4. Validate the full API before committing the pattern to all othe
 ### Phase 6 — Migrate remaining overlays (one PR per overlay)
 - [x] `VolumeOverlay` (token) → IsoRenderer
 - [x] `TokenBackground` (indicator, label, shadow) → IsoRenderer
-- [ ] `VolumeGizmos` (tile gizmos) → IsoRenderer
+- [x] `VolumeGizmos` (tile gizmos) → IsoRenderer
 - [ ] `TokenGizmos` → IsoRenderer
 - [ ] `BackgroundGizmos` → IsoRenderer
 - [ ] `WallOverlay` → IsoRenderer

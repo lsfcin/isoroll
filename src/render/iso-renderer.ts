@@ -31,9 +31,9 @@ export interface DrawAPI {
 }
 
 export type ShapeSpec =
-  | { kind: "rect";    w: number; h: number;       fill?: Color; stroke?: Stroke }
-  | { kind: "circle";  radius: number;              fill?: Color; stroke?: Stroke }
-  | { kind: "polygon"; points: P2[];                fill?: Color; stroke?: Stroke }
+  | { kind: "rect";    w: number; h: number;       fill?: Color; fillAlpha?: number; stroke?: Stroke }
+  | { kind: "circle";  radius: number;              fill?: Color; fillAlpha?: number; stroke?: Stroke }
+  | { kind: "polygon"; points: P2[];                fill?: Color; fillAlpha?: number; stroke?: Stroke }
   | { kind: "3d-box";  verts: BoxVerts;             fill?: Color; stroke?: Stroke }
   | { kind: "lines";   build: (g: DrawAPI) => void }
   | { kind: "text";    content: string;             style: TextStyleSpec; alpha?: number }
@@ -120,8 +120,15 @@ function _paint(c: PIXI.Container, v: ShapeSpec): void {
     if (tx?.source) tx.source.autoGenerateMipmaps = false;
     if (tx?.baseTexture) tx.baseTexture.mipmap = 0;
     c.addChild(t);
+  } else if (v.kind === "circle" || v.kind === "rect" || v.kind === "polygon") {
+    const g = new PIXI.Graphics(); g.eventMode = "none";
+    if (v.stroke) g.lineStyle(v.stroke.width, v.stroke.color, v.stroke.alpha ?? 1); else g.lineStyle(0);
+    if (v.fill !== undefined) g.beginFill(v.fill, v.fillAlpha ?? 1);
+    if      (v.kind === "circle")  g.drawCircle(0, 0, v.radius);
+    else if (v.kind === "rect")    g.drawRect(-v.w / 2, -v.h / 2, v.w, v.h);
+    else                           g.drawPolygon(v.points.flatMap(p => [p.x, p.y]));
+    if (v.fill !== undefined) g.endFill(); c.addChild(g);
   }
-  // rect / circle / polygon / 3d-box: future phases
 }
 
 function _drop(key: string): void {
@@ -155,6 +162,10 @@ export const IsoRenderer = {
     _drop(spec.key);
     const c = new PIXI.Container(); c.eventMode = "passive";
     _paint(c, spec.visual);
+    if (spec.interaction) {
+      const i = spec.interaction; c.eventMode = "static"; if (i.cursor) c.cursor = i.cursor;
+      if (i.onPointerDown) c.on("pointerdown", i.onPointerDown); if (i.onPointerMove) c.on("pointermove", i.onPointerMove); if (i.onPointerUp) c.on("pointerup", i.onPointerUp);
+    }
     if (spec.flat) { const p = currentProjection(); c.rotation = p.reverseRotation; c.scale.set(p.counterFactor, p.ratio * p.counterFactor); }
     const a = spec.placement.anchor as P2; c.position.set(a.x, a.y);
     if (typeof spec.z === "number") c.zIndex = spec.z;
