@@ -44,16 +44,20 @@ type EpDrag = { wallId: string; ep: "A"|"B"; c: number[]; epH: RenderHandle; lin
 function lineVis(c: number[], col: number): ShapeSpec {
   return { kind: "lines", build: (g) => drawWallLine(g, c, col, 1) };
 }
+function toCanvas(ev: PointerEvent): { x: number; y: number } {
+  let { x, y } = screenPointToCanvas(ev.clientX, ev.clientY, CanvasEnv.worldTransform());
+  if (!ev.shiftKey) { const s = CanvasEnv.gridSize() / 4; x = Math.round(x/s)*s; y = Math.round(y/s)*s; } return { x, y };
+}
 
 function epMove(d: EpDrag, ev: PointerEvent): void {
-  const { x, y } = screenPointToCanvas(ev.clientX, ev.clientY, CanvasEnv.worldTransform());
+  const { x, y } = toCanvas(ev);
   d.epH.update({ placement: { anchor: { x, y } } });
   const nc = [...d.c]; if (d.ep === "A") { nc[0] = x; nc[1] = y; } else { nc[2] = x; nc[3] = y; }
   d.lineH.update({ visual: lineVis(nc, d.col) });
 }
 
 function epUp(d: EpDrag, ev: PointerEvent): void {
-  const { x, y } = screenPointToCanvas(ev.clientX, ev.clientY, CanvasEnv.worldTransform());
+  const { x, y } = toCanvas(ev);
   const nc = [...d.c]; if (d.ep === "A") { nc[0] = x; nc[1] = y; } else { nc[2] = x; nc[3] = y; }
   scene().updateEmbeddedDocuments("Wall", [{ _id: d.wallId, c: nc }]).catch(console.warn);
 }
@@ -63,9 +67,9 @@ export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<str
   for (const id of getLinkedWallIds(doc)) {
     const wall = wallsLayer().get(id); if (!wall) continue;
     const wdoc = wall.document as WallDoc, c = wdoc.c as number[], col = wallColor(wdoc);
-    const lineKey = `tile-${tileId}:wall-${id}:line`;
-    const lineH = IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col),
-      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY });
+    const lineKey = `tile-${tileId}:wall-${id}:line`, lastClick = { t: 0 };
+    const lineH = IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col), hitArea: wallHitArea(c, 6, 5),
+      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY, interaction: { cursor: "pointer", onPointerDown: (e) => { e.stopPropagation(); (e as any).nativeEvent?.stopImmediatePropagation?.(); wallDblClick(id, lastClick); } } });
     keys.add(lineKey);
     for (const [ep, xi, yi] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
       const x = c[xi], y = c[yi], key = `tile-${tileId}:wall-${id}:ep${ep}`;
@@ -75,8 +79,8 @@ export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<str
         hitArea: [{ x: -5, y: -5 }, { x: 5, y: -5 }, { x: 5, y: 5 }, { x: -5, y: 5 }],
         space: "WORLD", placement: { anchor: { x, y } },
         layer: LAYER_KEYS.WALL_OVERLAY, z: ep === "A" ? "top" : undefined,
-        interaction: { cursor: "move",
-          onPointerDown: (e) => { e.stopPropagation(); startPointerDrag(drag, epMove, epUp); },
+        interaction: { cursor: "pointer",
+          onPointerDown: (e) => { e.stopPropagation(); if (wallDblClick(id, lastClick)) return; startPointerDrag(drag, epMove, epUp); },
           onPointerOver: () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0, EP_OUTER_HOV, EP_INNER_HOV) } }); },
           onPointerOut:  () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0) } }); },
         },
