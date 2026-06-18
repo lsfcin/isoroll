@@ -4,7 +4,42 @@ Archive of completed work and resolved issues.
 
 ---
 
-## Completed — 2026-06-18
+## Resolved Bugs — 2026-06-18
+
+- **B28** — Token elevation label visible through fog. Root cause: `placement.anchor` on the label is the elevated world position `(lx, ly)` — `isoRendererSightRefresh` tested that coordinate, which lies outside the fog map stored at ground level. Fix: added `testPoint: { x: tx + tw/2, y: ty + th/2 }` to label's `IsoRenderer.render()` call in `token-background.ts:140`. Shadow and indicator were already correct (shadow used its own ground anchor; indicator had `testPoint`). *(238d5d2)*
+
+---
+
+## Completed — 2026-06-18 (session 2)
+
+### IsoRenderer Refactor — Phase 6 Occluder → lifecycle-integrated path *(from REFACTOR.md)*
+
+- `Occluder` class replaced with module-level `evaluateAll()` + `activateLegacy()` in `occluder.ts`
+- All boundary violations fixed: `canvas.grid.size` → `CanvasEnv.gridSize()`, `canvas.tiles/tokens` → `CanvasEnv`, `canvas.scene.getFlag` → `VolumeFlags.isSceneEnabled()`, `game.settings.get("occlusionOpacity")` → `VolumeFlags.getOcclusionOpacity()` (new static method)
+- New `VolumeFlags.isNewOccluder()` reads hidden setting `isorollNewOccluder` (default false)
+- `render-lifecycle.ts` calls `occluderEvaluateAll()` in `onTokenRefresh`/`onTileRefresh`/`onTokenDraw`/`onTokenDestroy` gated on `VolumeFlags.isNewOccluder()`
+- Gate: `isorollNewOccluder=false` → old `activateLegacy()` hooks run; `=true` → lifecycle only. Enable via `game.settings.set("isoroll","isorollNewOccluder",true)` then reload.
+
+### IsoRenderer Refactor — Phase 7: UI + Background boundary fixes *(from REFACTOR.md)*
+
+- `bg-drag.ts`: `canvas.app!.stage.worldTransform` → `CanvasEnv.worldTransform()` (Phase 2 deferral)
+- `bg-html.ts`: `canvas.scene` reads → `CanvasEnv.scene()`/`CanvasEnv.sceneFlag()`; PIXI stage traversal extracted to `BackgroundTransform.findGridConfigPreviewBg()` on the declared PIXI boundary file
+- `tile-config.ts`: `canvas.tiles.get(id)` → `CanvasEnv.getTile(id)` (already existed in canvas-env)
+- `token-config.ts`: `canvas.tokens.get(id)` → `CanvasEnv.getToken(id)` (new accessor added)
+- `canvas-env.ts`: added `getToken(id: string): Token | undefined`
+- `bg-transform.ts`: added `findGridConfigPreviewBg(): PIXI.Sprite | null` (same traversal already in `onRenderGridConfig` — extracted to avoid PIXI in non-boundary `bg-html.ts`)
+- Verified: SceneConfig double-inject guard working (`tabContentExists` check in `tab-helpers.ts`)
+
+### Fix: GridConfig re-renders overlay visuals during session *(fix in render-lifecycle.ts + render-gate.ts)*
+
+- `refreshToken` fires every animation tick, causing isoroll overlays to reappear after `onGridConfigOpen` cleared them
+- Fix: `_gridConfigOpen` flag (bool) in `render-lifecycle.ts`; set `true` on `onGridConfigOpen`, `false` + `onCanvasReady()` on `onGridConfigClose()`
+- Guards added to `onTokenRefresh`, `onTileRefresh`, `onTokenDraw`, `onTileDraw` — early return when `_gridConfigOpen`
+- `closeGridConfig` hook wired in `render-gate.ts` → `onGridConfigClose()`
+
+---
+
+## Completed — 2026-06-18 (session 1)
 
 ### IsoRenderer Refactor — Phase 6e: BackgroundGizmos → IsoRenderer *(from REFACTOR.md)*
 

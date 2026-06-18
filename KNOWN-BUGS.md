@@ -74,25 +74,6 @@ sprite is confirmed ready, or hook into a later Foundry lifecycle event.
 
 ---
 
-## B28 — Token elevation label visible through fog when sprite is hidden
-
-**Symptom:** While moving Token A, Token B's distance label (`XXft`, semi-transparent)
-is visible from Token A even when Token B is in unexplored fog and its sprite is hidden.
-Shadow and dashed elevation line correctly follow Token B's fog visibility state; the
-distance label does not.
-
-**Root cause:** Distance label is rendered with `visibility: "always-visible"` (or
-equivalent) in TokenBackground, bypassing the sight-tracked state machine that correctly
-hides the shadow and elevation line in unexplored/hidden areas.
-
-**Expected:** Label visibility should follow the same sight-tracked logic as the shadow
-and elevation dashed line — hidden when token sprite is unexplored/invisible.
-
-**Affected:** `src/tokens/token-background.ts` — the label `IsoRenderer.render()` call's
-`visibility` field.
-
----
-
 ## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays
 
 **Observation:** Opening the TileConfig or TokenConfig popup causes all isoroll visuals

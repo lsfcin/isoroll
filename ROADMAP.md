@@ -8,7 +8,7 @@
 
 Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary image) is next feature priority. Phase 1 (token depth) still pending.
 
-IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–5 complete, Phase 6 mostly done (BackgroundGizmos + WallOverlay completed this session; Occluder is the last Phase 6 item, high-risk, gated behind `settings.isorollNewOccluder`). Phase 7 (UI + Background audit) and Phase 8 (cleanup + enforcement) follow. See REFACTOR.md for checklist.
+IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–7 complete. Phase 8 (cleanup + enforcement) is next: delete dead PIXI/Map plumbing, ESLint/grep boundary enforcement, update KNOWN-BUGS + ROADMAP. Occluder new path gated behind `isorollNewOccluder` setting (default off) — verify in Foundry before removing flag + `activateLegacy()`. See REFACTOR.md for checklist.
 
 ## Backlog
 
