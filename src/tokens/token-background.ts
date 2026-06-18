@@ -138,6 +138,7 @@ export class TokenBackground {
                 alpha: selected ? 1.0 : 0.3 },
       space: "WORLD", placement: { anchor: { x: lx, y: ly } },
       layer: LAYER_KEYS.TOKEN_LABEL, flat: true, visibility: "sight-tracked",
+      testPoint: { x: tx + tw / 2, y: ty + th / 2 },
     });
   }
 
