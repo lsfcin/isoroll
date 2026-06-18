@@ -1,5 +1,4 @@
 // Per-wall IsoRenderer drawing + endpoint drag logic.
-// Minimal rebuild — mirrors token-gizmos elevation handle pattern exactly.
 
 import { MODULE_ID, startPointerDrag, screenPointToCanvas, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
@@ -12,7 +11,8 @@ export const WALL_COLORS = {
   normal: 0xFFFFBB, terrain: 0x81B90C, invisible: 0x77E7E8, ethereal: 0xC880FC,
   sound: 0x00BFFF, door: 0x6666EE, secret: 0xA612D4, window: 0xC7D8FF,
 };
-const UNLINKED_ALPHA = 0.5, LINE_W = 1, EP_R = 6;
+const UNLINKED_ALPHA = 0.5, LINE_W = 1;
+const EP_OUTER = 3, EP_INNER = 2, EP_OUTER_HOV = 4.5, EP_INNER_HOV = 3;
 
 export function wallColor(doc: WallDoc): number {
   if (doc.door === 2) return WALL_COLORS.secret;
@@ -25,15 +25,24 @@ export function wallColor(doc: WallDoc): number {
   return WALL_COLORS.normal;
 }
 
+// ---- Shared wall visuals (single source for both display and select modes) ----
+
+function drawEpDot(g: DrawAPI, col: number, alpha: number, x: number, y: number, outer = EP_OUTER, inner = EP_INNER): void {
+  g.beginFill(0x000000, alpha); g.drawCircle(x, y, outer); g.endFill();
+  g.beginFill(col, alpha);     g.drawCircle(x, y, inner); g.endFill();
+}
+
+function drawWallLine(g: DrawAPI, c: number[], col: number, alpha: number): void {
+  g.lineStyle(LINE_W + 1.5, 0x000000, alpha); g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
+  g.lineStyle(LINE_W, col, alpha);             g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]); g.lineStyle(0);
+}
+
 // ---- Endpoint drag ----
 
 type EpDrag = { wallId: string; ep: "A"|"B"; c: number[]; epH: RenderHandle; lineH: RenderHandle; col: number };
 
 function lineVis(c: number[], col: number): ShapeSpec {
-  return { kind: "lines", build: (g) => {
-    g.lineStyle(LINE_W + 1.5, 0x000000, 1); g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
-    g.lineStyle(LINE_W, col, 1);             g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]); g.lineStyle(0);
-  }};
+  return { kind: "lines", build: (g) => drawWallLine(g, c, col, 1) };
 }
 
 function epMove(d: EpDrag, ev: PointerEvent): void {
@@ -62,11 +71,14 @@ export function drawWallDisplay(doc: TileDocument, tileId: string, isDrag: boole
       const x = c[xi], y = c[yi], key = `tile-${tileId}:wall-${id}:ep${ep}`;
       const drag: EpDrag = { wallId: id, ep, c: [...c], epH: null!, lineH, col };
       const epH = IsoRenderer.render({ key, owner: own,
-        visual: { kind: "circle", radius: EP_R, fill: col, fillAlpha: 0.9 },
+        visual: { kind: "lines", build: (g) => drawEpDot(g, col, 1, 0, 0) },
+        hitArea: [{ x: -5, y: -5 }, { x: 5, y: -5 }, { x: 5, y: 5 }, { x: -5, y: 5 }],
         space: "WORLD", placement: { anchor: { x, y } },
         layer: LAYER_KEYS.WALL_OVERLAY, z: ep === "A" ? "top" : undefined,
         interaction: { cursor: "move",
           onPointerDown: (e) => { e.stopPropagation(); startPointerDrag(drag, epMove, epUp); },
+          onPointerOver: () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0, EP_OUTER_HOV, EP_INNER_HOV) } }); },
+          onPointerOut:  () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0) } }); },
         },
       });
       drag.epH = epH; keys.add(key);
@@ -114,12 +126,8 @@ export function drawWallSelect(doc: TileDocument, tileId: string, keys: Set<stri
     IsoRenderer.render({
       key: `tile-${tileId}:wall-${id}:sel`, owner: own,
       visual: { kind: "lines", build: (g) => {
-        g.lineStyle(LINE_W + 1.5, 0x000000, alpha); g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
-        g.lineStyle(LINE_W, col, alpha);             g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]); g.lineStyle(0);
-        for (const [ix, iy] of [[0,1],[2,3]] as [number,number][]) {
-          g.beginFill(0x000000, alpha); g.drawCircle(c[ix], c[iy], 3); g.endFill();
-          g.beginFill(col, alpha);     g.drawCircle(c[ix], c[iy], 2); g.endFill();
-        }
+        drawWallLine(g, c, col, alpha);
+        for (const [ix, iy] of [[0,1],[2,3]] as [number,number][]) drawEpDot(g, col, alpha, c[ix], c[iy]);
       }},
       hitArea: wallHitArea(c, 6, 5), space: "WORLD", placement: { anchor: { x: 0, y: 0 } },
       layer: LAYER_KEYS.WALL_OVERLAY, z: first ? "top" : undefined,

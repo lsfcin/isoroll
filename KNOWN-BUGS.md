@@ -40,6 +40,18 @@ in-place requires a two-point `transformCoord` difference. Not worth the complex
 
 ---
 
+## B26 — Fog extraction ImageData zero-width crash on tile hover
+
+**Symptom:** `IndexSizeError: Failed to construct 'ImageData': The source width is zero or not a number` appears in the console, originating from `worker.js → image-compressor.js → pixelsToOffscreenCanvas`. Happens intermittently when hovering a tile. Foundry also logs `FogExtractor | Buffer compression has failed!`. Does not break functionality visibly.
+
+**Stack:** Foundry's FogExtractor tries to compress a fog buffer where the source canvas has zero width. Triggered by `commit → #save → _extractBase64 → compressBufferBase64 → ImageData(buffer, 0)`.
+
+**Likely cause:** A zero-dimension offscreen canvas produced during fog extraction when a tile has unusual dimensions or when the scene is in an intermediate state during hover. Not isoroll code — entirely in Foundry internals.
+
+**Action:** Monitor for Foundry upstream fix. If it worsens, investigate whether isoroll tile dimension handling produces zero-width image regions.
+
+---
+
 ## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays
 
 **Observation:** Opening the TileConfig or TokenConfig popup causes all isoroll visuals
