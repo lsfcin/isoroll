@@ -304,7 +304,7 @@ Gate on Phase 4. Validate the full API before committing the pattern to all othe
 - [x] `VolumeGizmos` (tile gizmos) → IsoRenderer
 - [x] `TokenGizmos` → IsoRenderer
 - [x] `BackgroundGizmos` → IsoRenderer
-- [ ] `WallOverlay` → IsoRenderer
+- [x] `WallOverlay` → IsoRenderer
 - [ ] `Occluder` → IsoRenderer
       Risk: high (alpha-occlusion logic). Gate behind `settings.isorollNewOccluder` (default off).
       Remove flag only after extended visual verification.

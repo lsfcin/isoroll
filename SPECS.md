@@ -77,6 +77,14 @@
 - **Auto-upsert**: `updateTile`/`updateToken`/`updateScene` hooks watch for relevant flag or native field changes; debounced 500ms to batch drag events
 - **Opt-out**: `flags.isoroll.presetEnabled` (default true) per tile/token for special cases
 
+### IsoRenderer Drag Handle Conventions
+
+- **Pattern:** `onPointerDown: (e) => { e.stopPropagation(); startPointerDrag(drag, onMove, onUp); }` — `e.stopPropagation()` (PIXI level) only. Never call `nativeEvent.stopImmediatePropagation()` when starting a drag — it blocks `window.pointermove` delivery that `startPointerDrag` depends on.
+- **nativeEvent stop is safe only on non-drag handlers** (e.g. wall line single-click that only toggles/dblchecks). Required there to prevent Foundry box selection.
+- **`screenPointToCanvas` signature:** `screenPointToCanvas(sx, sy, wt: PIXI.Matrix)` — requires `CanvasEnv.worldTransform()` as third argument. Located in `src/core/util.ts`, exported from `"../core"`.
+- **Snap to grid:** use `Math.round(v / step) * step` where `step = CanvasEnv.gridSize() / 4` (5 snap points per grid side). Apply in both `onMove` and `onUp`.
+- **SHIFT = free drag:** `if (!ev.shiftKey) { /* snap */ }` — Foundry convention (same as token drag).
+
 ---
 
 ## Repo Structure

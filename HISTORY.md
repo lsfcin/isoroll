@@ -4,6 +4,40 @@ Archive of completed work and resolved issues.
 
 ---
 
+## Completed — 2026-06-18
+
+### IsoRenderer Refactor — Phase 6e: BackgroundGizmos → IsoRenderer *(from REFACTOR.md)*
+
+- `bg-gizmos.ts`: replaced PIXI boilerplate with `IsoRenderer.render()` for all background drag handles
+- Pattern: `onPointerDown: (e) => { e.stopPropagation(); BackgroundGizmos.beginDrag(...); }` — no native event stop (same as token gizmos)
+- `startPointerDrag` with window listeners confirmed working for background handles
+
+### IsoRenderer Refactor — Phase 6f: WallOverlay → IsoRenderer *(from REFACTOR.md)*
+
+Initial commit (`685e0cd`) migrated `WallOverlay` to `IsoRenderer.render()` but endpoint drag was broken. Full debug + rebuild this session:
+
+**Problem:** `window.pointermove` never fired after `startPointerDrag` was called from wall endpoint `onPointerDown`. Root causes identified:
+- `nativeEvent.stopImmediatePropagation()` on endpoint `pointerdown` breaks `window.pointermove` delivery — safe only on non-drag handlers (line single-clicks)
+- Endpoint hitArea too small (no explicit hitArea → ~3px default for small drawn circle)
+
+**Solution:** Rebuilt `drawWallDisplay` from scratch mirroring the working elevation handle pattern exactly (`e.stopPropagation()` only, no native stop). Confirmed `window.pointermove` fires correctly in tile-selected context with this pattern.
+
+**Final `drawWallDisplay` implementation:**
+- Renders wall line via `lineVis(c, col)` + two endpoint circles per wall via `IsoRenderer.render()`
+- `epMove`: `toCanvas(ev)` → snap to `gridSize/4` (SHIFT bypasses) → `epH.update({placement})` + `lineH.update({visual: lineVis(nc, col)})`
+- `epUp`: `toCanvas(ev)` + snap → `scene().updateEmbeddedDocuments("Wall", [{ _id, c: nc }])`
+- Double-click on line or endpoint: opens wall config sheet (`wallDblClick` with shared `lastClick` per wall)
+- Cursor: `"pointer"` on both line and endpoints (Foundry convention)
+
+**Shared visual helpers (`drawEpDot`, `drawWallLine`):** Single source for endpoint dot + wall line rendering. Both `drawWallDisplay` and `drawWallSelect` use these — changing one changes both.
+
+**Key findings:**
+- `screenPointToCanvas(sx, sy, wt)` takes 3 args; use `CanvasEnv.worldTransform()` as third
+- Line interaction requires `nativeEvent.stopImmediatePropagation()` on single-click (no drag follows) to prevent Foundry box selection — safe because no `startPointerDrag` is called afterward
+- `lastClick = { t: 0 }` shared between line + both endpoints for consistent dblclick detection
+
+---
+
 ## Completed — 2026-06-16
 
 ### Phase 3 — Separate Rendering Layer Architecture *(from ROADMAP)*

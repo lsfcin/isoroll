@@ -8,7 +8,7 @@
 
 Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary image) is next feature priority. Phase 1 (token depth) still pending.
 
-IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–5 complete, Phase 6 (migrate remaining overlays) is next refactor step (see REFACTOR.md).
+IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–5 complete, Phase 6 mostly done (BackgroundGizmos + WallOverlay completed this session; Occluder is the last Phase 6 item, high-risk, gated behind `settings.isorollNewOccluder`). Phase 7 (UI + Background audit) and Phase 8 (cleanup + enforcement) follow. See REFACTOR.md for checklist.
 
 ## Backlog
 
