@@ -163,7 +163,7 @@ export class TokenBackground {
     IsoRenderer.clear(`token-${tokenId}:indicator`);
     IsoRenderer.clear(`token-${tokenId}:label`);
     TokenBackground.lastState.delete(tokenId);
-    const token = (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(tokenId);
+    const token = CanvasEnv.getToken(tokenId);
     if (token) {
       const tt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
       if (tt) tt.visible = getElevation(token.document) !== 0;

@@ -63,4 +63,7 @@ export const CanvasEnv = {
   appView(): HTMLCanvasElement {
     return canvas.app!.view as unknown as HTMLCanvasElement;
   },
+  appTicker(): { add(fn: unknown, ctx?: unknown, priority?: number): void; remove(fn: unknown): void } {
+    return canvas.app!.ticker as unknown as { add(fn: unknown, ctx?: unknown, priority?: number): void; remove(fn: unknown): void };
+  },
 };

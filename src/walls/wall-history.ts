@@ -1,5 +1,5 @@
 // Undo stack for isoroll wall operations on the Tiles layer.
-import { MODULE_ID } from "../core";
+import { MODULE_ID, CanvasEnv } from "../core";
 import { setLinkedWallIds } from "./wall-flags";
 import { wallsLayer, scene, canvasToAnchor, type TileDoc } from "./wall-coords";
 
@@ -32,7 +32,7 @@ export const WallHistory = {
     if (!e) return;
 
     if (e.k === "toggle") {
-      const tile = (canvas.tiles as any)?.get(e.tileId);
+      const tile = CanvasEnv.getTile(e.tileId);
       if (!tile) return;
       await setLinkedWallIds(tile.document, e.prevIds, { isUndo: true });
       if (!e.wasLinked && wallsLayer().get(e.wallId))
@@ -52,7 +52,7 @@ export const WallHistory = {
     if (e.k === "create") {
       if (e.newIds.length)
         await scene().deleteEmbeddedDocuments("Wall", e.newIds, { isoroll: "wallBulkDelete", isUndo: true });
-      const tile = (canvas.tiles as any)?.get(e.tileId);
+      const tile = CanvasEnv.getTile(e.tileId);
       if (!tile) return;
       await (tile.document as any).update({ [`flags.${MODULE_ID}.linkedWallIds`]: null }, { isUndo: true });
       if (e.prevData.length) await recreateWalls(e.tileId, e.prevData);
@@ -66,7 +66,7 @@ export const WallHistory = {
     }
 
     if (e.k === "unlink-all") {
-      const tile = (canvas.tiles as any)?.get(e.tileId);
+      const tile = CanvasEnv.getTile(e.tileId);
       if (!tile) return;
       const valid = e.prevIds.filter(id => wallsLayer().get(id));
       if (valid.length)
@@ -87,7 +87,7 @@ async function recreateWalls(tileId: string, data: object[]): Promise<void> {
   // keepId: true preserves original wall IDs so WallHistory "create" entries remain valid.
   const created  = await scene().createEmbeddedDocuments("Wall", data, { keepId: true, isUndo: true }) as any[];
   const ids      = created.map((w: any) => w.id as string).filter(Boolean);
-  const tile     = (canvas.tiles as any)?.get(tileId);
+  const tile     = CanvasEnv.getTile(tileId);
   if (tile) await setLinkedWallIds(tile.document, ids, { isUndo: true });
   refreshTile(tile);
 }

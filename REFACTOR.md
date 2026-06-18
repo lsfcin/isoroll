@@ -333,9 +333,20 @@ AppV2 + GridConfig + DOM have their own complexity. Do not start without an anal
 - [ ] Implement `core/history.ts`: canonical `pushPreDrag(layer, entry)` with options `{isUndo: true}`
       WARNING: verify linked-wall + tile history interleaving safe before touching (undo currently working;
       options inconsistency is `{isoroll:"gizmoDrag"}` / `{isUndo:true}` / `{}` across 4 files)
-- [ ] Delete dead PIXI/Map plumbing removed by Phase 6 (old overlay bodies)
-- [ ] Verify boundary enforcement: grep / ESLint rule confirming no `canvas.` / `PIXI.` in non-boundary files
-- [ ] Update KNOWN-BUGS.md + ROADMAP.md
+- [x] Delete dead PIXI/Map plumbing removed by Phase 6:
+      Tile shadow migrated from direct PIXI (ensureLayer/addChild/Map) → IsoRenderer.render({kind:"sprite"})
+      Removed: `shadows: Map<PIXI.DisplayObject>`, `showShadow()`, `hideShadow()` from VolumeOverlay.
+      Remaining intentional direct-PIXI: tile-gizmos rotate blocker (PIXI.Graphics in Foundry controls layer;
+      needs Foundry-layer PIXI access, not moveable to IsoRenderer without custom container support).
+- [x] Boundary enforcement grep audit — 5 documented exceptions remain:
+      `bg-html.ts:49` canvas.scene.setFlag → document write (not a canvas read, approved)
+      `depth-sorter.ts:29` canvas.primary → sorter boundary (accesses Foundry primary sort layer)
+      `tile-drag.ts:194`, `token-elev-drag.ts:26`, `token-gizmos.ts:167` canvas.tiles/tokens.history →
+        layer history push, deferred to core/history.ts (see WARNING above)
+      All other non-boundary canvas.* / PIXI.* reads fixed: wall-history, wall-manager, wall-coords,
+        preset-manager, iso-sprite-layer (getToken/getTile/placeables/ticker), core/util.ts, mesh-corners,
+        coord-debug, coord-sys-screen, transform/constants.
+- [x] Update KNOWN-BUGS.md + ROADMAP.md
 
 ### Out of Scope
 - DepthSorter activation (ROADMAP Phase 6 — separate design, non-trivial algorithm)

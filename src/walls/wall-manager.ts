@@ -1,5 +1,5 @@
 
-import { MODULE_ID, VolumeFlags, scheduleWrap } from "../core";
+import { MODULE_ID, VolumeFlags, scheduleWrap, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "./wall-flags";
 import { updateLinkedWallPositions, flipLinkedWallAnchorsX } from "./wall-sync";
 import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls } from "./wall-crud";
@@ -113,7 +113,7 @@ export class WallManager {
     if (options.isoroll === "wallBulkDelete") return;
     const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
     if (!tileId) return;
-    const tileObj = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(tileId);
+    const tileObj = CanvasEnv.getTile(tileId);
     if (!tileObj) return;
     const ids = getLinkedWallIds(tileObj.document).filter(id => id !== doc.id);
     wrap(() => setLinkedWallIds(tileObj.document, ids, { isUndo: true }), "wall id prune");
@@ -129,7 +129,7 @@ export class WallManager {
     if (options.isoroll === "anchorUpdate") return;
     const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
     if (!tileId) return;
-    const tileObj = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(tileId);
+    const tileObj = CanvasEnv.getTile(tileId);
     if (!tileObj) return;
 
     // User manually moved wall in Walls layer → recompute stored anchor
@@ -185,7 +185,7 @@ export class WallManager {
   }
 
   private static _refreshByDoc(doc: TileDocument): void {
-    const tile = (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(doc.id!);
+    const tile = CanvasEnv.getTile(doc.id!);
     if (tile) WallOverlay.showIfActive(tile);
   }
 

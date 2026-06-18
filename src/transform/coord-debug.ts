@@ -73,7 +73,7 @@ function nativeRender(
       break;
     case "VIEWPORT": {
       // Screen = Viewport + Rect offset natively.
-      const rect = (canvas.app!.view as HTMLElement).getBoundingClientRect();
+      const rect = CanvasEnv.appView().getBoundingClientRect();
       const ptV = pt as P2;
       drawDOM({ x: rect.left + ptV.x, y: rect.top + ptV.y }, isVert, colorHex);
       break;

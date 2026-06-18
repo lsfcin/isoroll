@@ -1,4 +1,4 @@
-import { MODULE_ID, scheduleWrap } from "../core";
+import { MODULE_ID, scheduleWrap, CanvasEnv } from "../core";
 import { deriveKey, readPreset, writePreset, preloadCache, getCachedPreset } from "./preset-storage";
 import { getSrc, docId, toScene, isPresetEnabled, gridSize, getSceneBg, type TextureDoc, type SceneDoc } from "./preset-ops";
 import { applyTile, applyToken, applyBackground, autoApplyTile, autoApplyToken, autoApplyBackground, autoApplyTileWalls, applyPresetToSource, tilePresetData } from "./preset-apply";
@@ -104,14 +104,14 @@ export class PresetManager {
         background: {
           get: (src: string) => readPreset(deriveKey(src)),
           save: async () => {
-            const scene = canvas.scene;
+            const scene = CanvasEnv.scene();
             if (!scene) { console.warn("isoroll | no active scene"); return; }
             const src = getSceneBg(scene)?.src;
             if (!src) { console.warn("isoroll | no background"); return; }
             await upsertBackground(scene);
           },
           apply: async (src: string) => {
-            const scene = canvas.scene;
+            const scene = CanvasEnv.scene();
             if (!scene) { console.warn("isoroll | no active scene"); return; }
             const p = await readPreset(deriveKey(src));
             if (!p || p.type !== "background") { console.warn("isoroll | no background preset for", src); return; }

@@ -1,5 +1,6 @@
 // Mesh corner, snap, and client-to-canvas coordinate helpers for gizmo placement.
 import type { MeshLike } from "../draw";
+import { CanvasEnv } from "../core";
 
 export type MeshHolder = { mesh: unknown };
 
@@ -30,6 +31,6 @@ export function snapQuarterUnits(units: number): number {
 }
 
 export function clientToGlobal(clientX: number, clientY: number): { x: number; y: number } {
-  const rect = (canvas.app!.view as HTMLCanvasElement).getBoundingClientRect();
+  const rect = CanvasEnv.appView().getBoundingClientRect();
   return { x: clientX - rect.left, y: clientY - rect.top };
 }

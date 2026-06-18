@@ -8,7 +8,16 @@
 
 Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary image) is next feature priority. Phase 1 (token depth) still pending.
 
-IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–7 complete. Phase 8 (cleanup + enforcement) is next: delete dead PIXI/Map plumbing, ESLint/grep boundary enforcement, update KNOWN-BUGS + ROADMAP. Occluder new path gated behind `isorollNewOccluder` setting (default off) — verify in Foundry before removing flag + `activateLegacy()`. See REFACTOR.md for checklist.
+IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–8 complete.
+
+**Remaining refactor cleanup (before merging):**
+- Verify Occluder new path in Foundry: `isorollNewOccluder = true` → reload → confirm tile alpha fades when token walks behind tile. Only then remove flag + `activateLegacy()`.
+- Implement `core/history.ts` canonical pre-drag push (see REFACTOR.md Phase 8 WARNING — verify linked-wall + tile history interleaving first).
+- 5 documented `canvas.*` boundary exceptions (see REFACTOR.md boundary table): `bg-html.ts` document write (approved), `depth-sorter.ts` canvas.primary (sorter boundary), `tile-drag/token-elev-drag/token-gizmos` history push (deferred to history.ts).
+- Verify GridConfig preview flow end-to-end (live-preview + submit + cancel) — REFACTOR.md Phase 7 checkbox.
+- Wire ESLint rule for boundary enforcement (Phase 8 optional).
+
+See REFACTOR.md for full checklist.
 
 ## Backlog
 
