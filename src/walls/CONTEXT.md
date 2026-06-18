@@ -39,7 +39,7 @@ Wall anchor points are stored in **IMAGE [0,1]² space** (same as `imageOffset` 
 | [`wall-flags.ts`](wall-flags.ts) | [`wall-flags.d.ts`](wall-flags.d.ts) | `getLinkedWallIds`, `setLinkedWallIds`, `pruneLinkedWalls`, `getDoorBehavior`, `setDoorBehavior` | Linked-wall and door-behavior flag accessors for tile documents. |
 | [`wall-history.ts`](wall-history.ts) | [`wall-history.d.ts`](wall-history.d.ts) | `WallHistory`, `tileHistLen`, `recreateWalls`, `refreshTile` | Undo stack for isoroll wall operations on the Tiles layer. |
 | [`wall-manager.ts`](wall-manager.ts) | [`wall-manager.d.ts`](wall-manager.d.ts) | — | ← add first-line comment |
-| [`wall-overlay-ops.ts`](wall-overlay-ops.ts) | [`wall-overlay-ops.d.ts`](wall-overlay-ops.d.ts) | `wallColor`, `drawWallDisplay`, `drawWallSelect`, `WALL_COLORS`, `wallHitArea` | Per-wall IsoRenderer drawing + endpoint drag logic. |
+| [`wall-overlay-ops.ts`](wall-overlay-ops.ts) | [`wall-overlay-ops.d.ts`](wall-overlay-ops.d.ts) | `wallColor`, `drawWallDisplay`, `drawWallSelect`, `WALL_COLORS`, `lineVis` | Per-wall IsoRenderer drawing + endpoint drag logic. |
 | [`wall-overlay.ts`](wall-overlay.ts) | [`wall-overlay.d.ts`](wall-overlay.d.ts) | — | PIXI overlay: shows linked walls when tile is selected, with select-mode picking. |
 | [`wall-sync.ts`](wall-sync.ts) | [`wall-sync.d.ts`](wall-sync.d.ts) | `updateLinkedWallPositions`, `flipLinkedWallAnchorsX` | Linked-wall position synchronization when a tile moves or flips. |
 | [`wall-types.ts`](wall-types.ts) | [`wall-types.d.ts`](wall-types.d.ts) | — | ← add first-line comment |
