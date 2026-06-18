@@ -21,7 +21,7 @@ export class WallOverlay {
 
   static rebuild(tile: Tile): void {
     if (!_tileKeys.has(tile.id)) return;
-    if (isPreviewClone(tile)) { WallOverlay.show(tile, true); return; }
+    if (isPreviewClone(tile)) return;
     WallOverlay.refresh(tile);
   }
 
@@ -35,12 +35,12 @@ export class WallOverlay {
     window.addEventListener("keyup",   e => { if (!e.altKey) WallOverlay.setAltMode(false); });
   }
 
-  static show(tile: Tile, isDrag = false): void {
+  static show(tile: Tile): void {
     WallOverlay.hide(tile.id);
     const keys = new Set<string>();
     const refresh = () => WallOverlay.show(tile);
     if (WallOverlay.selectTile === tile.id) drawWallSelect(tile.document, tile.id, keys, refresh);
-    else                                     drawWallDisplay(tile.document, tile.id, isDrag, keys);
+    else                                     drawWallDisplay(tile.document, tile.id, keys);
     _tileKeys.set(tile.id, keys);
   }
 

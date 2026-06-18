@@ -2,7 +2,7 @@
 
 import { MODULE_ID, startPointerDrag, screenPointToCanvas, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
-import { canvasToAnchor, wallsLayer, scene, imageRect, anchorToCanvas, type WallDoc, type TileDoc } from "./wall-coords";
+import { canvasToAnchor, wallsLayer, scene, type WallDoc, type TileDoc } from "./wall-coords";
 import { WallHistory } from "./wall-history";
 import { IsoRenderer, LAYER_KEYS } from "../render";
 import type { DrawAPI, RenderHandle, ShapeSpec } from "../render";
@@ -58,7 +58,7 @@ function epUp(d: EpDrag, ev: PointerEvent): void {
   scene().updateEmbeddedDocuments("Wall", [{ _id: d.wallId, c: nc }]).catch(console.warn);
 }
 
-export function drawWallDisplay(doc: TileDocument, tileId: string, isDrag: boolean, keys: Set<string>): void {
+export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<string>): void {
   const own = { kind: "tile" as const, id: tileId };
   for (const id of getLinkedWallIds(doc)) {
     const wall = wallsLayer().get(id); if (!wall) continue;
