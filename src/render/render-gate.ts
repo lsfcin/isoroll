@@ -5,7 +5,7 @@ import type { TokenRenderer } from './token-renderer';
 import type { TileRenderer } from './tile-renderer';
 import {
   registerTokenRenderer, registerTileRenderer,
-  onCanvasReady, onCanvasTeardown, onSceneChange, onGridConfigOpen, onSightRefresh,
+  onCanvasReady, onCanvasTeardown, onSceneChange, onGridConfigOpen, onGridConfigClose, onSightRefresh,
   onTileDraw, onTileRefresh, onTileFlagsChange, onTileSelect, onTileDeselect, onTileDestroy,
   onTokenDraw, onTokenRefresh, onTokenFlagsChange, onTokenSelect, onTokenDeselect, onTokenDestroy,
 } from './render-lifecycle';
@@ -19,6 +19,7 @@ export class RenderGate {
     Hooks.on("canvasTeardown",   ()                                       => onCanvasTeardown());
     Hooks.on("updateScene",      (s: Scene)                               => onSceneChange(s, {}));
     Hooks.on("renderGridConfig", (app: Application)                       => onGridConfigOpen(app));
+    Hooks.on("closeGridConfig",  ()                                        => onGridConfigClose());
     Hooks.on("sightRefresh",     ()                                       => onSightRefresh());
     Hooks.on("drawToken",        (t: Token)                               => onTokenDraw(t));
     Hooks.on("controlToken",     (t: Token, c: boolean)                   => c ? onTokenSelect(t) : onTokenDeselect(t));

@@ -12,6 +12,7 @@ type PlaceableState = "disabled" | "transformed" | "preview" | "pending" | "norm
 
 const _tokenRenderers: TokenRenderer[] = [];
 const _tileRenderers:  TileRenderer[]  = [];
+let _gridConfigOpen = false;
 
 export function registerTokenRenderer(r: TokenRenderer): void { _tokenRenderers.push(r); }
 export function registerTileRenderer(r: TileRenderer):  void { _tileRenderers.push(r); }
@@ -64,6 +65,7 @@ export function onSceneChange(scene: Scene, _changes: object): void {
 }
 
 export function onTileDraw(tile: Tile): void {
+  if (_gridConfigOpen) return;
   const state = classifyTile(tile);
   if (state === "disabled" || state === "transformed" || state === "pending") return;
   if (state === "preview") { _tileRenderers.filter(r => r.handlesPreview).forEach(r => r.create(tile)); return; }
@@ -71,6 +73,7 @@ export function onTileDraw(tile: Tile): void {
 }
 
 export function onTileRefresh(tile: Tile, flags?: Record<string, boolean>): void {
+  if (_gridConfigOpen) return;
   const state = classifyTile(tile);
   if (state === "disabled" || state === "transformed") { _tileRenderers.forEach(r => r.hide(tile.id)); return; }
   if (state === "pending") return;
@@ -110,6 +113,7 @@ export function onTileMove(_tile: Tile): void {
 export function onTileDestroy(id: string): void { _tileRenderers.forEach(r => r.onDestroy?.(id)); }
 
 export function onTokenDraw(token: Token): void {
+  if (_gridConfigOpen) return;
   suppressTooltip(token);
   const state = classifyToken(token);
   if (state === "disabled" || state === "transformed" || state === "pending") return;
@@ -119,6 +123,7 @@ export function onTokenDraw(token: Token): void {
 }
 
 export function onTokenRefresh(token: Token, flags?: Record<string, boolean>): void {
+  if (_gridConfigOpen) return;
   suppressTooltip(token);
   const state = classifyToken(token);
   if (state === "disabled" || state === "transformed") { _tokenRenderers.forEach(r => r.hide(token.id)); return; }
@@ -178,8 +183,14 @@ export function onSightRefresh(): void {
 }
 
 export function onGridConfigOpen(_app: Application): void {
+  _gridConfigOpen = true;
   _tokenRenderers.forEach(r => r.clearAll());
   _tileRenderers.forEach(r => r.clearAll());
+}
+
+export function onGridConfigClose(): void {
+  _gridConfigOpen = false;
+  onCanvasReady();
 }
 
 export function onGridConfigPreview(_params: object): void {
