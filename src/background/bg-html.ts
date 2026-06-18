@@ -1,7 +1,7 @@
 // GridConfig HTML injection: Vertical Scale field, key/wheel handlers, _processSubmitData patch.
 
-import { MODULE_ID } from "../core";
-import { getBgYScale, setBgYScaleOverride, CanvasTransform } from "../transform";
+import { MODULE_ID, CanvasEnv } from "../core";
+import { getBgYScale, setBgYScaleOverride, CanvasTransform, BackgroundTransform } from "../transform";
 
 type GCApp = { _processSubmitData?: (...a: unknown[]) => Promise<unknown> };
 
@@ -24,20 +24,14 @@ export class BgHtml {
   }
 
   private static onRenderGridConfig(app: GCApp, html: HTMLElement): void {
-    if (canvas.scene == null) return;
+    if (CanvasEnv.scene() == null) return;
     BgHtml.currentHtml = html;
     // Re-cache on every render: Reset Changes destroys + recreates the preview container,
     // making any stale previewBg reference point to a destroyed sprite.
-    // BG_GIZMOS layer children are Graphics/Container, not Sprites, so the search safely
-    // skips it and finds the GCT preview container's background sprite.
-    BgHtml.previewBg = null;
-    const kids = (canvas.app?.stage as unknown as { children: PIXI.Container[] }).children;
-    for (let i = kids.length - 1; i >= 0; i--) { const c = kids[i];
-      if (c instanceof PIXI.Container && c.constructor === PIXI.Container) { const bg = c.children[1]; if (bg instanceof PIXI.Sprite) BgHtml.previewBg = bg; break; }
-    }
+    BgHtml.previewBg = BackgroundTransform.findGridConfigPreviewBg();
     // Vertical Scale field — only meaningful in TBF mode (counter-transformed background).
     if (BgHtml.isTBF() && !html.querySelector('#isoroll-bg-yscale')) {
-      const curYS = (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
+      const curYS = CanvasEnv.sceneFlag<number>("backgroundYScale") ?? 1;
       setBgYScaleOverride(curYS);
       html.querySelector('[name="scale"]')?.closest('.form-group')?.insertAdjacentHTML('afterend',
         `<div class="form-group"><label for="isoroll-bg-yscale">Vertical Scale</label>` +

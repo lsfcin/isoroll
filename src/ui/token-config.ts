@@ -1,12 +1,11 @@
 // Registers the isoroll Iso tab in the TokenConfig AppV2 sheet.
 
-import { MODULE_ID, VolumeFlags } from "../core";
+import { MODULE_ID, VolumeFlags, CanvasEnv } from "../core";
 import { TokenBackground, TokenGizmos } from "../tokens";
 import { addIsorollTab, flagCheckbox, flagNumber, flagSelect } from "./tab-helpers";
 
 type ConfigApp = { document: { id?: string } };
-const getCanvasToken = (id: string) =>
-  (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(id);
+const getCanvasToken = (id: string) => CanvasEnv.getToken(id);
 
 export function registerTokenConfigHook(): void {
   // Track config-open so renderers show gizmos / keep label bright even when token is deselected.

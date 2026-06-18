@@ -87,6 +87,21 @@ export class BackgroundTransform {
     BackgroundTransform.savedUpdateTransform = null;
   }
 
+  // Find the GridConfig preview background sprite by scanning stage children.
+  // Returns null when GridConfig is not open or before first render.
+  static findGridConfigPreviewBg(): PIXI.Sprite | null {
+    const stage = canvas.app?.stage as PIXI.Container | undefined;
+    if (!stage) return null;
+    for (let i = stage.children.length - 1; i >= 0; i--) {
+      const c = stage.children[i];
+      if (c instanceof PIXI.Container && c.constructor === PIXI.Container) {
+        const bg = c.children[1];
+        return (bg instanceof PIXI.Sprite) ? bg : null;
+      }
+    }
+    return null;
+  }
+
   // Override bg sprite's updateTransform so #refreshPreview picks up each frame.
   // Grid mesh (children[2]) untouched: stays isometric, camera unchanged.
   // Called from CanvasTransform.onRenderGridConfig with effective state (respects

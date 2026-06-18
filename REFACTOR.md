@@ -314,10 +314,18 @@ Gate on Phase 4. Validate the full API before committing the pattern to all othe
 
 ### Phase 7 — UI + Background (plan separately before starting)
 AppV2 + GridConfig + DOM have their own complexity. Do not start without an analysis session.
-- [ ] Audit `ui/` files: what reads canvas beyond form injection?
-- [ ] Audit `background/bg-gizmos.ts`, `bg-html.ts`: which calls are legit vs should use canvas-env?
-      (`bg-transform.ts` is a legit boundary — do not change it)
-- [ ] Refactor non-boundary calls in bg-gizmos + bg-html to use canvas-env + IsoRenderer
+- [x] Audit `ui/` files: what reads canvas beyond form injection?
+      tile-config.ts: canvas.tiles → CanvasEnv.getTile()
+      token-config.ts: canvas.tokens → CanvasEnv.getToken() (added to canvas-env)
+      scene-config.ts, tab-helpers.ts: clean — no canvas reads
+- [x] Audit `background/bg-gizmos.ts`, `bg-html.ts`: which calls are legit vs should use canvas-env?
+      bg-gizmos.ts: already migrated — IsoRenderer + CanvasEnv throughout
+      bg-html.ts: canvas.scene reads → CanvasEnv.scene/sceneFlag; PIXI traversal →
+        BackgroundTransform.findGridConfigPreviewBg() (new helper on boundary file);
+        canvas.scene?.setFlag() left as-is (document write, not a canvas read)
+      bg-drag.ts: canvas.app!.stage.worldTransform → CanvasEnv.worldTransform() (Phase 2 deferral)
+      bg-transform.ts: legit boundary — unchanged
+- [x] Refactor non-boundary calls in bg-gizmos + bg-html to use canvas-env + IsoRenderer
 - [ ] Verify GridConfig preview flow end-to-end (live-preview + submit + cancel)
 - [ ] Verify SceneConfig iso tab survives multiple opens (double-inject guard)
 

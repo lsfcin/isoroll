@@ -57,6 +57,9 @@ export const CanvasEnv = {
   getTile(id: string): Tile | undefined {
     return (canvas.tiles as unknown as { get(id: string): Tile | undefined })?.get(id);
   },
+  getToken(id: string): Token | undefined {
+    return (canvas.tokens as unknown as { get(id: string): Token | undefined })?.get(id);
+  },
   appView(): HTMLCanvasElement {
     return canvas.app!.view as unknown as HTMLCanvasElement;
   },
