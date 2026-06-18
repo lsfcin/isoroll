@@ -305,9 +305,12 @@ Gate on Phase 4. Validate the full API before committing the pattern to all othe
 - [x] `TokenGizmos` → IsoRenderer
 - [x] `BackgroundGizmos` → IsoRenderer
 - [x] `WallOverlay` → IsoRenderer
-- [ ] `Occluder` → IsoRenderer
-      Risk: high (alpha-occlusion logic). Gate behind `settings.isorollNewOccluder` (default off).
-      Remove flag only after extended visual verification.
+- [x] `Occluder` → IsoRenderer
+      Risk: high (alpha-occlusion logic). Gated behind `settings.isorollNewOccluder` (default off).
+      New path: evaluateAll() called from lifecycle (onTokenRefresh/onTokenDraw/onTokenDestroy/onTileRefresh).
+      Old path: activateLegacy() via direct Hooks — still runs when flag = false.
+      Boundary violations fixed: CanvasEnv for canvas.*, VolumeFlags for game.settings/canvas.scene.
+      Remove flag + activateLegacy() only after extended visual verification.
 
 ### Phase 7 — UI + Background (plan separately before starting)
 AppV2 + GridConfig + DOM have their own complexity. Do not start without an analysis session.

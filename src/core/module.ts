@@ -2,7 +2,8 @@ import "../../styles/isoroll.scss";
 import { registerVolumeSettings } from "./settings";
 import { VolumeOverlay, VolumeGizmos } from "../tiles";
 import { TokenBackground, TokenGizmos } from "../tokens";
-import { Occluder } from "../occluder";
+import { MODULE_ID } from "./flags";
+import { activateLegacy as occluderActivateLegacy } from "../occluder";
 import { CanvasTransform, ObjectTransform, registerRulerPatch } from "../transform";
 import { BackgroundGizmos } from "../background";
 import { registerSceneConfigHook, registerTileConfigHook, registerTokenConfigHook } from "../ui";
@@ -23,7 +24,7 @@ Hooks.once("init", () => {
   TileHud.activate();
   TokenHud.activate();
   ObjectTransform.activate();
-  Occluder.activate();
+  if (!(game.settings.get(MODULE_ID, "isorollNewOccluder") as boolean)) occluderActivateLegacy();
   PresetManager.activate();
   WallManager.activate();
 
