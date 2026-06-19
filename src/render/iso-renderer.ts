@@ -12,7 +12,7 @@ export type Color = number; export type LayerKey = string; export type CSSCursor
 export type VisibilityMode = "always-visible" | "sight-tracked";
 export type Stroke = { color: Color; width: number; alpha?: number };
 export type TextStyleSpec = { fontSize?: number; fill?: Color; fontFamily?: string; stroke?: Color; strokeThickness?: number };
-export type TextureRef = string | PIXI.Texture; export type BoxVerts = P3[];
+export type TextureRef = string | PIXI.Texture;
 export type CoordSystem = "WORLD" | "ISO3D" | "GRID" | "IMAGE" | "SCREEN" | "VIEWPORT";
 
 // DrawAPI: wraps PIXI.Graphics for kind:"lines" build fns — PIXI.Graphics satisfies structurally.
@@ -31,7 +31,6 @@ export type ShapeSpec =
   | { kind: "rect";    w: number; h: number;       fill?: Color; fillAlpha?: number; stroke?: Stroke }
   | { kind: "circle";  radius: number;              fill?: Color; fillAlpha?: number; stroke?: Stroke }
   | { kind: "polygon"; points: P2[];                fill?: Color; fillAlpha?: number; stroke?: Stroke }
-  | { kind: "3d-box";  verts: BoxVerts;             fill?: Color; stroke?: Stroke }
   | { kind: "lines";   build: (g: DrawAPI) => void }
   | { kind: "text";    content: string;             style: TextStyleSpec; alpha?: number }
   | { kind: "sprite";  texture: TextureRef;         anchor?: P2; scale?: P2; alpha?: number };
@@ -46,15 +45,14 @@ export interface Interaction {
 }
 
 export interface Placement {
-  anchor:  P2 | P3;
-  offset?: P2;
+  anchor: P2 | P3;
 }
 
 export interface RenderSpec {
   owner:        { kind: "tile" | "token" | "background"; id: string };
   visual:       ShapeSpec;
   interaction?: Interaction;
-  space:        CoordSystem;
+  space:        CoordSystem; // "WORLD" only — other values reserved, coord transform not yet implemented
   placement:    Placement;
   layer?:       LayerKey;
   z?:           number | "top";

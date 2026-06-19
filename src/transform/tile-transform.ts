@@ -1,6 +1,6 @@
 // Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers.
 
-import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas } from "../core";
+import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas, CanvasEnv } from "../core";
 import { CanvasTransform } from "./stage-transform";
 
 import { transformCoord, P2 } from "./coord-map";
@@ -60,7 +60,7 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
   pendingGridRescale = null;
   if (!pending || pending.sceneId !== scene.id) return;
   if (scene.id !== canvas.scene?.id) return;
-  if (!game.user?.isGM) return;
+  if (!CanvasEnv.isGM()) return;
   const { ratio } = pending;
   const tiles = (canvas.tiles?.placeables as Tile[] | undefined) ?? [];
   const updates = tiles

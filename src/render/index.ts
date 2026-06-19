@@ -5,7 +5,7 @@ export { RenderGate } from './render-gate';
 export type { TokenRenderer } from './token-renderer';
 export type { TileRenderer } from './tile-renderer';
 export { IsoRenderer } from './iso-renderer';
-export type { RenderSpec, RenderHandle, ShapeSpec, Interaction, Placement, DrawAPI, P2, P3, BoxVerts, Color, Stroke, TextStyleSpec, TextureRef, CSSCursor, CoordSystem, LayerKey, VisibilityMode } from './iso-renderer';
+export type { RenderSpec, RenderHandle, ShapeSpec, Interaction, Placement, DrawAPI, P2, P3, Color, Stroke, TextStyleSpec, TextureRef, CSSCursor, CoordSystem, LayerKey, VisibilityMode } from './iso-renderer';
 export { IsoGeometry } from './iso-geometry';
 export type { WorldBoxVerts, TileFootprint, P2 as GeomP2 } from './iso-geometry';
 export { MeshAccessor } from './mesh-accessor';
