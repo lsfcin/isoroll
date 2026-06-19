@@ -164,8 +164,7 @@ export class TokenGizmos {
     if (drag.type === "imgOffset") original[`flags.${MODULE_ID}.imageOffset`] = { x: drag.startImgOffX / gridSize, y: drag.startImgOffY / gridSize };
     else if (drag.type === "imgYScale") original[`flags.${MODULE_ID}.imageYScale`] = drag.startImgYScale;
     else original[`flags.${MODULE_ID}.imageScale`] = drag.startImgScale;
-    const layer = canvas.tokens as unknown as { history: { type: string; data: unknown[]; options: object }[] };
-    layer.history.push({ type: "update", data: [original], options: { isUndo: true } });
+    CanvasEnv.pushTokensHistory({ type: "update", data: [original], options: { isUndo: true } });
     console.debug(`[isoroll] storeDragHistory | type=${drag.type} token=${id}`, original);
   }
 

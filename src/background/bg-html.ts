@@ -46,7 +46,7 @@ export class BgHtml {
         const orig = app._processSubmitData.bind(app);
         app._processSubmitData = async (...a: unknown[]) => {
           await orig(...a);
-          await canvas.scene?.setFlag(MODULE_ID, "backgroundYScale", getBgYScale());
+          await CanvasEnv.setSceneFlag("backgroundYScale", getBgYScale());
         };
       }
     }

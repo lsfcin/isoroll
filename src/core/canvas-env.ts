@@ -66,4 +66,16 @@ export const CanvasEnv = {
   appTicker(): { add(fn: unknown, ctx?: unknown, priority?: number): void; remove(fn: unknown): void } {
     return canvas.app!.ticker as unknown as { add(fn: unknown, ctx?: unknown, priority?: number): void; remove(fn: unknown): void };
   },
+  primaryLayer(): { children: PIXI.DisplayObject[] } | null {
+    return (canvas as unknown as { primary?: { children: PIXI.DisplayObject[] } }).primary ?? null;
+  },
+  setSceneFlag(key: string, value: unknown): Promise<unknown> | undefined {
+    return canvas.scene?.setFlag(MODULE_ID, key, value);
+  },
+  pushTilesHistory(entry: { type: string; data: unknown[]; options: object }): void {
+    (canvas.tiles as unknown as { history: typeof entry[] })?.history?.push(entry);
+  },
+  pushTokensHistory(entry: { type: string; data: unknown[]; options: object }): void {
+    (canvas.tokens as unknown as { history: typeof entry[] })?.history?.push(entry);
+  },
 };

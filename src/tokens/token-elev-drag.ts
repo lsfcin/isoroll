@@ -23,9 +23,8 @@ export function beginElevDrag(
 function pushElevHistory(drag: TokenElevDrag): void {
   const id = drag.token.id;
   if (!id) return;
-  const layer = canvas.tokens as unknown as { history: { type: string; data: unknown[]; options: object }[] };
   const original = { _id: id, elevation: drag.startElev };
-  layer.history.push({ type: "update", data: [original], options: {} });
+  CanvasEnv.pushTokensHistory({ type: "update", data: [original], options: {} });
   console.debug(`[isoroll] storeDragHistory | type=elevation token=${id} startElev=${drag.startElev}`);
 }
 

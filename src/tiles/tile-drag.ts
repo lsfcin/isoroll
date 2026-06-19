@@ -191,7 +191,6 @@ export function storeDragHistory(drag: DragState): void {
     case "imgYScale": o[fk("imageYScale")]  = drag.startImgYScale; break;
     case "swapSide":  return;
   }
-  const layer = canvas.tiles as unknown as { history: { type: string; data: unknown[]; options: object }[] };
-  layer.history.push({ type: "update", data: [o], options: { isoroll: "gizmoDrag" } });
+  CanvasEnv.pushTilesHistory({ type: "update", data: [o], options: { isoroll: "gizmoDrag" } });
   console.debug(`[isoroll] storeDragHistory | type=${drag.type} tile=${id}`, o);
 }
