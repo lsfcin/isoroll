@@ -2,7 +2,7 @@
 // Clones of counter-transformed (untransformed) tokens/tiles live here.
 // Originals stay in canvas.primary at alpha=0 for hit detection.
 
-import { MODULE_ID, VolumeFlags } from "../core";
+import { MODULE_ID, VolumeFlags, CanvasEnv } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
 import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, clearSeenTiles, getViewers, tryRestoreFromStorage, maybeInvalidateRestoredTiles, saveSessionToStorage } from "./fog-helpers";
 import type { TokenRenderer } from "./token-renderer";
@@ -32,6 +32,7 @@ export function syncSprite(sprite: PIXI.Sprite, mesh: Mesh): void {
 }
 
 function getMesh(obj: unknown): Mesh | undefined {
+  if (!obj) return undefined;
   const m = (obj as { mesh?: Mesh }).mesh; return m?.texture ? m : undefined;
 }
 function tokenCenter(t: Token): Center { return (t as unknown as { center?: Center }).center ?? { x: t.x, y: t.y }; }
@@ -55,8 +56,8 @@ const tokenClones = new Map<string, PIXI.Sprite>();
 const tileClones  = new Map<string, PIXI.Sprite>();
 function needsTokenClone(t: Token): boolean { return t.document.getFlag(MODULE_ID, "transformToken") !== true; }
 function needsTileClone(t: Tile):   boolean { return t.document.getFlag(MODULE_ID, "transformTile")  !== true; }
-const getToken = (id: string) => (canvas.tokens as unknown as { get?(id: string): Token | undefined })?.get?.(id);
-const getTile  = (id: string) => (canvas.tiles  as unknown as { get?(id: string): Tile  | undefined })?.get?.(id);
+const getToken = (id: string) => CanvasEnv.getToken(id);
+const getTile  = (id: string) => CanvasEnv.getTile(id);
 
 // ---- token renderer ----
 
@@ -85,7 +86,7 @@ export const IsoTokenRenderer: TokenRenderer = {
     if (!VolumeFlags.isSceneEnabled()) return;
     const viewers = getViewers();
     const viewerIds = new Set(viewers.map(v => v.id));
-    for (const t of (canvas.tokens?.placeables ?? []) as Token[]) {
+    for (const t of CanvasEnv.tokens()) {
       const clone = tokenClones.get(t.id); if (!clone) continue;
       const doc = t.document as unknown as PlaceableDoc;
       // Viewer tokens always see themselves — never hide the token the player controls.
@@ -127,7 +128,7 @@ export const IsoTileRenderer: TileRenderer = {
     maybeInvalidateRestoredTiles(); // clear restored data if in-session fog reset detected
     tryRestoreFromStorage();         // one-time: populate restoredTileIds from localStorage after F5
     const viewers = getViewers();
-    for (const t of (canvas.tiles?.placeables ?? []) as Tile[]) {
+    for (const t of CanvasEnv.tiles()) {
       const clone = tileClones.get(t.id); if (!clone) continue;
       const w = t.document.width ?? 0, h = t.document.height ?? 0;
       const mesh = getMesh(t);
@@ -168,14 +169,15 @@ export const IsoSpriteLayer = {
   },
   _teardown(): void {
     IsoTokenRenderer.clearAll(); IsoTileRenderer.clearAll();
-    canvas.app?.ticker.remove(IsoSpriteLayer._onTick);
+    CanvasEnv.appTicker().remove(IsoSpriteLayer._onTick);
     LayerManager.clearLayer(LAYER_KEYS.ISO_SPRITES);
   },
+  _sort(): void {},
   activate(): void {
     Hooks.on("canvasInit",  IsoSpriteLayer._onCanvasInit);
     Hooks.on("canvasReady", () => {
-      canvas.app?.ticker.remove(IsoSpriteLayer._onTick);
-      canvas.app?.ticker.add(IsoSpriteLayer._onTick, null, -25);
+      CanvasEnv.appTicker().remove(IsoSpriteLayer._onTick);
+      CanvasEnv.appTicker().add(IsoSpriteLayer._onTick, null, -25);
     });
     Hooks.on("changeScene", IsoSpriteLayer._teardown);
     Hooks.on("resetFogOfWar", () => { clearSeenTiles(); IsoTileRenderer.onSightRefresh(); });

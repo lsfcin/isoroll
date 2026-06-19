@@ -69,7 +69,7 @@ Curried API: `toWorld(params)(point)` / `fromWorld(params)(point)` in each `coor
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`index.ts`](index.ts) | — | — | **facade** — Public API for the transform module — stage, object, and coordinate transforms |
+| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the transform module — stage, object, and coordinate transforms |
 | [`bg-transform.ts`](bg-transform.ts) | [`bg-transform.d.ts`](bg-transform.d.ts) | `getBgYScale`, `setBgYScaleOverride` | Background sprite counter-transform: undistorted background while stage is isometric. |
 | [`constants.ts`](constants.ts) | [`constants.d.ts`](constants.d.ts) | `getProjection`, `currentProjection`, `PROJECTION_TYPES`, `DIMETRIC_2_1` | ← add first-line comment |
 | [`coord-debug.ts`](coord-debug.ts) | [`coord-debug.d.ts`](coord-debug.d.ts) | `drawCoordDebug`, `DEBUG_COORD`, `clearDOM`, `drawDOMText`, `drawDOM` | ← add first-line comment |

@@ -3,3 +3,7 @@ export { MODULE_ID, VolumeFlags, getElevation, isTransformedToken, isTransformed
 export type { TokenVolumeFlags, TileVolumeFlags } from './flags';
 export { suppressTooltip, scheduleWrap, canvasZoom, gridDistance, elevToCanvas, screenToCanvas, screenPointToCanvas, startPointerDrag, isPreviewClone, hasActiveClone } from './util';
 export { registerVolumeSettings } from './settings';
+export { CanvasEnv } from './canvas-env';
+export type { Dimensions } from './canvas-env';
+export { IsoHistory } from './history';
+export type { HistoryLayer } from './history';

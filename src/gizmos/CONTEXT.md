@@ -25,7 +25,7 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`index.ts`](index.ts) | — | — | **facade** — Public API for the gizmos module — handle factories, image drag math, mesh corner helpers |
+| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the gizmos module — handle factories, image drag math, mesh corner helpers |
 | [`handle-draw.ts`](handle-draw.ts) | [`handle-draw.d.ts`](handle-draw.d.ts) | `makeHandle`, `makeCircleHandle`, `makeSquareCounterHandle`, `makeMoveHandle`, `makeSwapHandle` | PIXI drawing primitives for gizmo handles. |
 | [`handle-factories.ts`](handle-factories.ts) | [`handle-factories.d.ts`](handle-factories.d.ts) | `makeHandleForType`, `createRotateBlocker`, `HANDLE_COLOR` | Handle dispatch and tile-specific factories. |
 | [`img-drag.ts`](img-drag.ts) | [`img-drag.d.ts`](img-drag.d.ts) | `projectImgOffset`, `projectImgYScale`, `projectImgScale`, `IMG_YSCALE_SNAP_PX` | Shared pure-math helpers for image-manipulation drag (offset, scale, Y-scale). |

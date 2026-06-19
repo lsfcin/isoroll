@@ -1,3 +1,5 @@
+import { CanvasEnv } from "./canvas-env";
+
 // Suppresses Foundry's native tooltip on a token — prevents GL_INVALID_OPERATION from texture upload.
 export function suppressTooltip(token: Token): void {
   const tt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
@@ -10,11 +12,11 @@ export function scheduleWrap(fn: () => Promise<void>, label: string, delay = 0):
 }
 
 export function canvasZoom(): number {
-  return (canvas.stage as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
+  return (CanvasEnv.stage() as unknown as { scale?: { x: number } })?.scale?.x ?? 1;
 }
 
 export function gridDistance(): number {
-  return (canvas.scene as unknown as { grid?: { distance?: number } })?.grid?.distance ?? 1;
+  return CanvasEnv.gridDistance();
 }
 
 export function elevToCanvas(elev: number, gridSize: number, gridDist: number): number {

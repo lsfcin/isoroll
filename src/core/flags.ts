@@ -126,6 +126,14 @@ export class VolumeFlags {
   static getHideOnFog(doc: { getFlag(s: string, k: string): unknown }): boolean {
     return doc.getFlag(MODULE_ID, "hideOnFog") === true;
   }
+
+  static getOcclusionOpacity(): number {
+    return (game.settings?.get(MODULE_ID, "occlusionOpacity") as number | undefined) ?? 0.2;
+  }
+
+  static isNewOccluder(): boolean {
+    return (game.settings?.get(MODULE_ID, "isorollNewOccluder") as boolean | undefined) ?? false;
+  }
 }
 
 // Standalone doc helpers — not flag-specific, used across token/tile renderers.

@@ -2,7 +2,7 @@
 
 const rad = (d: number): number => (d * Math.PI) / 180;
 
-import { MODULE_ID } from "../core";
+import { MODULE_ID, CanvasEnv } from "../core";
 export interface IsoProjection {
   readonly id: string;
   readonly rotation: number;
@@ -131,5 +131,5 @@ export function getProjection(
 }
 
 export function currentProjection(): IsoProjection {
-  return getProjection(canvas.scene);
+  return getProjection(CanvasEnv.scene());
 }

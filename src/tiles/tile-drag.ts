@@ -1,5 +1,5 @@
 // Pure drag-math helpers for VolumeGizmos: axis projection, snapping, handle positions.
-import { MODULE_ID, canvasZoom, gridDistance, elevToCanvas, screenToCanvas } from "../core";
+import { MODULE_ID, canvasZoom, gridDistance, elevToCanvas, screenToCanvas, CanvasEnv } from "../core";
 import { currentProjection } from "../transform";
 
 import { snapQuarterPx, snapQuarterUnits, projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos";
@@ -62,9 +62,9 @@ export function projectDrag(
   drag: DragState, gx: number, gy: number,
 ): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number; imgOffX: number; imgOffY: number; imgScale: number; imgYScale: number } {
   const dx = gx - drag.startGX, dy = gy - drag.startGY;
-  const wt       = canvas.app!.stage.worldTransform;
+  const wt       = CanvasEnv.worldTransform();
   const zoom     = canvasZoom();
-  const gridSize = canvas.grid?.size ?? 100;
+  const gridSize = CanvasEnv.gridSize();
   const gridDist = gridDistance();
 
   let tw = drag.startW, th = drag.startH, boundH = drag.startBoundH, elev = drag.startElev;
@@ -162,7 +162,7 @@ export function commitDrag(drag: DragState, gx: number, gy: number): void {
     }
     case "move":      void drag.tile.document.update({ x: docX, y: docY },     DRAG_OPTS); break;
     case "imgOffset": {
-      const gridSize = canvas.grid?.size ?? 100;
+      const gridSize = CanvasEnv.gridSize();
       void drag.tile.document.update({ [`flags.${MODULE_ID}.imageOffset`]: { x: imgOffX / gridSize, y: imgOffY / gridSize } }, DRAG_OPTS);
       break;
     }
@@ -175,7 +175,7 @@ export function commitDrag(drag: DragState, gx: number, gy: number): void {
 // Push pre-drag document state to canvas.tiles.history so one Ctrl+Z restores correctly.
 export function storeDragHistory(drag: DragState): void {
   const id = drag.tile.id; if (!id) return;
-  const gs = canvas.grid?.size ?? 100;
+  const gs = CanvasEnv.gridSize();
   const o: Record<string, unknown> = { _id: id };
   const fk = (k: string) => `flags.${MODULE_ID}.${k}`;
   const bh = { w: drag.startW, h: drag.startH };
@@ -191,7 +191,6 @@ export function storeDragHistory(drag: DragState): void {
     case "imgYScale": o[fk("imageYScale")]  = drag.startImgYScale; break;
     case "swapSide":  return;
   }
-  const layer = canvas.tiles as unknown as { history: { type: string; data: unknown[]; options: object }[] };
-  layer.history.push({ type: "update", data: [o], options: { isoroll: "gizmoDrag" } });
+  CanvasEnv.pushTilesHistory({ type: "update", data: [o], options: { isoroll: "gizmoDrag" } });
   console.debug(`[isoroll] storeDragHistory | type=${drag.type} tile=${id}`, o);
 }

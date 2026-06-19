@@ -21,10 +21,10 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`index.ts`](index.ts) | — | — | **facade** — Public API for the draw module — PIXI drawing utilities and geometry |
+| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the draw module — PIXI drawing utilities and geometry |
 | [`constants.ts`](constants.ts) | [`constants.d.ts`](constants.d.ts) | `ORANGE`, `BLACK`, `DASH_LEN`, `GAP_LEN`, `ANCHOR_DASH` | Visual constants shared across all overlay and gizmo drawing code. |
 | [`contour.ts`](contour.ts) | [`contour.d.ts`](contour.d.ts) | `drawMeshContour` | Unified dashed image-contour drawing shared by tile and token overlays. |
-| [`shadow.ts`](shadow.ts) | — | `drawGroundShadow`, `circleTexture`, `rectTexture` | Ground shadow — cached radial gradient textures, elevation-scaled opacity. |
-| [`shapes.ts`](shapes.ts) | [`shapes.d.ts`](shapes.d.ts) | `drawDash`, `drawDashedContour` | Pure PIXI dash drawing primitives — no domain knowledge, no constants imported. |
-| [`volume-box.ts`](volume-box.ts) | [`volume-box.d.ts`](volume-box.d.ts) | `point`, `computeVerts`, `computeTokenVerts`, `drawAnchorLine`, `drawBox` | Geometry helpers for the 3D volume overlay: vertex computation and box drawing. |
+| [`shadow.ts`](shadow.ts) | [`shadow.d.ts`](shadow.d.ts) | `shadowTexture`, `shadowAlpha`, `drawGroundShadow`, `circleTexture`, `rectTexture` | Ground shadow — cached radial gradient textures, elevation-scaled opacity. |
+| [`shapes.ts`](shapes.ts) | [`shapes.d.ts`](shapes.d.ts) | `makeCounterWrapper`, `suppressMipmap`, `drawDash`, `drawDashedContour` | Pure PIXI drawing primitives — no domain knowledge, no constants imported. |
+| [`volume-box.ts`](volume-box.ts) | [`volume-box.d.ts`](volume-box.d.ts) | `drawAnchorLine`, `drawBox` | PIXI drawing utilities for the 3D volume box. Purely functional — no canvas reads. |
 <!-- routing:end -->
