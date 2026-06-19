@@ -2,7 +2,7 @@
 
 import { MODULE_ID, startPointerDrag, screenPointToCanvas, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
-import { canvasToAnchor, imageRect, anchorToCanvas, wallsLayer, scene, type WallDoc, type TileDoc } from "./wall-coords";
+import { canvasToAnchor, imageRectAt, anchorToCanvas, wallsLayer, scene, type WallDoc, type TileDoc } from "./wall-coords";
 import type { TileAnchor } from "./wall-types";
 import { WallHistory } from "./wall-history";
 import { IsoRenderer, LAYER_KEYS } from "../render";
@@ -63,49 +63,58 @@ function epUp(d: EpDrag, ev: PointerEvent): void {
   scene().updateEmbeddedDocuments("Wall", [{ _id: d.wallId, c: nc }]).catch(console.warn);
 }
 
-// isDrag=true: positions computed from stored anchor + live tile doc (follows tile during native drag).
-// Uses "drag-" key prefix so drag renders are tracked separately from static display keys.
-export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<string>, isDrag = false): void {
+export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<string>): void {
   const own = { kind: "tile" as const, id: tileId };
-  const kpfx = isDrag ? "drag-" : "";
-  const rect = isDrag ? imageRect(doc as TileDoc) : null;
+  for (const id of getLinkedWallIds(doc)) {
+    const wall = wallsLayer().get(id); if (!wall) continue;
+    const wdoc = wall.document as WallDoc, c = wdoc.c as number[], col = wallColor(wdoc);
+    const lineKey = `tile-${tileId}:wall-${id}:line`, lastClick = { t: 0 };
+    const lineH = IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col), hitArea: wallHitArea(c, 6, 5),
+      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY,
+      interaction: { cursor: "pointer", onPointerDown: (e) => { e.stopPropagation(); (e as any).nativeEvent?.stopImmediatePropagation?.(); wallDblClick(id, lastClick); } } });
+    keys.add(lineKey);
+    for (const [ep, xi, yi] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
+      const x = c[xi], y = c[yi], key = `tile-${tileId}:wall-${id}:ep${ep}`;
+      const drag: EpDrag = { wallId: id, ep, c: [...c], epH: null!, lineH, col };
+      const epH = IsoRenderer.render({ key, owner: own,
+        visual: { kind: "lines", build: (g) => drawEpDot(g, col, 1, 0, 0) },
+        hitArea: [{ x: -5, y: -5 }, { x: 5, y: -5 }, { x: 5, y: 5 }, { x: -5, y: 5 }],
+        space: "WORLD", placement: { anchor: { x, y } },
+        layer: LAYER_KEYS.WALL_OVERLAY, z: ep === "A" ? "top" : undefined,
+        interaction: { cursor: "pointer",
+          onPointerDown: (e) => { e.stopPropagation(); if (wallDblClick(id, lastClick)) return; startPointerDrag(drag, epMove, epUp); },
+          onPointerOver: () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0, EP_OUTER_HOV, EP_INNER_HOV) } }); },
+          onPointerOut:  () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0) } }); },
+        },
+      });
+      drag.epH = epH; keys.add(key);
+    }
+  }
+}
+
+// Drag-preview rendering: positions computed from stored anchor + PIXI drag center (cx, cy).
+// Uses "drag-" key prefix so keys are tracked separately from static _tileKeys display.
+// No interaction handlers — native tile drag captures pointer events anyway.
+export function drawWallDrag(doc: TileDocument, tileId: string, keys: Set<string>, cx: number, cy: number): void {
+  const own = { kind: "tile" as const, id: tileId };
+  const rect = imageRectAt(doc as TileDoc, cx, cy);
   for (const id of getLinkedWallIds(doc)) {
     const wall = wallsLayer().get(id); if (!wall) continue;
     const wdoc = wall.document as WallDoc, col = wallColor(wdoc);
-    let c: number[] = wdoc.c as number[];
-    if (isDrag && rect) {
-      const anchor = wdoc.getFlag(MODULE_ID, "tileAnchor") as TileAnchor | undefined;
-      if (anchor) c = anchorToCanvas(rect.icx, rect.icy, rect.sw, rect.sh, anchor);
-    }
-    const lineKey = `tile-${tileId}:${kpfx}wall-${id}:line`, lastClick = { t: 0 };
-    const lineH = IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col), hitArea: wallHitArea(c, 6, 5),
-      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY,
-      ...(!isDrag && { interaction: { cursor: "pointer", onPointerDown: (e) => { e.stopPropagation(); (e as any).nativeEvent?.stopImmediatePropagation?.(); wallDblClick(id, lastClick); } } }) });
+    const anchor = wdoc.getFlag(MODULE_ID, "tileAnchor") as TileAnchor | undefined;
+    const c = anchor ? anchorToCanvas(rect.icx, rect.icy, rect.sw, rect.sh, anchor) : wdoc.c as number[];
+    const lineKey = `tile-${tileId}:drag-wall-${id}:line`;
+    IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col),
+      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY });
     keys.add(lineKey);
     for (const [ep, xi, yi] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
-      const x = c[xi], y = c[yi], key = `tile-${tileId}:${kpfx}wall-${id}:ep${ep}`;
-      if (isDrag) {
-        IsoRenderer.render({ key, owner: own,
-          visual: { kind: "lines", build: (g) => drawEpDot(g, col, 1, 0, 0) },
-          space: "WORLD", placement: { anchor: { x, y } },
-          layer: LAYER_KEYS.WALL_OVERLAY, z: ep === "A" ? "top" : undefined,
-        });
-        keys.add(key);
-      } else {
-        const drag: EpDrag = { wallId: id, ep, c: [...c], epH: null!, lineH, col };
-        const epH = IsoRenderer.render({ key, owner: own,
-          visual: { kind: "lines", build: (g) => drawEpDot(g, col, 1, 0, 0) },
-          hitArea: [{ x: -5, y: -5 }, { x: 5, y: -5 }, { x: 5, y: 5 }, { x: -5, y: 5 }],
-          space: "WORLD", placement: { anchor: { x, y } },
-          layer: LAYER_KEYS.WALL_OVERLAY, z: ep === "A" ? "top" : undefined,
-          interaction: { cursor: "pointer",
-            onPointerDown: (e) => { e.stopPropagation(); if (wallDblClick(id, lastClick)) return; startPointerDrag(drag, epMove, epUp); },
-            onPointerOver: () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0, EP_OUTER_HOV, EP_INNER_HOV) } }); },
-            onPointerOut:  () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0) } }); },
-          },
-        });
-        drag.epH = epH; keys.add(key);
-      }
+      const key = `tile-${tileId}:drag-wall-${id}:ep${ep}`;
+      IsoRenderer.render({ key, owner: own,
+        visual: { kind: "lines", build: (g) => drawEpDot(g, col, 1, 0, 0) },
+        space: "WORLD", placement: { anchor: { x: c[xi], y: c[yi] } },
+        layer: LAYER_KEYS.WALL_OVERLAY, z: ep === "A" ? "top" : undefined,
+      });
+      keys.add(key);
     }
   }
 }

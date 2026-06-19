@@ -2,6 +2,7 @@
 
 import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas, CanvasEnv } from "../core";
 import { CanvasTransform } from "./stage-transform";
+import { updateLinkedWallPositions } from "../walls";
 
 import { transformCoord, P2 } from "./coord-map";
 
@@ -83,7 +84,16 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
     });
   if (updates.length === 0) { CanvasEnv.setGridRescaling(false); return; }
   void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" })
-    .then(() => CanvasEnv.setGridRescaling(false))
+    .then(async () => {
+      CanvasEnv.setGridRescaling(false);
+      // Directly sync linked walls — bypasses the onUpdateTile hook path which may be
+      // unreliable after a batch update (hook fires with changes diff that may omit position
+      // if Foundry considers values unchanged after its own implicit rescale).
+      for (const t of tiles) {
+        const ids = t.document.getFlag(MODULE_ID, "linkedWallIds") as string[] | undefined;
+        if (ids?.length) await updateLinkedWallPositions(t.document).catch(() => {});
+      }
+    })
     .catch(() => CanvasEnv.setGridRescaling(false));
 }
 

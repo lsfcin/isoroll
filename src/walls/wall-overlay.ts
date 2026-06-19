@@ -2,7 +2,7 @@
 
 import { isPreviewClone, CanvasEnv } from "../core";
 import { IsoRenderer, LAYER_KEYS } from "../render";
-import { drawWallDisplay, drawWallSelect } from "./wall-overlay-ops";
+import { drawWallDisplay, drawWallDrag, drawWallSelect } from "./wall-overlay-ops";
 
 export { WALL_COLORS, wallColor } from "./wall-overlay-ops";
 
@@ -36,8 +36,16 @@ export class WallOverlay {
 
   private static _showDrag(tile: Tile): void {
     for (const k of _dragKeys.get(tile.id) ?? []) IsoRenderer.clear(k);
+    // Hide static display renders during drag — map kept so refresh restores them at drop.
+    for (const k of _tileKeys.get(tile.id) ?? []) IsoRenderer.clear(k);
     const keys = new Set<string>();
-    drawWallDisplay(tile.document, tile.id, keys, true);
+    const doc = tile.document;
+    // tile.position.x/y = PIXI container top-left (follows native Foundry drag cursor);
+    // adding half-size converts to center, matching the coordinate system used by imageRectAt.
+    const pos = (tile as unknown as { position: { x: number; y: number } }).position;
+    const cx = pos.x + (doc.width ?? 0) / 2;
+    const cy = pos.y + (doc.height ?? 0) / 2;
+    drawWallDrag(doc, tile.id, keys, cx, cy);
     _dragKeys.set(tile.id, keys);
   }
 
