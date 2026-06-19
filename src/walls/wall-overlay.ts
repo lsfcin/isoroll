@@ -7,6 +7,8 @@ import { drawWallDisplay, drawWallSelect } from "./wall-overlay-ops";
 export { WALL_COLORS, wallColor } from "./wall-overlay-ops";
 
 const _tileKeys: Map<string, Set<string>> = new Map();
+// Drag-mode renders use "drag-" key prefix and are tracked separately to avoid polluting _tileKeys.
+const _dragKeys: Map<string, Set<string>> = new Map();
 
 export class WallOverlay {
   private static selectTile: string | null = null;
@@ -20,9 +22,23 @@ export class WallOverlay {
   static sync(_tile: Tile): void {}
 
   static rebuild(tile: Tile): void {
+    if (isPreviewClone(tile)) {
+      // Draw walls at anchor-computed positions relative to current drag doc.x/y.
+      WallOverlay._showDrag(tile);
+      return;
+    }
+    // Non-preview: clear any drag-mode renders, then rebuild static display if active.
+    for (const k of _dragKeys.get(tile.id) ?? []) IsoRenderer.clear(k);
+    _dragKeys.delete(tile.id);
     if (!_tileKeys.has(tile.id)) return;
-    if (isPreviewClone(tile)) { WallOverlay.show(tile); return; }
     WallOverlay.refresh(tile);
+  }
+
+  private static _showDrag(tile: Tile): void {
+    for (const k of _dragKeys.get(tile.id) ?? []) IsoRenderer.clear(k);
+    const keys = new Set<string>();
+    drawWallDisplay(tile.document, tile.id, keys, true);
+    _dragKeys.set(tile.id, keys);
   }
 
   static onControl(tile: Tile, controlled: boolean): void {
@@ -47,11 +63,14 @@ export class WallOverlay {
   static hide(tileId: string): void {
     for (const k of _tileKeys.get(tileId) ?? []) IsoRenderer.clear(k);
     _tileKeys.delete(tileId);
+    for (const k of _dragKeys.get(tileId) ?? []) IsoRenderer.clear(k);
+    _dragKeys.delete(tileId);
   }
 
   static clearAll(): void {
     IsoRenderer.clearLayer(LAYER_KEYS.WALL_OVERLAY);
     _tileKeys.clear();
+    _dragKeys.clear();
     WallOverlay.selectTile = null;
   }
 

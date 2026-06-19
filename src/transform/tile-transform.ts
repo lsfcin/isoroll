@@ -53,6 +53,7 @@ export function onPreUpdateScene(
   const newGridSize = changes.grid.size;
   if (oldGridSize <= 0 || oldGridSize === newGridSize) return;
   pendingGridRescale = { sceneId: (scene as { id: string }).id, ratio: newGridSize / oldGridSize };
+  CanvasEnv.setGridRescaling(true);
 }
 
 export function onUpdateSceneGridRescale(scene: { id: string }): void {
@@ -80,8 +81,10 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
       if (base) u[`flags.${MODULE_ID}.boundHeightBase`] = { w: base.w * ratio, h: base.h * ratio };
       return u;
     });
-  if (updates.length === 0) return;
-  void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" });
+  if (updates.length === 0) { CanvasEnv.setGridRescaling(false); return; }
+  void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" })
+    .then(() => CanvasEnv.setGridRescaling(false))
+    .catch(() => CanvasEnv.setGridRescaling(false));
 }
 
 // setFlag() updates don't set any Tile render flags → refreshTile never fires.

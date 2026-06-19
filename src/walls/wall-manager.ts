@@ -132,8 +132,10 @@ export class WallManager {
     const tileObj = CanvasEnv.getTile(tileId);
     if (!tileObj) return;
 
-    // User manually moved wall in Walls layer → recompute stored anchor
-    if (options.isoroll !== "wallMove" && options.isoroll !== "wallEndpointDrag" && "c" in changes) {
+    // User manually moved wall in Walls layer → recompute stored anchor.
+    // Skipped during grid rescale: Foundry rescales wall c-coords before our tile update fires,
+    // so canvasToAnchor would use stale tile dimensions and corrupt the stored anchor.
+    if (!CanvasEnv.isGridRescaling() && options.isoroll !== "wallMove" && options.isoroll !== "wallEndpointDrag" && "c" in changes) {
       wrap(async () => {
         const c = (doc as unknown as { c: number[] }).c;
         await scene().updateEmbeddedDocuments("Wall",
