@@ -326,7 +326,7 @@ AppV2 + GridConfig + DOM have their own complexity. Do not start without an anal
       bg-drag.ts: canvas.app!.stage.worldTransform → CanvasEnv.worldTransform() (Phase 2 deferral)
       bg-transform.ts: legit boundary — unchanged
 - [x] Refactor non-boundary calls in bg-gizmos + bg-html to use canvas-env + IsoRenderer
-- [ ] Verify GridConfig preview flow end-to-end (live-preview + submit + cancel)
+- [x] Verify GridConfig preview flow end-to-end (live-preview + submit + cancel)
 - [ ] Verify SceneConfig iso tab survives multiple opens (double-inject guard)
 
 ### Phase 8 — Cleanup + enforcement

@@ -13,7 +13,6 @@ IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–8 c
 **Remaining refactor cleanup (before merging):**
 - Verify Occluder new path in Foundry: `isorollNewOccluder = true` → reload → confirm tile alpha fades when token walks behind tile. Only then remove flag + `activateLegacy()`.
 - Implement `core/history.ts` canonical pre-drag push (see REFACTOR.md Phase 8 WARNING — verify linked-wall + tile history interleaving first). `CanvasEnv.pushTilesHistory/pushTokensHistory` already wraps the raw access; history.ts would add a unified API on top.
-- Verify GridConfig preview flow end-to-end (live-preview + submit + cancel) — REFACTOR.md Phase 7 checkbox.
 - Wire ESLint rule for boundary enforcement (Phase 8 optional).
 
 See REFACTOR.md for full checklist.
