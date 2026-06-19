@@ -26,8 +26,8 @@
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the gizmos module — handle factories, image drag math, mesh corner helpers |
-| [`handle-draw.ts`](handle-draw.ts) | [`handle-draw.d.ts`](handle-draw.d.ts) | `makeHandle`, `makeCircleHandle`, `makeSquareCounterHandle`, `makeMoveHandle`, `makeSwapHandle` | PIXI drawing primitives for gizmo handles. |
-| [`handle-factories.ts`](handle-factories.ts) | [`handle-factories.d.ts`](handle-factories.d.ts) | `makeHandleForType`, `createRotateBlocker`, `HANDLE_COLOR` | Handle dispatch and tile-specific factories. |
+| [`handle-draw.ts`](handle-draw.ts) | [`handle-draw.d.ts`](handle-draw.d.ts) | `HANDLE_SIZE`, `HALF` | Size constants for gizmo handles — used by bg-gizmos, tile-gizmos, token-gizmos. |
+| [`handle-factories.ts`](handle-factories.ts) | [`handle-factories.d.ts`](handle-factories.d.ts) | `createRotateBlocker` | Handle utilities — rotate-blocker factory only. |
 | [`img-drag.ts`](img-drag.ts) | [`img-drag.d.ts`](img-drag.d.ts) | `projectImgOffset`, `projectImgYScale`, `projectImgScale`, `IMG_YSCALE_SNAP_PX` | Shared pure-math helpers for image-manipulation drag (offset, scale, Y-scale). |
 | [`mesh-corners.ts`](mesh-corners.ts) | [`mesh-corners.d.ts`](mesh-corners.d.ts) | `imageBottomLeft`, `imageTopRight`, `imageBottomCenter`, `imageTopCenter`, `snapQuarterPx` | Mesh corner, snap, and client-to-canvas coordinate helpers for gizmo placement. |
 <!-- routing:end -->
