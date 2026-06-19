@@ -1,4 +1,5 @@
 // Pure PIXI drawing primitives — no domain knowledge, no constants imported.
+import type { DrawAPI } from '../render';
 
 // Wraps a child in a PIXI.Container that reverses the isometric world transform,
 // so children (text, sprites) appear un-distorted in screen space.
@@ -22,7 +23,7 @@ export function suppressMipmap(texture: unknown): void {
 
 
 export function drawDash(
-  g: PIXI.Graphics, x1: number, y1: number, x2: number, y2: number,
+  g: DrawAPI, x1: number, y1: number, x2: number, y2: number,
   dashLen: number, gapLen: number,
 ): void {
   const dx = x2 - x1, dy = y2 - y1;
@@ -41,7 +42,7 @@ export function drawDash(
 }
 
 export function drawDashedContour(
-  g: PIXI.Graphics, pts: { x: number; y: number }[],
+  g: DrawAPI, pts: { x: number; y: number }[],
   dash: number, gap: number, dashAlt = dash, gapAlt = gap,
 ): void {
   g.lineStyle(1.5, 0xffffff, 0.85);

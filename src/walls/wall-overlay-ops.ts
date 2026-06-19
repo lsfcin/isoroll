@@ -1,140 +1,150 @@
-// Interactive helpers: endpoint handles, drag, select toggle.
+// Per-wall IsoRenderer drawing + endpoint drag logic.
 
-import { MODULE_ID, startPointerDrag, screenPointToCanvas } from "../core";
+import { MODULE_ID, startPointerDrag, screenPointToCanvas, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
-import { canvasToAnchor, wallsLayer, scene, type TileDoc } from "./wall-coords";
+import { canvasToAnchor, wallsLayer, scene, type WallDoc, type TileDoc } from "./wall-coords";
 import { WallHistory } from "./wall-history";
+import { IsoRenderer, LAYER_KEYS } from "../render";
+import type { DrawAPI, RenderHandle, ShapeSpec } from "../render";
 
-function scaleEndpoints(ctr: PIXI.Container, wallId: string, s: number): void {
-  (ctr.getChildByName(`ep-${wallId}-A`) as PIXI.Graphics | null)?.scale.set(s);
-  (ctr.getChildByName(`ep-${wallId}-B`) as PIXI.Graphics | null)?.scale.set(s);
+export const WALL_COLORS = {
+  normal: 0xFFFFBB, terrain: 0x81B90C, invisible: 0x77E7E8, ethereal: 0xC880FC,
+  sound: 0x00BFFF, door: 0x6666EE, secret: 0xA612D4, window: 0xC7D8FF,
+};
+const UNLINKED_ALPHA = 0.5, LINE_W = 1;
+const EP_OUTER = 3, EP_INNER = 2, EP_OUTER_HOV = 4.5, EP_INNER_HOV = 3;
+
+export function wallColor(doc: WallDoc): number {
+  if (doc.door === 2) return WALL_COLORS.secret;
+  if (doc.door === 1) return WALL_COLORS.door;
+  const m = doc.move ?? 0, s = doc.sight ?? doc.sense ?? 0;
+  if (s === 10 || s === 1) return WALL_COLORS.terrain;
+  if (s === 30 || s === 40 || s === 6 || s === 3) return WALL_COLORS.window;
+  if (m !== 1 && m < 10) return WALL_COLORS.ethereal;
+  if (s === 0) return WALL_COLORS.invisible;
+  return WALL_COLORS.normal;
 }
 
-function dblClick(wallId: string, last: { t: number }): void {
-  const now = Date.now();
-  if (now - last.t < 350) { last.t = 0; (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true); }
-  else last.t = now;
+// ---- Shared wall visuals (single source for both display and select modes) ----
+
+function drawEpDot(g: DrawAPI, col: number, alpha: number, x: number, y: number, outer = EP_OUTER, inner = EP_INNER): void {
+  g.beginFill(0x000000, alpha); g.drawCircle(x, y, outer); g.endFill();
+  g.beginFill(col, alpha);     g.drawCircle(x, y, inner); g.endFill();
 }
 
-export function addLineHover(g: PIXI.Graphics, wallId: string, ctr: PIXI.Container): void {
-  g.on("pointerover", () => scaleEndpoints(ctr, wallId, 1.3));
-  g.on("pointerout",  () => scaleEndpoints(ctr, wallId, 1));
+function drawWallLine(g: DrawAPI, c: number[], col: number, alpha: number): void {
+  g.lineStyle(LINE_W + 1.5, 0x000000, alpha); g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]);
+  g.lineStyle(LINE_W, col, alpha);             g.moveTo(c[0], c[1]); g.lineTo(c[2], c[3]); g.lineStyle(0);
 }
 
-export function addWallDblClick(g: PIXI.Graphics, wallId: string): void {
-  const last = { t: 0 };
-  g.on("pointerdown", () => dblClick(wallId, last));
+// ---- Endpoint drag ----
+
+type EpDrag = { wallId: string; ep: "A"|"B"; c: number[]; epH: RenderHandle; lineH: RenderHandle; col: number };
+
+function lineVis(c: number[], col: number): ShapeSpec {
+  return { kind: "lines", build: (g) => drawWallLine(g, c, col, 1) };
+}
+function toCanvas(ev: PointerEvent): { x: number; y: number } {
+  let { x, y } = screenPointToCanvas(ev.clientX, ev.clientY, CanvasEnv.worldTransform());
+  if (!ev.shiftKey) { const s = CanvasEnv.gridSize() / 4; x = Math.round(x/s)*s; y = Math.round(y/s)*s; } return { x, y };
 }
 
-function snapQuarter(x: number, y: number): { x: number; y: number } {
-  const q = ((canvas.grid as unknown as { size?: number })?.size ?? 100) / 4;
-  return { x: Math.round(x / q) * q, y: Math.round(y / q) * q };
+function epMove(d: EpDrag, ev: PointerEvent): void {
+  const { x, y } = toCanvas(ev);
+  d.epH.update({ placement: { anchor: { x, y } } });
+  const nc = [...d.c]; if (d.ep === "A") { nc[0] = x; nc[1] = y; } else { nc[2] = x; nc[3] = y; }
+  d.lineH.update({ visual: lineVis(nc, d.col) });
 }
 
-function toSnapCanvas(e: PointerEvent): { x: number; y: number } {
-  const wt   = (canvas.app as unknown as { stage: { worldTransform: PIXI.Matrix } }).stage.worldTransform;
-  const rect = (canvas.app!.view as HTMLCanvasElement).getBoundingClientRect();
-  const raw  = screenPointToCanvas(e.clientX - rect.left, e.clientY - rect.top, wt);
-  return snapQuarter(raw.x, raw.y);
+function epUp(d: EpDrag, ev: PointerEvent): void {
+  const { x, y } = toCanvas(ev);
+  const nc = [...d.c]; if (d.ep === "A") { nc[0] = x; nc[1] = y; } else { nc[2] = x; nc[3] = y; }
+  scene().updateEmbeddedDocuments("Wall", [{ _id: d.wallId, c: nc }]).catch(console.warn);
 }
 
-// ── Endpoint drag handles (circles, same color as wall line) ──────────────────
-
-export function addEndpointHandles(
-  ctr: PIXI.Container, c: number[], wallId: string, tileDoc: TileDocument, color: number, r = 4,
-): void {
-  for (const [ep, ix, iy] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
-    const h = new PIXI.Graphics();
-    h.name = `ep-${wallId}-${ep}`;
-    h.lineStyle(0); h.beginFill(0x000000, 1); h.drawCircle(0, 0, r+1); h.endFill();
-    h.beginFill(color, 0.9); h.drawCircle(0, 0, r); h.endFill();
-    h.hitArea = new PIXI.Circle(0, 0, 6);
-    h.x = c[ix]; h.y = c[iy];
-    h.eventMode = "static"; h.cursor = "pointer";
-    const last = { t: 0 };
-    h.on("pointerover", () => scaleEndpoints(ctr, wallId, 1.3));
-    h.on("pointerout",  () => scaleEndpoints(ctr, wallId, 1));
-    h.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
-      e.stopPropagation();
-      if (Date.now() - last.t < 350 && last.t !== 0) {
-        last.t = 0;
-        (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true);
-        return;
-      }
-      last.t = Date.now();
-      startEndpointDrag(wallId, ep, tileDoc, ctr, color, r);
-    });
-    ctr.addChild(h);
-  }
-}
-
-// ── Select mode wall interaction ──────────────────────────────────────────────
-
-export function addSelectInteraction(
-  g: PIXI.Graphics, doc: TileDocument, wallId: string, c: number[], refresh: () => void,
-): void {
-  g.eventMode = "static"; g.cursor = "pointer";
-  g.on("pointerdown", (e: PIXI.FederatedPointerEvent) => {
-    e.stopPropagation();
-    // Stop native DOM event to prevent Foundry deselecting the tile on canvas click
-    const ne = (e as unknown as { nativeEvent?: Event }).nativeEvent;
-    ne?.stopPropagation?.();
-    ne?.stopImmediatePropagation?.();
-    const ids      = getLinkedWallIds(doc);
-    const isLinked = ids.includes(wallId);
-    WallHistory.push({ k: "toggle", tileId: doc.id ?? "", wallId, prevIds: ids, wasLinked: isLinked });
-    if (isLinked) {
-      setLinkedWallIds(doc, ids.filter(x => x !== wallId)).then(refresh).catch(console.warn);
-    } else {
-      const anchor = canvasToAnchor(doc as TileDoc, [...c]);
-      scene()
-        .updateEmbeddedDocuments("Wall", [{ _id: wallId, flags: { [MODULE_ID]: { parentTileId: doc.id, tileAnchor: anchor } } }])
-        .then(() => setLinkedWallIds(doc, [...ids, wallId]))
-        .then(refresh)
-        .catch(console.warn);
+export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<string>): void {
+  const own = { kind: "tile" as const, id: tileId };
+  for (const id of getLinkedWallIds(doc)) {
+    const wall = wallsLayer().get(id); if (!wall) continue;
+    const wdoc = wall.document as WallDoc, c = wdoc.c as number[], col = wallColor(wdoc);
+    const lineKey = `tile-${tileId}:wall-${id}:line`, lastClick = { t: 0 };
+    const lineH = IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col), hitArea: wallHitArea(c, 6, 5),
+      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY, interaction: { cursor: "pointer", onPointerDown: (e) => { e.stopPropagation(); (e as any).nativeEvent?.stopImmediatePropagation?.(); wallDblClick(id, lastClick); } } });
+    keys.add(lineKey);
+    for (const [ep, xi, yi] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
+      const x = c[xi], y = c[yi], key = `tile-${tileId}:wall-${id}:ep${ep}`;
+      const drag: EpDrag = { wallId: id, ep, c: [...c], epH: null!, lineH, col };
+      const epH = IsoRenderer.render({ key, owner: own,
+        visual: { kind: "lines", build: (g) => drawEpDot(g, col, 1, 0, 0) },
+        hitArea: [{ x: -5, y: -5 }, { x: 5, y: -5 }, { x: 5, y: 5 }, { x: -5, y: 5 }],
+        space: "WORLD", placement: { anchor: { x, y } },
+        layer: LAYER_KEYS.WALL_OVERLAY, z: ep === "A" ? "top" : undefined,
+        interaction: { cursor: "pointer",
+          onPointerDown: (e) => { e.stopPropagation(); if (wallDblClick(id, lastClick)) return; startPointerDrag(drag, epMove, epUp); },
+          onPointerOver: () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0, EP_OUTER_HOV, EP_INNER_HOV) } }); },
+          onPointerOut:  () => { drag.epH.update({ visual: { kind: "lines", build: (g) => drawEpDot(g, drag.col, 1, 0, 0) } }); },
+        },
+      });
+      drag.epH = epH; keys.add(key);
     }
-  });
-}
-
-// ── Endpoint drag with live snap preview ─────────────────────────────────────
-
-interface EpDrag { wallId: string; ep: "A"|"B"; startC: number[]; tileDoc: TileDocument; ctr: PIXI.Container; color: number; r: number; }
-
-function startEndpointDrag(
-  wallId: string, ep: "A"|"B", tileDoc: TileDocument, ctr: PIXI.Container, color: number, r: number,
-): void {
-  const wall = wallsLayer().get(wallId);
-  if (!wall) return;
-  const drag: EpDrag = { wallId, ep, startC: [...wall.document.c], tileDoc, ctr, color, r };
-  startPointerDrag(drag,
-    (d, e) => { const s = toSnapCanvas(e); updatePreview(d, s.x, s.y); },
-    (d, e) => { const s = toSnapCanvas(e); commitEndpointDrag(d, s.x, s.y); },
-  );
-}
-
-function updatePreview(d: EpDrag, sx: number, sy: number): void {
-  const epA = d.ctr.getChildByName(`ep-${d.wallId}-A`) as PIXI.Graphics | null;
-  const epB = d.ctr.getChildByName(`ep-${d.wallId}-B`) as PIXI.Graphics | null;
-  if (d.ep === "A" && epA) { epA.x = sx; epA.y = sy; }
-  if (d.ep === "B" && epB) { epB.x = sx; epB.y = sy; }
-  const ax = d.ep === "A" ? sx : d.startC[0], ay = d.ep === "A" ? sy : d.startC[1];
-  const bx = d.ep === "B" ? sx : d.startC[2], by = d.ep === "B" ? sy : d.startC[3];
-  const lineG = d.ctr.getChildByName(`line-${d.wallId}`) as PIXI.Graphics | null;
-  if (lineG) {
-    lineG.clear();
-    lineG.lineStyle(2.5, 0x000000, 0.8); lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
-    lineG.lineStyle(1, d.color, 1);      lineG.moveTo(ax, ay); lineG.lineTo(bx, by);
-    lineG.lineStyle(0);
   }
 }
 
-function commitEndpointDrag(d: EpDrag, sx: number, sy: number): void {
-  const c = [...d.startC];
-  if (d.ep === "A") { c[0] = sx; c[1] = sy; }
-  else              { c[2] = sx; c[3] = sy; }
-  WallHistory.push({ k: "move", wallId: d.wallId, prevC: d.startC });
-  scene().updateEmbeddedDocuments("Wall",
-    [{ _id: d.wallId, c, flags: { [MODULE_ID]: { tileAnchor: canvasToAnchor(d.tileDoc as TileDoc, c) } } }],
-    { isoroll: "wallEndpointDrag" }
-  ).catch(console.warn);
+// ---- Wall select mode (unchanged) ----
+
+function wallHitArea(c: number[], nw: number, ew: number): { x: number; y: number }[] {
+  const dx = c[2]-c[0], dy = c[3]-c[1], l = Math.sqrt(dx*dx+dy*dy) || 1;
+  const nx = (-dy/l)*nw, ny = (dx/l)*nw, ex = (dx/l)*ew, ey = (dy/l)*ew;
+  return [{ x: c[0]-ex+nx, y: c[1]-ey+ny }, { x: c[2]+ex+nx, y: c[3]+ey+ny },
+          { x: c[2]+ex-nx, y: c[3]+ey-ny }, { x: c[0]-ex-nx, y: c[1]-ey-ny }];
+}
+
+function toggleWallLink(doc: TileDocument, wallId: string, c: number[], refresh: () => void): void {
+  const ids = getLinkedWallIds(doc), isLinked = ids.includes(wallId);
+  WallHistory.push({ k: "toggle", tileId: doc.id ?? "", wallId, prevIds: ids, wasLinked: isLinked });
+  if (isLinked) {
+    setLinkedWallIds(doc, ids.filter(x => x !== wallId)).then(refresh).catch(console.warn);
+  } else {
+    const anchor = canvasToAnchor(doc as TileDoc, [...c]);
+    scene()
+      .updateEmbeddedDocuments("Wall", [{ _id: wallId, flags: { [MODULE_ID]: { parentTileId: doc.id, tileAnchor: anchor } } }])
+      .then(() => setLinkedWallIds(doc, [...ids, wallId])).then(refresh).catch(console.warn);
+  }
+}
+
+function wallDblClick(wallId: string, last: { t: number }): boolean {
+  const now = Date.now();
+  if (now - last.t < 350 && last.t !== 0) { last.t = 0; (wallsLayer().get(wallId) as unknown as { sheet?: { render(f: boolean): void } })?.sheet?.render(true); return true; }
+  last.t = now; return false;
+}
+
+export function drawWallSelect(doc: TileDocument, tileId: string, keys: Set<string>, refresh: () => void): void {
+  const linked = new Set(getLinkedWallIds(doc));
+  const own = { kind: "tile" as const, id: tileId };
+  let first = true;
+  for (const wall of wallsLayer().placeables) {
+    const id = wall.document.id ?? "", wdoc = wall.document as WallDoc;
+    const c = wdoc.c as number[], isLnk = linked.has(id), col = wallColor(wdoc);
+    const alpha = isLnk ? 1 : UNLINKED_ALPHA;
+    const lastClick = { t: 0 };
+    IsoRenderer.render({
+      key: `tile-${tileId}:wall-${id}:sel`, owner: own,
+      visual: { kind: "lines", build: (g) => {
+        drawWallLine(g, c, col, alpha);
+        for (const [ix, iy] of [[0,1],[2,3]] as [number,number][]) drawEpDot(g, col, alpha, c[ix], c[iy]);
+      }},
+      hitArea: wallHitArea(c, 6, 5), space: "WORLD", placement: { anchor: { x: 0, y: 0 } },
+      layer: LAYER_KEYS.WALL_OVERLAY, z: first ? "top" : undefined,
+      interaction: { cursor: "pointer",
+        onPointerDown: (e) => {
+          e.stopPropagation(); if (wallDblClick(id, lastClick)) return;
+          const ne = (e as unknown as { nativeEvent?: Event }).nativeEvent;
+          ne?.stopPropagation?.(); ne?.stopImmediatePropagation?.();
+          toggleWallLink(doc, id, c, refresh);
+        },
+      },
+    });
+    keys.add(`tile-${tileId}:wall-${id}:sel`);
+    first = false;
+  }
 }

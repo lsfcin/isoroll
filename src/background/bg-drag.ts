@@ -1,6 +1,6 @@
 // Drag math for BackgroundGizmos: translate, uniform scale, Y-scale.
 
-import { canvasZoom, screenToCanvas } from "../core";
+import { canvasZoom, screenToCanvas, CanvasEnv } from "../core";
 export type BgDrag = {
   type: "bgScale" | "bgYScale" | "bgTranslate";
   startGX: number; startGY: number;
@@ -20,7 +20,7 @@ export function commitBgDrag(
   const field         = (n: string) => form?.elements.namedItem?.(n) as HTMLInputElement | null;
   const triggerChange = (n: string) => field(n)?.dispatchEvent(new Event("change", { bubbles: true }));
   const dx = gx - drag.startGX, dy = gy - drag.startGY;
-  const wt    = canvas.app!.stage.worldTransform;
+  const wt    = CanvasEnv.worldTransform();
   const zoom = canvasZoom();
   if (drag.type === "bgTranslate") {
     const { x: cdx, y: cdy } = screenToCanvas(dx, dy, wt);

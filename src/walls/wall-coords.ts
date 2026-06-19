@@ -1,6 +1,6 @@
 // Canvas coordinate helpers and Foundry shims for the walls system.
 
-import { VolumeFlags, gridDistance, elevToCanvas } from "../core";
+import { VolumeFlags, gridDistance, elevToCanvas, CanvasEnv } from "../core";
 import type { WallDef, TileAnchor } from "./wall-types";
 
 export type TileDoc = TileDocument & { x: number; y: number; width: number; height: number };
@@ -31,7 +31,7 @@ export function wallsLayer(): WallsCollection {
   return (canvas as unknown as { walls: WallsCollection }).walls;
 }
 export function scene(): SceneEmbedded {
-  return canvas.scene as unknown as SceneEmbedded;
+  return CanvasEnv.scene() as unknown as SceneEmbedded;
 }
 
 // tile.x/y = CENTER in Foundry v14
@@ -42,7 +42,7 @@ export function tileRect(doc: TileDoc): { left: number; top: number; w: number; 
 // Anchors are in S-normalized space: both axes share S = max(docW, docH, boundH_px) × imgScale.
 // Image center includes elevation offset; heightDir = {+1, -1} for all isoroll projections.
 export function imageRect(doc: TileDoc): { icx: number; icy: number; sw: number; sh: number } {
-  const gridSize = (canvas as unknown as { grid?: { size?: number } }).grid?.size ?? 100;
+  const gridSize = CanvasEnv.gridSize();
   const gridDist = gridDistance();
   const imgOff   = VolumeFlags.getImageOffset(doc);
   const imgScale = VolumeFlags.getImageScale(doc);

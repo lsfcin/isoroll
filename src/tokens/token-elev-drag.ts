@@ -1,5 +1,5 @@
 // Elevation drag logic for TokenElevGizmo — extracted to keep gizmo file under line limit.
-import { canvasZoom, gridDistance, startPointerDrag } from "../core";
+import { canvasZoom, gridDistance, startPointerDrag, CanvasEnv } from "../core";
 import { clientToGlobal } from "../gizmos";
 
 export interface TokenElevDrag {
@@ -23,15 +23,14 @@ export function beginElevDrag(
 function pushElevHistory(drag: TokenElevDrag): void {
   const id = drag.token.id;
   if (!id) return;
-  const layer = canvas.tokens as unknown as { history: { type: string; data: unknown[]; options: object }[] };
   const original = { _id: id, elevation: drag.startElev };
-  layer.history.push({ type: "update", data: [original], options: {} });
+  CanvasEnv.pushTokensHistory({ type: "update", data: [original], options: {} });
   console.debug(`[isoroll] storeDragHistory | type=elevation token=${id} startElev=${drag.startElev}`);
 }
 
 function commitElevDrag(lastCommittedElev: Map<string, number>, drag: TokenElevDrag, gy: number): void {
   const zoom      = canvasZoom();
-  const gridSize  = canvas.grid?.size ?? 100;
+  const gridSize  = CanvasEnv.gridSize();
   const gridDist  = gridDistance();
   const deltaFeet = -(gy - drag.startGY) / (zoom * gridSize / gridDist);
   const elev = Math.round(drag.startElev + deltaFeet);

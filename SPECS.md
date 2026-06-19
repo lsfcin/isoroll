@@ -77,6 +77,54 @@
 - **Auto-upsert**: `updateTile`/`updateToken`/`updateScene` hooks watch for relevant flag or native field changes; debounced 500ms to batch drag events
 - **Opt-out**: `flags.isoroll.presetEnabled` (default true) per tile/token for special cases
 
+### IsoRenderer `testPoint` Convention for Elevated Visuals
+
+Any `IsoRenderer.render()` call where `placement.anchor` is an **elevated world position**
+(above ground — e.g. a label at the top of an elevation line) MUST also set `testPoint`
+to the corresponding **ground position**. Reason: `isoRendererSightRefresh` uses
+`testPoint ?? placement.anchor` to query fog state. Fog data is stored at ground-level
+canvas coordinates; an elevated anchor tests outside that map and always reads as visible.
+
+```typescript
+// ✓ correct — testPoint at ground; anchor elevated
+IsoRenderer.render({
+  placement: { anchor: { x: lx, y: ly } },   // elevated position
+  testPoint: { x: tx + tw / 2, y: ty + th / 2 }, // ground center
+  visibility: "sight-tracked",
+  ...
+});
+```
+
+Shadow is exempt (its anchor IS the ground position). Indicator uses `testPoint` correctly (anchor `{0,0}` → would test world origin without it).
+
+### IsoRenderer Lifecycle Guard for Overlay Modes (GridConfig pattern)
+
+Foundry fires `refreshToken` + `refreshTile` on every animation tick, even when a
+dialog like GridConfig is open. If a lifecycle function calls overlay `render()` or
+`rebuild()` unconditionally, visuals cleared by `onGridConfigOpen` will reappear within
+one tick.
+
+**Pattern:** add a module-level boolean guard; block overlay draws while mode is active;
+restore via `onCanvasReady()` when mode exits.
+
+```typescript
+// In render-lifecycle.ts
+let _gridConfigOpen = false;
+export function onGridConfigOpen(...) { _gridConfigOpen = true; clearAll(); }
+export function onGridConfigClose()   { _gridConfigOpen = false; onCanvasReady(); }
+export function onTokenRefresh(...)   { if (_gridConfigOpen) return; ... }
+```
+
+Wire `closeGridConfig` hook in `render-gate.ts` → `onGridConfigClose()`.
+
+### IsoRenderer Drag Handle Conventions
+
+- **Pattern:** `onPointerDown: (e) => { e.stopPropagation(); startPointerDrag(drag, onMove, onUp); }` — `e.stopPropagation()` (PIXI level) only. Never call `nativeEvent.stopImmediatePropagation()` when starting a drag — it blocks `window.pointermove` delivery that `startPointerDrag` depends on.
+- **nativeEvent stop is safe only on non-drag handlers** (e.g. wall line single-click that only toggles/dblchecks). Required there to prevent Foundry box selection.
+- **`screenPointToCanvas` signature:** `screenPointToCanvas(sx, sy, wt: PIXI.Matrix)` — requires `CanvasEnv.worldTransform()` as third argument. Located in `src/core/util.ts`, exported from `"../core"`.
+- **Snap to grid:** use `Math.round(v / step) * step` where `step = CanvasEnv.gridSize() / 4` (5 snap points per grid side). Apply in both `onMove` and `onUp`.
+- **SHIFT = free drag:** `if (!ev.shiftKey) { /* snap */ }` — Foundry convention (same as token drag).
+
 ---
 
 ## Repo Structure

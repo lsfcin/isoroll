@@ -40,6 +40,57 @@ in-place requires a two-point `transformCoord` difference. Not worth the complex
 
 ---
 
+## B26 — Fog extraction ImageData zero-width crash on tile hover
+
+**Symptom:** `IndexSizeError: Failed to construct 'ImageData': The source width is zero or not a number` appears in the console, originating from `worker.js → image-compressor.js → pixelsToOffscreenCanvas`. Happens intermittently when hovering a tile. Foundry also logs `FogExtractor | Buffer compression has failed!`. Does not break functionality visibly.
+
+**Stack:** Foundry's FogExtractor tries to compress a fog buffer where the source canvas has zero width. Triggered by `commit → #save → _extractBase64 → compressBufferBase64 → ImageData(buffer, 0)`.
+
+**Likely cause:** A zero-dimension offscreen canvas produced during fog extraction when a tile has unusual dimensions or when the scene is in an intermediate state during hover. Not isoroll code — entirely in Foundry internals.
+
+**Action:** Monitor for Foundry upstream fix. If it worsens, investigate whether isoroll tile dimension handling produces zero-width image regions.
+
+---
+
+## B27 — Black screen flash when entering scene (F5, scene activation, GridConfig close)
+
+**Symptom:** On scene load (page reload / F5, scene activation from scene list, or closing
+GridConfig and returning to the active scene), tiles briefly appear projected against a
+black background before the background image renders in. Lasts ~0.5–1s then resolves.
+
+**Trigger conditions confirmed:**
+- Page reload (F5) with isoroll scene active
+- Activating a scene from the sidebar
+- Closing the GridConfig dialog (returns to the scene mid-animation tick)
+
+**Likely cause:** `onCanvasReady` fires and draws tile overlays (3D boxes, sprite clones)
+before Foundry finishes painting the background sprite. IsoRenderer renders into canvas
+layers that are already visible while `canvas.environment.primary.background` is still
+loading/positioning. When GridConfig closes, `onGridConfigClose` → `onCanvasReady` may
+fire before the background restores its non-preview state.
+
+**Action:** Investigate deferring `onCanvasReady` tile/token rendering until background
+sprite is confirmed ready, or hook into a later Foundry lifecycle event.
+
+---
+
+## B29 — Undo of linked-wall displacement in Tile layer lost
+
+**Symptom:** After dragging a wall that is linked to a tile (wall-overlay select mode,
+endpoint drag or wall move), Ctrl+Z in the Tile layer does not restore the wall to its
+previous position. Other gizmo-drag undos (tile volume, token image) work correctly.
+
+**Confirmed missing:** Wall displacement undo. Onset unknown — may predate the refactor
+or may have been introduced during Phase 8 boundary cleanup (`wall-history.ts` changes).
+
+**Likely location:** `src/walls/wall-history.ts` — `WallHistory.undo()` case `k === "move"`,
+or the history entry is not being pushed when the wall drag commits. Check
+`wall-overlay-ops.ts` drag commit path for `WallHistory.push({ k: "move", ... })` call.
+
+**Action:** Bisect against pre-Phase-8 commit (`3403e6e`) to confirm onset. Fix in walls/.
+
+---
+
 ## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays
 
 **Observation:** Opening the TileConfig or TokenConfig popup causes all isoroll visuals

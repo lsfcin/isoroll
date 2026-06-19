@@ -1,9 +1,9 @@
 // SCREEN ↔ WORLD: browser window pixels via viewport affine inverse.
 import type { P2, AffineMatrix } from './coord-types.js';
 import { toWorld as vpToWorld, fromWorld as worldToVp } from './coord-sys-viewport.js';
+import { CanvasEnv } from '../core';
 
-const getCanvasRect = (): DOMRect =>
-  (canvas.app!.view as HTMLCanvasElement).getBoundingClientRect();
+const getCanvasRect = (): DOMRect => CanvasEnv.appView().getBoundingClientRect();
 
 /** Screen (browser window) pixels → world coordinates. */
 export const toWorld = (wt: AffineMatrix): ((p: P2) => P2) => {

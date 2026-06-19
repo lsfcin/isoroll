@@ -1,11 +1,11 @@
 // Interactive handles + dashed contour for background image, shown only in GridConfig.
-import { startPointerDrag } from "../core";
+import { startPointerDrag, CanvasEnv } from "../core";
 import { currentProjection, CanvasTransform, getBgYScale, setBgYScaleOverride } from "../transform";
-import { clientToGlobal, makeHandle, makeCircleHandle, makeMoveHandle, makeSquareCounterHandle } from "../gizmos";
-
-import { drawDashedContour } from "../draw";
+import { clientToGlobal, HANDLE_SIZE, HALF } from "../gizmos";
+import { drawDashedContour, BLACK } from "../draw";
+import type { ShapeSpec } from "../render";
+import { IsoRenderer, LAYER_KEYS } from "../render";
 import { BgDrag, commitBgDrag } from "./bg-drag";
-import { LayerManager, LAYER_KEYS } from "../render";
 import { BgHtml } from "./bg-html";
 
 function bgCorner(
@@ -16,19 +16,20 @@ function bgCorner(
   return { x: cx + cosR * lx - sinR * ly, y: cy + sinR * lx + cosR * ly };
 }
 
+const BG_OWNER = { kind: "background" as const, id: "bg" };
+
 export class BackgroundGizmos {
   static activate(): void {
     BgHtml.activate(() => BackgroundGizmos.show(), () => BackgroundGizmos.clearAll());
     Hooks.on("canvasReady", BackgroundGizmos.clearAll);
   }
 
-  private static isEnabled(): boolean { return canvas.scene != null; }
+  private static isEnabled(): boolean { return CanvasEnv.scene() != null; }
 
   static show(): void {
-    BackgroundGizmos.clearLayer();
+    IsoRenderer.clearLayer(LAYER_KEYS.BG_GIZMOS);
     if (!BackgroundGizmos.isEnabled() || !BgHtml.currentHtml) return;
     const html  = BgHtml.currentHtml;
-    const layer = LayerManager.ensureLayer(LAYER_KEYS.BG_GIZMOS);
     const proj  = currentProjection();
     const isoCT = CanvasTransform.gctEffectiveEnabled() && !CanvasTransform.gctEffectiveTransformBg();
     const cosR  = isoCT ? Math.cos(proj.reverseRotation) : 1;
@@ -45,37 +46,39 @@ export class BackgroundGizmos {
     const baseH = Math.max(1, texH * sx * proj.ratio * proj.counterFactor / 2);
     const [tr, tc, bl, tl, br] = [[.5,-.5],[0,-.5],[-.5,.5],[-.5,-.5],[.5,.5]]
       .map(([fx,fy]) => bgCorner(fx, fy, cx, cy, texW, texH, scX, scY, cosR, sinR));
-    const wt      = canvas.app!.stage.worldTransform;
+    const wt      = CanvasEnv.worldTransform();
     const topSc  = Math.hypot(wt.a*cosR + wt.c*sinR, wt.b*cosR + wt.d*sinR);
     const leftSc = Math.hypot(-wt.a*sinR + wt.c*cosR, -wt.b*sinR + wt.d*cosR);
-    const g = new PIXI.Graphics();
-    drawDashedContour(g, [tl, tr, br, bl], 8, 5, leftSc > 0 ? 8*topSc/leftSc : 8, leftSc > 0 ? 5*topSc/leftSc : 5); layer.addChild(g);
+    IsoRenderer.render({
+      key: "bg:contour", owner: BG_OWNER,
+      visual: { kind: "lines", build: (g) => drawDashedContour(g, [tl, tr, br, bl], 8, 5, leftSc > 0 ? 8*topSc/leftSc : 8, leftSc > 0 ? 5*topSc/leftSc : 5) },
+      space: "WORLD", placement: { anchor: { x: 0, y: 0 } },
+      layer: LAYER_KEYS.BG_GIZMOS,
+    });
     const form   = (html.closest('form') ?? html.querySelector('form')) as HTMLFormElement | null;
     const getEl  = (n: string) => form?.elements.namedItem?.(n) as HTMLInputElement | null;
     const shiftX = Number(getEl('shiftX')?.value) || 0;
     const shiftY = Number(getEl('shiftY')?.value) || 0;
     const scale  = Number(getEl('scale')?.value) || sx;
     const sCX    = wt.a * cx + wt.c * cy + wt.tx, sCY = wt.b * cx + wt.d * cy + wt.ty;
-    const defs: [PIXI.Container, BgDrag["type"], { x: number; y: number }][] = [
-      [isoCT ? makeSquareCounterHandle(0xffffff, "nesw-resize") : makeHandle(0xffffff, "nesw-resize"), "bgScale",     tr],
-      [isoCT ? makeCircleHandle(0xffffff, "move")               : makeMoveHandle(0xffffff),            "bgTranslate", bl],
+    const strk   = { color: BLACK, width: 0.5 };
+    const defs: [string, ShapeSpec, string, { x: number; y: number }, BgDrag["type"]][] = [
+      ["bg:scale",     { kind: "rect",   w: HANDLE_SIZE, h: HANDLE_SIZE, fill: 0xffffff, fillAlpha: 0.9, stroke: strk }, "nesw-resize", tr, "bgScale"],
+      ["bg:translate", { kind: "circle", radius: HALF * 0.945,           fill: 0xffffff, fillAlpha: 0.9, stroke: strk }, "move",        bl, "bgTranslate"],
     ];
-    if (isoCT) defs.splice(1, 0, [makeSquareCounterHandle(0xffffff, "ns-resize"), "bgYScale", tc]);
-    for (const [handle, type, pos] of defs) {
-      handle.x = pos.x; handle.y = pos.y;
-      handle.on("pointerdown", (e: PIXI.FederatedPointerEvent) => { e.stopPropagation(); BackgroundGizmos.beginDrag(type, e.global.x, e.global.y, scale, sCX, sCY, bgYS, baseH, shiftX, shiftY); });
-      layer.addChild(handle);
+    if (isoCT) defs.splice(1, 0, ["bg:yscale", { kind: "rect", w: HANDLE_SIZE, h: HANDLE_SIZE, fill: 0xffffff, fillAlpha: 0.9, stroke: strk }, "ns-resize", tc, "bgYScale"]);
+    for (const [k, visual, cursor, pos, type] of defs) {
+      IsoRenderer.render({
+        key: k, owner: BG_OWNER, visual, space: "WORLD",
+        placement: { anchor: pos },
+        layer: LAYER_KEYS.BG_GIZMOS, flat: isoCT,
+        interaction: { cursor, onPointerDown: (e) => { e.stopPropagation(); BackgroundGizmos.beginDrag(type, e.global.x, e.global.y, scale, sCX, sCY, bgYS, baseH, shiftX, shiftY); } },
+      });
     }
-    LayerManager.bringToTop(LAYER_KEYS.BG_GIZMOS);
-  }
-
-  private static clearLayer(): void {
-    const l = LayerManager.ensureLayer(LAYER_KEYS.BG_GIZMOS);
-    l.removeChildren().forEach(c => (c as PIXI.Container).destroy({ children: true }));
   }
 
   static clearAll(): void {
-    LayerManager.clearLayer(LAYER_KEYS.BG_GIZMOS);
+    IsoRenderer.clearLayer(LAYER_KEYS.BG_GIZMOS);
   }
 
   private static beginDrag(

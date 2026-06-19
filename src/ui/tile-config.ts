@@ -1,5 +1,5 @@
 
-import { MODULE_ID, VolumeFlags } from "../core";
+import { MODULE_ID, VolumeFlags, CanvasEnv } from "../core";
 import { addIsorollTab, flagCheckbox, flagNumber, flagSelect } from "./tab-helpers";
 import type { DoorBehavior } from "../walls";
 import { WallManager } from "../walls";
@@ -74,7 +74,7 @@ export function registerTileConfigHook(): void {
       wallSection + doorSection,
       ($h) => {
         const refresh  = () => $h.find(".isoroll-wall-count").text(WallManager.getLinkedWallIds(d).length);
-        const getTile  = () => (canvas.tiles as unknown as { get(id: string): Tile | undefined }).get(d.id ?? "");
+        const getTile  = () => CanvasEnv.getTile(d.id ?? "");
 
         $h.on("click", ".isoroll-gen-walls-btn",    () => WallManager.generateBaseWalls(d).then(refresh).catch(console.warn));
         $h.on("click", ".isoroll-unlink-walls-btn", () => WallManager.unlinkAllWalls(d).then(refresh).catch(console.warn));
