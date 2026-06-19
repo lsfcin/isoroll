@@ -338,14 +338,10 @@ AppV2 + GridConfig + DOM have their own complexity. Do not start without an anal
       Removed: `shadows: Map<PIXI.DisplayObject>`, `showShadow()`, `hideShadow()` from VolumeOverlay.
       Remaining intentional direct-PIXI: tile-gizmos rotate blocker (PIXI.Graphics in Foundry controls layer;
       needs Foundry-layer PIXI access, not moveable to IsoRenderer without custom container support).
-- [x] Boundary enforcement grep audit — 5 documented exceptions remain:
-      `bg-html.ts:49` canvas.scene.setFlag → document write (not a canvas read, approved)
-      `depth-sorter.ts:29` canvas.primary → sorter boundary (accesses Foundry primary sort layer)
-      `tile-drag.ts:194`, `token-elev-drag.ts:26`, `token-gizmos.ts:167` canvas.tiles/tokens.history →
-        layer history push, deferred to core/history.ts (see WARNING above)
-      All other non-boundary canvas.* / PIXI.* reads fixed: wall-history, wall-manager, wall-coords,
-        preset-manager, iso-sprite-layer (getToken/getTile/placeables/ticker), core/util.ts, mesh-corners,
-        coord-debug, coord-sys-screen, transform/constants.
+- [x] Boundary enforcement grep audit — zero exceptions remain.
+      Added CanvasEnv accessors: primaryLayer(), setSceneFlag(), pushTilesHistory(), pushTokensHistory().
+      All non-boundary canvas.* / PIXI.* reads fixed across all files.
+      `grep canvas\. src/**/*.ts` in non-boundary files returns empty.
 - [x] Update KNOWN-BUGS.md + ROADMAP.md
 
 ### Out of Scope
