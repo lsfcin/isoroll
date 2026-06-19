@@ -2,7 +2,7 @@
 > Foundry VTT v14 isometric projection module — TypeScript + Vite + SCSS.
 
 > **Foundry v14 patterns, gotchas, and coordinate math → `/foundry` skill**
-> (`Core/skills/foundry.md` — run `/foundry` at session start)
+> (`core/skills/foundry.md` — run `/foundry` at session start)
 
 ## Quick Start
 

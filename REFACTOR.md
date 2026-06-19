@@ -1,386 +1,337 @@
-# IsoRenderer Refactor
-> Design document and migration plan for the IsoRenderer refactor (branch: `refactor/iso-renderer`).
-> Read at session start before any work on this refactor. Do not derive the design from scratch — it is here.
-
-## Goal
-
-Isolate all direct Foundry/PIXI API calls to a declared set of boundary files.
-Every visual rendering decision flows through one entry point (`IsoRenderer`).
-Every canvas read flows through one accessor (`canvas-env.ts`).
-
-**Before:** ~37 files touch `canvas.*` directly. ~8 overlay classes each duplicate the same ~25-line
-PIXI lifecycle block (ensureLayer → new Container → addChild → bringToTop → Map registry → destroy).
-
-**After:** Foundry/PIXI calls confined to ~12 boundary files. One rendering API. One canvas accessor.
-Consumers (overlays, gizmos) declare *what* to draw — they never touch `canvas.*` or `PIXI.*`.
+# IsoRenderer Refactor — Phase 9+
+> Phases 0–8 complete on branch `refactor/iso-renderer`.
+> Full design doc and completed phase history archived in HISTORY.md.
+> This file covers remaining cleanup and architectural gaps found in post-Phase-8 audit (2026-06-19).
 
 ---
 
-## Boundary Files
+## Architecture State (established)
 
-After the refactor, **only these files** may use `canvas.*`, `PIXI.*`, `Hooks.*`, `game.*`, `CONFIG.*` directly.
-Every other file must import from boundary files or isoroll abstractions.
+Three-layer abstraction enforced across the codebase:
 
-| File | Permitted direct calls | Reason |
-|------|----------------------|--------|
-| `core/canvas-env.ts` | `canvas.*`, `game.user`, `game.settings` | The one canvas accessor — this is the new entry point for all canvas reads |
-| `core/flags.ts` | `game.settings.get`, `canvas.scene.getFlag` | Flag adapter — legit boundary by design |
-| `render/layer-manager.ts` | `canvas.stage`, `PIXI.Container` | Layer registry — legit PIXI boundary |
-| `render/iso-renderer.ts` | `PIXI.Container`, `PIXI.Graphics`, `PIXI.Sprite` | Rendering façade — this is where PIXI is allowed |
-| `render/mesh-accessor.ts` | `tile.mesh`, `token.mesh` | Typed mesh reader — only place reading mesh geometry |
-| `render/render-gate.ts` | `Hooks.on*` | Thin hook subscriber only — routes to render-lifecycle.ts |
-| `transform/stage-transform.ts` | `canvas.app.stage`, `document.getElementById("hud")` | Isometric stage transform — legit adapter |
-| `transform/bg-transform.ts` | `canvas.environment.primary.background`, `PIXI.*` | Background counter-transform — legit adapter |
-| `transform/tile-transform.ts` | `tile.mesh`, `renderFlags.set` | Tile mesh mutation — legit adapter |
-| `transform/token-transform.ts` | `token.mesh`, `renderFlags.set` | Token mesh mutation — legit adapter |
-| `transform/ruler-patch.ts` | `CONFIG.Token/Tile.hudClass`, `canvas.app.stage` | Prototype patches — legit adapter (rename to hud-position-patch.ts: TODO) |
-| `hud/hud-utils.ts` | DOM `.style`, `canvas.app.stage.worldTransform` | HUD CSS positioning |
-| `ui/*` | `Hooks.on renderSceneConfig/TileConfig/TokenConfig/GridConfig` | AppV2 form injection |
-| `occluder/occluder.ts` | `tile.mesh.alpha`, `canvas.tiles/tokens.placeables` | Alpha occlusion — self-contained system, high isolation risk, Phase 6 last |
-| `render/fog-helpers.ts` | `canvas.visibility.testVisibility`, `canvas.fog.isPointExplored`, `canvas.tokens.controlled` | Fog visibility logic — called by iso-renderer for sight-tracked visuals |
+| Layer | File | Role |
+|-------|------|------|
+| Canvas accessor | `core/canvas-env.ts` | Single typed accessor for all `canvas.*` / `game.*` reads |
+| Render entry point | `render/iso-renderer.ts` | Single PIXI rendering facade — all visual output |
+| Render decisions | `render/render-lifecycle.ts` | Single file where all show/hide/rebuild calls live |
+
+`render/render-gate.ts` is a thin Foundry hook subscriber that routes to lifecycle functions. After Phase 11 it dissolves into `core/hook-registry.ts`.
+
+### Boundary Files
+
+Only these files may use `canvas.*`, `PIXI.*`, `Hooks.*`, `game.*`, `CONFIG.*` directly.
+
+| File | Permitted |
+|------|-----------|
+| `core/canvas-env.ts` | `canvas.*`, `game.user`, `game.settings` |
+| `core/flags.ts` | `game.settings.get`, `canvas.scene.getFlag` |
+| `core/module.ts` | `Hooks.once("init")`, bootstrap only |
+| `core/hook-registry.ts` *(Phase 11)* | `Hooks.on*` — the sole Hooks registrar after Phase 11 |
+| `render/layer-manager.ts` | `canvas.stage`, `PIXI.Container` |
+| `render/iso-renderer.ts` | `PIXI.*` |
+| `render/iso-sprite-layer.ts` | `PIXI.Sprite`, own Hooks until Phase 11 |
+| `render/mesh-accessor.ts` | `tile.mesh`, `token.mesh` |
+| `render/render-gate.ts` | `Hooks.on*` until Phase 11, then renderer registry only |
+| `render/fog-helpers.ts` | `canvas.visibility.*`, `canvas.fog.*`, `game.user` |
+| `transform/stage-transform.ts` | `canvas.app.stage`, `Hooks.on*` until Phase 11 |
+| `transform/bg-transform.ts` | `canvas.environment.primary.background`, `PIXI.*` |
+| `transform/tile-transform.ts` | `tile.mesh`, `renderFlags.set` |
+| `transform/token-transform.ts` | `token.mesh`, `renderFlags.set` |
+| `transform/ruler-patch.ts` | `CONFIG.*`, `canvas.app.stage` |
+| `hud/hud-utils.ts` | DOM `.style`, `canvas.app.stage.worldTransform` |
+| `ui/*` | `Hooks.on render*Config` form injection |
+| `occluder/occluder.ts` | `tile.mesh.alpha`, `canvas.tiles/tokens.placeables` |
+
+### Rules
+
+1. **Boundary rule**: only boundary files use `canvas.*`, `PIXI.*`, `Hooks.*`, `game.*`, `CONFIG.*` directly.
+2. **Idempotency**: `IsoRenderer.render({ key })` replaces the prior visual for that key. Call unconditionally.
+3. **Single decision point**: all show/hide/update/clear calls happen inside `render-lifecycle.ts` functions.
+4. **Strangler Fig**: never two live implementations of the same logic. Wrap → migrate callers → delete old.
+5. **Commit rule**: module must load in Foundry with scene functional at every commit.
+6. **200 LOC limit**: new source files obey the workspace hard block.
 
 ---
 
-## New Files
+## Audit Findings (2026-06-19)
 
-| File | Absorbs from | Responsibility |
-|------|-------------|----------------|
-| `core/canvas-env.ts` | ~37 files: `canvas.grid?.size ?? 100`, `canvas.app.stage.worldTransform`, `canvas.scene.getFlag`, `game.user.isGM`, `canvas.dimensions`, `canvas.tokens/tiles.placeables`, `canvas.scene.tokenVision`, `canvas.colors.fogExplored`, etc. | Single typed accessor. All canvas reads in non-boundary files route here. |
-| `render/iso-renderer.ts` | 8 overlay classes (the repeated ensureLayer → new PIXI.Container → addChild → bringToTop → Map → destroy block) | Single rendering entry point. Owns PIXI Container lifecycle, key registry, z-order, sight-tracked state machine. |
-| `render/iso-geometry.ts` | `draw/volume-box.ts`: `computeVerts`, `computeTokenVerts`, `tokenFootprint` | Footprint math. The **one** place reading `canvas-env.gridSize()` + `currentProjection()` to compute world-space geometry. After migration, `volume-box.ts` becomes pure (receives geometry in, draws it). |
-| `render/mesh-accessor.ts` | 11 `as unknown as MeshLike` casts across overlays/gizmos/contour/mesh-corners | `geometryOf(placeable): MeshGeometry \| null`. One typed, null-safe reader of tile/token mesh geometry. |
-| `render/render-lifecycle.ts` | `render/render-gate.ts` dispatch logic (moves here). Scattered hook handlers in overlays/gizmos. | Named lifecycle functions. ALL rendering decisions live here. See section below. |
-| `core/history.ts` | 4 inconsistent `canvas.X.history.push(...)` sites in tile-drag, token-gizmos, token-elev-drag, wall-manager | Canonical pre-drag history push with one options policy. See undo note below. |
+### What works
 
-Existing `render/render-gate.ts` and `draw/volume-box.ts` slim down but remain.
+- `canvas-env.ts` covers all canvas reads in non-boundary files ✓
+- IsoRenderer API: rect/circle/polygon/lines/text/sprite, interaction, flat, sight-tracked, key idempotency ✓
+- `render-lifecycle.ts` is the single rendering decision point ✓
+- `render-gate.ts` is a thin subscriber (~50 lines) ✓
+- `module.ts` has explicit renderer registry and layer order declaration ✓
+
+### Smells
+
+**A — Dead PIXI code** (`handle-draw.ts`, `handle-factories.ts`, `draw/shadow.ts`, `draw/shapes.ts`)
+
+`makeHandle`, `makeCircleHandle`, `makeSquareCounterHandle`, `makeMoveHandle`, `makeSwapHandle`,
+`makeFaceHandle`, `makeHandleForType` — **zero callers**. Pre-IsoRenderer pattern. Gizmos now use
+ShapeSpec directly via `IsoRenderer.render()`.
+
+`drawGroundShadow()` in `draw/shadow.ts` — **zero callers**. Callers now use `shadowTexture()` +
+`IsoRenderer.render({ kind:"sprite" })`.
+
+`makeCounterWrapper()` in `draw/shapes.ts` — **zero callers**. `IsoRenderer`'s `flat:true` absorbed this.
+
+These look like valid patterns to future devs but are inert. Phase 9 deletes them.
+
+**B — IsoRenderer phantom API surface**
+
+- `kind:"3d-box"` in `ShapeSpec` — declared, NOT implemented in `_paint()`. Silent no-op.
+- `space: CoordSystem` — declared on `RenderSpec` but `_paint()` ignores it. All callers pass `"WORLD"`.
+  `GRID/ISO3D/IMAGE/SCREEN/VIEWPORT` are fiction.
+- `placement.offset?: P2` — declared, never read.
+
+Phase 10 cleans these up.
+
+**C — Hook registration scattered**
+
+`Hooks.on` calls exist in ~10 files. Several fire on the same Foundry event independently with undefined
+execution order:
+
+- `refreshToken` → object-transform + depth-sorter + render-gate (order: undefined)
+- `canvasReady` → stage-transform + bg-gizmos + iso-sprite-layer + wall-manager + render-gate (order: undefined)
+- `renderGridConfig` → stage-transform + bg-html + render-gate (order: undefined; bg-html and render-gate both
+  handle this event separately, creating overlap)
+- `updateTile` → wall-manager + preset-manager + render-gate (order: undefined; preset must complete before render)
+- `createTile` → preset-manager must fire BEFORE render-gate's `drawTile` to ensure flags are set on first draw
+
+Phase 11 centralizes all `Hooks.on` into `core/hook-registry.ts` with explicit per-event ordering.
+
+**D — `iso-sprite-layer.ts` not in boundary table**
+
+Creates `PIXI.Sprite` directly, manages own `Map<string, PIXI.Sprite>` registries, registers 4 Hooks.
+Architecturally IS a boundary (sprite clones need to live outside Foundry's VisibilityFilter; parallel
+rendering track is intentional). Already added to boundary table above.
+
+**E — `game.*` reads outside boundaries (minor)**
+
+- `token-background.ts:20,26`: `game.users.get()`, `game.user` for player color
+- `tile-transform.ts:63`: `game.user?.isGM` — use `CanvasEnv.isGM()`
+- `hud/tile-hud.ts:19`: `game.i18n?.localize()`
 
 ---
 
-## IsoRenderer API
+## Phase 9 — Dead Code Purge
+
+Low risk. All targets confirmed zero callers in audit. Grep before each delete.
+
+### `gizmos/handle-draw.ts`
+Delete: `makeHandle`, `makeCircleHandle`, `makeSquareCounterHandle`, `makeMoveHandle`, `makeSwapHandle`, `makeFaceHandle`.
+Keep: `HANDLE_SIZE`, `HALF`.
+
+### `gizmos/handle-factories.ts`
+Delete: `makeHandleForType`, `HANDLE_COLOR`, all `make*` imports from `./handle-draw`.
+Keep: `createRotateBlocker` (still used by `tile-gizmos.ts` for Foundry controls-layer rotate blocker).
+
+### `gizmos/index.ts` + `gizmos/index.d.ts`
+Remove exports of all deleted functions.
+
+### `draw/shadow.ts`
+Delete: `drawGroundShadow`.
+Keep: `shadowTexture`, `shadowAlpha`.
+
+### `draw/shapes.ts`
+Delete: `makeCounterWrapper`.
+Keep: `drawDash`, `drawDashedContour`, `suppressMipmap`.
+
+---
+
+## Phase 10 — IsoRenderer API Completeness
+
+### 10a — `kind:"3d-box"` (remove)
+
+`grep -rn '"3d-box"' src/` to confirm zero callers. If zero: remove from `ShapeSpec` union in
+`iso-renderer.ts`. No `_paint()` branch to add.
+
+If 3d-box rendering is ever needed: implement as 6-face volume using `PIXI.Graphics.drawPolygon` per face
+with z-sorted painter's algorithm. That's a separate design session.
+
+### 10b — `placement.offset` (implement or remove)
+
+Check callers. If zero: remove `offset?: P2` from `Placement` interface.
+If used: `c.position.set(a.x + (spec.placement.offset?.x ?? 0), a.y + (spec.placement.offset?.y ?? 0))` in `render()`.
+
+### 10c — `space: CoordSystem` (document)
+
+Do not implement the 5 coord transforms — no concrete need yet. Add comment on the field:
+`// "WORLD" only — other values reserved, coord transform not yet implemented`
+Keeps the future door open without lying to callers.
+
+### 10d — `game.*` boundary (minor)
+
+- `tile-transform.ts:63`: `game.user?.isGM` → `CanvasEnv.isGM()`
+- `token-background.ts`: `game.users.get(uid)` / `game.user` for player color → add
+  `CanvasEnv.userColor(userId: string): number` accessor, or accept as-is if `game.users` is
+  considered a data boundary (not a canvas boundary).
+
+---
+
+## Phase 11 — Hook Centralization
+
+### Goal
+
+Every `Hooks.on(...)` call lives in `core/hook-registry.ts`. Each subsystem exports named handler
+functions. No `activate()` registers its own hooks. Order explicit and controlled per event.
+
+`core/hook-registry.ts` becomes a boundary file — the sole `Hooks.on` registrar (except
+`module.ts`'s `Hooks.once("init")`).
+
+### Pattern
+
+Before:
+```typescript
+// wall-manager.ts
+static activate(): void {
+  Hooks.on("preUpdateTile", WallManager.onPreUpdateTile);
+  Hooks.on("updateTile",    WallManager.onUpdateTile);
+}
+```
+
+After:
+```typescript
+// wall-manager.ts — export named handlers, no Hooks.on
+export function onPreUpdateTile(doc: unknown, ...): void { ... }
+export function onUpdateTile(doc: unknown, changes: Record<string, unknown>): void { ... }
+
+// hook-registry.ts — explicit order per event
+Hooks.on("updateTile", (doc, changes) => {
+  WallManager.onUpdateTile(doc, changes);      // data sync first
+  PresetManager.onUpdateTile(doc, changes);    // preset upsert
+  RenderGate.onUpdateTile(doc, changes);       // render last, sees updated data
+});
+```
+
+### Proposed execution order per hook
+
+```
+canvasInit       → IsoSpriteLayer.onCanvasInit
+
+canvasReady      → StageTransform.onCanvasReady      // iso transform applied first
+                 → WallHistory.clear                 // data reset
+                 → IsoSpriteLayer.onCanvasReady      // ticker wired
+                 → RenderGate.onCanvasReady          // overlays built last
+
+refreshToken     → ObjectTransform.onRefreshToken    // mesh mutation first
+                 → DepthSorter.onRefreshToken        // sort after mesh settles
+                 → RenderGate.onRefreshToken         // render last
+
+refreshTile      → ObjectTransform.onRefreshTile
+                 → DepthSorter.onRefreshTile
+                 → RenderGate.onRefreshTile
+
+updateTile       → WallManager.onUpdateTile          // wall sync
+                 → PresetManager.onUpdateTile        // preset upsert
+                 → RenderGate.onUpdateTile           // render last
+
+preUpdateTile    → WallManager.onPreUpdateTile
+
+updateToken      → PresetManager.onUpdateToken
+                 → RenderGate.onUpdateToken
+
+updateScene      → StageTransform.onUpdateScene
+                 → RenderGate.onSceneChange
+
+preUpdateScene   → ObjectTransform.onPreUpdateScene
+
+renderGridConfig → StageTransform.onRenderGridConfig  // stage transform first
+                 → BgHtml.onRenderGridConfig          // background preview HTML
+                 → RenderGate.onGridConfigOpen        // clears overlays last
+
+closeGridConfig  → BgHtml.onCloseGridConfig
+                 → StageTransform.onCloseGridConfig
+                 → RenderGate.onGridConfigClose
+
+closeSceneConfig → StageTransform.onCloseSceneConfig
+
+sightRefresh     → RenderGate.onSightRefresh
+canvasTeardown   → RenderGate.onCanvasTeardown
+renderTileHUD    → TileHud.onRenderTileHUD
+
+drawToken        → RenderGate.onDrawToken
+drawTile         → RenderGate.onDrawTile
+destroyToken     → RenderGate.onDestroyToken         // guard: !isPreviewClone
+destroyTile      → RenderGate.onDestroyTile          // guard: !isPreviewClone
+controlToken     → RenderGate.onControlToken
+controlTile      → RenderGate.onControlTile
+deleteToken      → RenderGate.onDeleteToken
+deleteTile       → WallManager.onDeleteTile
+                 → RenderGate.onDeleteTile
+deleteWall       → WallManager.onDeleteWall
+updateWall       → WallManager.onUpdateWall
+changeScene      → IsoSpriteLayer.onChangeScene
+resetFogOfWar    → IsoSpriteLayer.onResetFogOfWar
+
+preCreateTile    → PresetManager.onPreCreateTile
+createTile       → PresetManager.onCreateTile        // preset flags applied BEFORE render fires drawTile
+createToken      → PresetManager.onCreateToken
+createScene      → PresetManager.onCreateScene
+
+ready            → PresetManager.onReady
+init             → module.ts (Hooks.once — stays there)
+```
+
+### Files with `activate()` to dissolve
+
+| File | Change |
+|------|--------|
+| `render/render-gate.ts` | Remove `activate()`. Keep renderer registry (`registerToken/Tile`). |
+| `transform/stage-transform.ts` | Remove `activate()`. Export named handlers. |
+| `transform/object-transform.ts` | Remove `activate()`. Export named handlers. |
+| `background/bg-html.ts` | Remove `Hooks.on` from `activate()`. Export named handlers. |
+| `background/bg-gizmos.ts` | Remove `canvasReady` hook (lifecycle already handles this via render-gate). |
+| `hud/tile-hud.ts` | Remove `activate()`. Export `onRenderTileHUD`. |
+| `sorter/depth-sorter.ts` | Remove `activate()`. Export `onRefreshToken`, `onRefreshTile`. |
+| `render/iso-sprite-layer.ts` | Remove `activate()`. Export named handlers. |
+| `preset/preset-manager.ts` | Remove `activate()`. Export named handlers. |
+| `walls/wall-manager.ts` | Remove `activate()`. Export named handlers. |
+
+### `module.ts` after Phase 11
 
 ```typescript
-const IsoRenderer = {
-  render(spec: RenderSpec): RenderHandle,
-  clear(key: string): void,
-  clearOwner(ownerId: string): void,
-  clearLayer(layer: LayerKey): void,
-  clearAll(): void,
-};
-
-interface RenderSpec {
-  // What component this belongs to — drives default layer + lighting policy
-  owner: { kind: "tile" | "token" | "background"; id: string };
-
-  // What to draw — shape and interactivity are orthogonal
-  visual:       ShapeSpec;
-  interaction?: Interaction;   // any shape becomes a gizmo when this is present
-
-  // Coordinate system for placement.anchor; IsoRenderer transforms to WORLD via coord-map
-  space:    CoordSystem;       // "WORLD" | "ISO3D" | "GRID" | "IMAGE" | "SCREEN" | "VIEWPORT"
-  placement: Placement;
-
-  // Which layer (default derived from owner.kind if omitted)
-  layer?: LayerKey;
-
-  // Z-ordering within the layer
-  z?: number | "top";
-
-  // Visibility: follows fog/sight system or always draws
-  visibility?: "always-visible" | "sight-tracked";  // default: "always-visible"
-
-  // Apply inverse stage transform — visual appears screen-upright / undistorted
-  flat?: boolean;
-
-  // Idempotency key — render() with same key REPLACES the prior visual for that key
-  key: string;   // e.g. "tile-abc123:box", "token-xyz:shadow"
-}
-
-// --- Shape types (discriminated union) ---
-
-type ShapeSpec =
-  | { kind: "rect";    w: number; h: number;  fill?: Color; stroke?: Stroke }
-  | { kind: "circle";  radius: number;        fill?: Color; stroke?: Stroke }
-  | { kind: "polygon"; points: P2[];          fill?: Color; stroke?: Stroke }
-  | { kind: "3d-box";  verts: BoxVerts;       fill?: Color; stroke?: Stroke }
-  | { kind: "lines";   build: (g: DrawAPI) => void }   // freeform — DrawAPI wraps PIXI.Graphics, no raw PIXI in consumer
-  | { kind: "text";    content: string;       style: TextStyleSpec }
-  | { kind: "sprite";  texture: TextureRef;   anchor?: P2; scale?: P2 };
-
-// Optional: attached to any shape to make it interactive
-interface Interaction {
-  cursor?:        CSSCursor;
-  onPointerDown?: (e: PIXI.FederatedPointerEvent) => void;
-  onPointerMove?: (e: PIXI.FederatedPointerEvent) => void;
-  onPointerUp?:   (e: PIXI.FederatedPointerEvent) => void;
-}
-
-interface Placement {
-  anchor:  P2 | P3;   // point expressed in `space`
-  offset?: P2;         // additional world-px nudge after coord transform
-}
-
-// Returned by IsoRenderer.render() — per-object control without re-specifying
-interface RenderHandle {
-  readonly key: string;
-  show(): void;
-  hide(): void;
-  update(partial: Partial<RenderSpec>): void;
-  remove(): void;
-}
+Hooks.once("init", () => {
+  registerVolumeSettings();
+  registerSceneConfigHook();
+  registerTokenConfigHook();
+  registerTileConfigHook();
+  registerRulerPatch();
+  registerRenderers();   // was gate.registerToken/Tile chain
+  registerAllHooks();    // core/hook-registry.ts — wires everything
+  LayerManager.declareOrder([...]);
+  console.log("isoroll | initialized");
+});
 ```
 
 ---
 
-## Visibility Taxonomy
+## Open Items (pre-merge decision)
 
-Named to match Foundry's own terminology (`fog.colors.explored/unexplored`, `fog.isPointExplored`,
-`canvas.visibility.testVisibility`). Foundry's `CONST.LIGHTING_LEVELS` (DARKNESS/DIM/BRIGHT etc.) is
-for light-source intensity on the scene — **we do not use it**.
+### B29 — Undo of linked-wall displacement lost
 
-```
-visibility: "always-visible"   →  draw regardless of fog/vision state
-                                   use for: GM overlays, gizmos, volume boxes, debug
+Wall drag commit does not produce an undoable Tile-layer history entry.
 
-            "sight-tracked"    →  follow token sight system (three states)
-                                   use for: sprite clones, shadows, objects that should fog-match
+Bisect against `3403e6e` to confirm onset. Check:
+- `wall-overlay-ops.ts` drag `onUp` path → does it call `WallHistory.push({ k:"move", ... })`?
+- `wall-history.ts` `undo()` case `k === "move"` — does it reconstruct the displacement correctly?
 
-When "sight-tracked", IsoRenderer internally manages tint on sightRefresh via fog-helpers.ts:
-  visible    →  tint 0xffffff (full brightness)
-  explored   →  tint canvas.colors.fogExplored  (Foundry's configured explored color)
-  unexplored →  visible = false
-```
+See KNOWN-BUGS.md B29 for full symptom description.
 
-Consumers declare intent. IsoRenderer owns the state machine.
+### Occluder new path (`isorollNewOccluder=true`)
+
+New path untested in Foundry. Enable via `game.settings.set("isoroll","isorollNewOccluder",true)` then
+reload. Confirm tile alpha fades when token walks behind a tile. Only after confirmed: remove flag +
+`activateLegacy()` from `occluder.ts` and remove the conditional in `module.ts`.
 
 ---
 
-## Lifecycle Entry Points (render-lifecycle.ts)
+## Merge Decision
 
-Single file. ALL rendering decisions (show/hide/update/clear) happen inside one of these functions.
-`render-gate.ts` becomes a thin Foundry-hook subscriber that routes into here.
-UI hooks (`renderSceneConfig/TileConfig/TokenConfig`) stay in `ui/` — form injection, not rendering.
+Phases 9–11 are cleanup, not features. Branch `refactor/iso-renderer` is safe to merge → `develop`
+now with B29 documented and occluder flag still off.
 
-```typescript
-// Scene
-export function onCanvasReady(): void
-export function onCanvasTeardown(): void
-export function onSceneChange(scene: Scene, changes: object): void
+**Option A (recommended):** Merge now. Continue Phase 9–11 on new branch `refactor/cleanup`.
 
-// Tile
-export function onTileRefresh(tile: Tile): void
-export function onTileFlagsChange(tile: Tile): void
-export function onTileSelect(tile: Tile): void
-export function onTileDeselect(tile: Tile): void
-export function onTileMove(tile: Tile): void         // during drag
-
-// Token
-export function onTokenRefresh(token: Token): void
-export function onTokenFlagsChange(token: Token): void
-export function onTokenSelect(token: Token): void
-export function onTokenDeselect(token: Token): void
-export function onTokenMove(token: Token): void      // during drag
-
-// Vision / fog
-export function onSightRefresh(): void               // re-evaluate all sight-tracked visuals
-
-// Background / GridConfig
-export function onGridConfigOpen(app: Application): void
-export function onGridConfigPreview(params: object): void
-```
-
----
-
-## Migration Strategy: Strangler Fig
-
-Never two live versions of the same logic simultaneously.
-
-1. New file created with full interface, initially calls old code inside.
-2. Callers of the old code are updated to call the new file instead.
-3. Old code inside new file replaced with real implementation.
-4. Old file/class deleted only when fully replaced.
-
-At every step: one source of truth, builds cleanly, loads in Foundry.
-
-Example — `VolumeOverlay`:
-- Step A: `IsoRenderer.render(...)` internally delegates to `VolumeOverlay.show()` → behavior unchanged
-- Step B: `VolumeOverlay.show()` replaced to call `IsoRenderer.render(...)` → still one truth
-- Step C: `VolumeOverlay` becomes a thin caller → delete class, inline call into lifecycle function
-
----
-
-## Phase Plan
-
-### Phase 0 — Pre-flight (no logic change, zero risk)
-- [x] Verify `sorter/depth-sorter.ts` `_sort()` reference: does `IsoSpriteLayer._sort()` exist?
-      Added `_sort(): void {}` stub to IsoSpriteLayer. Method did not exist; DepthSorter.sort() line 38
-      was a dead reference. Phase 6 fills in the stub when DepthSorter activates.
-- [x] Confirm branch `refactor/iso-renderer` created off `develop` ✓ (done)
-
-### Phase 1 — Stub new files (zero runtime impact)
-All new files: full TypeScript interfaces, `throw new Error("not implemented")` bodies or empty.
-Build must pass. Nothing calls them yet.
-- [x] `core/canvas-env.ts`
-- [x] `render/iso-renderer.ts`
-- [x] `render/iso-geometry.ts`
-- [x] `render/mesh-accessor.ts`
-- [x] `render/render-lifecycle.ts`
-- [x] `core/history.ts`
-- [x] Add new files to their module's `index.ts` facades (facade-gate requirement)
-- [x] Build: `npm run build` passes (83 modules, 145.72 kB — stubs tree-shaken, zero size impact)
-
-### Phase 2 — canvas-env goes live (mechanical, compiler-verified)
-Implement all `canvas-env.ts` accessors. Mechanical find-replace in non-boundary files — no logic change.
-- [x] Implement accessors: `gridSize()`, `gridDistance()`, `gridUnits()`, `scene()`, `sceneFlag(key)`,
-      `tokens()`, `tiles()`, `dimensions()`, `worldTransform()`, `stage()`, `isGM()`,
-      `tokenVision()`, `fogColors()`
-- [x] Replace all scattered reads in non-boundary files:
-      `canvas.grid?.size ?? 100` → `CanvasEnv.gridSize()` (7 files: volume-box, depth-sorter, tile-gizmos, tile-drag, token-gizmos, token-background, token-elev-drag, wall-overlay-ops)
-      `canvas.app.stage.worldTransform` → `CanvasEnv.worldTransform()` (5 files: contour, tile-drag, token-gizmos, wall-overlay-ops, coord-debug)
-      `(canvas.grid as ...).units` → `CanvasEnv.gridUnits()` (token-background)
-      `canvas.grid?.distance` → `CanvasEnv.gridDistance()` (coord-debug)
-      Remaining patterns (sceneFlag, isGM, dimensions) had no non-boundary callsites in Phase 2 scope.
-      bg-drag.ts + bg-gizmos.ts worldTransform deferred to Phase 7 (background/ audit).
-- [ ] Smoke test: load scene, enable isoroll, verify tiles/tokens render (⚠ requires Foundry — deferred)
-
-### Phase 3 — iso-geometry + mesh-accessor go live
-- [x] Implement `iso-geometry.ts`: `tileVerts(tile)`, `tokenVerts(token)`, `footprint(token)`
-      Absorbed computeVerts/computeTokenVerts/tokenFootprint logic from volume-box.ts.
-      Reads via CanvasEnv.gridSize()/gridDistance() + currentProjection() — no raw canvas.*.
-      Defines WorldBoxVerts (named vertex struct) and TileFootprint types.
-- [x] Implement `mesh-accessor.ts`: `geometryOf(placeable): MeshGeometry | null`
-      Safe read of tile/token mesh: returns null if no mesh or texture.
-- [x] Refactor `draw/volume-box.ts`: purely functional — drawBox + drawAnchorLine only.
-      Imports WorldBoxVerts from render; exports BoxVerts alias for backward compat.
-- [x] Refactor `draw/contour.ts`: drawMeshContour(g, geo: MeshGeometry|null, wt: PIXI.Matrix).
-      MeshLike interface kept (gizmos/mesh-corners.ts still uses it directly).
-- [x] Update callers:
-      tile-overlay.ts: computeVerts→IsoGeometry.tileVerts, MeshLike cast→MeshAccessor.geometryOf
-      token-gizmos.ts: computeTokenVerts/tokenFootprint→IsoGeometry, MeshLike casts→MeshAccessor
-      token-background.ts: tokenFootprint→IsoGeometry.footprint (3 sites)
-      Boundary-file MeshLike casts (token-transform.ts) untouched — correct to stay.
-- [x] Build clean ✓ (146.53 kB; visual test: 3D box outline, shadow, contour passed — user confirmed)
-
-### Phase 4 — render-lifecycle.ts goes live
-- [x] Implement lifecycle functions — real bodies calling existing overlays (no IsoRenderer.render() yet)
-      Added: onTileDraw, onTileDestroy, onTokenDraw, onTokenDestroy (helpers for gate wiring)
-      Added: registerTokenRenderer, registerTileRenderer (module-level registry replacing RenderGate arrays)
-      Added: classifyToken, classifyTile (moved from render-gate — all dispatch logic now in lifecycle)
-      New hooks wired: canvasTeardown, updateTile (onTileFlagsChange), renderGridConfig→onGridConfigOpen
-      CanvasEnv used for canvas reads: CanvasEnv.tokens/tiles/scene() instead of raw canvas.*
-- [x] In `render-gate.ts`: all Hooks.on registrations route to render-lifecycle functions.
-      RenderGate slimmed to ~50 lines (was 155). registerToken/registerTile forward to lifecycle registry.
-      updateToken and updateTile still pre-filter in gate (isSceneEnabled + flags guard) before calling lifecycle.
-- [x] Move RenderGate's current dispatch/classification logic into the lifecycle functions ✓
-- [ ] Verify all hook paths still fire correctly:
-      canvasReady, refreshTile, refreshToken, sightRefresh, updateScene, updateToken, drawToken, drawTile
-- [ ] Build; smoke test: all interactions work (select, move, fog)
-
-### Phase 5 — IsoRenderer proof: VolumeOverlay tile (one consumer end-to-end)
-Gate on Phase 4. Validate the full API before committing the pattern to all other overlays.
-- [x] Implement `IsoRenderer` core:
-      render/clear/clearOwner, RenderHandle, key→Container registry,
-      LayerKey routing via LayerManager, z-order (zIndex + bringToTop),
-      sight-tracked state machine (isoRendererSightRefresh export) via _sightTracked set
-- [x] Wire `VolumeOverlay` (tile only): replaced ensureLayer/new PIXI/addChild/bringToTop/Map
-      with `IsoRenderer.render({ key: "tile-{id}:box", visual: { kind:"lines", build: ... }, ... })`
-      Handles tracked in VolumeOverlay._handles Map; onDestroy added for clean tile-delete path.
-- [x] DrawAPI changes: drawBox/drawAnchorLine/drawMeshContour/drawDash now accept DrawAPI (not
-      PIXI.Graphics). PIXI.Graphics satisfies DrawAPI structurally — existing callers unchanged.
-      VolumeOverlay._drawInto(g: DrawAPI, tile) calls all draw utilities via DrawAPI only.
-- [ ] Wire shadow: same pattern — deferred to Phase 6 (shadow uses drawGroundShadow→PIXI.Sprite,
-      needs kind:"sprite" support in IsoRenderer._paint which is not yet implemented)
-- [x] Visual test checklist (requires live Foundry):
-      - [x] Box appears on tile selection
-      - [x] Box disappears on deselect
-      - [x] Shadow renders correctly (unchanged — not migrated yet)
-      - [x] Fog state transitions: visible → explored → unexplored
-      - [x] Re-enable scene: box re-renders
-      - [x] Delete tile: no orphan PIXI objects
-- [x] If visual test passes: proceed to Phase 6. If not: fix IsoRenderer, do not proceed.
-
-### Phase 6 — Migrate remaining overlays (one PR per overlay)
-- [x] `VolumeOverlay` (token) → IsoRenderer
-- [x] `TokenBackground` (indicator, label, shadow) → IsoRenderer
-- [x] `VolumeGizmos` (tile gizmos) → IsoRenderer
-- [x] `TokenGizmos` → IsoRenderer
-- [x] `BackgroundGizmos` → IsoRenderer
-- [x] `WallOverlay` → IsoRenderer
-- [x] `Occluder` → IsoRenderer
-      Risk: high (alpha-occlusion logic). Gated behind `settings.isorollNewOccluder` (default off).
-      New path: evaluateAll() called from lifecycle (onTokenRefresh/onTokenDraw/onTokenDestroy/onTileRefresh).
-      Old path: activateLegacy() via direct Hooks — still runs when flag = false.
-      Boundary violations fixed: CanvasEnv for canvas.*, VolumeFlags for game.settings/canvas.scene.
-      Remove flag + activateLegacy() only after extended visual verification.
-
-### Phase 7 — UI + Background (plan separately before starting)
-AppV2 + GridConfig + DOM have their own complexity. Do not start without an analysis session.
-- [x] Audit `ui/` files: what reads canvas beyond form injection?
-      tile-config.ts: canvas.tiles → CanvasEnv.getTile()
-      token-config.ts: canvas.tokens → CanvasEnv.getToken() (added to canvas-env)
-      scene-config.ts, tab-helpers.ts: clean — no canvas reads
-- [x] Audit `background/bg-gizmos.ts`, `bg-html.ts`: which calls are legit vs should use canvas-env?
-      bg-gizmos.ts: already migrated — IsoRenderer + CanvasEnv throughout
-      bg-html.ts: canvas.scene reads → CanvasEnv.scene/sceneFlag; PIXI traversal →
-        BackgroundTransform.findGridConfigPreviewBg() (new helper on boundary file);
-        canvas.scene?.setFlag() left as-is (document write, not a canvas read)
-      bg-drag.ts: canvas.app!.stage.worldTransform → CanvasEnv.worldTransform() (Phase 2 deferral)
-      bg-transform.ts: legit boundary — unchanged
-- [x] Refactor non-boundary calls in bg-gizmos + bg-html to use canvas-env + IsoRenderer
-- [x] Verify GridConfig preview flow end-to-end (live-preview + submit + cancel)
-- [ ] Verify SceneConfig iso tab survives multiple opens (double-inject guard)
-
-### Phase 8 — Cleanup + enforcement
-- [ ] Implement `core/history.ts`: canonical `pushPreDrag(layer, entry)` with options `{isUndo: true}`
-      WARNING: verify linked-wall + tile history interleaving safe before touching (undo currently working;
-      options inconsistency is `{isoroll:"gizmoDrag"}` / `{isUndo:true}` / `{}` across 4 files)
-- [x] Delete dead PIXI/Map plumbing removed by Phase 6:
-      Tile shadow migrated from direct PIXI (ensureLayer/addChild/Map) → IsoRenderer.render({kind:"sprite"})
-      Removed: `shadows: Map<PIXI.DisplayObject>`, `showShadow()`, `hideShadow()` from VolumeOverlay.
-      Remaining intentional direct-PIXI: tile-gizmos rotate blocker (PIXI.Graphics in Foundry controls layer;
-      needs Foundry-layer PIXI access, not moveable to IsoRenderer without custom container support).
-- [x] Boundary enforcement grep audit — zero exceptions remain.
-      Added CanvasEnv accessors: primaryLayer(), setSceneFlag(), pushTilesHistory(), pushTokensHistory().
-      All non-boundary canvas.* / PIXI.* reads fixed across all files.
-      `grep canvas\. src/**/*.ts` in non-boundary files returns empty.
-- [x] Update KNOWN-BUGS.md + ROADMAP.md
-
-### Out of Scope
-- DepthSorter activation (ROADMAP Phase 6 — separate design, non-trivial algorithm)
-- Skills rewrite (validate architecture in code first; rewrite after Phase 5+6 proven)
-- VisionMode integration beyond 3-state tint
-
----
-
-## Rules
-
-1. **Boundary rule**: only the files listed in the Boundary Files table may use `canvas.*`, `PIXI.*`,
-   `Hooks.*`, `game.*`, `CONFIG.*` directly. Enforce with ESLint or grep in Phase 8.
-
-2. **Idempotency**: `IsoRenderer.render({ key, ... })` replaces the prior visual for that key.
-   Callers must not track whether they have called render — call unconditionally, IsoRenderer deduplicates.
-
-3. **Single decision point**: all show/hide/update/clear calls happen inside a `render-lifecycle.ts`
-   function. If code outside render-lifecycle.ts calls `IsoRenderer.clear()`, it is wrong.
-   Exception: gizmo show/hide driven by selection events may call `RenderHandle.show/hide()` directly,
-   triggered from the relevant `onTileSelect/onTokenSelect` lifecycle function.
-
-4. **Strangler Fig**: never have two live implementations of the same logic. New file starts as wrapper,
-   caller migrates, old path deleted. No file copies.
-
-5. **Commit rule**: module must load in Foundry with the scene functional at every commit.
-   No broken intermediate states on the branch.
-
-6. **200 LOC limit**: new source files (not docs) obey the workspace hard block.
-   Split large files proactively before the hook blocks the edit.
-
----
-
-## Open / Pending
-
-- `flat` chosen for the inverse-stage-transform flag (CSS 3D intuition: not participating in the projection)
-
-- Phase 7 (UI + background) needs a dedicated analysis session before implementation.
-
-- `render/render-lifecycle.ts` vs expanding `render/render-gate.ts`:
-  **Decision: new file** (`render-lifecycle.ts`), `render-gate.ts` becomes thin subscriber only.
-  Prefix convention: `render-` prefix maintained for the render/ folder files.
+**Option B:** Do Phase 9 (dead code, trivially safe, no logic change) before merging. Push 10–11 post-merge.

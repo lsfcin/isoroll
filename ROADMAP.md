@@ -8,14 +8,17 @@
 
 Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary image) is next feature priority. Phase 1 (token depth) still pending.
 
-IsoRenderer refactor active on branch `refactor/iso-renderer` — Phases 0–8 complete.
+IsoRenderer refactor on branch `refactor/iso-renderer` — Phases 0–8 complete. Post-Phase-8 architectural audit done 2026-06-19. Three cleanup phases planned before/after merge:
 
-**Remaining refactor cleanup (before merging):**
-- Verify Occluder new path in Foundry: `isorollNewOccluder = true` → reload → confirm tile alpha fades when token walks behind tile. Only then remove flag + `activateLegacy()`.
-- Implement `core/history.ts` canonical pre-drag push (see REFACTOR.md Phase 8 WARNING — verify linked-wall + tile history interleaving first). `CanvasEnv.pushTilesHistory/pushTokensHistory` already wraps the raw access; history.ts would add a unified API on top.
-- Wire ESLint rule for boundary enforcement (Phase 8 optional).
+- **Phase 9** — Dead code purge (handle-draw factories, `drawGroundShadow`, `makeCounterWrapper` — zero callers confirmed)
+- **Phase 10** — IsoRenderer phantom API (`kind:"3d-box"` unimplemented, `space` field noop, `placement.offset` unread)
+- **Phase 11** — Hook centralization: all `Hooks.on` into `core/hook-registry.ts`, explicit per-event execution order
 
-See REFACTOR.md for full checklist.
+**Merge decision:** safe to merge now with B29 documented and occluder flag off. Continue Phase 9–11 on `refactor/cleanup`. See REFACTOR.md for full phase specs.
+
+**Open pre-merge items:**
+- B29 (linked-wall undo broken) — see KNOWN-BUGS.md
+- Occluder new path — verify `isorollNewOccluder=true` in Foundry before removing legacy path
 
 ## Backlog
 

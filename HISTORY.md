@@ -4,6 +4,155 @@ Archive of completed work and resolved issues.
 
 ---
 
+## IsoRenderer Refactor — Design Reference (Phases 0–8, archived 2026-06-19)
+
+> Original REFACTOR.md content. Phases 0–8 complete on branch `refactor/iso-renderer`.
+> Active continuation in current REFACTOR.md (Phases 9–11).
+
+### Goal
+
+Isolate all direct Foundry/PIXI API calls to a declared set of boundary files.
+Every visual rendering decision flows through one entry point (`IsoRenderer`).
+Every canvas read flows through one accessor (`canvas-env.ts`).
+
+**Before:** ~37 files touch `canvas.*` directly. ~8 overlay classes each duplicate the same ~25-line
+PIXI lifecycle block (ensureLayer → new Container → addChild → bringToTop → Map registry → destroy).
+
+**After:** Foundry/PIXI calls confined to ~12 boundary files. One rendering API. One canvas accessor.
+Consumers (overlays, gizmos) declare *what* to draw — they never touch `canvas.*` or `PIXI.*`.
+
+### Boundary Files
+
+| File | Permitted direct calls | Reason |
+|------|----------------------|--------|
+| `core/canvas-env.ts` | `canvas.*`, `game.user`, `game.settings` | The one canvas accessor |
+| `core/flags.ts` | `game.settings.get`, `canvas.scene.getFlag` | Flag adapter |
+| `render/layer-manager.ts` | `canvas.stage`, `PIXI.Container` | Layer registry |
+| `render/iso-renderer.ts` | `PIXI.Container`, `PIXI.Graphics`, `PIXI.Sprite` | Rendering façade |
+| `render/mesh-accessor.ts` | `tile.mesh`, `token.mesh` | Typed mesh reader |
+| `render/render-gate.ts` | `Hooks.on*` | Thin hook subscriber |
+| `transform/stage-transform.ts` | `canvas.app.stage`, `document.getElementById("hud")` | Stage transform |
+| `transform/bg-transform.ts` | `canvas.environment.primary.background`, `PIXI.*` | Background counter-transform |
+| `transform/tile-transform.ts` | `tile.mesh`, `renderFlags.set` | Tile mesh mutation |
+| `transform/token-transform.ts` | `token.mesh`, `renderFlags.set` | Token mesh mutation |
+| `transform/ruler-patch.ts` | `CONFIG.Token/Tile.hudClass`, `canvas.app.stage` | Prototype patches |
+| `hud/hud-utils.ts` | DOM `.style`, `canvas.app.stage.worldTransform` | HUD CSS positioning |
+| `ui/*` | `Hooks.on renderSceneConfig/TileConfig/TokenConfig/GridConfig` | AppV2 form injection |
+| `occluder/occluder.ts` | `tile.mesh.alpha`, `canvas.tiles/tokens.placeables` | Alpha occlusion |
+| `render/fog-helpers.ts` | `canvas.visibility.testVisibility`, `canvas.fog.isPointExplored`, `canvas.tokens.controlled` | Fog visibility |
+
+### New Files Created
+
+| File | Absorbs from | Responsibility |
+|------|-------------|----------------|
+| `core/canvas-env.ts` | ~37 scattered `canvas.*` reads | Single typed accessor |
+| `render/iso-renderer.ts` | 8 overlay classes (PIXI lifecycle boilerplate) | Single rendering entry point |
+| `render/iso-geometry.ts` | `draw/volume-box.ts`: computeVerts, computeTokenVerts, tokenFootprint | Footprint math |
+| `render/mesh-accessor.ts` | 11 `as unknown as MeshLike` casts | Safe typed mesh reader |
+| `render/render-lifecycle.ts` | `render/render-gate.ts` dispatch logic + scattered hook handlers | All rendering decisions |
+
+### IsoRenderer API
+
+```typescript
+const IsoRenderer = {
+  render(spec: RenderSpec): RenderHandle,
+  clear(key: string): void,
+  clearOwner(ownerId: string): void,
+  clearLayer(layer: LayerKey): void,
+  clearAll(): void,
+};
+
+type ShapeSpec =
+  | { kind: "rect";    w: number; h: number;       fill?: Color; fillAlpha?: number; stroke?: Stroke }
+  | { kind: "circle";  radius: number;              fill?: Color; fillAlpha?: number; stroke?: Stroke }
+  | { kind: "polygon"; points: P2[];                fill?: Color; fillAlpha?: number; stroke?: Stroke }
+  | { kind: "lines";   build: (g: DrawAPI) => void }
+  | { kind: "text";    content: string;             style: TextStyleSpec; alpha?: number }
+  | { kind: "sprite";  texture: TextureRef;         anchor?: P2; scale?: P2; alpha?: number };
+
+interface RenderSpec {
+  owner:        { kind: "tile" | "token" | "background"; id: string };
+  visual:       ShapeSpec;
+  interaction?: Interaction;    // any shape becomes interactive
+  space:        CoordSystem;    // "WORLD" | "ISO3D" | "GRID" | "IMAGE" | "SCREEN" | "VIEWPORT"
+  placement:    { anchor: P2 | P3; offset?: P2 };
+  layer?:       LayerKey;
+  z?:           number | "top";
+  visibility?:  "always-visible" | "sight-tracked";  // default: "always-visible"
+  testPoint?:   P2;      // ground-level point for fog test (needed when anchor is elevated)
+  flat?:        boolean; // apply inverse stage transform — visual appears screen-upright
+  hitArea?:     P2[];
+  key:          string;  // idempotency — render() with same key replaces prior visual
+}
+```
+
+### Visibility Taxonomy
+
+```
+visibility: "always-visible"  →  draw regardless of fog/vision state
+                                  use for: GM overlays, gizmos, volume boxes, debug
+
+            "sight-tracked"   →  follow token sight system (three states)
+                                  use for: sprite clones, shadows, objects that fog-match
+
+When "sight-tracked", IsoRenderer manages tint on sightRefresh via fog-helpers.ts:
+  visible    →  tint 0xffffff (full brightness)
+  explored   →  tint canvas.colors.fogExplored
+  unexplored →  visible = false
+```
+
+Elevated anchors (e.g. label at top of elevation line) MUST set `testPoint` to the ground position.
+Fog data is at ground level — elevated anchor tests outside that map and always reads as visible.
+
+### Lifecycle Entry Points (render-lifecycle.ts)
+
+```typescript
+export function onCanvasReady(): void
+export function onCanvasTeardown(): void
+export function onSceneChange(scene: Scene, changes: object): void
+export function onTileRefresh(tile: Tile, flags?: Record<string, boolean>): void
+export function onTileFlagsChange(tile: Tile): void
+export function onTileSelect(tile: Tile): void
+export function onTileDeselect(tile: Tile): void
+export function onTileMove(tile: Tile): void
+export function onTokenRefresh(token: Token, flags?: Record<string, boolean>): void
+export function onTokenFlagsChange(token: Token): void
+export function onTokenSelect(token: Token): void
+export function onTokenDeselect(token: Token): void
+export function onTokenMove(token: Token): void
+export function onSightRefresh(): void
+export function onGridConfigOpen(app: Application): void
+export function onGridConfigClose(): void
+export function onGridConfigPreview(params: object): void
+```
+
+### Rules (established)
+
+1. **Boundary rule**: only boundary files may use `canvas.*`, `PIXI.*`, `Hooks.*`, `game.*`, `CONFIG.*` directly.
+2. **Idempotency**: `IsoRenderer.render({ key })` replaces the prior visual for that key. Call unconditionally.
+3. **Single decision point**: all show/hide/update/clear calls happen inside a `render-lifecycle.ts` function.
+4. **Strangler Fig**: never two live implementations of the same logic. New file wraps old, callers migrate, old deleted.
+5. **Commit rule**: module must load in Foundry with the scene functional at every commit.
+6. **200 LOC limit**: new source files obey the workspace hard block.
+
+### Phase Summary (Phases 0–8 complete)
+
+- **Phase 0** — Pre-flight: branch created, `IsoSpriteLayer._sort()` stub added.
+- **Phase 1** — Stub new files: canvas-env, iso-renderer, iso-geometry, mesh-accessor, render-lifecycle, history.ts created with full interfaces.
+- **Phase 2** — canvas-env live: all `canvas.grid?.size`, `canvas.app.stage.worldTransform`, etc. replaced across 7+ files.
+- **Phase 3** — iso-geometry + mesh-accessor live: computeVerts/tokenFootprint absorbed; volume-box.ts purely functional; MeshLike casts eliminated.
+- **Phase 4** — render-lifecycle live: all dispatch/classification moved from render-gate; RenderGate slimmed to ~50 lines.
+- **Phase 5** — IsoRenderer core + VolumeOverlay tile box: full IsoRenderer implemented and proven end-to-end.
+- **Phase 6** — All overlays migrated: VolumeOverlay (token), TokenBackground, VolumeGizmos, TokenGizmos, BackgroundGizmos, WallOverlay, Occluder (gated behind `isorollNewOccluder` flag).
+- **Phase 7** — UI + Background: bg-html/bg-drag/tile-config/token-config boundary violations fixed; GridConfig flow verified.
+- **Phase 8** — Cleanup + enforcement: tile shadow migrated to IsoRenderer `kind:"sprite"`; boundary grep audit clean; KNOWN-BUGS + ROADMAP updated.
+
+### Migration Strategy: Strangler Fig
+
+Never two live versions of the same logic simultaneously. New file created with full interface, initially delegates to old code. Callers updated to call new file. Old code inside new file replaced. Old file deleted only when fully replaced. At every step: one source of truth, builds cleanly, loads in Foundry.
+
+---
+
 ## Resolved Bugs — 2026-06-18
 
 - **B28** — Token elevation label visible through fog. Root cause: `placement.anchor` on the label is the elevated world position `(lx, ly)` — `isoRendererSightRefresh` tested that coordinate, which lies outside the fog map stored at ground level. Fix: added `testPoint: { x: tx + tw/2, y: ty + th/2 }` to label's `IsoRenderer.render()` call in `token-background.ts:140`. Shadow and indicator were already correct (shadow used its own ground anchor; indicator had `testPoint`). *(238d5d2)*
@@ -28,7 +177,7 @@ Archive of completed work and resolved issues.
 - `token-config.ts`: `canvas.tokens.get(id)` → `CanvasEnv.getToken(id)` (new accessor added)
 - `canvas-env.ts`: added `getToken(id: string): Token | undefined`
 - `bg-transform.ts`: added `findGridConfigPreviewBg(): PIXI.Sprite | null` (same traversal already in `onRenderGridConfig` — extracted to avoid PIXI in non-boundary `bg-html.ts`)
-- Verified: SceneConfig double-inject guard working (`tabContentExists` check in `tab-helpers.ts`)
+- Verified: SceneConfig double-inject guard working (`tabContentExists` check in `tab-helpers.ts`) ✓
 
 ### Fix: GridConfig re-renders overlay visuals during session *(fix in render-lifecycle.ts + render-gate.ts)*
 
