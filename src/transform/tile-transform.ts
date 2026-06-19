@@ -65,13 +65,21 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
   const tiles = (canvas.tiles?.placeables as Tile[] | undefined) ?? [];
   const updates = tiles
     .filter(t => VolumeFlags.isForegroundTile(t.document))
-    .map(t => ({
-      _id: t.id,
-      x:      (t.document.x      ?? 0) * ratio,
-      y:      (t.document.y      ?? 0) * ratio,
-      width:  (t.document.width  ?? 0) * ratio,
-      height: (t.document.height ?? 0) * ratio,
-    }));
+    .map(t => {
+      const base = t.document.getFlag(MODULE_ID, "boundHeightBase") as { w: number; h: number } | undefined;
+      const u: Record<string, unknown> = {
+        _id:    t.id,
+        x:      (t.document.x      ?? 0) * ratio,
+        y:      (t.document.y      ?? 0) * ratio,
+        width:  (t.document.width  ?? 0) * ratio,
+        height: (t.document.height ?? 0) * ratio,
+      };
+      // boundHeightBase tracks tile size at last explicit boundH set.
+      // Grid rescale changes tile pixel size by ratio — advance the base so
+      // getEffectiveTileHeight doesn't apply a second ratio factor.
+      if (base) u[`flags.${MODULE_ID}.boundHeightBase`] = { w: base.w * ratio, h: base.h * ratio };
+      return u;
+    });
   if (updates.length === 0) return;
   void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" });
 }

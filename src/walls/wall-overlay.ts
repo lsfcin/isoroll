@@ -21,7 +21,7 @@ export class WallOverlay {
 
   static rebuild(tile: Tile): void {
     if (!_tileKeys.has(tile.id)) return;
-    if (isPreviewClone(tile)) return;
+    if (isPreviewClone(tile)) { WallOverlay.show(tile); return; }
     WallOverlay.refresh(tile);
   }
 
