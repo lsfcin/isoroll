@@ -154,6 +154,10 @@ export class WallManager {
 
   // ── Public façade ────────────────────────────────────────────────────────
 
+  // Drag lifecycle — called by tile-gizmos to keep wall overlay visible during move drag
+  static markWallDrag(tileId: string): void  { WallOverlay.markDragActive(tileId); }
+  static clearWallDrag(tileId: string): void { WallOverlay.clearDragActive(tileId); }
+
   // Reads — delegate to wall-flags / WallOverlay
   static getLinkedWallIds(doc: TileDocument): string[]      { return getLinkedWallIds(doc); }
   static hasLinkedDoor(doc: TileDocument): boolean          { return hasLinkedDoor(doc); }

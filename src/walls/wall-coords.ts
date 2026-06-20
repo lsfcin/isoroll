@@ -46,7 +46,7 @@ export function imageRect(doc: TileDoc): { icx: number; icy: number; sw: number;
 }
 
 // Like imageRect but uses explicit center coordinates — for drag-preview where PIXI position
-// differs from document position (tile.position.x + w/2 gives actual drag center).
+// (center in v14) is passed directly without any offset adjustment.
 export function imageRectAt(doc: TileDoc, cx: number, cy: number): { icx: number; icy: number; sw: number; sh: number } {
   const gridSize = CanvasEnv.gridSize();
   const gridDist = gridDistance();

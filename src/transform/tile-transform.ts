@@ -86,12 +86,12 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
   void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" })
     .then(async () => {
       CanvasEnv.setGridRescaling(false);
-      // Directly sync linked walls — bypasses the onUpdateTile hook path which may be
-      // unreliable after a batch update (hook fires with changes diff that may omit position
-      // if Foundry considers values unchanged after its own implicit rescale).
-      for (const t of tiles) {
+      // Re-fetch fresh tile refs — canvas may have reloaded during the batch update,
+      // making the `tiles` array captured before updateEmbeddedDocuments stale.
+      const freshTiles = (canvas.tiles?.placeables as Tile[] | undefined) ?? [];
+      for (const t of freshTiles) {
         const ids = t.document.getFlag(MODULE_ID, "linkedWallIds") as string[] | undefined;
-        if (ids?.length) await updateLinkedWallPositions(t.document).catch(() => {});
+        if (ids?.length) await updateLinkedWallPositions(t.document).catch(e => console.warn("[isoroll] wall sync after gridRescale:", e));
       }
     })
     .catch(() => CanvasEnv.setGridRescaling(false));

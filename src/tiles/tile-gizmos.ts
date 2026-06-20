@@ -5,6 +5,7 @@ import { currentProjection } from "../transform";
 import { LayerManager, LAYER_KEYS, IsoRenderer } from "../render";
 import type { ShapeSpec } from "../render";
 import { HandleType, DragState, handlePositions, commitDrag, storeDragHistory } from "./tile-drag";
+import { WallManager } from "../walls";
 import { HANDLE_SIZE, HALF, imageBottomLeft, imageTopRight, imageBottomCenter, imageTopCenter, clientToGlobal, createRotateBlocker } from "../gizmos";
 import { BLACK, ORANGE } from "../draw";
 
@@ -135,9 +136,13 @@ export class VolumeGizmos {
       startImgOffX: imgOffX, startImgOffY: imgOffY, startImgScale: imgScale,
       startImgYScale: imgYScale, startImgHalfH: imgHalfH,
     };
+    if (type === "move") WallManager.markWallDrag(tile.id);
     startPointerDrag(drag,
       (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); commitDrag(d, x, y); },
-      (d, e) => { const { x, y } = clientToGlobal(e.clientX, e.clientY); storeDragHistory(d); commitDrag(d, x, y); },
+      (d, e) => {
+        if (type === "move") WallManager.clearWallDrag(tile.id);
+        const { x, y } = clientToGlobal(e.clientX, e.clientY); storeDragHistory(d); commitDrag(d, x, y);
+      },
     );
   }
 
