@@ -2,13 +2,11 @@
 
 import { isPreviewClone, CanvasEnv } from "../core";
 import { IsoRenderer, LAYER_KEYS } from "../render";
-import { drawWallDisplay, drawWallDrag, drawWallSelect } from "./wall-overlay-ops";
+import { drawWallDisplay, drawWallSelect } from "./wall-overlay-ops";
 
 export { WALL_COLORS, wallColor } from "./wall-overlay-ops";
 
 const _tileKeys: Map<string, Set<string>> = new Map();
-// Drag-mode renders use "drag-" key prefix and are tracked separately to avoid polluting _tileKeys.
-const _dragKeys: Map<string, Set<string>> = new Map();
 // Tiles with active gizmo move drag — hide() is suppressed to keep _tileKeys populated for refresh.
 const _dragActive: Set<string> = new Set();
 
@@ -25,28 +23,14 @@ export class WallOverlay {
 
   static rebuild(tile: Tile): void {
     if (isPreviewClone(tile)) {
-      // Draw walls at anchor-computed positions relative to current drag doc.x/y.
-      WallOverlay._showDrag(tile);
+      // Preview clone = native Foundry drag in progress. Always show walls — doc.x/y update live
+      // for clones (same source VolumeOverlay's tileVerts uses). drawWallDisplay now computes
+      // positions from imageRect(doc) + anchor so walls follow cursor each rebuild call.
+      WallOverlay.show(tile);
       return;
     }
-    // Non-preview: clear any drag-mode renders, then rebuild static display if active.
-    for (const k of _dragKeys.get(tile.id) ?? []) IsoRenderer.clear(k);
-    _dragKeys.delete(tile.id);
     if (!_tileKeys.has(tile.id)) return;
     WallOverlay.refresh(tile);
-  }
-
-  private static _showDrag(tile: Tile): void {
-    for (const k of _dragKeys.get(tile.id) ?? []) IsoRenderer.clear(k);
-    // Hide static display renders during drag — map kept so refresh restores them at drop.
-    for (const k of _tileKeys.get(tile.id) ?? []) IsoRenderer.clear(k);
-    const keys = new Set<string>();
-    const doc = tile.document;
-    // Foundry v14 sets tile.position = (doc.x, doc.y) = center with pivot=(w/2,h/2).
-    // During native drag, position tracks the cursor center directly — no offset needed.
-    const pos = (tile as unknown as { position: { x: number; y: number } }).position;
-    drawWallDrag(doc, tile.id, keys, pos.x, pos.y);
-    _dragKeys.set(tile.id, keys);
   }
 
   static onControl(tile: Tile, controlled: boolean): void {
@@ -64,7 +48,7 @@ export class WallOverlay {
     const keys = new Set<string>();
     const refresh = () => WallOverlay.show(tile);
     if (WallOverlay.selectTile === tile.id) drawWallSelect(tile.document, tile.id, keys, refresh);
-    else                                     drawWallDisplay(tile.document, tile.id, keys);
+    else                                     drawWallDisplay(tile, tile.id, keys);
     _tileKeys.set(tile.id, keys);
   }
 
@@ -72,14 +56,11 @@ export class WallOverlay {
     if (_dragActive.has(tileId)) return;
     for (const k of _tileKeys.get(tileId) ?? []) IsoRenderer.clear(k);
     _tileKeys.delete(tileId);
-    for (const k of _dragKeys.get(tileId) ?? []) IsoRenderer.clear(k);
-    _dragKeys.delete(tileId);
   }
 
   static clearAll(): void {
     IsoRenderer.clearLayer(LAYER_KEYS.WALL_OVERLAY);
     _tileKeys.clear();
-    _dragKeys.clear();
     _dragActive.clear();
     WallOverlay.selectTile = null;
   }

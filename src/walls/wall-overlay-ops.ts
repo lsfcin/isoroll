@@ -2,7 +2,7 @@
 
 import { MODULE_ID, startPointerDrag, screenPointToCanvas, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
-import { canvasToAnchor, imageRectAt, anchorToCanvas, wallsLayer, scene, type WallDoc, type TileDoc } from "./wall-coords";
+import { canvasToAnchor, imageRect, anchorToCanvas, wallsLayer, scene, type WallDoc, type TileDoc } from "./wall-coords";
 import type { TileAnchor } from "./wall-types";
 import { WallHistory } from "./wall-history";
 import { IsoRenderer, LAYER_KEYS } from "../render";
@@ -63,11 +63,17 @@ function epUp(d: EpDrag, ev: PointerEvent): void {
   scene().updateEmbeddedDocuments("Wall", [{ _id: d.wallId, c: nc }]).catch(console.warn);
 }
 
-export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<string>): void {
+export function drawWallDisplay(tile: Tile, tileId: string, keys: Set<string>): void {
+  const doc = tile.document;
   const own = { kind: "tile" as const, id: tileId };
   for (const id of getLinkedWallIds(doc)) {
     const wall = wallsLayer().get(id); if (!wall) continue;
-    const wdoc = wall.document as WallDoc, c = wdoc.c as number[], col = wallColor(wdoc);
+    const wdoc = wall.document as WallDoc, col = wallColor(wdoc);
+    // Compute from stored anchor + live doc.x/y so walls follow tile during native Foundry drag
+    // (doc.x/y update live for preview clones — same source VolumeOverlay uses via tileVerts).
+    const anchor = wdoc.getFlag(MODULE_ID, "tileAnchor") as TileAnchor | undefined;
+    const rect = imageRect(doc as TileDoc);
+    const c = anchor ? anchorToCanvas(rect.icx, rect.icy, rect.sw, rect.sh, anchor) : wdoc.c as number[];
     const lineKey = `tile-${tileId}:wall-${id}:line`, lastClick = { t: 0 };
     const lineH = IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col), hitArea: wallHitArea(c, 6, 5),
       space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY,
@@ -88,33 +94,6 @@ export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<str
         },
       });
       drag.epH = epH; keys.add(key);
-    }
-  }
-}
-
-// Drag-preview rendering: positions computed from stored anchor + PIXI drag center (cx, cy).
-// Uses "drag-" key prefix so keys are tracked separately from static _tileKeys display.
-// No interaction handlers — native tile drag captures pointer events anyway.
-export function drawWallDrag(doc: TileDocument, tileId: string, keys: Set<string>, cx: number, cy: number): void {
-  const own = { kind: "tile" as const, id: tileId };
-  const rect = imageRectAt(doc as TileDoc, cx, cy);
-  for (const id of getLinkedWallIds(doc)) {
-    const wall = wallsLayer().get(id); if (!wall) continue;
-    const wdoc = wall.document as WallDoc, col = wallColor(wdoc);
-    const anchor = wdoc.getFlag(MODULE_ID, "tileAnchor") as TileAnchor | undefined;
-    const c = anchor ? anchorToCanvas(rect.icx, rect.icy, rect.sw, rect.sh, anchor) : wdoc.c as number[];
-    const lineKey = `tile-${tileId}:drag-wall-${id}:line`;
-    IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col),
-      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY });
-    keys.add(lineKey);
-    for (const [ep, xi, yi] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
-      const key = `tile-${tileId}:drag-wall-${id}:ep${ep}`;
-      IsoRenderer.render({ key, owner: own,
-        visual: { kind: "lines", build: (g) => drawEpDot(g, col, 1, 0, 0) },
-        space: "WORLD", placement: { anchor: { x: c[xi], y: c[yi] } },
-        layer: LAYER_KEYS.WALL_OVERLAY, z: ep === "A" ? "top" : undefined,
-      });
-      keys.add(key);
     }
   }
 }
