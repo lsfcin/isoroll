@@ -153,6 +153,25 @@ Never two live versions of the same logic simultaneously. New file created with 
 
 ---
 
+## Completed — 2026-06-21
+
+### IsoRenderer Refactor — Cleanup Phases 9 + 10 *(on branch refactor/cleanup)*
+
+- **Phase 9** — Dead code purge: handle-draw factories, `drawGroundShadow`, `makeCounterWrapper` removed (zero callers confirmed). *(3448a94)*
+- **Phase 10** — IsoRenderer phantom API trimmed: `kind:"3d-box"` (unimplemented shape), `space` field (was a no-op), `placement.offset` (unread) removed from the render spec. *(cdfc95f)*
+
+---
+
+## Resolved Bugs — 2026-06-21
+
+- **Bug 3c** — Linked walls disappear during tile drag. Root cause: `drawWallDisplay` pre-computed `c = wdoc.c` (committed coords) before `IsoRenderer.render`; during drag `wdoc.c` never updates. For gizmo drag: Foundry deselect on gizmo grab cleared `_tileKeys`, blocking `refresh()`. Fix: `drawWallDisplay` now computes `c` from `imageRect(tile.document) + anchor` (live for preview clones, same as `IsoGeometry.tileVerts` used by working VolumeOverlay); `rebuild()` for preview clones calls `show(tile)` directly; `_dragActive` suppresses `hide()` during gizmo move. *(9811adf)*
+
+- **Bug 3b** — Linked walls displaced after grid size change. Root cause: `updateLinkedWallPositions` in `.then()` iterated stale tile refs captured before canvas reload during batch update; errors silently swallowed. Fix: re-fetch `canvas.tiles.placeables` fresh in `.then()`; surface errors via `console.warn`. *(9811adf, 6558cf9)*
+
+- **Bug 3a** — Tiles lost height proportion after grid size change. Root cause: `boundHeightBase` not scaled in grid rescale. Fix: `onUpdateSceneGridRescale` now scales `boundHeightBase.w/h` by ratio alongside `x, y, width, height`. *(ddf5e84)*
+
+---
+
 ## Resolved Bugs — 2026-06-18
 
 - **B28** — Token elevation label visible through fog. Root cause: `placement.anchor` on the label is the elevated world position `(lx, ly)` — `isoRendererSightRefresh` tested that coordinate, which lies outside the fog map stored at ground level. Fix: added `testPoint: { x: tx + tw/2, y: ty + th/2 }` to label's `IsoRenderer.render()` call in `token-background.ts:140`. Shadow and indicator were already correct (shadow used its own ground anchor; indicator had `testPoint`). *(238d5d2)*
