@@ -8,10 +8,7 @@
 
 Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary image) is next feature priority. Phase 1 (token depth) still pending.
 
-IsoRenderer refactor — Phases 0–11 complete on branch `refactor/cleanup` (see HISTORY.md). Wall bugs 3a/3b/3c + B29 fixed.
-
-**Open pre-merge item:**
-- Occluder new path — verify `isorollNewOccluder=true` in Foundry before removing legacy path
+IsoRenderer refactor — Phases 0–11 complete, merged to `develop` (see HISTORY.md). Wall bugs 3a/3b/3c + B29 fixed. Occluder lifecycle path verified and flag removed.
 
 ## Backlog
 
