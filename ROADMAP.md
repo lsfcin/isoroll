@@ -8,16 +8,9 @@
 
 Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary image) is next feature priority. Phase 1 (token depth) still pending.
 
-IsoRenderer refactor — Phases 0–10 complete on branch `refactor/cleanup`. Cleanup phases:
+IsoRenderer refactor — Phases 0–11 complete on branch `refactor/cleanup` (see HISTORY.md). Wall bugs 3a/3b/3c + B29 fixed.
 
-- **Phase 9** ✅ — Dead code purge *(3448a94)*
-- **Phase 10** ✅ — IsoRenderer phantom API trim *(cdfc95f)*
-- **Phase 11** ✅ — Hook centralization: all `Hooks.on` into `core/hook-registry.ts`, explicit per-event execution order
-
-Wall bugs 3a/3b/3c fixed on `refactor/cleanup` *(ddf5e84, 6558cf9, 9811adf)*.
-
-**Open pre-merge items:**
-- ~~B29 (linked-wall undo broken)~~ ✅ fixed *(63f757f)*
+**Open pre-merge item:**
 - Occluder new path — verify `isorollNewOccluder=true` in Foundry before removing legacy path
 
 ## Backlog

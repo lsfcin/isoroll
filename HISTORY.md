@@ -153,6 +153,20 @@ Never two live versions of the same logic simultaneously. New file created with 
 
 ---
 
+## Completed — 2026-06-22
+
+### IsoRenderer Refactor — Cleanup Phase 11 *(on branch refactor/cleanup)*
+
+- **Phase 11** — Hook centralization: all `Hooks.on/once` calls moved from 14 subsystem files into `src/core/hook-registry.ts`. Explicit per-event execution order documented. Private handlers made public across `CanvasTransform` (5), `WallManager` (5+1 new), `TileHud`, `RenderGate` (2 new statics), `IsoSpriteLayer` (2 new methods). `BgHtml.activate()` → `setup()` (stores callbacks, no hook registration). `PresetManager.activate()` removed; 8 lambdas extracted as public statics. UI files: `registerXxxHook()` → `onRenderXxx()` named exports. Legacy occluder hooks isolated in `registerLegacyOccluderHooks()` guarded by `isorollNewOccluder` feature flag. *(688c019)*
+
+---
+
+## Resolved Bugs — 2026-06-22
+
+- **B29** — Linked-wall displacement undo broken. Root cause: `epUp()` in `wall-overlay-ops.ts` called `scene().updateEmbeddedDocuments(...)` without first pushing a `"move"` entry to `WallHistory`. Fix: one-liner `WallHistory.push({ k:"move", wallId: d.wallId, prevC: d.c })` before the update call. `d.c` holds pre-drag canvas coords captured at `drawWallDisplay` time. `onUpdateWall` anchor-sync runs on undo too (option is `"undoMove"`, not exempted), so anchor stays consistent after undo. *(63f757f)*
+
+---
+
 ## Completed — 2026-06-21
 
 ### IsoRenderer Refactor — Cleanup Phases 9 + 10 *(on branch refactor/cleanup)*
