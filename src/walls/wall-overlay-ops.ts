@@ -60,6 +60,7 @@ function epMove(d: EpDrag, ev: PointerEvent): void {
 function epUp(d: EpDrag, ev: PointerEvent): void {
   const { x, y } = toCanvas(ev);
   const nc = [...d.c]; if (d.ep === "A") { nc[0] = x; nc[1] = y; } else { nc[2] = x; nc[3] = y; }
+  WallHistory.push({ k: "move", wallId: d.wallId, prevC: d.c });
   scene().updateEmbeddedDocuments("Wall", [{ _id: d.wallId, c: nc }]).catch(console.warn);
 }
 
