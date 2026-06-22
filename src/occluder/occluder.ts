@@ -33,12 +33,4 @@ function _hasTokenBehind(tile: Tile): boolean {
   return false;
 }
 
-// Legacy activation — registers Foundry hooks directly. Called only when isorollNewOccluder = false.
-// Remove once lifecycle path is verified in production.
-export function activateLegacy(): void {
-  Hooks.on("refreshToken", evaluateAll);
-  Hooks.on("updateToken",  evaluateAll);
-  Hooks.on("updateTile",   evaluateAll);
-  Hooks.on("createToken",  evaluateAll);
-  Hooks.on("deleteToken",  evaluateAll);
-}
+// Legacy hooks registered in core/hook-registry.ts → registerLegacyOccluderHooks().

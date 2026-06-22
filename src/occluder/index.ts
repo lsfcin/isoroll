@@ -1,2 +1,2 @@
 // Public API for the occluder module — tile alpha fade when a token moves behind it
-export { evaluateAll, activateLegacy } from './occluder';
+export { evaluateAll } from './occluder';

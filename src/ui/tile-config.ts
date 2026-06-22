@@ -4,9 +4,8 @@ import { addIsorollTab, flagCheckbox, flagNumber, flagSelect } from "./tab-helpe
 import type { DoorBehavior } from "../walls";
 import { WallManager } from "../walls";
 
-export function registerTileConfigHook(): void {
-  Hooks.on("renderTileConfig", (app: { document: TileDocument }, html: JQuery) => {
-    const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
+export function onRenderTileConfig(app: { document: TileDocument }, html: JQuery): void {
+  const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
     const d  = app.document;
     const t  = (k: string) => game.i18n.localize(k);
     const wallCount = WallManager.getLinkedWallIds(d).length;
@@ -108,5 +107,4 @@ export function registerTileConfigHook(): void {
         const togShadow = () => $h.find("#isoroll-shadowShape,#isoroll-shadowRadius,#isoroll-shadowOpacity").prop("disabled", !$h.find("#isoroll-shadowEnabled").prop("checked"));
         $h.on("change", "#isoroll-shadowEnabled", togShadow); togShadow();
       });
-  });
 }

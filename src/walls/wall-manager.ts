@@ -17,12 +17,7 @@ export class WallManager {
   private static preSizes: Map<string, { w: number; h: number }> = new Map();
 
   static activate(): void {
-    Hooks.on("preUpdateTile", WallManager.onPreUpdateTile);
-    Hooks.on("updateTile",    WallManager.onUpdateTile);
-    Hooks.on("deleteTile",    WallManager.onDeleteTile);
-    Hooks.on("deleteWall",    WallManager.onDeleteWall);
-    Hooks.on("updateWall",    WallManager.onUpdateWall);
-    Hooks.on("canvasReady",   () => WallHistory.clear());
+    // Hooks registered in core/hook-registry.ts. Non-hook setup only:
     window.addEventListener("keydown", (e) => {
       if (!e.ctrlKey || e.key !== "z" || e.shiftKey) return;
       if ((e.target as HTMLElement)?.matches?.("input,textarea,[contenteditable]")) return;
@@ -36,7 +31,9 @@ export class WallManager {
     WallOverlay.activate();
   }
 
-  private static onPreUpdateTile(
+  static onCanvasReady(): void { WallHistory.clear(); }
+
+  static onPreUpdateTile(
     doc: TileDocument,
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
@@ -46,7 +43,7 @@ export class WallManager {
     WallManager.preSizes.set(doc.id!, { w: doc.width ?? 0, h: doc.height ?? 0 });
   }
 
-  private static onUpdateTile(
+  static onUpdateTile(
     doc: TileDocument,
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
@@ -98,7 +95,7 @@ export class WallManager {
     }
   }
 
-  private static onDeleteTile(doc: TileDocument): void {
+  static onDeleteTile(doc: TileDocument): void {
     // Skip unsetFlag — tile doc is already removed from the collection.
     wrap(async () => {
       const ids = getLinkedWallIds(doc).filter(id => !!wallsLayer().get(id));
@@ -106,7 +103,7 @@ export class WallManager {
     }, "wall cascade delete");
   }
 
-  private static onDeleteWall(
+  static onDeleteWall(
     doc: WallDocument, options: Record<string, unknown>,
   ): void {
     // Skip when deleteLinkedWalls bulk-deleted — it handles the flag clear directly
@@ -120,7 +117,7 @@ export class WallManager {
     WallOverlay.refresh(tileObj);
   }
 
-  private static onUpdateWall(
+  static onUpdateWall(
     doc: WallDocument,
     changes: Record<string, unknown>,
     options: Record<string, unknown>,

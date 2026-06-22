@@ -173,14 +173,13 @@ export const IsoSpriteLayer = {
     LayerManager.clearLayer(LAYER_KEYS.ISO_SPRITES);
   },
   _sort(): void {},
+  onCanvasReady(): void {
+    CanvasEnv.appTicker().remove(IsoSpriteLayer._onTick);
+    CanvasEnv.appTicker().add(IsoSpriteLayer._onTick, null, -25);
+  },
+  onResetFogOfWar(): void { clearSeenTiles(); IsoTileRenderer.onSightRefresh(); },
   activate(): void {
-    Hooks.on("canvasInit",  IsoSpriteLayer._onCanvasInit);
-    Hooks.on("canvasReady", () => {
-      CanvasEnv.appTicker().remove(IsoSpriteLayer._onTick);
-      CanvasEnv.appTicker().add(IsoSpriteLayer._onTick, null, -25);
-    });
-    Hooks.on("changeScene", IsoSpriteLayer._teardown);
-    Hooks.on("resetFogOfWar", () => { clearSeenTiles(); IsoTileRenderer.onSightRefresh(); });
+    // Hooks registered in core/hook-registry.ts. Non-hook setup only:
     // Save explored tile set before F5/reload so restored tiles appear darkened without the 2-sec fog save debounce.
     window.addEventListener("beforeunload", saveSessionToStorage);
   },

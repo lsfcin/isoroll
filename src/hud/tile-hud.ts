@@ -6,11 +6,9 @@ import {
 } from "./hud-utils";
 
 export class TileHud {
-  static activate(): void {
-    Hooks.on("renderTileHUD", TileHud.onRenderTileHUD);
-  }
+  static activate(): void { /* hooks registered in core/hook-registry.ts */ }
 
-  private static onRenderTileHUD(hud: { object: Tile }, html: JQuery | HTMLElement): void {
+  static onRenderTileHUD(hud: { object: Tile }, html: JQuery | HTMLElement): void {
     const tile = hud.object;
     if (!tile?.document) return;
     const $html     = html instanceof jQuery ? html : $(html as unknown as HTMLElement);

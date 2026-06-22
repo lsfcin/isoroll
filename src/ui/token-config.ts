@@ -7,23 +7,23 @@ import { addIsorollTab, flagCheckbox, flagNumber, flagSelect } from "./tab-helpe
 type ConfigApp = { document: { id?: string } };
 const getCanvasToken = (id: string) => CanvasEnv.getToken(id);
 
-export function registerTokenConfigHook(): void {
-  // Track config-open so renderers show gizmos / keep label bright even when token is deselected.
-  Hooks.on("renderTokenConfig", (app: ConfigApp) => {
-    const id = app.document?.id; if (!id || !VolumeFlags.isSceneEnabled()) return;
-    const token = getCanvasToken(id); if (!token) return;
-    TokenGizmos.setConfigOpen(token, true);
-    TokenBackground.setConfigOpen(token, true);
-  });
-  Hooks.on("closeTokenConfig", (app: ConfigApp) => {
-    const id = app.document?.id; if (!id) return;
-    const token = getCanvasToken(id);
-    if (token) { TokenGizmos.setConfigOpen(token, false); TokenBackground.setConfigOpen(token, false); }
-    else { TokenGizmos.configOpen.delete(id); TokenBackground.configOpen.delete(id); }
-  });
+// Track config-open so renderers show gizmos / keep label bright even when token is deselected.
+export function onRenderTokenConfigState(app: ConfigApp): void {
+  const id = app.document?.id; if (!id || !VolumeFlags.isSceneEnabled()) return;
+  const token = getCanvasToken(id); if (!token) return;
+  TokenGizmos.setConfigOpen(token, true);
+  TokenBackground.setConfigOpen(token, true);
+}
 
-  Hooks.on("renderTokenConfig",
-    (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
+export function onCloseTokenConfig(app: ConfigApp): void {
+  const id = app.document?.id; if (!id) return;
+  const token = getCanvasToken(id);
+  if (token) { TokenGizmos.setConfigOpen(token, false); TokenBackground.setConfigOpen(token, false); }
+  else { TokenGizmos.configOpen.delete(id); TokenBackground.configOpen.delete(id); }
+}
+
+export function onRenderTokenConfigTab(
+    app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery): void {
       const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
       const d = app.document;
       const t = (k: string) => game.i18n.localize(k);
@@ -78,6 +78,4 @@ export function registerTokenConfigHook(): void {
           toggleGroup("isoroll-shadowEnabled",  "isoroll-shadowShape",    "isoroll-shadowRadius",  "isoroll-shadowOpacity");
           toggleGroup("isoroll-elevLineEnabled", "isoroll-elevLineDashed", "isoroll-elevLineColor");
         });
-    },
-  );
 }

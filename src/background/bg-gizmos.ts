@@ -20,8 +20,8 @@ const BG_OWNER = { kind: "background" as const, id: "bg" };
 
 export class BackgroundGizmos {
   static activate(): void {
-    BgHtml.activate(() => BackgroundGizmos.show(), () => BackgroundGizmos.clearAll());
-    Hooks.on("canvasReady", BackgroundGizmos.clearAll);
+    BgHtml.setup(() => BackgroundGizmos.show(), () => BackgroundGizmos.clearAll());
+    // canvasReady hook registered in core/hook-registry.ts
   }
 
   private static isEnabled(): boolean { return CanvasEnv.scene() != null; }
