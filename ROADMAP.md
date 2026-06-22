@@ -17,7 +17,7 @@ IsoRenderer refactor — Phases 0–10 complete on branch `refactor/cleanup`. Cl
 Wall bugs 3a/3b/3c fixed on `refactor/cleanup` *(ddf5e84, 6558cf9, 9811adf)*.
 
 **Open pre-merge items:**
-- B29 (linked-wall undo broken) — see KNOWN-BUGS.md
+- ~~B29 (linked-wall undo broken)~~ ✅ fixed *(63f757f)*
 - Occluder new path — verify `isorollNewOccluder=true` in Foundry before removing legacy path
 
 ## Backlog

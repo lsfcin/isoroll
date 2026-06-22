@@ -74,22 +74,6 @@ sprite is confirmed ready, or hook into a later Foundry lifecycle event.
 
 ---
 
-## B29 — Undo of linked-wall displacement in Tile layer lost
-
-**Symptom:** After dragging a wall that is linked to a tile (wall-overlay select mode,
-endpoint drag or wall move), Ctrl+Z in the Tile layer does not restore the wall to its
-previous position. Other gizmo-drag undos (tile volume, token image) work correctly.
-
-**Confirmed missing:** Wall displacement undo. Onset unknown — may predate the refactor
-or may have been introduced during Phase 8 boundary cleanup (`wall-history.ts` changes).
-
-**Likely location:** `src/walls/wall-history.ts` — `WallHistory.undo()` case `k === "move"`,
-or the history entry is not being pushed when the wall drag commits. Check
-`wall-overlay-ops.ts` drag commit path for `WallHistory.push({ k: "move", ... })` call.
-
-**Action:** Bisect against pre-Phase-8 commit (`3403e6e`) to confirm onset. Fix in walls/.
-
----
 
 ## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays
 
