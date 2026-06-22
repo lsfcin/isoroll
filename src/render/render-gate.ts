@@ -1,5 +1,7 @@
-// Renderer registry + per-updateToken/updateTile flag-change dispatch.
-// All other hook subscriptions live in core/hook-registry.ts.
+// Dual role: (1) renderer registry — module.ts calls registerToken/Tile to enroll renderers;
+// (2) flag-change gate — onUpdateToken/Tile filter updateToken/updateTile hook events to
+// flag-only changes and route them to render-lifecycle, bypassing the full refresh path.
+// All Foundry hook subscriptions live in core/hook-registry.ts.
 
 import { MODULE_ID, VolumeFlags } from '../core';
 import type { TokenRenderer } from './token-renderer';

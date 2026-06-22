@@ -25,7 +25,7 @@ export function registerAllHooks(): void {
   // ── canvasReady ───────────────────────────────────────────────────────────
   // Order: stage transform → bg gizmo clear → wall history clear → render lifecycle → ticker
   Hooks.on("canvasReady", CanvasTransform.onCanvasReady);
-  Hooks.on("canvasReady", BackgroundGizmos.clearAll);
+  Hooks.on("canvasReady", BackgroundGizmos.clearAll);   // clears stale gizmos on scene load (also used as GridConfig close callback)
   Hooks.on("canvasReady", WallManager.onCanvasReady);
   Hooks.on("canvasReady", onCanvasReady);
   Hooks.on("canvasReady", IsoSpriteLayer.onCanvasReady);

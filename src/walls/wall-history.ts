@@ -94,5 +94,5 @@ async function recreateWalls(tileId: string, data: object[]): Promise<void> {
 
 function refreshTile(tile: any): void {
   if (!tile) return;
-  import("./wall-overlay").then(({ WallOverlay }) => WallOverlay.refresh(tile));
+  import("./wall-overlay").then(({ WallOverlay }) => WallOverlay.refresh(tile));  // dynamic: breaks wall-overlay-ops → wall-history → wall-overlay cycle
 }
