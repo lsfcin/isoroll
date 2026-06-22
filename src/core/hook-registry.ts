@@ -14,7 +14,6 @@ import { BackgroundGizmos, BgHtml } from '../background';
 import { TileHud }            from '../hud';
 import { PresetManager }      from '../preset';
 import { WallManager }        from '../walls';
-import { evaluateAll as occluderEvaluateAll } from '../occluder';
 import { isPreviewClone }     from './index';
 import { onRenderSceneConfig, onRenderTileConfig, onRenderTokenConfigState, onCloseTokenConfig, onRenderTokenConfigTab } from '../ui';
 
@@ -161,12 +160,3 @@ export function registerAllHooks(): void {
   Hooks.on("updateWall", WallManager.onUpdateWall);
 }
 
-// Called from module.ts only when isorollNewOccluder = false (legacy occluder path).
-// Remove once the new occluder lifecycle path is verified in production.
-export function registerLegacyOccluderHooks(): void {
-  Hooks.on("refreshToken", occluderEvaluateAll);
-  Hooks.on("updateToken",  occluderEvaluateAll);
-  Hooks.on("updateTile",   occluderEvaluateAll);
-  Hooks.on("createToken",  occluderEvaluateAll);
-  Hooks.on("deleteToken",  occluderEvaluateAll);
-}

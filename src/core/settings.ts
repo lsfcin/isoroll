@@ -21,11 +21,4 @@ export function registerVolumeSettings(): void {
     range: { min: 0, max: 1, step: 0.05 },
   });
 
-  // Dev flag: enable lifecycle-integrated occluder path. Default off until verified.
-  game.settings.register(MODULE_ID, "isorollNewOccluder", {
-    scope: "world",
-    config: false,
-    type: Boolean,
-    default: false,
-  });
 }

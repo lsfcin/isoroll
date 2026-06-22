@@ -32,5 +32,3 @@ function _hasTokenBehind(tile: Tile): boolean {
   }
   return false;
 }
-
-// Legacy hooks registered in core/hook-registry.ts → registerLegacyOccluderHooks().

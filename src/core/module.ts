@@ -1,9 +1,8 @@
 import "../../styles/isoroll.scss";
 import { registerVolumeSettings } from "./settings";
-import { registerAllHooks, registerLegacyOccluderHooks } from "./hook-registry";
+import { registerAllHooks } from "./hook-registry";
 import { VolumeOverlay, VolumeGizmos } from "../tiles";
 import { TokenBackground, TokenGizmos } from "../tokens";
-import { MODULE_ID } from "./flags";
 import { CanvasTransform, registerRulerPatch } from "../transform";
 import { BackgroundGizmos } from "../background";
 import { TileHud, TokenHud } from "../hud";
@@ -32,7 +31,6 @@ Hooks.once("init", () => {
     .registerTile(WallOverlay      as unknown as TileRenderer);
 
   registerAllHooks();
-  if (!(game.settings.get(MODULE_ID, "isorollNewOccluder") as boolean)) registerLegacyOccluderHooks();
 
   LayerManager.declareOrder([
     LAYER_KEYS.ISO_SPRITES,
