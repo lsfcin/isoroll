@@ -7,6 +7,8 @@ import { drawWallDisplay, drawWallSelect } from "./wall-overlay-ops";
 export { WALL_COLORS, wallColor } from "./wall-overlay-ops";
 
 const _tileKeys: Map<string, Set<string>> = new Map();
+// Tiles with active gizmo move drag — hide() is suppressed to keep _tileKeys populated for refresh.
+const _dragActive: Set<string> = new Set();
 
 export class WallOverlay {
   private static selectTile: string | null = null;
@@ -20,8 +22,14 @@ export class WallOverlay {
   static sync(_tile: Tile): void {}
 
   static rebuild(tile: Tile): void {
+    if (isPreviewClone(tile)) {
+      // Preview clone = native Foundry drag in progress. Always show walls — doc.x/y update live
+      // for clones (same source VolumeOverlay's tileVerts uses). drawWallDisplay now computes
+      // positions from imageRect(doc) + anchor so walls follow cursor each rebuild call.
+      WallOverlay.show(tile);
+      return;
+    }
     if (!_tileKeys.has(tile.id)) return;
-    if (isPreviewClone(tile)) return;
     WallOverlay.refresh(tile);
   }
 
@@ -40,11 +48,12 @@ export class WallOverlay {
     const keys = new Set<string>();
     const refresh = () => WallOverlay.show(tile);
     if (WallOverlay.selectTile === tile.id) drawWallSelect(tile.document, tile.id, keys, refresh);
-    else                                     drawWallDisplay(tile.document, tile.id, keys);
+    else                                     drawWallDisplay(tile, tile.id, keys);
     _tileKeys.set(tile.id, keys);
   }
 
   static hide(tileId: string): void {
+    if (_dragActive.has(tileId)) return;
     for (const k of _tileKeys.get(tileId) ?? []) IsoRenderer.clear(k);
     _tileKeys.delete(tileId);
   }
@@ -52,8 +61,12 @@ export class WallOverlay {
   static clearAll(): void {
     IsoRenderer.clearLayer(LAYER_KEYS.WALL_OVERLAY);
     _tileKeys.clear();
+    _dragActive.clear();
     WallOverlay.selectTile = null;
   }
+
+  static markDragActive(tileId: string): void  { _dragActive.add(tileId); }
+  static clearDragActive(tileId: string): void { _dragActive.delete(tileId); }
 
   static enterSelect(tile: Tile): void { WallOverlay.selectTile = tile.id; WallOverlay.show(tile); }
   static exitSelect(tile: Tile): void  { WallOverlay.selectTile = null;    WallOverlay.show(tile); }

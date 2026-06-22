@@ -22,10 +22,9 @@ function projectionOptions(currentKey: string): string {
     .join("");
 }
 
-export function registerSceneConfigHook(): void {
-  Hooks.on("renderSceneConfig",
-    (app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery) => {
-      const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
+export function onRenderSceneConfig(
+  app: { document: { getFlag: (m: string, k: string) => unknown } }, html: JQuery): void {
+    const $html = html instanceof jQuery ? html : $(html as unknown as HTMLElement);
       const doc = app.document;
       // Sanitize with strict checks: prior bad saves may store arrays as "false,false,false" etc.
       const enabled     = doc.getFlag(MODULE_ID, "enabled")            === true;
@@ -130,6 +129,4 @@ export function registerSceneConfigHook(): void {
             sync);
         },
       );
-    },
-  );
 }

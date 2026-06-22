@@ -80,7 +80,7 @@ export function onTileRefresh(tile: Tile, flags?: Record<string, boolean>): void
   _tileRenderers.forEach(r => r.sync(tile));
   if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
   _tileRenderers.forEach(r => r.rebuild(tile));
-  if (VolumeFlags.isNewOccluder()) occluderEvaluateAll();
+  occluderEvaluateAll();
 }
 
 export function onTileFlagsChange(tile: Tile): void {
@@ -119,7 +119,7 @@ export function onTokenDraw(token: Token): void {
   if (state === "disabled" || state === "transformed" || state === "pending") return;
   if (state === "preview") { _tokenRenderers.filter(r => r.handlesPreview).forEach(r => r.create(token)); return; }
   _tokenRenderers.forEach(r => r.create(token));
-  if (VolumeFlags.isNewOccluder()) occluderEvaluateAll();
+  occluderEvaluateAll();
 }
 
 export function onTokenRefresh(token: Token, flags?: Record<string, boolean>): void {
@@ -137,7 +137,7 @@ export function onTokenRefresh(token: Token, flags?: Record<string, boolean>): v
   _tokenRenderers.forEach(r => r.sync(token));
   if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
   _tokenRenderers.forEach(r => r.rebuild(token));
-  if (VolumeFlags.isNewOccluder()) occluderEvaluateAll();
+  occluderEvaluateAll();
 }
 
 export function onTokenFlagsChange(token: Token): void {
@@ -173,7 +173,7 @@ export function onTokenMove(_token: Token): void {
 
 export function onTokenDestroy(id: string): void {
   _tokenRenderers.forEach(r => r.onDestroy?.(id));
-  if (VolumeFlags.isNewOccluder()) occluderEvaluateAll();
+  occluderEvaluateAll();
 }
 
 export function onSightRefresh(): void {

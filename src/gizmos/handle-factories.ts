@@ -1,41 +1,5 @@
-// Handle dispatch and tile-specific factories.
+// Handle utilities — rotate-blocker factory only.
 import { canvasZoom } from "../core";
-import type { HandleType } from "../tiles";
-
-import {
-  HALF, makeHandle, makeCircleHandle, makeSquareCounterHandle,
-  makeMoveHandle, makeSwapHandle, makeFaceHandle,
-} from "./handle-draw";
-export const HANDLE_COLOR: Record<HandleType, number> = {
-  width:     0xff9829,
-  height:    0xff9829,
-  boundH:    0xff9829,
-  elevation: 0xff9829,
-  scale:     0xff9829,
-  move:      0xff9829,
-  imgOffset: 0xffffff,
-  imgScale:  0xffffff,
-  imgYScale: 0xffffff,
-  swapSide:  0xffffff,
-};
-
-// Dispatches the correct factory for a given handle type; used by VolumeGizmos.show().
-export function makeHandleForType(
-  type: HandleType, heightDirX: number, heightDirY: number,
-): PIXI.Container | PIXI.Graphics {
-  const color = HANDLE_COLOR[type];
-  if (type === "elevation") return makeCircleHandle(color);
-  if (type === "imgOffset") return makeCircleHandle(0xffffff, "move");
-  if (type === "imgScale")  return makeSquareCounterHandle(0xffffff, "nesw-resize");
-  if (type === "imgYScale") return makeSquareCounterHandle(0xffffff, "ns-resize");
-  if (type === "swapSide")  return makeSwapHandle();
-  if (type === "move")      return makeMoveHandle(color);
-  if (type === "boundH") {
-    const vLen = Math.sqrt(heightDirX * heightDirX + heightDirY * heightDirY);
-    return makeFaceHandle(color, 0, HALF, (heightDirX / vLen) * HALF * 2, (heightDirY / vLen) * HALF * 2);
-  }
-  return makeHandle(color);
-}
 
 // Locates Foundry's rotation handle on the tile, builds an invisible event-absorbing circle on top.
 // Returns null when the handle isn't found (e.g. tile not yet selected).

@@ -117,6 +117,18 @@ export function onTokenRefresh(...)   { if (_gridConfigOpen) return; ... }
 
 Wire `closeGridConfig` hook in `render-gate.ts` → `onGridConfigClose()`.
 
+### WallOverlay Live-Position Pattern
+
+`drawWallDisplay` computes wall `c` from `imageRect(tile.document) + anchor` (not from `wdoc.c`). `imageRect` reads `doc.x/y` which update live for preview clones during native Foundry drag — same source `IsoGeometry.tileVerts` uses for the working VolumeOverlay. This means `show(tile)` produces correct positions whether the tile is static, being gizmo-dragged, or a Foundry preview clone.
+
+**`WallOverlay.rebuild` for preview clones:** calls `show(tile)` directly without `_tileKeys` guard — walls always recompute each Foundry refresh frame during drag, no separate drag-specific path needed.
+
+**`_dragActive` (gizmo move drag):** `WallOverlay.hide()` is suppressed for tiles in `_dragActive`. `tile-gizmos.ts` calls `WallManager.markWallDrag(tile.id)` at move-drag start and `clearWallDrag` on drop. This keeps `_tileKeys` populated so `refresh()` works per-frame (Foundry may fire `controlTile(false)` on gizmo grab at DOM level, clearing `_tileKeys` before PIXI handlers run).
+
+### Hook Registry Import Convention
+
+`src/core/hook-registry.ts` aggregates handlers from all subsystems. It MUST import through each module's `index.ts` façade — not directly from internal files (e.g. `'../render'` not `'../render/render-gate'`). The pre-commit hook enforces this: "Facade boundary violations" error means a direct deep-import crept in. All handlers needed by the registry are already exported from their respective index files.
+
 ### IsoRenderer Drag Handle Conventions
 
 - **Pattern:** `onPointerDown: (e) => { e.stopPropagation(); startPointerDrag(drag, onMove, onUp); }` — `e.stopPropagation()` (PIXI level) only. Never call `nativeEvent.stopImmediatePropagation()` when starting a drag — it blocks `window.pointermove` delivery that `startPointerDrag` depends on.
