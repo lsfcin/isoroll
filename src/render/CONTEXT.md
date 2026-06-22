@@ -22,7 +22,8 @@
 | [`fog-helpers.ts`](fog-helpers.ts) | — | `docAlpha`, `applyDocState`, `clearSeenTiles`, `saveSessionToStorage`, `tryRestoreFromStorage` | Fog-of-war visibility helpers for IsoSpriteLayer. |
 | [`iso-geometry.ts`](iso-geometry.ts) | — | `IsoGeometry`, `pt`, `buildVerts` | Footprint math for tiles and tokens. |
 | [`iso-renderer.ts`](iso-renderer.ts) | — | `isoRendererSightRefresh`, `IsoRenderer`, `_defLayer`, `_paint`, `_drop` | Rendering façade — single entry point for all isoroll visuals. |
-| [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | [`iso-sprite-layer.d.ts`](iso-sprite-layer.d.ts) | `cloneSprite`, `syncSprite`, `IsoTokenRenderer`, `IsoTileRenderer`, `IsoSpriteLayer` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
+| [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | [`iso-sprite-layer.d.ts`](iso-sprite-layer.d.ts) | `cloneSprite`, `syncSprite`, `IsoTokenRenderer`, `IsoSpriteLayer`, `getMesh` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
+| [`iso-tile-renderer.ts`](iso-tile-renderer.ts) | — | `tileSlices`, `DEPTH_SCALE`, `IsoTileRenderer`, `getMesh`, `needsTileClone` | IsoTileRenderer — depth-sorted iso-diagonal sliced tile sprites for the iso layer. |
 | [`layer-manager.ts`](layer-manager.ts) | [`layer-manager.d.ts`](layer-manager.d.ts) | `destroyMapped`, `LayerManager`, `LAYER_KEYS`, `stage` | Central PIXI layer registry: creation, z-order policy, and teardown for all overlay layers. |
 | [`mesh-accessor.ts`](mesh-accessor.ts) | — | `MeshAccessor` | Typed, null-safe reader of tile/token mesh geometry. |
 | [`render-gate.ts`](render-gate.ts) | [`render-gate.d.ts`](render-gate.d.ts) | — | Dual role: (1) renderer registry — module.ts calls registerToken/Tile to enroll renderers; |

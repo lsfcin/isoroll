@@ -4,9 +4,9 @@
 
 import { MODULE_ID, VolumeFlags, CanvasEnv } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
-import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, applyTileFog, clearSeenTiles, getViewers, tryRestoreFromStorage, maybeInvalidateRestoredTiles, saveSessionToStorage } from "./fog-helpers";
+import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, clearSeenTiles, getViewers, saveSessionToStorage } from "./fog-helpers";
 import type { TokenRenderer } from "./token-renderer";
-import type { TileRenderer } from "./tile-renderer";
+import { tileSlices, IsoTileRenderer, DEPTH_SCALE } from "./iso-tile-renderer";
 
 type Mesh = PIXI.DisplayObject & {
   texture?: PIXI.Texture;
@@ -53,11 +53,16 @@ function removeClone(map: Map<string, PIXI.Sprite>, id: string, mesh?: Mesh, doc
 // ---- clone registries ----
 
 const tokenClones = new Map<string, PIXI.Sprite>();
-const tileClones  = new Map<string, PIXI.Sprite>();
 function needsTokenClone(t: Token): boolean { return t.document.getFlag(MODULE_ID, "transformToken") !== true; }
-function needsTileClone(t: Tile):   boolean { return t.document.getFlag(MODULE_ID, "transformTile")  !== true; }
 const getToken = (id: string) => CanvasEnv.getToken(id);
 const getTile  = (id: string) => CanvasEnv.getTile(id);
+
+function _updateTokenZIndex(token: Token): void {
+  const clone = tokenClones.get(token.id); if (!clone) return;
+  const gs   = CanvasEnv.gridSize();
+  const elev = (token.document.elevation ?? 0) / gs;
+  clone.zIndex = (token.document.x / gs + token.document.y / gs + elev) * DEPTH_SCALE;
+}
 
 // ---- token renderer ----
 
@@ -66,11 +71,13 @@ export const IsoTokenRenderer: TokenRenderer = {
   create(token: Token): void {
     if (!needsTokenClone(token)) return;
     createClone(tokenClones, token.id, getMesh(token), token.document as unknown as PlaceableDoc);
+    _updateTokenZIndex(token);
   },
   sync(token: Token): void {
     const clone = tokenClones.get(token.id); if (!clone) return;
     const mesh  = getMesh(token); if (!mesh) return;
     syncSprite(clone, mesh); mesh.alpha = 0;
+    _updateTokenZIndex(token);
     const doc = token.document as unknown as PlaceableDoc;
     clone.alpha = docAlpha(doc);
     if (doc.hidden) clone.visible = false;
@@ -100,50 +107,6 @@ export const IsoTokenRenderer: TokenRenderer = {
   clearAll(): void { for (const [, c] of tokenClones) { c.parent?.removeChild(c); c.destroy(); } tokenClones.clear(); },
 };
 
-// ---- tile renderer ----
-
-export const IsoTileRenderer: TileRenderer = {
-  handlesPreview: true,
-  create(tile: Tile): void {
-    if (!needsTileClone(tile)) return;
-    createClone(tileClones, tile.id, getMesh(tile), tile.document as unknown as PlaceableDoc);
-  },
-  sync(tile: Tile): void {
-    const clone = tileClones.get(tile.id); if (!clone) return;
-    const mesh  = getMesh(tile); if (!mesh) return;
-    syncSprite(clone, mesh); mesh.alpha = 0;
-    const doc = tile.document as unknown as PlaceableDoc;
-    clone.alpha = docAlpha(doc);
-    if (doc.hidden) { clone.visible = false; clone.tint = 0xffffff; clone.filters = null; }
-    // visible/tint/filters preserved — fog state owned by onSightRefresh
-  },
-  rebuild(tile: Tile): void {
-    if (!needsTileClone(tile)) { IsoTileRenderer.hide(tile.id); return; }
-    if (!tileClones.has(tile.id)) IsoTileRenderer.create(tile);
-  },
-  onControl(_tile: Tile, _controlled: boolean): void { /* ISO has no selection behavior */ },
-  onDestroy(id: string): void { IsoTileRenderer.hide(id); },
-  onSightRefresh(): void {
-    if (!VolumeFlags.isSceneEnabled()) return;
-    maybeInvalidateRestoredTiles(); // clear restored data if in-session fog reset detected
-    tryRestoreFromStorage();         // one-time: populate restoredTileIds from localStorage after F5
-    const viewers = getViewers();
-    for (const t of CanvasEnv.tiles()) {
-      const clone = tileClones.get(t.id); if (!clone) continue;
-      const w = t.document.width ?? 0, h = t.document.height ?? 0;
-      const mesh = getMesh(t);
-      // v14: doc.x/y is center; top-left = center - size/2
-      applyTileFog(clone, t.document as unknown as PlaceableDoc, t.id,
-        (t.document.x ?? 0) - w / 2, (t.document.y ?? 0) - h / 2, w, h,
-        VolumeFlags.getHideOnFog(t.document), viewers);
-    }
-  },
-  hide(id: string): void {
-    removeClone(tileClones, id, getMesh(getTile(id)), getTile(id)?.document as unknown as PlaceableDoc | undefined);
-  },
-  clearAll(): void { for (const [, c] of tileClones) { c.parent?.removeChild(c); c.destroy(); } tileClones.clear(); },
-};
-
 // ---- layer infrastructure ----
 
 export const IsoSpriteLayer = {
@@ -155,7 +118,7 @@ export const IsoSpriteLayer = {
     // Tile._refreshState() resets mesh.alpha=1 on every render flag cycle.
     // This ticker runs at priority -25 (after _refreshState at OBJECTS:23, after sightRefresh at PERCEPTION:2,
     // but before the GPU render), so it's the last word on mesh.alpha before each frame is drawn.
-    for (const [id] of tileClones) {
+    for (const [id] of tileSlices) {
       const tile = getTile(id);
       const mesh = tile ? getMesh(tile) : undefined;
       if (mesh) (mesh as unknown as { alpha: number }).alpha = 0;
@@ -164,7 +127,7 @@ export const IsoSpriteLayer = {
   _onCanvasInit(): void {
     IsoTokenRenderer.clearAll(); IsoTileRenderer.clearAll(); clearSeenTiles();
     const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
-    layer.sortableChildren = false; layer.eventMode = "passive";
+    layer.sortableChildren = true; layer.eventMode = "passive";
     layer.name = "isoroll-iso-sprite-layer"; layer.zIndex = 500;
   },
   _teardown(): void {
