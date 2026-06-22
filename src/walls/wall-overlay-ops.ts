@@ -2,7 +2,8 @@
 
 import { MODULE_ID, startPointerDrag, screenPointToCanvas, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
-import { canvasToAnchor, wallsLayer, scene, type WallDoc, type TileDoc } from "./wall-coords";
+import { canvasToAnchor, imageRect, anchorToCanvas, wallsLayer, scene, type WallDoc, type TileDoc } from "./wall-coords";
+import type { TileAnchor } from "./wall-types";
 import { WallHistory } from "./wall-history";
 import { IsoRenderer, LAYER_KEYS } from "../render";
 import type { DrawAPI, RenderHandle, ShapeSpec } from "../render";
@@ -59,17 +60,25 @@ function epMove(d: EpDrag, ev: PointerEvent): void {
 function epUp(d: EpDrag, ev: PointerEvent): void {
   const { x, y } = toCanvas(ev);
   const nc = [...d.c]; if (d.ep === "A") { nc[0] = x; nc[1] = y; } else { nc[2] = x; nc[3] = y; }
+  WallHistory.push({ k: "move", wallId: d.wallId, prevC: d.c });
   scene().updateEmbeddedDocuments("Wall", [{ _id: d.wallId, c: nc }]).catch(console.warn);
 }
 
-export function drawWallDisplay(doc: TileDocument, tileId: string, keys: Set<string>): void {
+export function drawWallDisplay(tile: Tile, tileId: string, keys: Set<string>): void {
+  const doc = tile.document;
   const own = { kind: "tile" as const, id: tileId };
   for (const id of getLinkedWallIds(doc)) {
     const wall = wallsLayer().get(id); if (!wall) continue;
-    const wdoc = wall.document as WallDoc, c = wdoc.c as number[], col = wallColor(wdoc);
+    const wdoc = wall.document as WallDoc, col = wallColor(wdoc);
+    // Compute from stored anchor + live doc.x/y so walls follow tile during native Foundry drag
+    // (doc.x/y update live for preview clones — same source VolumeOverlay uses via tileVerts).
+    const anchor = wdoc.getFlag(MODULE_ID, "tileAnchor") as TileAnchor | undefined;
+    const rect = imageRect(doc as TileDoc);
+    const c = anchor ? anchorToCanvas(rect.icx, rect.icy, rect.sw, rect.sh, anchor) : wdoc.c as number[];
     const lineKey = `tile-${tileId}:wall-${id}:line`, lastClick = { t: 0 };
     const lineH = IsoRenderer.render({ key: lineKey, owner: own, visual: lineVis(c, col), hitArea: wallHitArea(c, 6, 5),
-      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY, interaction: { cursor: "pointer", onPointerDown: (e) => { e.stopPropagation(); (e as any).nativeEvent?.stopImmediatePropagation?.(); wallDblClick(id, lastClick); } } });
+      space: "WORLD", placement: { anchor: { x: 0, y: 0 } }, layer: LAYER_KEYS.WALL_OVERLAY,
+      interaction: { cursor: "pointer", onPointerDown: (e) => { e.stopPropagation(); (e as any).nativeEvent?.stopImmediatePropagation?.(); wallDblClick(id, lastClick); } } });
     keys.add(lineKey);
     for (const [ep, xi, yi] of [["A", 0, 1], ["B", 2, 3]] as ["A"|"B", number, number][]) {
       const x = c[xi], y = c[yi], key = `tile-${tileId}:wall-${id}:ep${ep}`;

@@ -1,7 +1,8 @@
 // Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers.
 
-import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas } from "../core";
+import { MODULE_ID, VolumeFlags, gridDistance, elevToCanvas, CanvasEnv } from "../core";
 import { CanvasTransform } from "./stage-transform";
+import { updateLinkedWallPositions } from "../walls";
 
 import { transformCoord, P2 } from "./coord-map";
 
@@ -53,6 +54,7 @@ export function onPreUpdateScene(
   const newGridSize = changes.grid.size;
   if (oldGridSize <= 0 || oldGridSize === newGridSize) return;
   pendingGridRescale = { sceneId: (scene as { id: string }).id, ratio: newGridSize / oldGridSize };
+  CanvasEnv.setGridRescaling(true);
 }
 
 export function onUpdateSceneGridRescale(scene: { id: string }): void {
@@ -60,20 +62,39 @@ export function onUpdateSceneGridRescale(scene: { id: string }): void {
   pendingGridRescale = null;
   if (!pending || pending.sceneId !== scene.id) return;
   if (scene.id !== canvas.scene?.id) return;
-  if (!game.user?.isGM) return;
+  if (!CanvasEnv.isGM()) return;
   const { ratio } = pending;
   const tiles = (canvas.tiles?.placeables as Tile[] | undefined) ?? [];
   const updates = tiles
     .filter(t => VolumeFlags.isForegroundTile(t.document))
-    .map(t => ({
-      _id: t.id,
-      x:      (t.document.x      ?? 0) * ratio,
-      y:      (t.document.y      ?? 0) * ratio,
-      width:  (t.document.width  ?? 0) * ratio,
-      height: (t.document.height ?? 0) * ratio,
-    }));
-  if (updates.length === 0) return;
-  void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" });
+    .map(t => {
+      const base = t.document.getFlag(MODULE_ID, "boundHeightBase") as { w: number; h: number } | undefined;
+      const u: Record<string, unknown> = {
+        _id:    t.id,
+        x:      (t.document.x      ?? 0) * ratio,
+        y:      (t.document.y      ?? 0) * ratio,
+        width:  (t.document.width  ?? 0) * ratio,
+        height: (t.document.height ?? 0) * ratio,
+      };
+      // boundHeightBase tracks tile size at last explicit boundH set.
+      // Grid rescale changes tile pixel size by ratio — advance the base so
+      // getEffectiveTileHeight doesn't apply a second ratio factor.
+      if (base) u[`flags.${MODULE_ID}.boundHeightBase`] = { w: base.w * ratio, h: base.h * ratio };
+      return u;
+    });
+  if (updates.length === 0) { CanvasEnv.setGridRescaling(false); return; }
+  void canvas.scene!.updateEmbeddedDocuments("Tile", updates, { isoroll: "gridRescale" })
+    .then(async () => {
+      CanvasEnv.setGridRescaling(false);
+      // Re-fetch fresh tile refs — canvas may have reloaded during the batch update,
+      // making the `tiles` array captured before updateEmbeddedDocuments stale.
+      const freshTiles = (canvas.tiles?.placeables as Tile[] | undefined) ?? [];
+      for (const t of freshTiles) {
+        const ids = t.document.getFlag(MODULE_ID, "linkedWallIds") as string[] | undefined;
+        if (ids?.length) await updateLinkedWallPositions(t.document).catch(e => console.warn("[isoroll] wall sync after gridRescale:", e));
+      }
+    })
+    .catch(() => CanvasEnv.setGridRescaling(false));
 }
 
 // setFlag() updates don't set any Tile render flags → refreshTile never fires.

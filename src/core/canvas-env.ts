@@ -3,6 +3,8 @@
 
 import { MODULE_ID } from './flags';
 
+let _gridRescaling = false;
+
 export type Dimensions = {
   width: number;
   height: number;
@@ -78,4 +80,8 @@ export const CanvasEnv = {
   pushTokensHistory(entry: { type: string; data: unknown[]; options: object }): void {
     (canvas.tokens as unknown as { history: typeof entry[] })?.history?.push(entry);
   },
+  // Set before Foundry fires per-placeable hooks during a grid-size change; cleared after our
+  // tile position update completes. Used to suppress anchor re-sync in onUpdateWall.
+  setGridRescaling(v: boolean): void { _gridRescaling = v; },
+  isGridRescaling(): boolean { return _gridRescaling; },
 };

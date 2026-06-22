@@ -45,18 +45,3 @@ export function shadowAlpha(elevation: number, opacity: number): number {
   return Math.min(1, opacity * Math.max(0.1, 1 / (1 + elevation * 0.04)));
 }
 
-export function drawGroundShadow(
-  groundX: number, groundY: number, elevation: number,
-  radiusX: number, radiusY: number, opacity: number, shape: "circle" | "rect",
-): PIXI.DisplayObject | null {
-  if (elevation < 0) return null;
-  const effectiveAlpha = Math.min(1, opacity * Math.max(0.1, 1 / (1 + elevation * 0.04)));
-  const sprite = new PIXI.Sprite(shape === "rect" ? rectTexture() : circleTexture());
-  sprite.anchor.set(0.5);
-  sprite.position.set(groundX, groundY);
-  sprite.width  = radiusX * 2;
-  sprite.height = radiusY * 2;
-  sprite.alpha = effectiveAlpha;
-  sprite.eventMode = "none";
-  return sprite;
-}

@@ -153,6 +153,39 @@ Never two live versions of the same logic simultaneously. New file created with 
 
 ---
 
+## Completed — 2026-06-22
+
+### IsoRenderer Refactor — Cleanup Phase 11 *(on branch refactor/cleanup)*
+
+- **Phase 11** — Hook centralization: all `Hooks.on/once` calls moved from 14 subsystem files into `src/core/hook-registry.ts`. Explicit per-event execution order documented. Private handlers made public across `CanvasTransform` (5), `WallManager` (5+1 new), `TileHud`, `RenderGate` (2 new statics), `IsoSpriteLayer` (2 new methods). `BgHtml.activate()` → `setup()` (stores callbacks, no hook registration). `PresetManager.activate()` removed; 8 lambdas extracted as public statics. UI files: `registerXxxHook()` → `onRenderXxx()` named exports. Legacy occluder hooks isolated in `registerLegacyOccluderHooks()` guarded by `isorollNewOccluder` feature flag. *(688c019)*
+
+---
+
+## Resolved Bugs — 2026-06-22
+
+- **B29** — Linked-wall displacement undo broken. Root cause: `epUp()` in `wall-overlay-ops.ts` called `scene().updateEmbeddedDocuments(...)` without first pushing a `"move"` entry to `WallHistory`. Fix: one-liner `WallHistory.push({ k:"move", wallId: d.wallId, prevC: d.c })` before the update call. `d.c` holds pre-drag canvas coords captured at `drawWallDisplay` time. `onUpdateWall` anchor-sync runs on undo too (option is `"undoMove"`, not exempted), so anchor stays consistent after undo. *(63f757f)*
+
+---
+
+## Completed — 2026-06-21
+
+### IsoRenderer Refactor — Cleanup Phases 9 + 10 *(on branch refactor/cleanup)*
+
+- **Phase 9** — Dead code purge: handle-draw factories, `drawGroundShadow`, `makeCounterWrapper` removed (zero callers confirmed). *(3448a94)*
+- **Phase 10** — IsoRenderer phantom API trimmed: `kind:"3d-box"` (unimplemented shape), `space` field (was a no-op), `placement.offset` (unread) removed from the render spec. *(cdfc95f)*
+
+---
+
+## Resolved Bugs — 2026-06-21
+
+- **Bug 3c** — Linked walls disappear during tile drag. Root cause: `drawWallDisplay` pre-computed `c = wdoc.c` (committed coords) before `IsoRenderer.render`; during drag `wdoc.c` never updates. For gizmo drag: Foundry deselect on gizmo grab cleared `_tileKeys`, blocking `refresh()`. Fix: `drawWallDisplay` now computes `c` from `imageRect(tile.document) + anchor` (live for preview clones, same as `IsoGeometry.tileVerts` used by working VolumeOverlay); `rebuild()` for preview clones calls `show(tile)` directly; `_dragActive` suppresses `hide()` during gizmo move. *(9811adf)*
+
+- **Bug 3b** — Linked walls displaced after grid size change. Root cause: `updateLinkedWallPositions` in `.then()` iterated stale tile refs captured before canvas reload during batch update; errors silently swallowed. Fix: re-fetch `canvas.tiles.placeables` fresh in `.then()`; surface errors via `console.warn`. *(9811adf, 6558cf9)*
+
+- **Bug 3a** — Tiles lost height proportion after grid size change. Root cause: `boundHeightBase` not scaled in grid rescale. Fix: `onUpdateSceneGridRescale` now scales `boundHeightBase.w/h` by ratio alongside `x, y, width, height`. *(ddf5e84)*
+
+---
+
 ## Resolved Bugs — 2026-06-18
 
 - **B28** — Token elevation label visible through fog. Root cause: `placement.anchor` on the label is the elevated world position `(lx, ly)` — `isoRendererSightRefresh` tested that coordinate, which lies outside the fog map stored at ground level. Fix: added `testPoint: { x: tx + tw/2, y: ty + th/2 }` to label's `IsoRenderer.render()` call in `token-background.ts:140`. Shadow and indicator were already correct (shadow used its own ground anchor; indicator had `testPoint`). *(238d5d2)*

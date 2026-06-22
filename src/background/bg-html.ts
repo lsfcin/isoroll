@@ -11,11 +11,12 @@ export class BgHtml {
   private static keyHandler:   ((e: KeyboardEvent) => void) | null = null;
   private static wheelHandler: ((e: WheelEvent) => void) | null = null;
   private static onShow: (() => void) | null = null;
+  private static _onClearAll: (() => void) | null = null;
 
-  static activate(onShow: () => void, onClearAll: () => void): void {
-    BgHtml.onShow = onShow;
-    Hooks.on("renderGridConfig", (app: GCApp, html: HTMLElement) => BgHtml.onRenderGridConfig(app, html));
-    Hooks.on("closeGridConfig",  () => BgHtml.onCloseGridConfig(onClearAll));
+  // Store callbacks without registering hooks — hooks registered in core/hook-registry.ts.
+  static setup(onShow: () => void, onClearAll: () => void): void {
+    BgHtml.onShow      = onShow;
+    BgHtml._onClearAll = onClearAll;
   }
 
   // TBF = iso enabled + background NOT transformed — the only mode using vertical scale.
@@ -23,7 +24,7 @@ export class BgHtml {
     return CanvasTransform.gctEffectiveEnabled() && !CanvasTransform.gctEffectiveTransformBg();
   }
 
-  private static onRenderGridConfig(app: GCApp, html: HTMLElement): void {
+  static onRenderGridConfig(app: GCApp, html: HTMLElement): void {
     if (CanvasEnv.scene() == null) return;
     BgHtml.currentHtml = html;
     // Re-cache on every render: Reset Changes destroys + recreates the preview container,
@@ -94,13 +95,13 @@ export class BgHtml {
     BgHtml.onShow?.();
   }
 
-  private static onCloseGridConfig(onClearAll: () => void): void {
+  static onCloseGridConfig(): void {
     if (BgHtml.keyHandler)   { document.removeEventListener('keydown', BgHtml.keyHandler, { capture: true });   BgHtml.keyHandler   = null; }
     if (BgHtml.wheelHandler) { document.removeEventListener('wheel',   BgHtml.wheelHandler); BgHtml.wheelHandler = null; }
     setBgYScaleOverride(null);
     BgHtml.currentHtml = null;
     BgHtml.previewBg   = null;
-    onClearAll();
+    BgHtml._onClearAll?.();
   }
 
   static scaleVerticalStep(delta: number): void {

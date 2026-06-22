@@ -42,6 +42,12 @@ export function tileRect(doc: TileDoc): { left: number; top: number; w: number; 
 // Anchors are in S-normalized space: both axes share S = max(docW, docH, boundH_px) × imgScale.
 // Image center includes elevation offset; heightDir = {+1, -1} for all isoroll projections.
 export function imageRect(doc: TileDoc): { icx: number; icy: number; sw: number; sh: number } {
+  return imageRectAt(doc, doc.x, doc.y);
+}
+
+// Like imageRect but uses explicit center coordinates — for drag-preview where PIXI position
+// (center in v14) is passed directly without any offset adjustment.
+export function imageRectAt(doc: TileDoc, cx: number, cy: number): { icx: number; icy: number; sw: number; sh: number } {
   const gridSize = CanvasEnv.gridSize();
   const gridDist = gridDistance();
   const imgOff   = VolumeFlags.getImageOffset(doc);
@@ -51,8 +57,8 @@ export function imageRect(doc: TileDoc): { icx: number; icy: number; sw: number;
   const boundH   = VolumeFlags.getTileHeight(doc) * gridSize;
   const S        = Math.max(doc.width, doc.height, boundH) * imgScale;
   return {
-    icx: doc.x + elevPx + imgOff.x * gridSize,    // heightDir.x = +1
-    icy: doc.y - elevPx + imgOff.y * gridSize,    // heightDir.y = -1
+    icx: cx + elevPx + imgOff.x * gridSize,    // heightDir.x = +1
+    icy: cy - elevPx + imgOff.y * gridSize,    // heightDir.y = -1
     sw:  S,
     sh:  S,
   };

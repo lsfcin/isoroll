@@ -8,17 +8,7 @@
 
 Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary image) is next feature priority. Phase 1 (token depth) still pending.
 
-IsoRenderer refactor on branch `refactor/iso-renderer` — Phases 0–8 complete. Post-Phase-8 architectural audit done 2026-06-19. Three cleanup phases planned before/after merge:
-
-- **Phase 9** — Dead code purge (handle-draw factories, `drawGroundShadow`, `makeCounterWrapper` — zero callers confirmed)
-- **Phase 10** — IsoRenderer phantom API (`kind:"3d-box"` unimplemented, `space` field noop, `placement.offset` unread)
-- **Phase 11** — Hook centralization: all `Hooks.on` into `core/hook-registry.ts`, explicit per-event execution order
-
-**Merge decision:** safe to merge now with B29 documented and occluder flag off. Continue Phase 9–11 on `refactor/cleanup`. See REFACTOR.md for full phase specs.
-
-**Open pre-merge items:**
-- B29 (linked-wall undo broken) — see KNOWN-BUGS.md
-- Occluder new path — verify `isorollNewOccluder=true` in Foundry before removing legacy path
+IsoRenderer refactor — Phases 0–11 complete, merged to `develop` (see HISTORY.md). Wall bugs 3a/3b/3c + B29 fixed. Occluder lifecycle path verified and flag removed.
 
 ## Backlog
 

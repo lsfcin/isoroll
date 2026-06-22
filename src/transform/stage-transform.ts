@@ -12,13 +12,7 @@ export class CanvasTransform {
   // Cleared on closeGridConfig so stale state doesn't persist across sessions.
   static lastPreviewState: { enabled: boolean; transformBg: boolean } | null = null;
 
-  static activate(): void {
-    Hooks.on("canvasReady",      CanvasTransform.onCanvasReady);
-    Hooks.on("updateScene",      CanvasTransform.onUpdateScene);
-    Hooks.on("renderGridConfig", CanvasTransform.onRenderGridConfig);
-    Hooks.on("closeGridConfig",  CanvasTransform.onCloseGridConfig);
-    Hooks.on("closeSceneConfig", CanvasTransform.onCloseSceneConfig);
-  }
+  static activate(): void { /* hooks registered in core/hook-registry.ts */ }
 
   private static isEnabled(): boolean {
     return CanvasTransform.previewOverride?.enabled ?? (canvas.scene?.getFlag(MODULE_ID, "enabled") === true);
@@ -93,7 +87,7 @@ export class CanvasTransform {
     for (const tile of canvas.tiles?.placeables ?? []) tile.refresh();
   }
 
-  private static onCanvasReady(): void {
+  static onCanvasReady(): void {
     const bg = BackgroundTransform.getSprite();
     // reset() only when sprite is unchanged (same canvas session, no canvas.draw() redraw).
     // If bg is a new sprite (canvas.draw() was called), original values are stale — skipping
@@ -124,7 +118,7 @@ export class CanvasTransform {
     }
   }
 
-  private static onUpdateScene(scene: Scene, changes: Record<string, unknown>): void {
+  static onUpdateScene(scene: Scene, changes: Record<string, unknown>): void {
     if (scene.id !== canvas.scene?.id) return;
     const changed = (changes as { flags?: Record<string, unknown> }).flags?.[MODULE_ID];
     if (changed === undefined) return;
@@ -135,7 +129,7 @@ export class CanvasTransform {
   // If a pending SceneConfig iso change differs from saved flags, the stage was reverted
   // to saved state by applyCurrentState() in onCloseSceneConfig. Re-apply the effective
   // state so the GCT preview reflects what the user had pending in SceneConfig.
-  private static onRenderGridConfig(): void {
+  static onRenderGridConfig(): void {
     const lps = CanvasTransform.lastPreviewState;
     const savedEnabled = canvas.scene?.getFlag(MODULE_ID, "enabled") === true;
     if (lps && lps.enabled !== savedEnabled) {
@@ -154,12 +148,12 @@ export class CanvasTransform {
     );
   }
 
-  private static onCloseGridConfig(): void {
+  static onCloseGridConfig(): void {
     CanvasTransform.lastPreviewState = null;
     BackgroundTransform.clearGridConfigPatch();
   }
 
-  private static onCloseSceneConfig(): void {
+  static onCloseSceneConfig(): void {
     if (!CanvasTransform.previewOverride && !CanvasTransform.previewProjection) return;
     CanvasTransform.lastPreviewState = CanvasTransform.previewOverride; // capture before clearing
     CanvasTransform.previewOverride = null;

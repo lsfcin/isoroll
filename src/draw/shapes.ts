@@ -1,18 +1,6 @@
 // Pure PIXI drawing primitives — no domain knowledge, no constants imported.
 import type { DrawAPI } from '../render';
 
-// Wraps a child in a PIXI.Container that reverses the isometric world transform,
-// so children (text, sprites) appear un-distorted in screen space.
-type CounterParams = { reverseRotation: number; counterFactor: number; ratio: number };
-export function makeCounterWrapper(proj: CounterParams, x: number, y: number): PIXI.Container {
-  const c = new PIXI.Container();
-  c.rotation = proj.reverseRotation;
-  c.scale.set(proj.counterFactor, proj.ratio * proj.counterFactor);
-  c.x = x; c.y = y;
-  c.eventMode = "none";
-  return c;
-}
-
 // Disables mipmap generation on a PIXI texture — prevents GL_INVALID_OPERATION on text textures.
 export function suppressMipmap(texture: unknown): void {
   const t = texture as { source?: { autoGenerateMipmaps: boolean }; baseTexture?: { mipmap: number } };

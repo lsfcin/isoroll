@@ -11,17 +11,16 @@ import { IsoSpriteLayer } from "../render";
 import { CanvasEnv } from "../core";
 
 export class DepthSorter {
-  static activate(): void {
-    Hooks.on("refreshToken", DepthSorter.onRefresh);
-    Hooks.on("refreshTile", DepthSorter.onRefresh);
-  }
+  // activate() is intentionally not called — DepthSorter is dormant pending Phase 1.
+  // When Phase 1 is implemented, call registerDepthSorterHooks() from hook-registry.ts.
+  static activate(): void { /* dormant — hooks registered manually when Phase 1 is ready */ }
 
   private static sortKey(gridX: number, gridY: number, elevation: number): number {
     const gridSize = CanvasEnv.gridSize();
     return gridX + gridY + elevation / gridSize;
   }
 
-  private static onRefresh(): void {
+  static onRefresh(): void {
     DepthSorter.sort();
   }
 

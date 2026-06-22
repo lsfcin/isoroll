@@ -1,32 +1,24 @@
 import "../../styles/isoroll.scss";
 import { registerVolumeSettings } from "./settings";
+import { registerAllHooks } from "./hook-registry";
 import { VolumeOverlay, VolumeGizmos } from "../tiles";
 import { TokenBackground, TokenGizmos } from "../tokens";
-import { MODULE_ID } from "./flags";
-import { activateLegacy as occluderActivateLegacy } from "../occluder";
-import { CanvasTransform, ObjectTransform, registerRulerPatch } from "../transform";
+import { CanvasTransform, registerRulerPatch } from "../transform";
 import { BackgroundGizmos } from "../background";
-import { registerSceneConfigHook, registerTileConfigHook, registerTokenConfigHook } from "../ui";
 import { TileHud, TokenHud } from "../hud";
-import { PresetManager } from "../preset";
 import { WallManager, WallOverlay } from "../walls";
 import { LayerManager, LAYER_KEYS, IsoSpriteLayer, RenderGate } from "../render";
 import type { TokenRenderer, TileRenderer } from "../render";
 
 Hooks.once("init", () => {
   registerVolumeSettings();
-  registerSceneConfigHook();
-  registerTokenConfigHook();
-  registerTileConfigHook();
   registerRulerPatch();
-  CanvasTransform.activate();
-  BackgroundGizmos.activate();
-  TileHud.activate();
-  TokenHud.activate();
-  ObjectTransform.activate();
-  if (!(game.settings.get(MODULE_ID, "isorollNewOccluder") as boolean)) occluderActivateLegacy();
-  PresetManager.activate();
-  WallManager.activate();
+  CanvasTransform.activate();   // no-op: hooks registered below
+  BackgroundGizmos.activate();  // BgHtml.setup() — must run before registerAllHooks
+  TileHud.activate();           // no-op
+  TokenHud.activate();          // no-op
+  WallManager.activate();       // keydown listener + WallOverlay.activate()
+  IsoSpriteLayer.activate();    // beforeunload listener
 
   const gate = new RenderGate();
   gate
@@ -37,8 +29,8 @@ Hooks.once("init", () => {
     .registerTile(VolumeOverlay    as unknown as TileRenderer)
     .registerTile(VolumeGizmos     as unknown as TileRenderer)
     .registerTile(WallOverlay      as unknown as TileRenderer);
-  gate.activate();
-  IsoSpriteLayer.activate(); // ticker + layer infrastructure only
+
+  registerAllHooks();
 
   LayerManager.declareOrder([
     LAYER_KEYS.ISO_SPRITES,

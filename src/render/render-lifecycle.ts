@@ -12,7 +12,7 @@ type PlaceableState = "disabled" | "transformed" | "preview" | "pending" | "norm
 
 const _tokenRenderers: TokenRenderer[] = [];
 const _tileRenderers:  TileRenderer[]  = [];
-let _gridConfigOpen = false;
+let _renderSuspended = false;  // true while GridConfig is open; blocks per-frame refresh rebuilds
 
 export function registerTokenRenderer(r: TokenRenderer): void { _tokenRenderers.push(r); }
 export function registerTileRenderer(r: TileRenderer):  void { _tileRenderers.push(r); }
@@ -65,7 +65,7 @@ export function onSceneChange(scene: Scene, _changes: object): void {
 }
 
 export function onTileDraw(tile: Tile): void {
-  if (_gridConfigOpen) return;
+  if (_renderSuspended) return;
   const state = classifyTile(tile);
   if (state === "disabled" || state === "transformed" || state === "pending") return;
   if (state === "preview") { _tileRenderers.filter(r => r.handlesPreview).forEach(r => r.create(tile)); return; }
@@ -73,14 +73,14 @@ export function onTileDraw(tile: Tile): void {
 }
 
 export function onTileRefresh(tile: Tile, flags?: Record<string, boolean>): void {
-  if (_gridConfigOpen) return;
+  if (_renderSuspended) return;
   const state = classifyTile(tile);
   if (state === "disabled" || state === "transformed") { _tileRenderers.forEach(r => r.hide(tile.id)); return; }
   if (state === "pending") return;
   _tileRenderers.forEach(r => r.sync(tile));
   if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
   _tileRenderers.forEach(r => r.rebuild(tile));
-  if (VolumeFlags.isNewOccluder()) occluderEvaluateAll();
+  occluderEvaluateAll();
 }
 
 export function onTileFlagsChange(tile: Tile): void {
@@ -113,17 +113,17 @@ export function onTileMove(_tile: Tile): void {
 export function onTileDestroy(id: string): void { _tileRenderers.forEach(r => r.onDestroy?.(id)); }
 
 export function onTokenDraw(token: Token): void {
-  if (_gridConfigOpen) return;
+  if (_renderSuspended) return;
   suppressTooltip(token);
   const state = classifyToken(token);
   if (state === "disabled" || state === "transformed" || state === "pending") return;
   if (state === "preview") { _tokenRenderers.filter(r => r.handlesPreview).forEach(r => r.create(token)); return; }
   _tokenRenderers.forEach(r => r.create(token));
-  if (VolumeFlags.isNewOccluder()) occluderEvaluateAll();
+  occluderEvaluateAll();
 }
 
 export function onTokenRefresh(token: Token, flags?: Record<string, boolean>): void {
-  if (_gridConfigOpen) return;
+  if (_renderSuspended) return;
   suppressTooltip(token);
   const state = classifyToken(token);
   if (state === "disabled" || state === "transformed") { _tokenRenderers.forEach(r => r.hide(token.id)); return; }
@@ -137,7 +137,7 @@ export function onTokenRefresh(token: Token, flags?: Record<string, boolean>): v
   _tokenRenderers.forEach(r => r.sync(token));
   if (flags?.["refreshMesh"] && !flags?.["refreshPosition"]) return;
   _tokenRenderers.forEach(r => r.rebuild(token));
-  if (VolumeFlags.isNewOccluder()) occluderEvaluateAll();
+  occluderEvaluateAll();
 }
 
 export function onTokenFlagsChange(token: Token): void {
@@ -173,7 +173,7 @@ export function onTokenMove(_token: Token): void {
 
 export function onTokenDestroy(id: string): void {
   _tokenRenderers.forEach(r => r.onDestroy?.(id));
-  if (VolumeFlags.isNewOccluder()) occluderEvaluateAll();
+  occluderEvaluateAll();
 }
 
 export function onSightRefresh(): void {
@@ -183,13 +183,13 @@ export function onSightRefresh(): void {
 }
 
 export function onGridConfigOpen(_app: Application): void {
-  _gridConfigOpen = true;
+  _renderSuspended = true;
   _tokenRenderers.forEach(r => r.clearAll());
   _tileRenderers.forEach(r => r.clearAll());
 }
 
 export function onGridConfigClose(): void {
-  _gridConfigOpen = false;
+  _renderSuspended = false;
   onCanvasReady();
 }
 

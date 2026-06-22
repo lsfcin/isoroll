@@ -25,7 +25,7 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`index.ts`](index.ts) | — | — | **facade** — Public API for the hud module — HUD patches and DOM helpers |
+| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the hud module — HUD patches and DOM helpers |
 | [`hud-utils.ts`](hud-utils.ts) | [`hud-utils.d.ts`](hud-utils.d.ts) | `hudButton`, `clearIsorollHud`, `appendHudButtons`, `onHudAction`, `onHudToggle` | Façade to Foundry's HUD DOM. All direct HUD jQuery access lives here. |
 | [`tile-hud.ts`](tile-hud.ts) | [`tile-hud.d.ts`](tile-hud.d.ts) | — | TileHUD wall control buttons. |
 | [`token-hud.ts`](token-hud.ts) | [`token-hud.d.ts`](token-hud.d.ts) | — | TokenHUD repositioning is handled by patchTokenHUDProto in ruler-patch.ts, |
