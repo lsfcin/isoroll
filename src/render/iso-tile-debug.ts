@@ -30,10 +30,8 @@ function _shortId(id: string): string {
 }
 
 function _text(str: string, fill: number, size: number): PIXI.Text {
-  const T = PIXI.Text as any;
-  // v8 uses {text, style} constructor; v7 uses (text, style) — try both
-  try { return new T({ text: str, style: { fontSize: size, fill } }); }
-  catch { return new T(str, { fontSize: size, fill }) as PIXI.Text; }
+  // v7 constructor (string, style) works on both v7 and v8; v8 object-form would coerce to "[object Object]"
+  return new (PIXI.Text as any)(str, { fontSize: size, fill }) as PIXI.Text;
 }
 
 const SLICE_COLORS = [0xff6600, 0x00cc66, 0x0088ff, 0xff00cc, 0xffcc00];
