@@ -29,10 +29,11 @@ function _shortId(id: string): string {
   return h.toString(36).slice(-2).toUpperCase();
 }
 
-function _text(str: string, fill: number, size: number, isV8: boolean): PIXI.Text {
+function _text(str: string, fill: number, size: number): PIXI.Text {
   const T = PIXI.Text as any;
-  if (isV8) return new T({ text: str, style: { fontSize: size, fill, stroke: { color: 0x000000, width: 3 } } });
-  return new T(str, { fontSize: size, fill, stroke: 0x000000, strokeThickness: 3 });
+  // v8 uses {text, style} constructor; v7 uses (text, style) — try both
+  try { return new T({ text: str, style: { fontSize: size, fill } }); }
+  catch { return new T(str, { fontSize: size, fill }) as PIXI.Text; }
 }
 
 const SLICE_COLORS = [0xff6600, 0x00cc66, 0x0088ff, 0xff00cc, 0xffcc00];
@@ -46,40 +47,51 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
   const ax = mesh.anchor?.x ?? 0, ay = mesh.anchor?.y ?? 0;
   const sx = mesh.scale?.x ?? 1, sy = mesh.scale?.y ?? 1;
   const fw = origFrame.width, fh = origFrame.height;
+  const tid = _shortId(id);
 
   const con = new PIXI.Container();
   (con as any).eventMode = "passive"; (con as any).zIndex = 9e9;
   con.position.set(mesh.x, mesh.y); con.rotation = mesh.rotation ?? 0;
-  const g = new PIXI.Graphics(); (g as any).eventMode = "passive"; con.addChild(g);
-  const ga = g as any, isV8 = typeof ga.stroke === "function";
-  const tid = _shortId(id);
+  // Add to layer immediately — graphics visible even if text creation throws later
+  layer.addChild(con); debugContainers.set(id, con);
 
+  // Orange cut lines — proven v7/v8 pattern: accumulate path, one stroke call
+  const g = new PIXI.Graphics(); (g as any).eventMode = "passive"; con.addChild(g);
+  const ga = g as any; const isV8 = typeof ga.stroke === "function";
+  if (!isV8) ga.lineStyle(1, 0xff6600, 1);
+  for (const cut of cuts) { const bx = (cut / fw - ax) * fw * sx; ga.moveTo(bx, -ay * fh * sy); ga.lineTo(bx, (1 - ay) * fh * sy); }
+  if (isV8) ga.stroke({ color: 0xff6600, width: 1 });
+
+  // Per-slice colored outline (separate Graphics per slice — one shape + one stroke each)
   for (let i = 0; i < nSlices; i++) {
     const cl = i === 0 ? 0 : cuts[i - 1];
     const cr = i === nSlices - 1 ? fw : cuts[i];
     const lx1 = (cl / fw - ax) * fw * sx, lx2 = (cr / fw - ax) * fw * sx;
     const ly1 = -ay * fh * sy,            ly2 = (1 - ay) * fh * sy;
     const col = SLICE_COLORS[i % SLICE_COLORS.length];
-    if (!isV8) { ga.lineStyle(2, col, 0.85); ga.drawRect(lx1, ly1, lx2 - lx1, ly2 - ly1); }
-    else        { ga.rect(lx1, ly1, lx2 - lx1, ly2 - ly1); ga.stroke({ color: col, width: 2, alpha: 0.85 }); }
+    const sg = new PIXI.Graphics(); const sga = sg as any;
+    if (!isV8) { sga.lineStyle(2, col, 0.7); sga.drawRect(lx1, ly1, lx2 - lx1, ly2 - ly1); }
+    else        { sga.rect(lx1, ly1, lx2 - lx1, ly2 - ly1); sga.stroke({ color: col, width: 2, alpha: 0.7 }); }
+    con.addChild(sg);
     const d = kStart + i, rc = Math.min(Hg - 1, d), cc = d - rc;
-    const t = _text(`${tid}·${i.toString(36).toUpperCase()}\n(${cc},${rc})`, col, 11, isV8);
-    (t as any).anchor?.set(0.5, 0); t.position.set((lx1 + lx2) / 2, ly1 + 4);
-    con.addChild(t);
+    try {
+      const t = _text(`${tid}·${i.toString(36).toUpperCase()}\n(${cc},${rc})`, col, 11);
+      (t as any).anchor?.set(0.5, 0); t.position.set((lx1 + lx2) / 2, ly1 + 4); con.addChild(t);
+    } catch { /* text failed — graphics outline still visible */ }
   }
 
+  // Grid cell coordinate labels within tile bounds
   for (let c = 0; c < Wg; c++) {
     for (let r = 0; r < Hg; r++) {
-      const uv = transformCoord({ x: snapX + (c + 0.5) * gs, y: snapY + (r + 0.5) * gs },
-        "WORLD", "IMAGE", { mesh: mesh as any }) as P2;
-      const t = _text(`(${c},${r})`, 0x00ffff, 10, isV8);
-      (t as any).anchor?.set(0.5, 0.5);
-      t.position.set((uv.x - ax) * fw * sx, (uv.y - ay) * fh * sy);
-      con.addChild(t);
+      try {
+        const uv = transformCoord({ x: snapX + (c + 0.5) * gs, y: snapY + (r + 0.5) * gs },
+          "WORLD", "IMAGE", { mesh: mesh as any }) as P2;
+        const t = _text(`(${c},${r})`, 0x00ffff, 10);
+        (t as any).anchor?.set(0.5, 0.5);
+        t.position.set((uv.x - ax) * fw * sx, (uv.y - ay) * fh * sy); con.addChild(t);
+      } catch { /* skip */ }
     }
   }
-
-  layer.addChild(con); debugContainers.set(id, con);
 }
 
 export function clearSliceDebug(id: string): void {
@@ -100,17 +112,18 @@ export function drawGridDebug(layer: PIXI.Container): void {
   const dims = (globalThis as any).canvas?.dimensions;
   const x0 = dims?.sceneX ?? 0, y0 = dims?.sceneY ?? 0;
   const x1 = x0 + (dims?.sceneWidth ?? 4000), y1 = y0 + (dims?.sceneHeight ?? 4000);
-  const g0 = new PIXI.Graphics(); const v8 = typeof (g0 as any).stroke === "function"; (g0 as any).destroy?.();
   const con = new PIXI.Container();
   (con as any).eventMode = "passive"; (con as any).zIndex = 8e9;
+  layer.addChild(con); gridDebugContainer = con;
   for (let c = Math.floor(x0 / gs); c < Math.ceil(x1 / gs); c++) {
     for (let r = Math.floor(y0 / gs); r < Math.ceil(y1 / gs); r++) {
-      const t = _text(`(${c},${r})`, 0xffffff, 12, v8);
-      (t as any).anchor?.set(0.5, 0.5); t.position.set((c + 0.5) * gs, (r + 0.5) * gs);
-      con.addChild(t);
+      try {
+        const t = _text(`(${c},${r})`, 0xffffff, 12);
+        (t as any).anchor?.set(0.5, 0.5); t.position.set((c + 0.5) * gs, (r + 0.5) * gs);
+        con.addChild(t);
+      } catch { /* skip */ }
     }
   }
-  layer.addChild(con); gridDebugContainer = con;
 }
 
 export function clearGridDebug(): void {

@@ -20,6 +20,7 @@ const getTile = (id: string) => CanvasEnv.getTile(id);
 export let DEBUG_SLICES = false;
 export function debugSlices(on: boolean): void { DEBUG_SLICES = on; IsoTileRenderer.clearAll(); for (const t of CanvasEnv.tiles()) IsoTileRenderer.create(t); }
 export function debugGrid(on: boolean): void {
+  debugSlices(on); // slice outlines + cell labels + cut lines
   if (!on) { clearGridDebug(); return; }
   drawGridDebug(LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES));
 }
