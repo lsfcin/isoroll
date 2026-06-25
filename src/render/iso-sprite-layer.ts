@@ -61,7 +61,9 @@ function _updateTokenZIndex(token: Token): void {
   const clone = tokenClones.get(token.id); if (!clone) return;
   const gs   = CanvasEnv.gridSize();
   const elev = (token.document.elevation ?? 0) / gs;
-  clone.zIndex = (token.document.x / gs + token.document.y / gs + elev) * DEPTH_SCALE;
+  // token.x/y = animated canvas position (vs document.x/y = committed destination).
+  // +0.5 places token strictly between adjacent tile slice depths — eliminates insertion-order ties.
+  clone.zIndex = (token.x / gs + token.y / gs + elev + 0.5) * DEPTH_SCALE;
 }
 
 // ---- token renderer ----
@@ -115,6 +117,7 @@ export const IsoSpriteLayer = {
   getLayer(): PIXI.Container { return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES); },
   _onTick(): void {
     LayerManager.enforceOrder();
+    const gs = CanvasEnv.gridSize();
     // Tile._refreshState() resets mesh.alpha=1 on every render flag cycle.
     // This ticker runs at priority -25 (after _refreshState at OBJECTS:23, after sightRefresh at PERCEPTION:2,
     // but before the GPU render), so it's the last word on mesh.alpha before each frame is drawn.
@@ -123,6 +126,16 @@ export const IsoSpriteLayer = {
       const mesh = tile ? getMesh(tile) : undefined;
       if (mesh) (mesh as unknown as { alpha: number }).alpha = 0;
     }
+    // Update token zIndex every tick using animated token.x/y (not document.x/y) so depth tracks
+    // the visual position during movement animations rather than the committed destination.
+    for (const [id, clone] of tokenClones) {
+      const token = getToken(id);
+      if (!token) continue;
+      const elev = (token.document.elevation ?? 0) / gs;
+      clone.zIndex = (token.x / gs + token.y / gs + elev + 0.5) * DEPTH_SCALE;
+    }
+    // PIXI v8 doesn't auto-call sortChildren() from sortableChildren alone — force it every tick.
+    IsoSpriteLayer.getLayer().sortChildren();
   },
   _onCanvasInit(): void {
     IsoTokenRenderer.clearAll(); IsoTileRenderer.clearAll(); clearSeenTiles();

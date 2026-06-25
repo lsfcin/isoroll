@@ -8,6 +8,7 @@ import { BackgroundGizmos } from "../background";
 import { TileHud, TokenHud } from "../hud";
 import { WallManager, WallOverlay } from "../walls";
 import { LayerManager, LAYER_KEYS, IsoSpriteLayer, RenderGate } from "../render";
+import { debugSlices } from "../render";
 import type { TokenRenderer, TileRenderer } from "../render";
 
 Hooks.once("init", () => {
@@ -42,5 +43,6 @@ Hooks.once("init", () => {
     LAYER_KEYS.WALL_OVERLAY,
   ]);
 
+  (globalThis as Record<string, unknown>).isoroll = { debugSlices };
   console.log("isoroll | initialized");
 });
