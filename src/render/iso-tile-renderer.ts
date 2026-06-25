@@ -5,6 +5,7 @@ import { PlaceableDoc, docAlpha, applyDocState, applyTileFog, getViewers, tryRes
 import type { TileRenderer } from "./tile-renderer";
 import { transformCoord } from "../transform";
 import type { P2 } from "../transform";
+import { drawSliceDebug, clearSliceDebug, clearAllSliceDebug } from "./iso-tile-debug";
 
 type Mesh = PIXI.DisplayObject & { texture?: PIXI.Texture; anchor?: PIXI.ObservablePoint; scale?: PIXI.ObservablePoint; alpha?: number; rotation?: number };
 function getMesh(obj: unknown): Mesh | undefined { const m = (obj as { mesh?: Mesh }).mesh; return m?.texture ? m : undefined; }
@@ -17,19 +18,7 @@ function needsTileClone(t: Tile): boolean { return t.document.getFlag(MODULE_ID,
 const getTile = (id: string) => CanvasEnv.getTile(id);
 
 export let DEBUG_SLICES = false;
-const tileDebugG = new Map<string, PIXI.Graphics>();
 export function debugSlices(on: boolean): void { DEBUG_SLICES = on; IsoTileRenderer.clearAll(); for (const t of CanvasEnv.tiles()) IsoTileRenderer.create(t); }
-function _drawSliceDebug(id: string, mesh: Mesh, origFrame: PIXI.Rectangle, layer: PIXI.Container): void {
-  const old = tileDebugG.get(id); if (old) { old.parent?.removeChild(old); old.destroy(); tileDebugG.delete(id); }
-  const state = tileSliceCuts.get(id); if (!DEBUG_SLICES || !state?.cuts.length) return;
-  const [sx, sy, ax, ay] = [mesh.scale?.x ?? 1, mesh.scale?.y ?? 1, mesh.anchor?.x ?? 0, mesh.anchor?.y ?? 0];
-  const g = new PIXI.Graphics(); g.eventMode = "passive"; g.zIndex = 9e9; g.position.set(mesh.x, mesh.y); g.rotation = mesh.rotation ?? 0;
-  const ga = g as unknown as { lineStyle?(w:number,c:number,a:number):void; moveTo(x:number,y:number):unknown; lineTo(x:number,y:number):unknown; stroke?(o:object):void };
-  const isV8 = typeof ga.stroke === "function"; if (!isV8) ga.lineStyle?.(1, 0xff6600, 1);
-  for (const cut of state.cuts) { const bx = (cut / origFrame.width - ax) * origFrame.width * sx; ga.moveTo(bx, -ay * origFrame.height * sy); ga.lineTo(bx, (1 - ay) * origFrame.height * sy); }
-  if (isV8) ga.stroke?.({ color: 0xff6600, width: 1 });
-  layer.addChild(g); tileDebugG.set(id, g);
-}
 
 export const DEPTH_SCALE = 10000;
 function _cloneSliceTexture(src: PIXI.Texture, x: number, y: number, w: number, h: number): PIXI.Texture {
@@ -85,7 +74,8 @@ function _createTileSlices(tile: Tile): void {
     sp.eventMode = "passive"; _syncSlicePos(sp, mesh); _initSliceAnchor(sp, mesh, origFrame.width, cutLeft, sliceW);
     sp.zIndex = (baseDepth + i) * DEPTH_SCALE; applyDocState(sp, doc); layer.addChild(sp); slices.push(sp);
   }
-  mesh.alpha = 0; tileSlices.set(id, slices); _drawSliceDebug(id, mesh, origFrame, layer);
+  mesh.alpha = 0; tileSlices.set(id, slices);
+  if (DEBUG_SLICES) { const { kStart, Wg, Hg } = _gridMetrics(tile); drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, kStart, Wg, Hg, nSlices }, layer); }
 }
 
 export const IsoTileRenderer: TileRenderer = {
@@ -128,14 +118,11 @@ export const IsoTileRenderer: TileRenderer = {
     const slices = tileSlices.get(id); if (!slices) return;
     const tile = getTile(id), mesh = tile ? getMesh(tile) : undefined, doc = tile?.document as unknown as PlaceableDoc | undefined;
     for (const s of slices) { s.parent?.removeChild(s); s.destroy(); }
-    tileSlices.delete(id); tileSliceCuts.delete(id);
-    const dg = tileDebugG.get(id); if (dg) { dg.parent?.removeChild(dg); dg.destroy(); tileDebugG.delete(id); }
+    tileSlices.delete(id); tileSliceCuts.delete(id); clearSliceDebug(id);
     if (mesh && doc) mesh.alpha = docAlpha(doc);
   },
   clearAll(): void {
     for (const [, slices] of tileSlices) { for (const s of slices) { s.parent?.removeChild(s); s.destroy(); } }
-    tileSlices.clear(); tileSliceCuts.clear();
-    for (const [, dg] of tileDebugG) { dg.parent?.removeChild(dg); dg.destroy(); }
-    tileDebugG.clear();
+    tileSlices.clear(); tileSliceCuts.clear(); clearAllSliceDebug();
   },
 };
