@@ -91,3 +91,31 @@ export function clearAllSliceDebug(): void {
   for (const [, c] of debugContainers) { c.parent?.removeChild(c); (c as any).destroy({ children: true }); }
   debugContainers.clear();
 }
+
+let gridDebugContainer: PIXI.Container | null = null;
+
+export function drawGridDebug(layer: PIXI.Container): void {
+  clearGridDebug();
+  const gs = CanvasEnv.gridSize();
+  const dims = (globalThis as any).canvas?.dimensions;
+  const x0 = dims?.sceneX ?? 0, y0 = dims?.sceneY ?? 0;
+  const x1 = x0 + (dims?.sceneWidth ?? 4000), y1 = y0 + (dims?.sceneHeight ?? 4000);
+  const g0 = new PIXI.Graphics(); const v8 = typeof (g0 as any).stroke === "function"; (g0 as any).destroy?.();
+  const con = new PIXI.Container();
+  (con as any).eventMode = "passive"; (con as any).zIndex = 8e9;
+  for (let c = Math.floor(x0 / gs); c < Math.ceil(x1 / gs); c++) {
+    for (let r = Math.floor(y0 / gs); r < Math.ceil(y1 / gs); r++) {
+      const t = _text(`(${c},${r})`, 0xffffff, 12, v8);
+      (t as any).anchor?.set(0.5, 0.5); t.position.set((c + 0.5) * gs, (r + 0.5) * gs);
+      con.addChild(t);
+    }
+  }
+  layer.addChild(con); gridDebugContainer = con;
+}
+
+export function clearGridDebug(): void {
+  if (!gridDebugContainer) return;
+  gridDebugContainer.parent?.removeChild(gridDebugContainer);
+  (gridDebugContainer as any).destroy({ children: true });
+  gridDebugContainer = null;
+}

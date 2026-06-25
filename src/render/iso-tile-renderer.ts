@@ -5,7 +5,7 @@ import { PlaceableDoc, docAlpha, applyDocState, applyTileFog, getViewers, tryRes
 import type { TileRenderer } from "./tile-renderer";
 import { transformCoord } from "../transform";
 import type { P2 } from "../transform";
-import { drawSliceDebug, clearSliceDebug, clearAllSliceDebug } from "./iso-tile-debug";
+import { drawSliceDebug, clearSliceDebug, clearAllSliceDebug, drawGridDebug, clearGridDebug } from "./iso-tile-debug";
 
 type Mesh = PIXI.DisplayObject & { texture?: PIXI.Texture; anchor?: PIXI.ObservablePoint; scale?: PIXI.ObservablePoint; alpha?: number; rotation?: number };
 function getMesh(obj: unknown): Mesh | undefined { const m = (obj as { mesh?: Mesh }).mesh; return m?.texture ? m : undefined; }
@@ -19,6 +19,10 @@ const getTile = (id: string) => CanvasEnv.getTile(id);
 
 export let DEBUG_SLICES = false;
 export function debugSlices(on: boolean): void { DEBUG_SLICES = on; IsoTileRenderer.clearAll(); for (const t of CanvasEnv.tiles()) IsoTileRenderer.create(t); }
+export function debugGrid(on: boolean): void {
+  if (!on) { clearGridDebug(); return; }
+  drawGridDebug(LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES));
+}
 
 export const DEPTH_SCALE = 10000;
 function _cloneSliceTexture(src: PIXI.Texture, x: number, y: number, w: number, h: number): PIXI.Texture {
