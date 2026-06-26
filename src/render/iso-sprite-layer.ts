@@ -61,9 +61,10 @@ function _updateTokenZIndex(token: Token): void {
   const clone = tokenClones.get(token.id); if (!clone) return;
   const gs   = CanvasEnv.gridSize();
   const elev = (token.document.elevation ?? 0) / gs;
-  // token.x/y = animated canvas position (vs document.x/y = committed destination).
+  // Depth = row - col (y/gs - x/gs): NE-camera viewpoint where SW face is closest.
+  // Replace with view-dependent formula when implementing the 8+1 multiview strategy.
   // +0.5 places token strictly between adjacent tile slice depths — eliminates insertion-order ties.
-  clone.zIndex = (token.x / gs + token.y / gs + elev + 0.5) * DEPTH_SCALE;
+  clone.zIndex = (token.y / gs - token.x / gs + elev + 0.5) * DEPTH_SCALE;
 }
 
 // ---- token renderer ----
@@ -132,7 +133,7 @@ export const IsoSpriteLayer = {
       const token = getToken(id);
       if (!token) continue;
       const elev = (token.document.elevation ?? 0) / gs;
-      clone.zIndex = (token.x / gs + token.y / gs + elev + 0.5) * DEPTH_SCALE;
+      clone.zIndex = (token.y / gs - token.x / gs + elev + 0.5) * DEPTH_SCALE;
     }
     // PIXI v8 doesn't auto-call sortChildren() from sortableChildren alone — force it every tick.
     IsoSpriteLayer.getLayer().sortChildren();

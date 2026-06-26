@@ -30,8 +30,8 @@ function _cloneSliceTexture(src: PIXI.Texture, x: number, y: number, w: number, 
   (t as unknown as { updateUvs?(): void }).updateUvs?.(); return t;
 }
 
-// kStart = min(Wg-1, Hg-1): iso-diagonal bands 0..kStart-1 contain only interior cells (not on the SE
-// visible face). Skipping them shifts all slice depths up, keeping frontier-cell slices above nearby tokens.
+// kStart = min(Wg-1, Hg-1): first diagonal band that contains a frontier (south/east face) cell.
+// Used by _computeSliceCuts to align cut points with frontier cell boundaries.
 function _gridMetrics(tile: Tile) {
   const gs = CanvasEnv.gridSize();
   const nwX = tile.document.x - tile.document.width / 2, nwY = tile.document.y - tile.document.height / 2;
@@ -40,10 +40,6 @@ function _gridMetrics(tile: Tile) {
   return { gs, nwX, nwY, Wg, Hg, kStart: Math.min(Math.max(0, Wg - 1), Math.max(0, Hg - 1)) };
 }
 function _tileSliceCount(tile: Tile): number { const { Wg, Hg } = _gridMetrics(tile); return Math.max(1, Wg + Hg - 1); }
-function _tileBaseDepth(tile: Tile): number {
-  const { gs, nwX, nwY, kStart } = _gridMetrics(tile);
-  return Math.floor(nwX / gs) + Math.floor(nwY / gs) + kStart + VolumeFlags.getTileBaseElevation(tile.document);
-}
 function _computeSliceCuts(tile: Tile, mesh: Mesh, nSlices: number, origFrame: PIXI.Rectangle): SliceState {
   const { gs, nwX, nwY, kStart } = _gridMetrics(tile);
   const snapX = Math.floor(nwX / gs) * gs, snapY = Math.floor(nwY / gs) * gs;
@@ -66,7 +62,10 @@ function _createTileSlices(tile: Tile): void {
   tileSliceCuts.delete(id);
   const mesh = getMesh(tile); if (!mesh?.texture) return;
   const doc = tile.document as unknown as PlaceableDoc;
-  const nSlices = _tileSliceCount(tile), baseDepth = _tileBaseDepth(tile), origFrame = mesh.texture.frame;
+  const { gs, nwX, nwY, Wg, Hg, kStart } = _gridMetrics(tile);
+  const nSlices = Math.max(1, Wg + Hg - 1), origFrame = mesh.texture.frame;
+  const gridC0 = Math.floor(nwX / gs), gridR0 = Math.floor(nwY / gs);
+  const elev = VolumeFlags.getTileBaseElevation(tile.document);
   const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
   const state = _computeSliceCuts(tile, mesh, nSlices, origFrame); tileSliceCuts.set(id, state);
   const slices: PIXI.Sprite[] = [];
@@ -76,10 +75,13 @@ function _createTileSlices(tile: Tile): void {
     const sliceW = Math.max(1, cutRight - cutLeft);
     const sp = new PIXI.Sprite(_cloneSliceTexture(mesh.texture, origFrame.x + cutLeft, origFrame.y, sliceW, origFrame.height));
     sp.eventMode = "passive"; _syncSlicePos(sp, mesh); _initSliceAnchor(sp, mesh, origFrame.width, cutLeft, sliceW);
-    sp.zIndex = (baseDepth + i) * DEPTH_SCALE; applyDocState(sp, doc); layer.addChild(sp); slices.push(sp);
+    // Depth = fr - fc (row minus col): encodes NE-camera viewpoint where SW face is closest.
+    // Replace with view-dependent formula when implementing the 8+1 multiview strategy.
+    const d = kStart + i, rc = Math.min(Hg - 1, d), cc = d - rc;
+    sp.zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE; applyDocState(sp, doc); layer.addChild(sp); slices.push(sp);
   }
   mesh.alpha = 0; tileSlices.set(id, slices);
-  if (DEBUG_SLICES) { const { kStart, Wg, Hg } = _gridMetrics(tile); drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, kStart, Wg, Hg, nSlices }, layer); }
+  if (DEBUG_SLICES) { drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, kStart, Wg, Hg, nSlices }, layer); }
 }
 
 export const IsoTileRenderer: TileRenderer = {
@@ -94,9 +96,13 @@ export const IsoTileRenderer: TileRenderer = {
         Math.abs(curRot - state.meshRot) > 0.001 || Math.abs(curScX - state.meshScX) > 0.001) {
       IsoTileRenderer.create(tile); return;
     }
-    const doc = tile.document as unknown as PlaceableDoc, baseDepth = _tileBaseDepth(tile);
+    const doc = tile.document as unknown as PlaceableDoc;
+    const { gs, nwX, nwY, kStart, Hg } = _gridMetrics(tile);
+    const gridC0 = Math.floor(nwX / gs), gridR0 = Math.floor(nwY / gs);
+    const elev = VolumeFlags.getTileBaseElevation(tile.document);
     for (let i = 0; i < nSlices; i++) {
-      _syncSlicePos(slices[i], mesh); slices[i].zIndex = (baseDepth + i) * DEPTH_SCALE;
+      const d = kStart + i, rc = Math.min(Hg - 1, d), cc = d - rc;
+      _syncSlicePos(slices[i], mesh); slices[i].zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE;
       slices[i].alpha = docAlpha(doc);
       if (doc.hidden) { slices[i].visible = false; slices[i].tint = 0xffffff; slices[i].filters = null; }
     }
