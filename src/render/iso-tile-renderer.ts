@@ -34,9 +34,13 @@ function _cloneSliceTexture(src: PIXI.Texture, x: number, y: number, w: number, 
 // Used by _computeSliceCuts to align cut points with frontier cell boundaries.
 function _gridMetrics(tile: Tile) {
   const gs = CanvasEnv.gridSize();
-  const nwX = tile.document.x - tile.document.width / 2, nwY = tile.document.y - tile.document.height / 2;
-  const Wg = Math.ceil((nwX + tile.document.width) / gs) - Math.floor(nwX / gs);
-  const Hg = Math.ceil((nwY + tile.document.height) / gs) - Math.floor(nwY / gs);
+  // swapSide() swaps doc.width↔height; use visual dims (pre-swap) when tileFlipped so grid footprint is correct.
+  const flipped = VolumeFlags.getTileFlipped(tile.document);
+  const docW = tile.document.width ?? 0, docH = tile.document.height ?? 0;
+  const visW = flipped ? docH : docW, visH = flipped ? docW : docH;
+  const nwX = tile.document.x - visW / 2, nwY = tile.document.y - visH / 2;
+  const Wg = Math.ceil((nwX + visW) / gs) - Math.floor(nwX / gs);
+  const Hg = Math.ceil((nwY + visH) / gs) - Math.floor(nwY / gs);
   return { gs, nwX, nwY, Wg, Hg, kStart: Math.min(Math.max(0, Wg - 1), Math.max(0, Hg - 1)) };
 }
 function _tileSliceCount(tile: Tile): number { const { Wg, Hg } = _gridMetrics(tile); return Math.max(1, Wg + Hg - 1); }
@@ -66,6 +70,7 @@ function _createTileSlices(tile: Tile): void {
   const nSlices = Math.max(1, Wg + Hg - 1), origFrame = mesh.texture.frame;
   const gridC0 = Math.floor(nwX / gs), gridR0 = Math.floor(nwY / gs);
   const elev = VolumeFlags.getTileBaseElevation(tile.document);
+  const flipped = VolumeFlags.getTileFlipped(tile.document);
   const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
   const state = _computeSliceCuts(tile, mesh, nSlices, origFrame); tileSliceCuts.set(id, state);
   const slices: PIXI.Sprite[] = [];
@@ -77,11 +82,13 @@ function _createTileSlices(tile: Tile): void {
     sp.eventMode = "passive"; _syncSlicePos(sp, mesh); _initSliceAnchor(sp, mesh, origFrame.width, cutLeft, sliceW);
     // Depth = fr - fc (row minus col): encodes NE-camera viewpoint where SW face is closest.
     // Replace with view-dependent formula when implementing the 8+1 multiview strategy.
-    const d = kStart + i, rc = Math.min(Hg - 1, d), cc = d - rc;
+    // flipped: texture is rendered mirrored (scale.x<0), so slice i covers the visual column (nSlices-1-i).
+    const effectiveI = flipped ? nSlices - 1 - i : i;
+    const d = kStart + effectiveI, rc = Math.min(Hg - 1, d), cc = d - rc;
     sp.zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE; applyDocState(sp, doc); layer.addChild(sp); slices.push(sp);
   }
   mesh.alpha = 0; tileSlices.set(id, slices);
-  if (DEBUG_SLICES) { drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, kStart, Wg, Hg, nSlices }, layer); }
+  if (DEBUG_SLICES) { drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, kStart, Wg, Hg, nSlices, flipped }, layer); }
 }
 
 export const IsoTileRenderer: TileRenderer = {
@@ -100,8 +107,10 @@ export const IsoTileRenderer: TileRenderer = {
     const { gs, nwX, nwY, kStart, Hg } = _gridMetrics(tile);
     const gridC0 = Math.floor(nwX / gs), gridR0 = Math.floor(nwY / gs);
     const elev = VolumeFlags.getTileBaseElevation(tile.document);
+    const flipped = VolumeFlags.getTileFlipped(tile.document);
     for (let i = 0; i < nSlices; i++) {
-      const d = kStart + i, rc = Math.min(Hg - 1, d), cc = d - rc;
+      const effectiveI = flipped ? nSlices - 1 - i : i;
+      const d = kStart + effectiveI, rc = Math.min(Hg - 1, d), cc = d - rc;
       _syncSlicePos(slices[i], mesh); slices[i].zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE;
       slices[i].alpha = docAlpha(doc);
       if (doc.hidden) { slices[i].visible = false; slices[i].tint = 0xffffff; slices[i].filters = null; }

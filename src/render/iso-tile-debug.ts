@@ -20,6 +20,7 @@ export interface SliceDebugParams {
   Wg: number;
   Hg: number;
   nSlices: number;
+  flipped: boolean;
 }
 
 const debugContainers = new Map<string, PIXI.Container>();
@@ -38,7 +39,7 @@ const SLICE_COLORS = [0xff6600, 0x00cc66, 0x0088ff, 0xff00cc, 0xffcc00];
 
 export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void {
   clearSliceDebug(p.id);
-  const { id, tile, mesh, origFrame, cuts, kStart, Wg, Hg, nSlices } = p;
+  const { id, tile, mesh, origFrame, cuts, kStart, Wg, Hg, nSlices, flipped } = p;
   const gs = CanvasEnv.gridSize();
   const nwX = tile.document.x - tile.document.width / 2, nwY = tile.document.y - tile.document.height / 2;
   const snapX = Math.floor(nwX / gs) * gs, snapY = Math.floor(nwY / gs) * gs;
@@ -72,7 +73,8 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
     if (!isV8) { sga.lineStyle(2, col, 0.7); sga.drawRect(lx1, ly1, lx2 - lx1, ly2 - ly1); }
     else        { sga.rect(lx1, ly1, lx2 - lx1, ly2 - ly1); sga.stroke({ color: col, width: 2, alpha: 0.7 }); }
     con.addChild(sg);
-    const d = kStart + i, rc = Math.min(Hg - 1, d), cc = d - rc;
+    const effectiveI = flipped ? nSlices - 1 - i : i;
+    const d = kStart + effectiveI, rc = Math.min(Hg - 1, d), cc = d - rc;
     try {
       const t = _text(`${tid}·${i.toString(36).toUpperCase()}\n(${gridC0 + cc},${gridR0 + rc})`, col, 11);
       (t as any).anchor?.set(0.5, 0); t.position.set((lx1 + lx2) / 2, ly1 + 4); con.addChild(t);
