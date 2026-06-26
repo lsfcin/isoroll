@@ -42,6 +42,7 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
   const gs = CanvasEnv.gridSize();
   const nwX = tile.document.x - tile.document.width / 2, nwY = tile.document.y - tile.document.height / 2;
   const snapX = Math.floor(nwX / gs) * gs, snapY = Math.floor(nwY / gs) * gs;
+  const gridC0 = Math.round(snapX / gs), gridR0 = Math.round(snapY / gs); // absolute grid origin of tile
   const ax = mesh.anchor?.x ?? 0, ay = mesh.anchor?.y ?? 0;
   const sx = mesh.scale?.x ?? 1, sy = mesh.scale?.y ?? 1;
   const fw = origFrame.width, fh = origFrame.height;
@@ -73,7 +74,7 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
     con.addChild(sg);
     const d = kStart + i, rc = Math.min(Hg - 1, d), cc = d - rc;
     try {
-      const t = _text(`${tid}·${i.toString(36).toUpperCase()}\n(${cc},${rc})`, col, 11);
+      const t = _text(`${tid}·${i.toString(36).toUpperCase()}\n(${gridC0 + cc},${gridR0 + rc})`, col, 11);
       (t as any).anchor?.set(0.5, 0); t.position.set((lx1 + lx2) / 2, ly1 + 4); con.addChild(t);
     } catch { /* text failed — graphics outline still visible */ }
   }
@@ -84,7 +85,7 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
       try {
         const uv = transformCoord({ x: snapX + (c + 0.5) * gs, y: snapY + (r + 0.5) * gs },
           "WORLD", "IMAGE", { mesh: mesh as any }) as P2;
-        const t = _text(`(${c},${r})`, 0x00ffff, 10);
+        const t = _text(`(${gridC0 + c},${gridR0 + r})`, 0x00ffff, 10);
         (t as any).anchor?.set(0.5, 0.5);
         t.position.set((uv.x - ax) * fw * sx, (uv.y - ay) * fh * sy); con.addChild(t);
       } catch { /* skip */ }
