@@ -42,6 +42,7 @@
   - Future: formula changes per viewing direction in 8+1 multiview strategy (see ROADMAP Future)
 - **Iso-diagonal slicing:** Multi-cell tiles split into `Wg + Hg - 1` vertical strips, each assigned its frontier cell depth. Avoids per-tile cyclic occlusion. See Phase 6 in ROADMAP for full algorithm.
 - **Key invariant:** `mesh.x ≠ tile.document.x`. Formula: `mesh.x = doc.x + heightDir.x * elevPx + imageOffset.x * gridSize` (from `tile-transform.ts::onRefreshTile`). Any code computing world positions from tile geometry must use `mesh.x/y`, not `doc.x/y`.
+- **swapSide visual-dims invariant:** `applyTileCounter` uses `Math.max(docW, docH, docBoundH)` for uniform scale — visual pixel size stays the same before and after `swapSide`. `_gridMetrics` uses `visW = flipped ? docH : docW` to recover the pre-swap visual width (since `swapSide` swaps `docW↔docH`, `docH` after swap equals `docW` before).
 - Implemented in `src/render/iso-sprite-layer.ts` (`IsoSpriteLayer._onTick`) and `src/render/iso-tile-renderer.ts` (`_createTileSlices`, `sync`)
 
 ### Occlusion

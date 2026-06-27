@@ -52,6 +52,7 @@ function _computeSliceCuts(tile: Tile, mesh: Mesh, nSlices: number, origFrame: P
     const uv = transformCoord({ x: snapX + (kStart + j) * gs, y: snapY }, "WORLD", "IMAGE", { mesh }) as P2;
     cuts.push(Math.max(0, Math.min(origFrame.width - 1, Math.round(uv.x * origFrame.width))));
   }
+  cuts.sort((a, b) => a - b);
   return { cuts, meshRot: mesh.rotation ?? 0, meshScX: Math.abs(mesh.scale?.x ?? 1) };
 }
 
@@ -88,7 +89,7 @@ function _createTileSlices(tile: Tile): void {
     sp.zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE; applyDocState(sp, doc); layer.addChild(sp); slices.push(sp);
   }
   mesh.alpha = 0; tileSlices.set(id, slices);
-  if (DEBUG_SLICES) { drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, kStart, Wg, Hg, nSlices, flipped }, layer); }
+  if (DEBUG_SLICES) { clearSliceDebug(id); drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, kStart, Wg, Hg, nSlices, flipped }, layer); }
 }
 
 export const IsoTileRenderer: TileRenderer = {
