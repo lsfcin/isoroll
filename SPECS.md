@@ -35,8 +35,14 @@
 
 ### Depth Sort (Painter's Algorithm)
 
-- Sort key: `gridCol + gridRow + elevation / gridSize`
-- Implemented via `depthSort` hook overriding Foundry's default z-order
+- **Current formula (NE-camera viewpoint):** `depth = (row - col + elev) * DEPTH_SCALE` = `(y/gs - x/gs + elev/gs) * DEPTH_SCALE`
+  - Higher y (south) = in front; higher x (east) = behind. Matches NE observer.
+  - `DEPTH_SCALE = 10000` (separates tile slice bands)
+  - Tokens: `+0.5` offset to interleave between adjacent tile slices
+  - Future: formula changes per viewing direction in 8+1 multiview strategy (see ROADMAP Future)
+- **Iso-diagonal slicing:** Multi-cell tiles split into `Wg + Hg - 1` vertical strips, each assigned its frontier cell depth. Avoids per-tile cyclic occlusion. See Phase 6 in ROADMAP for full algorithm.
+- **Key invariant:** `mesh.x ≠ tile.document.x`. Formula: `mesh.x = doc.x + heightDir.x * elevPx + imageOffset.x * gridSize` (from `tile-transform.ts::onRefreshTile`). Any code computing world positions from tile geometry must use `mesh.x/y`, not `doc.x/y`.
+- Implemented in `src/render/iso-sprite-layer.ts` (`IsoSpriteLayer._onTick`) and `src/render/iso-tile-renderer.ts` (`_createTileSlices`, `sync`)
 
 ### Occlusion
 
@@ -136,6 +142,21 @@ Wire `closeGridConfig` hook in `render-gate.ts` → `onGridConfigClose()`.
 - **`screenPointToCanvas` signature:** `screenPointToCanvas(sx, sy, wt: PIXI.Matrix)` — requires `CanvasEnv.worldTransform()` as third argument. Located in `src/core/util.ts`, exported from `"../core"`.
 - **Snap to grid:** use `Math.round(v / step) * step` where `step = CanvasEnv.gridSize() / 4` (5 snap points per grid side). Apply in both `onMove` and `onUp`.
 - **SHIFT = free drag:** `if (!ev.shiftKey) { /* snap */ }` — Foundry convention (same as token drag).
+
+---
+
+## Implementation Gotchas
+
+- **`tile.x/tile.y` = 0 in v14** — use `tile.document.x/y` (CENTER, not top-left); top-left = `doc.x - width/2, doc.y - height/2`
+- **`mesh.scale.set()`** (absolute) is safe on every refresh; only `*=` patterns need meshReset guard
+- **`addIsorollTab` double-inject**: no guard — if `renderSceneConfig` fires more than once for same dialog, Iso tab appears twice. Fix: `if ($html.find(\`a[data-tab="${TAB}"]\`).length) return;` at top of `addIsorollTab`.
+- **AppV2 `stopPropagation`** on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on content section (see `ui/scene-config.ts`)
+- **GridConfig `_processSubmitData`** only calls `super._processSubmitData` when one of 7 native fields changed. Module-specific fields silently skipped. Workaround: instance-level patch on `app._processSubmitData` at `renderGridConfig` time (done in `background/bg-html.ts`).
+- **GridConfig `updateTransform` centering**: when overriding bg sprite's `updateTransform`, `scY` in position formula must include `bgYScale` — if only `scale.set()` uses it, visual center shifts vertically instead of scaling around center.
+- **PIXI `worldTransform` cache on `canvasReady`**: after `stage.rotation/skew` are set, `worldTransform` is stale (identity) until next PIXI render frame. Foundry only sets `#hud style.left/top = wt.tx/ty` inside `canvasPan` — never on initial load. Fix: `syncHudAfterStageApply()` in `stage-transform.ts` flushes cache (`updateLocalTransform` + `copyFrom`) and syncs `#hud` CSS immediately. Do NOT call `stage.updateTransform()` — crashes when `stage.parent` is null (true during `canvasReady`).
+- **HUD `_updatePosition` pattern**: both TileHUD and TokenHUD use prototype patches on `CONFIG.Tile/Token.hudClass.prototype._updatePosition`. Never use `renderTileHUD`/`renderTokenHUD` hooks — they miss document-update re-renders and RAF timing can stomp Foundry's `transform: scale(uiScale)`. Only set `pos.left/top/width` — never `pos.scale`.
+- **`preCreateTile` + `updateSource`**: calling `doc.updateSource(data)` in `preCreateTile` modifies creation data. Calling `doc.update()` again in `createTile` with same data causes PIXI sprite blink. Solution: skip `createTile` fallback when `getCachedPreset(key)` confirms `preCreateTile` already applied.
+- **`FilePicker.upload` 5-param API**: param 4 is `body` (extra FormData entries, pass `{}`), param 5 is `options` (`notify: false` lives here). Passing `{ notify: false }` as param 4 silently ignores it.
 
 ---
 
