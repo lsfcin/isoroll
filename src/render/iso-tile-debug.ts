@@ -89,7 +89,8 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
           "WORLD", "IMAGE", { mesh: mesh as any }) as P2;
         const t = _text(`(${gridC0 + c},${gridR0 + r})`, 0x00ffff, 10);
         (t as any).anchor?.set(0.5, 0.5);
-        t.position.set((uv.x - ax) * fw * sx, (uv.y - ay) * fh * sy); con.addChild(t);
+        // abs(sx): fromWorld uses abs scale, so the UV→local mapping needs abs too (flipped tiles have sx<0).
+        t.position.set((uv.x - ax) * fw * Math.abs(sx), (uv.y - ay) * fh * sy); con.addChild(t);
       } catch { /* skip */ }
     }
   }

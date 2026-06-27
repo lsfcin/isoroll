@@ -44,11 +44,15 @@ function _gridMetrics(tile: Tile) {
 function _tileSliceCount(tile: Tile): number { const { Wg, Hg } = _gridMetrics(tile); return Math.max(1, Wg + Hg - 1); }
 function _computeSliceCuts(tile: Tile, mesh: Mesh, nSlices: number, origFrame: PIXI.Rectangle): SliceState {
   const { gs, nwX, nwY, kStart } = _gridMetrics(tile);
+  const flipped = VolumeFlags.getTileFlipped(tile.document);
+  const ax = mesh.anchor?.x ?? 0.5;
   const snapX = Math.floor(nwX / gs) * gs, snapY = Math.floor(nwY / gs) * gs;
   const cuts: number[] = [];
   for (let j = 1; j < nSlices; j++) {
     const uv = transformCoord({ x: snapX + (kStart + j) * gs, y: snapY }, "WORLD", "IMAGE", { mesh }) as P2;
-    cuts.push(Math.max(0, Math.min(origFrame.width - 1, Math.round(uv.x * origFrame.width))));
+    // fromWorld uses abs(scale.x), so for mirrored (flipped) tiles the UV is reflected around the anchor.
+    const uvx = flipped ? 2 * ax - uv.x : uv.x;
+    cuts.push(Math.max(0, Math.min(origFrame.width - 1, Math.round(uvx * origFrame.width))));
   }
   cuts.sort((a, b) => a - b);
   return { cuts, meshRot: mesh.rotation ?? 0, meshScX: Math.abs(mesh.scale?.x ?? 1) };
