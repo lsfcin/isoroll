@@ -34,10 +34,8 @@ function _cloneSliceTexture(src: PIXI.Texture, x: number, y: number, w: number, 
 // Used by _computeSliceCuts to align cut points with frontier cell boundaries.
 function _gridMetrics(tile: Tile) {
   const gs = CanvasEnv.gridSize();
-  // swapSide() swaps doc.width↔height; use visual dims (pre-swap) when tileFlipped so grid footprint is correct.
-  const flipped = VolumeFlags.getTileFlipped(tile.document);
   const docW = tile.document.width ?? 0, docH = tile.document.height ?? 0;
-  const visW = flipped ? docH : docW, visH = flipped ? docW : docH;
+  const visW = docW, visH = docH;
   const nwX = tile.document.x - visW / 2, nwY = tile.document.y - visH / 2;
   const Wg = Math.ceil((nwX + visW) / gs) - Math.floor(nwX / gs);
   const Hg = Math.ceil((nwY + visH) / gs) - Math.floor(nwY / gs);
