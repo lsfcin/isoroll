@@ -22,17 +22,21 @@ type RawMesh = {
 
 export const MeshAccessor = {
   geometryOf(placeable: Tile | Token): MeshGeometry | null {
-    const mesh = (placeable as unknown as { mesh?: unknown }).mesh as RawMesh | null | undefined;
-    if (!mesh?.texture || !mesh.scale) return null;
-    return {
-      x:        mesh.x        ?? 0,
-      y:        mesh.y        ?? 0,
-      width:    mesh.texture.width,
-      height:   mesh.texture.height,
-      anchor:   mesh.anchor   ?? { x: 0.5, y: 0.5 },
-      scale:    mesh.scale,
-      rotation: mesh.rotation ?? 0,
-      skew:     mesh.skew     ?? { x: 0, y: 0 },
-    };
+    const raw = (placeable as unknown as { mesh?: unknown }).mesh;
+    const mesh = raw as RawMesh | null | undefined;
+    let result: MeshGeometry | null = null;
+    if (mesh?.texture && mesh.scale) {
+      result = {
+        x:        mesh.x        ?? 0,
+        y:        mesh.y        ?? 0,
+        width:    mesh.texture.width,
+        height:   mesh.texture.height,
+        anchor:   mesh.anchor   ?? { x: 0.5, y: 0.5 },
+        scale:    mesh.scale,
+        rotation: mesh.rotation ?? 0,
+        skew:     mesh.skew     ?? { x: 0, y: 0 },
+      };
+    }
+    return result;
   },
 };

@@ -3,7 +3,9 @@ import { CanvasEnv } from "./canvas-env";
 // Suppresses Foundry's native tooltip on a token — prevents GL_INVALID_OPERATION from texture upload.
 export function suppressTooltip(token: Token): void {
   const tt = (token as unknown as { tooltip?: { visible: boolean } }).tooltip;
-  if (tt) tt.visible = false;
+  if (tt) {
+    tt.visible = false;
+  }
 }
 
 // Shared async scheduling utility.
@@ -59,7 +61,10 @@ export function startPointerDrag<T>(
   onMove: (drag: T, e: PointerEvent) => void,
   onUp:   (drag: T, e: PointerEvent) => void,
 ): void {
-  const handleMove = (e: PointerEvent) => { e.preventDefault(); onMove(drag, e); };
+  const handleMove = (e: PointerEvent) => {
+    e.preventDefault();
+    onMove(drag, e);
+  };
   const handleUp   = (e: PointerEvent) => {
     window.removeEventListener("pointermove", handleMove);
     onUp(drag, e);
