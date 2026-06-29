@@ -4,13 +4,19 @@
 import { CanvasEnv, VolumeFlags } from "../core";
 
 export function evaluateAll(): void {
-  if (!VolumeFlags.isSceneEnabled()) return;
+  if (!VolumeFlags.isSceneEnabled()) {
+    return;
+  }
   const opacity = VolumeFlags.getOcclusionOpacity();
-  for (const tile of CanvasEnv.tiles()) _evaluateTile(tile, opacity);
+  for (const tile of CanvasEnv.tiles()) {
+    _evaluateTile(tile, opacity);
+  }
 }
 
 function _evaluateTile(tile: Tile, occlusionOpacity: number): void {
-  if (tile.mesh) tile.mesh.alpha = _hasTokenBehind(tile) ? occlusionOpacity : 1.0;
+  if (tile.mesh) {
+    tile.mesh.alpha = _hasTokenBehind(tile) ? occlusionOpacity : 1.0;
+  }
 }
 
 function _hasTokenBehind(tile: Tile): boolean {
@@ -20,15 +26,25 @@ function _hasTokenBehind(tile: Tile): boolean {
   const tileKey = tile.x / gridSize + tile.y / gridSize + tileElev / gridSize;
   const tileZTop = tileElev + VolumeFlags.getTileHeight(tile.document);
   const tileBounds = tile.bounds;
+  let result = false;
   for (const token of tokens) {
     const tokenElev = token.document.elevation ?? 0;
     const tokenKey = token.x / gridSize + token.y / gridSize + tokenElev / gridSize;
-    if (tokenKey >= tileKey) continue;
+    if (tokenKey >= tileKey) {
+      continue;
+    }
     const tokenZTop = tokenElev + VolumeFlags.getTokenHeight(token.document);
-    if (tokenElev >= tileZTop || tokenZTop <= tileElev) continue;
+    if (tokenElev >= tileZTop || tokenZTop <= tileElev) {
+      continue;
+    }
     const b = token.bounds;
     if (b.right > tileBounds.left && b.left < tileBounds.right &&
-        b.bottom > tileBounds.top && b.top < tileBounds.bottom) return true;
+        b.bottom > tileBounds.top && b.top < tileBounds.bottom) {
+      result = true;
+    }
+    if (result) {
+      break;
+    }
   }
-  return false;
+  return result;
 }
