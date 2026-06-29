@@ -21,7 +21,8 @@
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the tokens module |
-| [`token-background.ts`](token-background.ts) | [`token-background.d.ts`](token-background.d.ts) | `resolveElevLineColor`, `getState` | Always-visible token indicators: ground shadow (sight-tracked), elevation line, elevation label. |
+| [`token-background.ts`](token-background.ts) | [`token-background.d.ts`](token-background.d.ts) | `resolveUserColor`, `resolveElevLineColor`, `buildGeoKey`, `buildShadowKey`, `getState` | Always-visible token indicators: ground shadow (sight-tracked), elevation line, elevation label. |
 | [`token-elev-drag.ts`](token-elev-drag.ts) | [`token-elev-drag.d.ts`](token-elev-drag.d.ts) | `beginElevDrag`, `pushElevHistory`, `commitElevDrag` | Elevation drag logic for TokenElevGizmo — extracted to keep gizmo file under line limit. |
+| [`token-gizmos-drag.ts`](token-gizmos-drag.ts) | — | `showVolHandle`, `beginDrag`, `pushHistory`, `commit` | Drag logic and vol/img handle setup extracted from TokenGizmos. |
 | [`token-gizmos.ts`](token-gizmos.ts) | [`token-gizmos.d.ts`](token-gizmos.d.ts) | — | Selection overlay for tokens: image handles, volume box, image contour, elevation handle. |
 <!-- routing:end -->
