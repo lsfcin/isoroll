@@ -20,7 +20,9 @@ export function projectImgYScale(
   const canvasDY = screenToCanvas(dx, dy, wt).y;
   const newHalfH = halfH * startYScale - canvasDY;
   let ys = Math.max(0.05, newHalfH / halfH);
-  if (Math.abs(ys - 1.0) * halfH * zoom < IMG_YSCALE_SNAP_PX) ys = 1.0;
+  if (Math.abs(ys - 1.0) * halfH * zoom < IMG_YSCALE_SNAP_PX) {
+    ys = 1.0;
+  }
   return ys;
 }
 
@@ -28,10 +30,17 @@ export function projectImgScale(
   gx: number, gy: number, startGX: number, startGY: number,
   startScale: number, cx: number, cy: number, wt: WT6,
 ): number {
-  const csx = wt.a * cx + wt.c * cy + wt.tx, csy = wt.b * cx + wt.d * cy + wt.ty;
-  const dxRef = startGX - csx, dyRef = startGY - csy;
+  const csx = wt.a * cx + wt.c * cy + wt.tx;
+  const csy = wt.b * cx + wt.d * cy + wt.ty;
+  const dxRef = startGX - csx;
+  const dyRef = startGY - csy;
   const distRef = Math.sqrt(dxRef * dxRef + dyRef * dyRef);
-  if (distRef <= 0) return startScale;
-  const curDist = ((gx - csx) * dxRef + (gy - csy) * dyRef) / distRef;
-  return Math.max(0.05, startScale * (curDist / distRef));
+  let result: number;
+  if (distRef <= 0) {
+    result = startScale;
+  } else {
+    const curDist = ((gx - csx) * dxRef + (gy - csy) * dyRef) / distRef;
+    result = Math.max(0.05, startScale * (curDist / distRef));
+  }
+  return result;
 }
