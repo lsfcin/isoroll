@@ -14,50 +14,77 @@ type FP = {
 
 function fp(): FP {
   type V14 = { foundry?: { applications?: { apps?: { FilePicker?: { implementation?: FP } } } } };
-  return (globalThis as unknown as V14).foundry?.applications?.apps?.FilePicker?.implementation
-    ?? (globalThis as unknown as { FilePicker: FP }).FilePicker;
+  const gv14 = globalThis as unknown as V14;
+  const foundryApps = gv14.foundry?.applications;
+  const foundryAppsApps = foundryApps?.apps;
+  const v14impl = foundryAppsApps?.FilePicker?.implementation;
+  const glegacy = globalThis as unknown as { FilePicker: FP };
+  const result = v14impl ?? glegacy.FilePicker;
+  return result;
 }
 
 export function deriveKey(src: string): string {
-  return src.split("?")[0].split("#")[0].toLowerCase();
+  const withoutQuery = src.split("?")[0];
+  const withoutHash = withoutQuery.split("#")[0];
+  return withoutHash.toLowerCase();
 }
 
 function keyToParts(key: string): { dir: string; filename: string } {
   const slash = key.lastIndexOf("/");
-  if (slash === -1) return { dir: "", filename: key + ".json" };
-  return { dir: key.slice(0, slash), filename: key.slice(slash + 1) + ".json" };
+  let result: { dir: string; filename: string };
+  if (slash === -1) {
+    result = { dir: "", filename: key + ".json" };
+  } else {
+    const dir = key.slice(0, slash);
+    const base = key.slice(slash + 1);
+    result = { dir, filename: base + ".json" };
+  }
+  return result;
+}
+
+async function tryMkdir(path: string): Promise<void> {
+  const fpInst = fp();
+  try {
+    await fpInst.createDirectory("data", path, {});
+  } catch { /* exists */ }
 }
 
 async function ensureKeyDir(key: string): Promise<void> {
   if (!baseDirEnsured) {
-    try { await fp().createDirectory("data", "isoroll", {}); } catch { /* exists */ }
-    try { await fp().createDirectory("data", BASE_DIR, {}); } catch { /* exists */ }
+    await tryMkdir("isoroll");
+    await tryMkdir(BASE_DIR);
     baseDirEnsured = true;
   }
-  const segments = key.split("/").slice(0, -1);
+  const allParts = key.split("/");
+  const segments = allParts.slice(0, -1);
   let path = BASE_DIR;
   for (const seg of segments) {
     path = `${path}/${seg}`;
     if (!ensuredDirs.has(path)) {
-      try { await fp().createDirectory("data", path, {}); } catch { /* exists */ }
+      await tryMkdir(path);
       ensuredDirs.add(path);
     }
   }
 }
 
 async function uploadFile(uploadDir: string, filename: string, json: string): Promise<void> {
-  await fp().upload(
+  const fpInst = fp();
+  const jsonFile = new File([json], filename, { type: "application/json" });
+  await fpInst.upload(
     "data", uploadDir,
-    new File([json], filename, { type: "application/json" }),
+    jsonFile,
     {}, { notify: false },
   );
 }
 
 async function writeIndex(): Promise<void> {
   const obj: Record<string, IsorollPreset> = {};
-  for (const [k, v] of presetCache) obj[k] = v;
+  for (const [k, v] of presetCache) {
+    obj[k] = v;
+  }
   try {
-    await uploadFile(BASE_DIR, "_index.json", JSON.stringify(obj));
+    const json = JSON.stringify(obj);
+    await uploadFile(BASE_DIR, "_index.json", json);
   } catch (e) {
     console.warn("isoroll | preset index write failed", e);
   }
@@ -68,10 +95,11 @@ export function getCachedPreset(key: string): IsorollPreset | undefined {
 }
 
 async function ensureBaseDir(): Promise<void> {
-  if (baseDirEnsured) return;
-  try { await fp().createDirectory("data", "isoroll", {}); } catch { /* exists */ }
-  try { await fp().createDirectory("data", BASE_DIR, {}); } catch { /* exists */ }
-  baseDirEnsured = true;
+  if (!baseDirEnsured) {
+    await tryMkdir("isoroll");
+    await tryMkdir(BASE_DIR);
+    baseDirEnsured = true;
+  }
 }
 
 export async function preloadCache(): Promise<void> {
@@ -83,25 +111,38 @@ export async function preloadCache(): Promise<void> {
       return;
     }
     const index = await res.json() as Record<string, IsorollPreset>;
-    for (const [k, v] of Object.entries(index)) presetCache.set(k, v);
-    if (presetCache.size) console.log(`isoroll | ${presetCache.size} image preset(s) loaded`);
+    const entries = Object.entries(index);
+    for (const [k, v] of entries) {
+      presetCache.set(k, v);
+    }
+    if (presetCache.size) {
+      console.log(`isoroll | ${presetCache.size} image preset(s) loaded`);
+    }
   } catch (e) { console.warn("[isoroll:preset] preloadCache error:", e); }
 }
 
 export async function readPreset(key: string): Promise<IsorollPreset | null> {
   const cached = presetCache.get(key);
-  if (cached) return cached;
-  try {
-    const { dir, filename } = keyToParts(key);
-    const url = dir ? `/${BASE_DIR}/${dir}/${filename}` : `/${BASE_DIR}/${filename}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json() as IsorollPreset;
-    presetCache.set(key, data);
-    return data;
-  } catch {
-    return null;
+  let result: IsorollPreset | null;
+  if (cached) {
+    result = cached;
+  } else {
+    try {
+      const { dir, filename } = keyToParts(key);
+      const url = dir ? `/${BASE_DIR}/${dir}/${filename}` : `/${BASE_DIR}/${filename}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        result = null;
+      } else {
+        const data = await res.json() as IsorollPreset;
+        presetCache.set(key, data);
+        result = data;
+      }
+    } catch {
+      result = null;
+    }
   }
+  return result;
 }
 
 export async function writePreset(preset: IsorollPreset): Promise<void> {
@@ -109,7 +150,8 @@ export async function writePreset(preset: IsorollPreset): Promise<void> {
     const { dir, filename } = keyToParts(preset.imageKey);
     await ensureKeyDir(preset.imageKey);
     const uploadDir = dir ? `${BASE_DIR}/${dir}` : BASE_DIR;
-    await uploadFile(uploadDir, filename, JSON.stringify(preset, null, 2));
+    const json = JSON.stringify(preset, null, 2);
+    await uploadFile(uploadDir, filename, json);
     presetCache.set(preset.imageKey, preset);
     await writeIndex();
   } catch (e) {

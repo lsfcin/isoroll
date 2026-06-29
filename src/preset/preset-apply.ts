@@ -4,63 +4,139 @@ import { MODULE_ID } from "../core";
 import { deriveKey, readPreset, getCachedPreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
 import { applyWallDefs } from "../walls";
-import { getSrc, isPresetEnabled, toScene, asUD, asTDp, gridSize as getGridSize, getSceneBg } from "./preset-ops";
+import { getSrc, toScene, asUD, asTDp, gridSize as getGridSize, getSceneBg, isPresetEnabled } from "./preset-ops";
 
 export function tilePresetData(preset: TilePreset): object {
   const gridSize = getGridSize();
-  return { width: preset.gridWidth * gridSize, height: preset.gridHeight * gridSize,
-    flags: { [MODULE_ID]: { boundHeight: preset.boundHeight, imageScale: preset.imageScale,
-      imageYScale: preset.imageYScale, imageOffset: preset.imageOffset,
-      tileFlipped: preset.tileFlipped, foregroundTile: preset.foregroundTile } } };
+  const flags = {
+    [MODULE_ID]: {
+      boundHeight: preset.boundHeight,
+      imageScale: preset.imageScale,
+      imageYScale: preset.imageYScale,
+      imageOffset: preset.imageOffset,
+      tileFlipped: preset.tileFlipped,
+      foregroundTile: preset.foregroundTile,
+    },
+  };
+  return {
+    width: preset.gridWidth * gridSize,
+    height: preset.gridHeight * gridSize,
+    flags,
+  };
 }
+
 export async function applyTile(doc: unknown, preset: TilePreset): Promise<void> {
-  await asUD(doc).update(tilePresetData(preset), { isoroll: "preset" });
+  const data = tilePresetData(preset);
+  const ud = asUD(doc);
+  await ud.update(data, { isoroll: "preset" });
 }
+
 export async function applyToken(doc: unknown, preset: TokenPreset): Promise<void> {
-  await asUD(doc).update({ flags: { [MODULE_ID]: { boundHeight: preset.boundHeight,
-    imageScale: preset.imageScale, imageYScale: preset.imageYScale,
-    imageOffset: preset.imageOffset, tileFlipped: preset.tileFlipped } } }, { isoroll: "preset" });
+  const flags = {
+    [MODULE_ID]: {
+      boundHeight: preset.boundHeight,
+      imageScale: preset.imageScale,
+      imageYScale: preset.imageYScale,
+      imageOffset: preset.imageOffset,
+      tileFlipped: preset.tileFlipped,
+    },
+  };
+  const ud = asUD(doc);
+  await ud.update({ flags }, { isoroll: "preset" });
 }
+
 export async function applyBackground(scene: unknown, preset: BackgroundPreset): Promise<void> {
-  await toScene(scene).update({ "background.scaleX": preset.scaleX, "background.offsetX": preset.offsetX,
-    "background.offsetY": preset.offsetY, "grid.size": preset.gridSize,
-    [`flags.${MODULE_ID}.backgroundYScale`]: preset.backgroundYScale }, { isoroll: "preset" });
+  const flagKey = `flags.${MODULE_ID}.backgroundYScale`;
+  const data: Record<string, unknown> = {
+    "background.scaleX": preset.scaleX,
+    "background.offsetX": preset.offsetX,
+    "background.offsetY": preset.offsetY,
+    "grid.size": preset.gridSize,
+    [flagKey]: preset.backgroundYScale,
+  };
+  const sd = toScene(scene);
+  await sd.update(data, { isoroll: "preset" });
+}
+
+async function doAutoApplyTile(doc: unknown): Promise<void> {
+  const src = getSrc(doc);
+  if (src) {
+    const key = deriveKey(src);
+    const p = await readPreset(key);
+    if (p && p.type === "tile") {
+      await applyTile(doc, p);
+      if (p.walls?.length) {
+        await applyWallDefs(doc as TileDocument, p.walls);
+      }
+    }
+  }
 }
 
 export async function autoApplyTile(doc: unknown): Promise<void> {
-  if (!isPresetEnabled(doc)) return;
-  const src = getSrc(doc); if (!src) return;
-  const p = await readPreset(deriveKey(src));
-  if (!p || p.type !== "tile") return;
-  await applyTile(doc, p);
-  if (p.walls?.length) await applyWallDefs(doc as TileDocument, p.walls);
+  if (isPresetEnabled(doc)) {
+    await doAutoApplyTile(doc);
+  }
+}
+
+async function doAutoApplyTileWalls(doc: unknown): Promise<void> {
+  const src = getSrc(doc);
+  if (src) {
+    const key = deriveKey(src);
+    const p = getCachedPreset(key);
+    if (p && p.type === "tile" && p.walls?.length) {
+      await applyWallDefs(doc as TileDocument, p.walls);
+    }
+  }
 }
 
 /** Apply only the wall portion of a cached preset (called from createTile on cache-hit). */
 export async function autoApplyTileWalls(doc: unknown): Promise<void> {
-  if (!isPresetEnabled(doc)) return;
-  const src = getSrc(doc); if (!src) return;
-  const p = getCachedPreset(deriveKey(src));
-  if (!p || p.type !== "tile" || !p.walls?.length) return;
-  await applyWallDefs(doc as TileDocument, p.walls);
+  if (isPresetEnabled(doc)) {
+    await doAutoApplyTileWalls(doc);
+  }
 }
+
+async function doAutoApplyToken(doc: unknown): Promise<void> {
+  const src = getSrc(doc);
+  if (src) {
+    const key = deriveKey(src);
+    const p = await readPreset(key);
+    if (p && p.type === "token") {
+      await applyToken(doc, p);
+    }
+  }
+}
+
 export async function autoApplyToken(doc: unknown): Promise<void> {
-  if (!isPresetEnabled(doc)) return;
-  const src = getSrc(doc); if (!src) return;
-  const p = await readPreset(deriveKey(src));
-  if (!p || p.type !== "token") return;
-  await applyToken(doc, p);
+  if (isPresetEnabled(doc)) {
+    await doAutoApplyToken(doc);
+  }
 }
+
+async function doAutoApplyBackground(scene: unknown): Promise<void> {
+  const bg = getSceneBg(scene);
+  const src = bg?.src;
+  if (src) {
+    const key = deriveKey(src);
+    const p = await readPreset(key);
+    if (p && p.type === "background") {
+      await applyBackground(scene, p);
+    }
+  }
+}
+
 export async function autoApplyBackground(scene: unknown): Promise<void> {
-  if (!isPresetEnabled(scene)) return;
-  const src = getSceneBg(scene)?.src; if (!src) return;
-  const p = await readPreset(deriveKey(src));
-  if (!p || p.type !== "background") return;
-  await applyBackground(scene, p);
+  if (isPresetEnabled(scene)) {
+    await doAutoApplyBackground(scene);
+  }
 }
 
 export function applyPresetToSource(doc: unknown, src: string): void {
-  const p = getCachedPreset(deriveKey(src));
-  if (!p || p.type !== "tile") return;
-  asTDp(doc).updateSource?.(tilePresetData(p));
+  const key = deriveKey(src);
+  const p = getCachedPreset(key);
+  if (p && p.type === "tile") {
+    const data = tilePresetData(p);
+    const tdp = asTDp(doc);
+    tdp.updateSource?.(data);
+  }
 }
