@@ -35,6 +35,9 @@
 | [`layer-manager.ts`](layer-manager.ts) | [`layer-manager.d.ts`](layer-manager.d.ts) | `destroyMapped`, `LayerManager`, `LAYER_KEYS`, `stage` | Central PIXI layer registry: creation, z-order policy, and teardown for all overlay layers. |
 | [`mesh-accessor.ts`](mesh-accessor.ts) | — | `MeshAccessor` | Typed, null-safe reader of tile/token mesh geometry. |
 | [`render-gate.ts`](render-gate.ts) | [`render-gate.d.ts`](render-gate.d.ts) | — | Dual role: (1) renderer registry — module.ts calls registerToken/Tile to enroll renderers; |
+| [`render-lifecycle-state.ts`](render-lifecycle-state.ts) | — | `classifyToken`, `classifyTile` | Shared state type and classifier helpers for render-lifecycle handlers. |
+| [`render-lifecycle-tile.ts`](render-lifecycle-tile.ts) | — | `drawTile`, `refreshTile`, `flagsChangeTile`, `selectTile`, `deselectTile` | Tile-specific lifecycle handlers: draw, refresh, flags, select/deselect, destroy. |
+| [`render-lifecycle-token.ts`](render-lifecycle-token.ts) | — | `drawToken`, `refreshToken`, `flagsChangeToken`, `selectToken`, `deselectToken` | Token-specific lifecycle handlers: draw, refresh, flags, select/deselect, destroy. |
 | [`render-lifecycle.ts`](render-lifecycle.ts) | — | `registerTokenRenderer`, `registerTileRenderer`, `onCanvasReady`, `onCanvasTeardown`, `onSceneChange` | Named lifecycle entry points for all rendering decisions. |
 | [`tile-renderer.ts`](tile-renderer.ts) | [`tile-renderer.d.ts`](tile-renderer.d.ts) | — | ← add first-line comment |
 | [`token-renderer.ts`](token-renderer.ts) | [`token-renderer.d.ts`](token-renderer.d.ts) | — | ← add first-line comment |
