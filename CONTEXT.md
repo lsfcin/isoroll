@@ -69,11 +69,13 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
+| [`HISTORY.md`](HISTORY.md) | — | — | History |
 | [`KNOWN-BUGS.md`](KNOWN-BUGS.md) | — | — | isoroll-module — Known Bugs |
+| [`REFACTOR.md`](REFACTOR.md) | — | — | IsoRenderer Refactor — Phase 9+ |
 | [`ROADMAP.md`](ROADMAP.md) | — | — | isoroll — Roadmap |
 | [`SETUP.md`](SETUP.md) | — | — | isoroll — Development Setup |
 | [`SPECS.md`](SPECS.md) | — | — | isoroll — Specs |
-| [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module source |
+| [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
 | [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
 | [`vite.config.ts`](vite.config.ts) | — | — | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
 <!-- routing:end -->
