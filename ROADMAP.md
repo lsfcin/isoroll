@@ -172,11 +172,11 @@ Slicing eliminates within-tile cycles. Cross-tile cycles (Tile A slice in front 
 
 ### Checklist
 
-- [ ] Verify iso projection → image-space x mapping formula (check against actual isoroll stage transform params in `src/transform/`)
-- [ ] Implement `createTileSlices(tile)` using `PIXI.Texture` frame sub-rects
-- [ ] Implement `syncSlices(slices, mesh)` — position all slices, keep them clipped to the corresponding image band
-- [ ] Implement token depth insertion between tile slices
-- [ ] Handle `imageOffset` shift in cut point calculation
+- [x] Verify iso projection → image-space x mapping formula — uniform vertical cuts in image-x suffice; image-x increases monotonically with depth for counter-transformed tiles
+- [x] Implement `createTileSlices(tile)` using `PIXI.Texture` frame sub-rects (`_createTileSlices` in `src/render/iso-sprite-layer.ts`)
+- [x] Implement `syncSlices(slices, mesh)` — position all slices, keep them clipped to the corresponding image band (`_syncSlice`)
+- [x] Implement token depth insertion between tile slices — tokens use `(x/gs + y/gs + elev/gs) * DEPTH_SCALE`; tiles use `(baseDepth + i) * DEPTH_SCALE`; tokens interleave at their depth
+- [ ] Handle `imageOffset` shift in cut point calculation — deferred; cut formula assumes imageOffset=0 (correct for most tiles)
 - [ ] Research cyclic occlusion between different tiles (topological sort vs. `document.sort` bands)
 - [ ] Write recommendations: at what tile count does O(n²) cycle detection become expensive?
 - [ ] If sort-band UI is viable: add sort-band field to Iso tab in `src/ui/tile-config.ts`

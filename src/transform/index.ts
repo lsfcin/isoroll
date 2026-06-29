@@ -10,3 +10,4 @@ export { onRefreshTile, onUpdateTileFlags, onPreUpdateScene, onUpdateSceneGridRe
 export type { MutMeshLike } from './tile-transform';
 export { onRefreshToken } from './token-transform';
 export type { P2, P3, AffineMatrix, TileMeshCoord } from './coord-types';
+export { transformCoord } from './coord-map';
