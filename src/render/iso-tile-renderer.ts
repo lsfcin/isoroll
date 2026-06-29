@@ -12,7 +12,9 @@ function getMesh(obj: unknown): Mesh | undefined { const m = (obj as { mesh?: Me
 
 export const tileSlices = new Map<string, PIXI.Sprite[]>();
 // Stores computed cuts + mesh transform at create-time (detects drawTile→refreshTile timing mismatch).
-interface SliceState { cuts: number[]; meshRot: number; meshScX: number; }
+// rawCuts: all projected frontier corners (texture px) BEFORE sort/drop — for debug visualization.
+// frontierWorldPts: the raw world-space vertices fed to transformCoord — for debug world-space dots.
+interface SliceState { cuts: number[]; rawCuts: number[]; frontierWorldPts: P2[]; meshRot: number; meshScX: number; meshFlipped: boolean; }
 const tileSliceCuts = new Map<string, SliceState>();
 function needsTileClone(t: Tile): boolean { return t.document.getFlag(MODULE_ID, "transformTile") !== true; }
 const getTile = (id: string) => CanvasEnv.getTile(id);
@@ -31,7 +33,7 @@ function _cloneSliceTexture(src: PIXI.Texture, x: number, y: number, w: number, 
 }
 
 // kStart = min(Wg-1, Hg-1): first diagonal band that contains a frontier (south/east face) cell.
-// Used by _computeSliceCuts to align cut points with frontier cell boundaries.
+// Used by depth assignment in _createTileSlices, NOT by cut computation (cuts use frontier corners now).
 function _gridMetrics(tile: Tile) {
   const gs = CanvasEnv.gridSize();
   const docW = tile.document.width ?? 0, docH = tile.document.height ?? 0;
@@ -42,20 +44,55 @@ function _gridMetrics(tile: Tile) {
   return { gs, nwX, nwY, Wg, Hg, kStart: Math.min(Math.max(0, Wg - 1), Math.max(0, Hg - 1)) };
 }
 function _tileSliceCount(tile: Tile): number { const { Wg, Hg } = _gridMetrics(tile); return Math.max(1, Wg + Hg - 1); }
+
+// Bottom-cell corner collection: the V-shaped frontier facing the camera.
+// Bottom-cell = cell closest to camera = (gridC0, gridR0 + Hg-1) for the SW viewpoint.
+// Its two lateral corners (W and E) are cut points.
+// Propagating UP the left column (frontier on the viewer's left), each cell's W corner is a cut.
+// Propagating RIGHT along the bottom row (frontier on the viewer's right), each cell's E corner is a cut.
+// Total = 2 + (Hg-1) + (Wg-1) = Wg+Hg corners. After projection+sort we drop the min & max
+// (tile texture boundaries), leaving Wg+Hg-2 = nSlices-1 internal cuts.
+//
+// ORIENTATION-ROTATION HOOK: when the iso viewpoint rotates (8+1 multiview strategy), the bottom-cell
+// and the propagation directions change. Adapt this helper then — keep the corner-collection shape
+// identical (list of world points), so _computeSliceCuts needs no change.
+function _frontierCorners(Wg: number, Hg: number, gridC0: number, gridR0: number, gs: number): P2[] {
+  const pts: P2[] = [];
+  const botR = gridR0 + Hg - 1;              // bottom row of the tile footprint
+  // WEST corner = leftmost diamond vertex = NW corner of grid square (c*gs, r*gs)
+  // EAST corner = rightmost diamond vertex = SE corner of grid square ((c+1)*gs, (r+1)*gs)
+  // In iso projection (rot -45°), screen-x ∝ world.x + world.y, so NW=min(leftmost), SE=max(rightmost).
+  // bottom-cell at (gridC0, botR): both lateral corners
+  pts.push({ x: gridC0 * gs,         y: botR * gs });            // WEST corner
+  pts.push({ x: (gridC0 + 1) * gs,   y: (botR + 1) * gs });      // EAST corner
+  // left propagation: cells above bottom-cell in the same column → WEST corner of each
+  for (let r = botR - 1; r >= gridR0; r--) {
+    pts.push({ x: gridC0 * gs,       y: r * gs });                // WEST corner
+  }
+  // right propagation: cells to the right of bottom-cell in the bottom row → EAST corner of each
+  for (let c = gridC0 + 1; c < gridC0 + Wg; c++) {
+    pts.push({ x: (c + 1) * gs,      y: (botR + 1) * gs });       // EAST corner
+  }
+  return pts;
+}
+
 function _computeSliceCuts(tile: Tile, mesh: Mesh, nSlices: number, origFrame: PIXI.Rectangle): SliceState {
-  const { gs, nwX, nwY, kStart } = _gridMetrics(tile);
+  const { gs, nwX, nwY, Wg, Hg } = _gridMetrics(tile);
   const flipped = VolumeFlags.getTileFlipped(tile.document);
   const ax = mesh.anchor?.x ?? 0.5;
-  const snapX = Math.floor(nwX / gs) * gs, snapY = Math.floor(nwY / gs) * gs;
-  const cuts: number[] = [];
-  for (let j = 1; j < nSlices; j++) {
-    const uv = transformCoord({ x: snapX + (kStart + j) * gs, y: snapY }, "WORLD", "IMAGE", { mesh }) as P2;
-    // fromWorld uses abs(scale.x), so for mirrored (flipped) tiles the UV is reflected around the anchor.
+  const gridC0 = Math.floor(nwX / gs), gridR0 = Math.floor(nwY / gs);
+  const corners = _frontierCorners(Wg, Hg, gridC0, gridR0, gs);
+  // Project each frontier corner to IMAGE space; flip-mirror around anchor (texture is mirrored when scale.x<0).
+  const projected = corners.map(p => {
+    const uv = transformCoord(p, "WORLD", "IMAGE", { mesh }) as P2;
     const uvx = flipped ? 2 * ax - uv.x : uv.x;
-    cuts.push(Math.max(0, Math.min(origFrame.width - 1, Math.round(uvx * origFrame.width))));
-  }
-  cuts.sort((a, b) => a - b);
-  return { cuts, meshRot: mesh.rotation ?? 0, meshScX: Math.abs(mesh.scale?.x ?? 1) };
+    return Math.max(0, Math.min(origFrame.width - 1, Math.round(uvx * origFrame.width)));
+  });
+  const rawCuts = [...projected];
+  projected.sort((a, b) => a - b);
+  // Drop texture boundaries (global min & max). Internal cuts = projected[1 .. n-2].
+  const cuts = projected.slice(1, projected.length - 1);
+  return { cuts, rawCuts, frontierWorldPts: corners, meshRot: mesh.rotation ?? 0, meshScX: Math.abs(mesh.scale?.x ?? 1), meshFlipped: (mesh.scale?.x ?? 1) < 0 };
 }
 
 function _syncSlicePos(s: PIXI.Sprite, m: Mesh): void { s.position.set(m.x, m.y); if (m.scale) s.scale.set(m.scale.x, m.scale.y); s.rotation = m.rotation ?? 0; }
@@ -89,9 +126,10 @@ function _createTileSlices(tile: Tile): void {
     const effectiveI = flipped ? nSlices - 1 - i : i;
     const d = kStart + effectiveI, rc = Math.min(Hg - 1, d), cc = d - rc;
     sp.zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE; applyDocState(sp, doc); layer.addChild(sp); slices.push(sp);
+    tileSlices.set(id, slices);
   }
-  mesh.alpha = 0; tileSlices.set(id, slices);
-  if (DEBUG_SLICES) { clearSliceDebug(id); drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, kStart, Wg, Hg, nSlices, flipped }, layer); }
+  mesh.alpha = 0;
+  if (DEBUG_SLICES) { clearSliceDebug(id); drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, rawCuts: state.rawCuts, frontierWorldPts: state.frontierWorldPts, kStart, Wg, Hg, nSlices, flipped }, layer); }
 }
 
 export const IsoTileRenderer: TileRenderer = {
@@ -101,9 +139,9 @@ export const IsoTileRenderer: TileRenderer = {
     const slices = tileSlices.get(tile.id); if (!slices) return;
     const mesh = getMesh(tile); if (!mesh) return;
     const nSlices = _tileSliceCount(tile), state = tileSliceCuts.get(tile.id);
-    const curRot = mesh.rotation ?? 0, curScX = Math.abs(mesh.scale?.x ?? 1);
+    const curRot = mesh.rotation ?? 0, curScX = Math.abs(mesh.scale?.x ?? 1), curFlipped = (mesh.scale?.x ?? 1) < 0;
     if (slices.length !== nSlices || !mesh.texture || !state ||
-        Math.abs(curRot - state.meshRot) > 0.001 || Math.abs(curScX - state.meshScX) > 0.001) {
+        Math.abs(curRot - state.meshRot) > 0.001 || Math.abs(curScX - state.meshScX) > 0.001 || curFlipped !== state.meshFlipped) {
       IsoTileRenderer.create(tile); return;
     }
     const doc = tile.document as unknown as PlaceableDoc;

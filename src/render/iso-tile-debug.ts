@@ -16,6 +16,8 @@ export interface SliceDebugParams {
   mesh: Mesh;
   origFrame: PIXI.Rectangle;
   cuts: number[];
+  rawCuts: number[];
+  frontierWorldPts: P2[];
   kStart: number;
   Wg: number;
   Hg: number;
@@ -24,6 +26,8 @@ export interface SliceDebugParams {
 }
 
 const debugContainers = new Map<string, PIXI.Container>();
+// World-space dot containers: separate from mesh-local con (positioned at raw world coords on the layer).
+const debugWorldContainers = new Map<string, PIXI.Container>();
 
 function _shortId(id: string): string {
   let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffffff;
@@ -39,7 +43,7 @@ const SLICE_COLORS = [0xff6600, 0x00cc66, 0x0088ff, 0xff00cc, 0xffcc00];
 
 export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void {
   clearSliceDebug(p.id);
-  const { id, tile, mesh, origFrame, cuts, kStart, Wg, Hg, nSlices, flipped } = p;
+  const { id, tile, mesh, origFrame, cuts, rawCuts, frontierWorldPts, kStart, Wg, Hg, nSlices, flipped } = p;
   const gs = CanvasEnv.gridSize();
   const nwX = tile.document.x - tile.document.width / 2, nwY = tile.document.y - tile.document.height / 2;
   const snapX = Math.floor(nwX / gs) * gs, snapY = Math.floor(nwY / gs) * gs;
@@ -61,6 +65,35 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
   if (!isV8) ga.lineStyle(1, 0xff6600, 1);
   for (const cut of cuts) { const bx = (cut / fw - ax) * fw * sx; ga.moveTo(bx, -ay * fh * sy); ga.lineTo(bx, (1 - ay) * fh * sy); }
   if (isV8) ga.stroke({ color: 0xff6600, width: 1 });
+
+  // Cut-point markers (mesh-local, overlaid on tile sprite).
+  const midY = (0.5 - ay) * fh * sy;
+  // Circles = final selected cuts (solid orange). Diamonds = all rawCuts incl. dropped boundaries (hollow yellow).
+  const cg = new PIXI.Graphics(); (cg as any).eventMode = "passive"; con.addChild(cg);
+  const cga = cg as any;
+  for (const cut of cuts) {
+    const cx = (cut / fw - ax) * fw * sx;
+    if (!isV8) { cga.beginFill(0xff6600, 1); cga.drawCircle(cx, midY, 6); cga.endFill(); }
+    else        { cga.circle(cx, midY, 6); cga.fill({ color: 0xff6600 }); }
+  }
+  const dg = new PIXI.Graphics(); (dg as any).eventMode = "passive"; con.addChild(dg);
+  const dga = dg as any;
+  if (!isV8) dga.lineStyle(2, 0xffcc00, 1);
+  for (const rc of rawCuts) {
+    const dx = (rc / fw - ax) * fw * sx;
+    dga.moveTo(dx, midY - 8); dga.lineTo(dx + 8, midY); dga.lineTo(dx, midY + 8); dga.lineTo(dx - 8, midY); dga.closePath();
+  }
+  if (isV8) dga.stroke({ color: 0xffcc00, width: 2 });
+
+  // World-space frontier-corner dots (magenta). Separate container on layer at raw world coords.
+  const wc = new PIXI.Container(); (wc as any).eventMode = "passive"; (wc as any).zIndex = 9e9;
+  layer.addChild(wc); debugWorldContainers.set(id, wc);
+  const wg = new PIXI.Graphics(); (wg as any).eventMode = "passive"; wc.addChild(wg);
+  const wga = wg as any;
+  for (const wp of frontierWorldPts) {
+    if (!isV8) { wga.beginFill(0xff00ff, 1); wga.drawCircle(wp.x, wp.y, 5); wga.endFill(); }
+    else        { wga.circle(wp.x, wp.y, 5); wga.fill({ color: 0xff00ff }); }
+  }
 
   // Per-slice colored outline (separate Graphics per slice — one shape + one stroke each)
   for (let i = 0; i < nSlices; i++) {
@@ -99,11 +132,15 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
 export function clearSliceDebug(id: string): void {
   const c = debugContainers.get(id);
   if (c) { c.parent?.removeChild(c); (c as any).destroy({ children: true }); debugContainers.delete(id); }
+  const wc = debugWorldContainers.get(id);
+  if (wc) { wc.parent?.removeChild(wc); (wc as any).destroy({ children: true }); debugWorldContainers.delete(id); }
 }
 
 export function clearAllSliceDebug(): void {
   for (const [, c] of debugContainers) { c.parent?.removeChild(c); (c as any).destroy({ children: true }); }
   debugContainers.clear();
+  for (const [, wc] of debugWorldContainers) { wc.parent?.removeChild(wc); (wc as any).destroy({ children: true }); }
+  debugWorldContainers.clear();
 }
 
 let gridDebugContainer: PIXI.Container | null = null;
