@@ -4,9 +4,9 @@ import { LayerManager, LAYER_KEYS } from "./layer-manager";
 import { PlaceableDoc, docAlpha, applyTileFog, getViewers, tryRestoreFromStorage, maybeInvalidateRestoredTiles } from "./fog-helpers";
 import type { TileRenderer } from "./tile-renderer";
 import { drawSliceDebug, clearSliceDebug, clearAllSliceDebug, drawGridDebug, clearGridDebug } from "./iso-tile-debug";
-import { Mesh, SliceState, SliceGeom, gridMetrics, tileSliceCount, computeSliceCuts, DEPTH_SCALE, syncSlicePos, buildSlice } from "./iso-tile-geom";
+import { type Mesh, type SliceState, type SliceGeom, gridMetrics, tileSliceCount, computeSliceCuts, DEPTH_SCALE, syncSlicePos, buildSlice } from "./iso-tile-geom";
 
-export { Mesh, DEPTH_SCALE } from "./iso-tile-geom";
+export { type Mesh, DEPTH_SCALE } from "./iso-tile-geom";
 
 function getMesh(obj: unknown): Mesh | undefined {
   const m = (obj as { mesh?: Mesh }).mesh;

@@ -30,5 +30,7 @@
 | [`bg-drag.ts`](bg-drag.ts) | [`bg-drag.d.ts`](bg-drag.d.ts) | `commitBgDrag`, `BG_YSCALE_SNAP_PX`, `_applyTranslate`, `_applyScale`, `_applyYScale` | Drag math for BackgroundGizmos: translate, uniform scale, Y-scale. |
 | [`bg-gizmos-geom.ts`](bg-gizmos-geom.ts) | — | `computeBgGeom`, `bgCorner` | Background gizmo corner/scale geometry, extracted from bg-gizmos.ts. |
 | [`bg-gizmos.ts`](bg-gizmos.ts) | [`bg-gizmos.d.ts`](bg-gizmos.d.ts) | — | Interactive handles + dashed contour for background image, shown only in GridConfig. |
+| [`bg-html-keys.ts`](bg-html-keys.ts) | — | `buildKeyHandler`, `buildWheelHandler`, `isCtrlArrowCode`, `isBareArrowCode`, `nudgeInput` | Keydown/wheel handler builders for GridConfig arrow-key + scroll background nudging, extracted from bg-html.ts. |
+| [`bg-html-yscale.ts`](bg-html-yscale.ts) | — | `setupYScaleField`, `insertYScaleField`, `bindYScaleInput`, `patchSubmitData` | Vertical Scale field injection + _processSubmitData patch for GridConfig, extracted from bg-html.ts. |
 | [`bg-html.ts`](bg-html.ts) | [`bg-html.d.ts`](bg-html.d.ts) | — | GridConfig HTML injection: Vertical Scale field, key/wheel handlers, _processSubmitData patch. |
 <!-- routing:end -->

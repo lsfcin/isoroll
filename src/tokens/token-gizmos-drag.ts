@@ -1,7 +1,7 @@
 // Drag logic and vol/img handle setup extracted from TokenGizmos.
 import { MODULE_ID, VolumeFlags, elevToCanvas, gridDistance, getElevation, canvasZoom, startPointerDrag, CanvasEnv } from "../core";
-import { HALF, ORANGE, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos";
-import { BLACK } from "../draw";
+import { HALF, clientToGlobal, projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos";
+import { BLACK, ORANGE } from "../draw";
 import { beginElevDrag } from "./token-elev-drag";
 import { LAYER_KEYS, IsoGeometry, IsoRenderer } from "../render";
 import { currentProjection } from "../transform";
