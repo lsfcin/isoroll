@@ -84,6 +84,7 @@ Curried API: `toWorld(params)(point)` / `fromWorld(params)(point)` in each `coor
 | [`object-transform.ts`](object-transform.ts) | [`object-transform.d.ts`](object-transform.d.ts) | — | ← add first-line comment |
 | [`ruler-patch.ts`](ruler-patch.ts) | [`ruler-patch.d.ts`](ruler-patch.d.ts) | `registerRulerPatch`, `patchRulerProto`, `applyTileHudPosition`, `patchTileHUDProto`, `applyTokenHudPosition` | ← add first-line comment |
 | [`stage-transform.ts`](stage-transform.ts) | [`stage-transform.d.ts`](stage-transform.d.ts) | — | Stage isometric transform coordinator: rotation/skew, preview override, object refresh. |
-| [`tile-transform.ts`](tile-transform.ts) | [`tile-transform.d.ts`](tile-transform.d.ts) | `onPreUpdateScene`, `onUpdateSceneGridRescale`, `onUpdateTileFlags`, `onRefreshTile`, `EPS` | Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers. |
+| [`tile-transform-rescale.ts`](tile-transform-rescale.ts) | — | `onPreUpdateScene`, `onUpdateSceneGridRescale`, `syncWallsAfterRescale`, `buildRescaleUpdates`, `doRescale` | Grid-rescale scene update handlers: pre-update capture, rescale apply, wall sync. |
+| [`tile-transform.ts`](tile-transform.ts) | [`tile-transform.d.ts`](tile-transform.d.ts) | `onUpdateTileFlags`, `onRefreshTile`, `EPS`, `applyTileCounter`, `applyNativeRefresh` | Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers. |
 | [`token-transform.ts`](token-transform.ts) | [`token-transform.d.ts`](token-transform.d.ts) | `onRefreshToken`, `_applyMeshScaleAndRotation`, `_applyMeshTransform` | Token counter-transform: refreshToken hook handler. |
 <!-- routing:end -->

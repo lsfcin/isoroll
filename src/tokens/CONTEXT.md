@@ -21,7 +21,10 @@
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the tokens module |
-| [`token-background.ts`](token-background.ts) | [`token-background.d.ts`](token-background.d.ts) | `resolveUserColor`, `resolveElevLineColor`, `buildGeoKey`, `buildShadowKey`, `getState` | Always-visible token indicators: ground shadow (sight-tracked), elevation line, elevation label. |
+| [`token-background-color.ts`](token-background-color.ts) | — | `resolveUserColor`, `resolveElevLineColor` | Elevation line color helpers: resolve user color and elev-line color for a token. |
+| [`token-background-render.ts`](token-background-render.ts) | — | `renderShadow`, `renderIndicator`, `renderLabel`, `drawIndicator` | Render helpers for TokenBackground: shadow, elevation indicator, and label layers. |
+| [`token-background-state.ts`](token-background-state.ts) | — | `getState`, `buildGeoKey`, `buildShadowKey` | Background state key builders: cache keys for geo and shadow layers. |
+| [`token-background.ts`](token-background.ts) | [`token-background.d.ts`](token-background.d.ts) | — | Always-visible token indicators: ground shadow (sight-tracked), elevation line, elevation label. |
 | [`token-elev-drag.ts`](token-elev-drag.ts) | [`token-elev-drag.d.ts`](token-elev-drag.d.ts) | `beginElevDrag`, `pushElevHistory`, `commitElevDrag` | Elevation drag logic for TokenElevGizmo — extracted to keep gizmo file under line limit. |
 | [`token-gizmos-drag.ts`](token-gizmos-drag.ts) | — | `showVolHandle`, `beginDrag`, `pushHistory`, `commit` | Drag logic and vol/img handle setup extracted from TokenGizmos. |
 | [`token-gizmos.ts`](token-gizmos.ts) | [`token-gizmos.d.ts`](token-gizmos.d.ts) | — | Selection overlay for tokens: image handles, volume box, image contour, elevation handle. |
