@@ -19,12 +19,19 @@
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the render module — central PIXI layer registry |
-| [`fog-helpers.ts`](fog-helpers.ts) | — | `docAlpha`, `applyDocState`, `clearSeenTiles`, `saveSessionToStorage`, `tryRestoreFromStorage` | Fog-of-war visibility helpers for IsoSpriteLayer. |
+| [`fog-apply.ts`](fog-apply.ts) | — | `docAlpha`, `applyDocState`, `getViewers`, `applyTokenFogContainer`, `applyTokenFog` | Public fog-state application: docAlpha, getViewers, applyTokenFog*, applyTileFog. |
+| [`fog-helpers.ts`](fog-helpers.ts) | — | `clearSeenTiles`, `saveSessionToStorage`, `tryRestoreFromStorage`, `maybeInvalidateRestoredTiles` | Fog-of-war session storage and tile visibility helpers. Re-exports public fog API. |
+| [`fog-state.ts`](fog-state.ts) | — | `isRestoreChecked`, `setRestoreChecked`, `isGM`, `testPointVisible`, `buildPerimeterPoints` | Fog system shared state, private helpers, and per-frame computation. |
 | [`iso-geometry.ts`](iso-geometry.ts) | — | `IsoGeometry`, `pt`, `buildVerts` | Footprint math for tiles and tokens. |
-| [`iso-renderer.ts`](iso-renderer.ts) | — | `isoRendererSightRefresh`, `IsoRenderer`, `_defLayer`, `_paint`, `_drop` | Rendering façade — single entry point for all isoroll visuals. |
-| [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | [`iso-sprite-layer.d.ts`](iso-sprite-layer.d.ts) | `cloneSprite`, `syncSprite`, `IsoTokenRenderer`, `IsoSpriteLayer`, `getMesh` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
+| [`iso-renderer-paint.ts`](iso-renderer-paint.ts) | — | `paintSpec`, `_paintLines`, `_paintSprite`, `_paintText`, `_paintShape` | iso-renderer-paint.ts — PIXI paint helpers for IsoRenderer. |
+| [`iso-renderer-types.ts`](iso-renderer-types.ts) | — | — | iso-renderer-types.ts — shared type declarations for the IsoRenderer façade. |
+| [`iso-renderer.ts`](iso-renderer.ts) | — | `isoRendererSightRefresh`, `IsoRenderer`, `_defLayer`, `_drop`, `_applyInteraction` | Rendering façade — single entry point for all isoroll visuals. |
+| [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | [`iso-sprite-layer.d.ts`](iso-sprite-layer.d.ts) | `IsoSpriteLayer` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
+| [`iso-tile-debug-paint.ts`](iso-tile-debug-paint.ts) | — | `makeText`, `drawCutLines`, `drawCutMarkers`, `drawFrontierDots`, `drawSliceOutlines` | iso-tile-debug-paint.ts — PIXI drawing helpers for the iso tile debug overlay. |
 | [`iso-tile-debug.ts`](iso-tile-debug.ts) | [`iso-tile-debug.d.ts`](iso-tile-debug.d.ts) | `drawSliceDebug`, `clearSliceDebug`, `clearAllSliceDebug`, `drawGridDebug`, `clearGridDebug` | iso-tile-debug.ts — visual debug overlay for iso tile slices |
-| [`iso-tile-renderer.ts`](iso-tile-renderer.ts) | [`iso-tile-renderer.d.ts`](iso-tile-renderer.d.ts) | `debugSlices`, `debugGrid`, `tileSlices`, `DEPTH_SCALE`, `IsoTileRenderer` | IsoTileRenderer — depth-sorted iso-diagonal sliced tile sprites for the iso layer. |
+| [`iso-tile-geom.ts`](iso-tile-geom.ts) | — | `gridMetrics`, `tileSliceCount`, `frontierCorners`, `computeSliceCuts`, `cloneSliceTexture` | iso-tile-geom.ts — grid metric, frontier-corner, and sprite helpers for iso tile slicing. |
+| [`iso-tile-renderer.ts`](iso-tile-renderer.ts) | [`iso-tile-renderer.d.ts`](iso-tile-renderer.d.ts) | `debugSlices`, `debugGrid`, `tileSlices`, `IsoTileRenderer`, `getMesh` | IsoTileRenderer — depth-sorted iso-diagonal sliced tile sprites for the iso layer. |
+| [`iso-token-renderer.ts`](iso-token-renderer.ts) | — | `getMesh`, `cloneSprite`, `syncSprite`, `tokenClones`, `IsoTokenRenderer` | iso-token-renderer.ts — IsoTokenRenderer: depth-sorted token clone sprites for the iso layer. |
 | [`layer-manager.ts`](layer-manager.ts) | [`layer-manager.d.ts`](layer-manager.d.ts) | `destroyMapped`, `LayerManager`, `LAYER_KEYS`, `stage` | Central PIXI layer registry: creation, z-order policy, and teardown for all overlay layers. |
 | [`mesh-accessor.ts`](mesh-accessor.ts) | — | `MeshAccessor` | Typed, null-safe reader of tile/token mesh geometry. |
 | [`render-gate.ts`](render-gate.ts) | [`render-gate.d.ts`](render-gate.d.ts) | — | Dual role: (1) renderer registry — module.ts calls registerToken/Tile to enroll renderers; |
