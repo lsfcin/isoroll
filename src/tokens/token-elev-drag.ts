@@ -15,14 +15,23 @@ export function beginElevDrag(
   lastCommittedElev.set(token.id ?? '', elev);
   const drag: TokenElevDrag = { token, startGX: gx, startGY: gy, startElev: elev };
   startPointerDrag(drag,
-    (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); commitElevDrag(lastCommittedElev, d, y); },
-    (d, e) => { const { y } = clientToGlobal(e.clientX, e.clientY); pushElevHistory(d); commitElevDrag(lastCommittedElev, d, y); },
+    (d, e) => {
+      const { y } = clientToGlobal(e.clientX, e.clientY);
+      commitElevDrag(lastCommittedElev, d, y);
+    },
+    (d, e) => {
+      const { y } = clientToGlobal(e.clientX, e.clientY);
+      pushElevHistory(d);
+      commitElevDrag(lastCommittedElev, d, y);
+    },
   );
 }
 
 function pushElevHistory(drag: TokenElevDrag): void {
   const id = drag.token.id;
-  if (!id) return;
+  if (!id) {
+    return;
+  }
   const original = { _id: id, elevation: drag.startElev };
   CanvasEnv.pushTokensHistory({ type: "update", data: [original], options: {} });
   console.debug(`[isoroll] storeDragHistory | type=elevation token=${id} startElev=${drag.startElev}`);
@@ -35,7 +44,9 @@ function commitElevDrag(lastCommittedElev: Map<string, number>, drag: TokenElevD
   const deltaFeet = -(gy - drag.startGY) / (zoom * gridSize / gridDist);
   const elev = Math.round(drag.startElev + deltaFeet);
   const id = drag.token.id ?? '';
-  if (lastCommittedElev.get(id) === elev) return;
+  if (lastCommittedElev.get(id) === elev) {
+    return;
+  }
   lastCommittedElev.set(id, elev);
   void (drag.token.document as unknown as { update(d: object, o?: object): Promise<unknown> })
     .update({ elevation: elev }, { animate: false, isUndo: true });

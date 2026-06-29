@@ -4,10 +4,15 @@ import { getDoorBehavior, setDoorBehavior, isLinkedDoorOpen } from "./wall-flags
 
 export async function applyDoorBehavior(doc: TileDocument, isOpen: boolean): Promise<void> {
   const b = getDoorBehavior(doc);
-  if (b.mode === "none") return;
-  if (!isOpen) { await doc.update({ hidden: false, alpha: 1 }); return; }
-  if (b.mode === "hide") { await doc.update({ alpha: 0 }); return; }
-  if (b.mode === "fade") { await doc.update({ alpha: b.opacity }); return; }
+  if (b.mode !== "none") {
+    if (!isOpen) {
+      await doc.update({ hidden: false, alpha: 1 });
+    } else if (b.mode === "hide") {
+      await doc.update({ alpha: 0 });
+    } else if (b.mode === "fade") {
+      await doc.update({ alpha: b.opacity });
+    }
+  }
 }
 
 export async function cycleDoorBehavior(doc: TileDocument): Promise<DoorBehavior> {
