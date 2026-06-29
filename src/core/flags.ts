@@ -21,8 +21,13 @@ export interface TileVolumeFlags {
 export class VolumeFlags {
   static getTokenHeight(token: TokenDocument): number {
     const flagVal = token.getFlag(MODULE_ID, "boundHeight") as number | undefined;
-    if (flagVal !== undefined) return flagVal;
-    return (game.settings?.get(MODULE_ID, "defaultTokenHeight") as number | undefined) ?? 2;
+    let result: number;
+    if (flagVal !== undefined) {
+      result = flagVal;
+    } else {
+      result = (game.settings?.get(MODULE_ID, "defaultTokenHeight") as number | undefined) ?? 2;
+    }
+    return result;
   }
 
   static getTileBaseElevation(tile: TileDocument): number {
@@ -39,10 +44,15 @@ export class VolumeFlags {
   static getEffectiveTileHeight(tile: TileDocument): number {
     const stored = VolumeFlags.getTileHeight(tile);
     const base   = tile.getFlag(MODULE_ID, "boundHeightBase") as { w: number; h: number } | undefined;
-    if (!base) return stored;
-    const baseMax = Math.max(base.w, base.h);
-    const curMax  = Math.max(tile.width ?? 0, tile.height ?? 0);
-    return baseMax > 0 ? stored * curMax / baseMax : stored;
+    let result: number;
+    if (!base) {
+      result = stored;
+    } else {
+      const baseMax = Math.max(base.w, base.h);
+      const curMax  = Math.max(tile.width ?? 0, tile.height ?? 0);
+      result = baseMax > 0 ? stored * curMax / baseMax : stored;
+    }
+    return result;
   }
 
   static getImageOffset(doc: { getFlag(s: string, k: string): unknown }): { x: number; y: number } {
@@ -95,8 +105,13 @@ export class VolumeFlags {
 
   static getShadowEnabled(doc: { getFlag(s: string, k: string): unknown }, defaultOn = true): boolean {
     const v = doc.getFlag(MODULE_ID, "shadowEnabled");
-    if (v === undefined || v === null) return defaultOn;
-    return v !== false;
+    let result: boolean;
+    if (v === undefined || v === null) {
+      result = defaultOn;
+    } else {
+      result = v !== false;
+    }
+    return result;
   }
 
   static getShadowShape(doc: { getFlag(s: string, k: string): unknown }, defaultShape: "circle" | "rect" = "circle"): "circle" | "rect" {

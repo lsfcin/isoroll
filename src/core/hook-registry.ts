@@ -17,8 +17,7 @@ import { WallManager }        from '../walls';
 import { isPreviewClone }     from './index';
 import { onRenderSceneConfig, onRenderTileConfig, onRenderTokenConfigState, onCloseTokenConfig, onRenderTokenConfigTab } from '../ui';
 
-export function registerAllHooks(): void {
-
+function registerCanvasAndSceneHooks(): void {
   // ── canvasInit ────────────────────────────────────────────────────────────
   Hooks.on("canvasInit", IsoSpriteLayer._onCanvasInit);
 
@@ -36,26 +35,20 @@ export function registerAllHooks(): void {
   // ── changeScene ───────────────────────────────────────────────────────────
   Hooks.on("changeScene", IsoSpriteLayer._teardown);
 
-  // ── closeGridConfig ───────────────────────────────────────────────────────
-  // Order: stage transform → render lifecycle → bg html
-  Hooks.on("closeGridConfig", CanvasTransform.onCloseGridConfig);
-  Hooks.on("closeGridConfig", onGridConfigClose);
-  Hooks.on("closeGridConfig", BgHtml.onCloseGridConfig);
+  // ── updateScene ──────────────────────────────────────────────────────────
+  // Order: stage transform → render lifecycle → object transform (grid rescale) → preset upsert
+  Hooks.on("updateScene", CanvasTransform.onUpdateScene);
+  Hooks.on("updateScene", (s: Scene) => onSceneChange(s, {}));
+  Hooks.on("updateScene", onUpdateSceneGridRescale);
+  Hooks.on("updateScene", PresetManager.onUpdateScene);
+}
 
-  // ── closeSceneConfig ──────────────────────────────────────────────────────
-  Hooks.on("closeSceneConfig", CanvasTransform.onCloseSceneConfig);
-
-  // ── closeTokenConfig ──────────────────────────────────────────────────────
-  Hooks.on("closeTokenConfig", onCloseTokenConfig);
-
+function registerTileAndTokenHooks(): void {
   // ── controlTile ───────────────────────────────────────────────────────────
   Hooks.on("controlTile", (t: Tile, c: boolean) => c ? onTileSelect(t) : onTileDeselect(t));
 
   // ── controlToken ──────────────────────────────────────────────────────────
   Hooks.on("controlToken", (t: Token, c: boolean) => c ? onTokenSelect(t) : onTokenDeselect(t));
-
-  // ── createScene ───────────────────────────────────────────────────────────
-  Hooks.on("createScene", PresetManager.onCreateScene);
 
   // ── createTile ────────────────────────────────────────────────────────────
   Hooks.on("createTile", PresetManager.onCreateTile);
@@ -71,15 +64,20 @@ export function registerAllHooks(): void {
   // ── deleteToken ───────────────────────────────────────────────────────────
   Hooks.on("deleteToken", (doc: unknown) => onTokenDestroy((doc as { id?: string }).id ?? ""));
 
-  // ── deleteWall ────────────────────────────────────────────────────────────
-  Hooks.on("deleteWall", WallManager.onDeleteWall);
-
   // ── destroyTile ───────────────────────────────────────────────────────────
   // Guard: preview clone shares id with original — must not trigger cleanup on original.
-  Hooks.on("destroyTile", (t: Tile) => { if (!isPreviewClone(t)) onTileDestroy(t.id); });
+  Hooks.on("destroyTile", (t: Tile) => {
+    if (!isPreviewClone(t)) {
+      onTileDestroy(t.id);
+    }
+  });
 
   // ── destroyToken ──────────────────────────────────────────────────────────
-  Hooks.on("destroyToken", (t: Token) => { if (!isPreviewClone(t)) onTokenDestroy(t.id); });
+  Hooks.on("destroyToken", (t: Token) => {
+    if (!isPreviewClone(t)) {
+      onTokenDestroy(t.id);
+    }
+  });
 
   // ── drawTile ─────────────────────────────────────────────────────────────
   Hooks.on("drawTile", onTileDraw);
@@ -90,14 +88,8 @@ export function registerAllHooks(): void {
   // ── preCreateTile ────────────────────────────────────────────────────────
   Hooks.on("preCreateTile", PresetManager.onPreCreateTile);
 
-  // ── preUpdateScene ────────────────────────────────────────────────────────
-  Hooks.on("preUpdateScene", onPreUpdateScene);
-
   // ── preUpdateTile ─────────────────────────────────────────────────────────
   Hooks.on("preUpdateTile", WallManager.onPreUpdateTile);
-
-  // ── ready ─────────────────────────────────────────────────────────────────
-  Hooks.once("ready", PresetManager.onReady);
 
   // ── refreshTile ───────────────────────────────────────────────────────────
   // [DepthSorter.onRefresh is dormant — add Hooks.on("refreshTile", DepthSorter.onRefresh) when Phase 1 ships]
@@ -110,6 +102,47 @@ export function registerAllHooks(): void {
   // Order: object transform → render lifecycle
   Hooks.on("refreshToken", onRefreshToken);
   Hooks.on("refreshToken", (t: Token, f?: Record<string, boolean>) => onTokenRefresh(t, f));
+
+  // ── updateTile ───────────────────────────────────────────────────────────
+  // Order: object transform flags → render lifecycle flags change → preset upsert → wall sync
+  Hooks.on("updateTile", onUpdateTileFlags);
+  Hooks.on("updateTile", RenderGate.onUpdateTile);
+  Hooks.on("updateTile", PresetManager.onUpdateTile);
+  Hooks.on("updateTile", WallManager.onUpdateTile);
+
+  // ── updateToken ──────────────────────────────────────────────────────────
+  // Order: render lifecycle flags change → preset upsert
+  Hooks.on("updateToken", RenderGate.onUpdateToken);
+  Hooks.on("updateToken", PresetManager.onUpdateToken);
+}
+
+export function registerAllHooks(): void {
+  registerCanvasAndSceneHooks();
+  registerTileAndTokenHooks();
+
+  // ── closeGridConfig ───────────────────────────────────────────────────────
+  // Order: stage transform → render lifecycle → bg html
+  Hooks.on("closeGridConfig", CanvasTransform.onCloseGridConfig);
+  Hooks.on("closeGridConfig", onGridConfigClose);
+  Hooks.on("closeGridConfig", BgHtml.onCloseGridConfig);
+
+  // ── closeSceneConfig ──────────────────────────────────────────────────────
+  Hooks.on("closeSceneConfig", CanvasTransform.onCloseSceneConfig);
+
+  // ── closeTokenConfig ──────────────────────────────────────────────────────
+  Hooks.on("closeTokenConfig", onCloseTokenConfig);
+
+  // ── createScene ───────────────────────────────────────────────────────────
+  Hooks.on("createScene", PresetManager.onCreateScene);
+
+  // ── deleteWall ────────────────────────────────────────────────────────────
+  Hooks.on("deleteWall", WallManager.onDeleteWall);
+
+  // ── preUpdateScene ────────────────────────────────────────────────────────
+  Hooks.on("preUpdateScene", onPreUpdateScene);
+
+  // ── ready ─────────────────────────────────────────────────────────────────
+  Hooks.once("ready", PresetManager.onReady);
 
   // ── renderGridConfig ──────────────────────────────────────────────────────
   // Order: stage transform preview → render lifecycle grid config state → bg html injection
@@ -137,26 +170,6 @@ export function registerAllHooks(): void {
   // ── sightRefresh ─────────────────────────────────────────────────────────
   Hooks.on("sightRefresh", onSightRefresh);
 
-  // ── updateScene ──────────────────────────────────────────────────────────
-  // Order: stage transform → render lifecycle → object transform (grid rescale) → preset upsert
-  Hooks.on("updateScene", CanvasTransform.onUpdateScene);
-  Hooks.on("updateScene", (s: Scene) => onSceneChange(s, {}));
-  Hooks.on("updateScene", onUpdateSceneGridRescale);
-  Hooks.on("updateScene", PresetManager.onUpdateScene);
-
-  // ── updateTile ───────────────────────────────────────────────────────────
-  // Order: object transform flags → render lifecycle flags change → preset upsert → wall sync
-  Hooks.on("updateTile", onUpdateTileFlags);
-  Hooks.on("updateTile", RenderGate.onUpdateTile);
-  Hooks.on("updateTile", PresetManager.onUpdateTile);
-  Hooks.on("updateTile", WallManager.onUpdateTile);
-
-  // ── updateToken ──────────────────────────────────────────────────────────
-  // Order: render lifecycle flags change → preset upsert
-  Hooks.on("updateToken", RenderGate.onUpdateToken);
-  Hooks.on("updateToken", PresetManager.onUpdateToken);
-
   // ── updateWall ───────────────────────────────────────────────────────────
   Hooks.on("updateWall", WallManager.onUpdateWall);
 }
-
