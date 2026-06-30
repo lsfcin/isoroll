@@ -1,6 +1,7 @@
 // iso-tile-debug.ts — visual debug overlay for iso tile slices
 import { CanvasEnv } from "../core";
 import { drawCutLines, drawCutMarkers, drawFrontierDots, drawSliceOutlines, drawCellLabels, makeText } from "./iso-tile-debug-paint";
+import { drawCellMarkers } from "./iso-tile-debug-cells";
 
 type Mesh = PIXI.DisplayObject & {
   texture?: PIXI.Texture;
@@ -71,6 +72,8 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
   drawCutLines(con, cuts, fw, ax, ay, fh, sx, sy);
   drawCutMarkers(con, cuts, rawCuts, fw, ax, ay, fh, sx, sy);
   drawFrontierDots(id, frontierWorldPts, layer, debugWorldContainers);
+  const wc = debugWorldContainers.get(id);
+  if (wc) drawCellMarkers(wc, p);
   drawSliceOutlines(con, p, fw, ax, ay, fh, sx, sy, tid);
   drawCellLabels(con, p, snapX, snapY, ax, ay, fw, fh, sx, gridC0, gridR0);
 }

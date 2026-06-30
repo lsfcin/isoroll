@@ -38,7 +38,7 @@ export function makeText(str: string, fill: number, size: number): PixiTextLike 
   return new TextCtor(str, { fontSize: size, fill });
 }
 
-function _isV8(g: PixiGfx): boolean {
+export function _isV8(g: PixiGfx): boolean {
   return typeof g.stroke === "function";
 }
 
