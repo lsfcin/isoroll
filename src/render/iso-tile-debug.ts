@@ -73,9 +73,11 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
   drawCutMarkers(con, cuts, rawCuts, fw, ax, ay, fh, sx, sy);
   drawFrontierDots(id, frontierWorldPts, layer, debugWorldContainers);
   const wc = debugWorldContainers.get(id);
-  if (wc) drawCellMarkers(wc, p);
+  if (wc) {
+    drawCellMarkers(wc, p);
+    drawCellLabels(wc, p, snapX, snapY, gridC0, gridR0);
+  }
   drawSliceOutlines(con, p, fw, ax, ay, fh, sx, sy, tid);
-  drawCellLabels(con, p, snapX, snapY, ax, ay, fw, fh, sx, gridC0, gridR0);
 }
 
 export function clearSliceDebug(id: string): void {

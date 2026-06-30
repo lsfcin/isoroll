@@ -1,15 +1,7 @@
 // iso-tile-debug-paint.ts — PIXI drawing helpers for the iso tile debug overlay.
 import { CanvasEnv } from "../core";
-import { transformCoord } from "../transform";
 import type { P2 } from "../transform";
 import type { SliceDebugParams } from "./iso-tile-debug";
-
-type Mesh = PIXI.DisplayObject & {
-  texture?: PIXI.Texture;
-  anchor?: PIXI.ObservablePoint;
-  scale?: PIXI.ObservablePoint;
-  rotation?: number;
-};
 
 type PixiGfx = {
   eventMode?: string;
@@ -159,20 +151,18 @@ export function drawSliceOutlines(con: PIXI.Container, p: SliceDebugParams, fw: 
   }
 }
 
-export function drawCellLabels(con: PIXI.Container, p: SliceDebugParams, snapX: number, snapY: number, ax: number, ay: number, fw: number, fh: number, sx: number, gridC0: number, gridR0: number): void {
-  const { Wg, Hg, mesh } = p;
+export function drawCellLabels(wc: PIXI.Container, p: SliceDebugParams, snapX: number, snapY: number, gridC0: number, gridR0: number): void {
+  const { Wg, Hg } = p;
   const gs = CanvasEnv.gridSize();
   for (let c = 0; c < Wg; c++) {
     for (let r = 0; r < Hg; r++) {
       try {
-        const worldPt = { x: snapX + (c + 0.5) * gs, y: snapY + (r + 0.5) * gs };
-        const uv = transformCoord(worldPt, "WORLD", "IMAGE", { mesh: mesh as unknown as Mesh }) as P2;
+        const wx = snapX + (c + 0.5) * gs;
+        const wy = snapY + (r + 0.5) * gs;
         const t = makeText(`(${gridC0 + c},${gridR0 + r})`, 0x00ffff, 10);
         t.anchor?.set(0.5, 0.5);
-        // abs(sx): fromWorld uses abs scale, so the UV→local mapping needs abs too (flipped tiles have sx<0).
-        const absSx = Math.abs(sx);
-        t.position.set((uv.x - ax) * fw * absSx, (uv.y - ay) * fh);
-        con.addChild(t);
+        t.position.set(wx, wy);
+        wc.addChild(t);
       } catch { /* skip */ }
     }
   }
