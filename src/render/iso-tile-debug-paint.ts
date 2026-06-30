@@ -160,7 +160,7 @@ export function drawCellLabels(wc: PIXI.Container, p: SliceDebugParams, snapX: n
     for (let r = 0; r < Hg; r++) {
       try {
         const wx = snapX + (c + 0.5) * gs;
-        const wy = snapY + (r + 0.75) * gs;
+        const wy = snapY + (r + 0.9) * gs;
         const t = makeText(`(${gridC0 + c},${gridR0 + r})`, 0x00ffff, 8);
         t.anchor?.set(0.5, 0.5);
         t.position.set(wx, wy);
