@@ -27,7 +27,7 @@
 | [`iso-renderer-types.ts`](iso-renderer-types.ts) | — | — | iso-renderer-types.ts — shared type declarations for the IsoRenderer façade. |
 | [`iso-renderer.ts`](iso-renderer.ts) | — | `isoRendererSightRefresh`, `IsoRenderer`, `_defLayer`, `_drop`, `_applyInteraction` | Rendering façade — single entry point for all isoroll visuals. |
 | [`iso-sprite-layer.ts`](iso-sprite-layer.ts) | [`iso-sprite-layer.d.ts`](iso-sprite-layer.d.ts) | `IsoSpriteLayer` | Iso Sprite Layer — PIXI.Container on canvas.stage outside VisibilityFilter scope. |
-| [`iso-tile-debug-cells.ts`](iso-tile-debug-cells.ts) | — | `drawCellMarkers`, `_drawTriangle` | iso-tile-debug-cells.ts — per-cell slice marker rendering for debugSlices mode. |
+| [`iso-tile-debug-cells.ts`](iso-tile-debug-cells.ts) | — | `drawCellMarkers`, `_drawTriangle`, `_imgX` | iso-tile-debug-cells.ts — per-cell slice marker rendering for debugSlices mode. |
 | [`iso-tile-debug-paint.ts`](iso-tile-debug-paint.ts) | — | `makeText`, `_isV8`, `drawCutLines`, `drawCutMarkers`, `drawFrontierDots` | iso-tile-debug-paint.ts — PIXI drawing helpers for the iso tile debug overlay. |
 | [`iso-tile-debug.ts`](iso-tile-debug.ts) | [`iso-tile-debug.d.ts`](iso-tile-debug.d.ts) | `drawSliceDebug`, `clearSliceDebug`, `clearAllSliceDebug`, `drawGridDebug`, `clearGridDebug` | iso-tile-debug.ts — visual debug overlay for iso tile slices |
 | [`iso-tile-geom.ts`](iso-tile-geom.ts) | — | `gridMetrics`, `tileSliceCount`, `frontierCorners`, `computeSliceCuts`, `cloneSliceTexture` | iso-tile-geom.ts — grid metric, frontier-corner, and sprite helpers for iso tile slicing. |
