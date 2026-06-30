@@ -8,8 +8,10 @@ import type { P2, TileMeshCoord } from './coord-types.js';
 export const toWorld = (mesh: TileMeshCoord): ((p: P2) => P2) => {
   const ax = mesh.anchor?.x ?? 0.5, ay = mesh.anchor?.y ?? 0.5;
   const texW = mesh.texture?.width ?? 1, texH = mesh.texture?.height ?? 1;
-  const absSx = Math.abs(mesh.scale.x), absSy = Math.abs(mesh.scale.y);
-  const cr = Math.cos(mesh.rotation), sr = Math.sin(mesh.rotation);
+  const absSx = Math.abs(mesh.scale.x);
+  const absSy = Math.abs(mesh.scale.y);
+  const cr = Math.cos(mesh.rotation);
+  const sr = Math.sin(mesh.rotation);
   return (p: P2) => {
     const lx = (p.x - ax) * texW * absSx;
     const ly = (p.y - ay) * texH * absSy;
@@ -24,8 +26,10 @@ export const toWorld = (mesh: TileMeshCoord): ((p: P2) => P2) => {
 export const fromWorld = (mesh: TileMeshCoord): ((p: P2) => P2) => {
   const ax = mesh.anchor?.x ?? 0.5, ay = mesh.anchor?.y ?? 0.5;
   const texW = mesh.texture?.width ?? 1, texH = mesh.texture?.height ?? 1;
-  const absSx = Math.abs(mesh.scale.x), absSy = Math.abs(mesh.scale.y);
-  const cr = Math.cos(mesh.rotation), sr = Math.sin(mesh.rotation);
+  const absSx = Math.abs(mesh.scale.x);
+  const absSy = Math.abs(mesh.scale.y);
+  const cr = Math.cos(mesh.rotation);
+  const sr = Math.sin(mesh.rotation);
   return (p: P2) => {
     const dx = p.x - mesh.x, dy = p.y - mesh.y;
     const u =  cr * dx + sr * dy;

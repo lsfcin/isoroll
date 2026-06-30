@@ -6,19 +6,35 @@ export type BoxVerts = WorldBoxVerts;
 export type P = { x: number; y: number };
 
 export function drawAnchorLine(g: DrawAPI, v: BoxVerts): void {
-  if (Math.abs(v.elevation) < 0.01) return;
-  const dx = v.baseCenter.x - v.ground.x;
-  const dy = v.baseCenter.y - v.ground.y;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 4) return;
-  const ux = dx / len, uy = dy / len;
-  const gap = 7;
-  const x1 = v.ground.x + ux * gap,     y1 = v.ground.y + uy * gap;
-  const x2 = v.baseCenter.x - ux * gap, y2 = v.baseCenter.y - uy * gap;
-  g.lineStyle(2, BLACK, 0.3);
-  g.moveTo(x1, y1); g.lineTo(x2, y2);
-  g.lineStyle(1, ORANGE, 0.7);
-  g.moveTo(x1, y1); g.lineTo(x2, y2);
+  let result: void;
+  if (Math.abs(v.elevation) < 0.01) {
+    result = undefined;
+  } else {
+    const baseCenter = v.baseCenter;
+    const ground = v.ground;
+    const dx = baseCenter.x - ground.x;
+    const dy = baseCenter.y - ground.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 4) {
+      result = undefined;
+    } else {
+      const ux = dx / len;
+      const uy = dy / len;
+      const gap = 7;
+      const x1 = ground.x + ux * gap;
+      const y1 = ground.y + uy * gap;
+      const x2 = baseCenter.x - ux * gap;
+      const y2 = baseCenter.y - uy * gap;
+      g.lineStyle(2, BLACK, 0.3);
+      g.moveTo(x1, y1);
+      g.lineTo(x2, y2);
+      g.lineStyle(1, ORANGE, 0.7);
+      g.moveTo(x1, y1);
+      g.lineTo(x2, y2);
+      result = undefined;
+    }
+  }
+  return result;
 }
 
 export function drawBox(g: DrawAPI, v: BoxVerts): void {
@@ -38,11 +54,13 @@ export function drawBox(g: DrawAPI, v: BoxVerts): void {
   ];
   for (const [a, b, back] of edges) {
     g.lineStyle(2, BLACK, back ? ALPHA_BACK_OUTLINE : ALPHA_FRONT_OUTLINE);
-    g.moveTo(a.x, a.y); g.lineTo(b.x, b.y);
+    g.moveTo(a.x, a.y);
+    g.lineTo(b.x, b.y);
   }
   for (const [a, b, back] of edges) {
     g.lineStyle(1, ORANGE, back ? ALPHA_BACK_FILL : ALPHA_FRONT_FILL);
-    g.moveTo(a.x, a.y); g.lineTo(b.x, b.y);
+    g.moveTo(a.x, a.y);
+    g.lineTo(b.x, b.y);
   }
   g.endFill();
 }

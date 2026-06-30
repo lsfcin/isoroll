@@ -1,33 +1,47 @@
 
-import { MODULE_ID, VolumeFlags, scheduleWrap, CanvasEnv } from "../core";
+import { MODULE_ID, scheduleWrap, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "./wall-flags";
-import { updateLinkedWallPositions, flipLinkedWallAnchorsX } from "./wall-sync";
 import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls } from "./wall-crud";
-import { canvasToAnchor, scene, wallsLayer, type TileDoc } from "./wall-coords";
-import { applyDoorBehavior, cycleDoorBehavior as _cycleDoorBehavior } from "./wall-door";
+import { scene, wallsLayer } from "./wall-coords";
+import { cycleDoorBehavior as _cycleDoorBehavior } from "./wall-door";
 import type { DoorBehavior } from "./wall-types";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
+import { handleNativeSizeChange, scheduleWallUpdate, doUpdateWall } from "./wall-manager-impl";
 
-import { upsertTile, debounced, tileUpsertTimers } from "../preset";
+function wrap(fn: () => Promise<void>, label: string): void {
+  scheduleWrap(fn, label, 0);
+}
 
-const wrap = (fn: () => Promise<void>, label: string) => scheduleWrap(fn, label, 0);
+function currentTileHistLen(): number {
+  const tiles = (canvas as unknown as { tiles?: { history?: unknown[] } }).tiles;
+  return tiles?.history?.length ?? 0;
+}
+
+function isInputTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  const matches = el?.matches?.("input,textarea,[contenteditable]");
+  return !!matches;
+}
+
+function handleKeydown(e: KeyboardEvent): void {
+  const isCtrlZ = e.ctrlKey && e.key === "z" && !e.shiftKey;
+  const notInput = !isInputTarget(e.target);
+  const hasHistory = !!WallHistory.size;
+  const notDeferred = currentTileHistLen() <= WallHistory.topTileHistLen;
+  if (isCtrlZ && notInput && hasHistory && notDeferred) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const undoPromise = WallHistory.undo();
+    undoPromise.catch(console.warn);
+  }
+}
 
 export class WallManager {
-  private static preSizes: Map<string, { w: number; h: number }> = new Map();
+  static preSizes: Map<string, { w: number; h: number }> = new Map();
 
   static activate(): void {
-    // Hooks registered in core/hook-registry.ts. Non-hook setup only:
-    window.addEventListener("keydown", (e) => {
-      if (!e.ctrlKey || e.key !== "z" || e.shiftKey) return;
-      if ((e.target as HTMLElement)?.matches?.("input,textarea,[contenteditable]")) return;
-      if (!WallHistory.size) return;
-      // Defer to Foundry if tile history has entries added after this wall op
-      const currentTileHistLen = ((canvas as unknown as { tiles?: { history?: unknown[] } }).tiles?.history?.length ?? 0);
-      if (currentTileHistLen > WallHistory.topTileHistLen) return;
-      e.preventDefault(); e.stopImmediatePropagation();
-      WallHistory.undo().catch(console.warn);
-    });
+    window.addEventListener("keydown", handleKeydown);
     WallOverlay.activate();
   }
 
@@ -38,9 +52,11 @@ export class WallManager {
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
   ): void {
-    if (options.isoroll) return;
-    if (!("width" in changes) && !("height" in changes)) return;
-    WallManager.preSizes.set(doc.id!, { w: doc.width ?? 0, h: doc.height ?? 0 });
+    const notOurs = !options.isoroll;
+    const sizeChange = "width" in changes || "height" in changes;
+    if (notOurs && sizeChange) {
+      WallManager.preSizes.set(doc.id!, { w: doc.width ?? 0, h: doc.height ?? 0 });
+    }
   }
 
   static onUpdateTile(
@@ -48,73 +64,43 @@ export class WallManager {
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
   ): void {
-    if (options.isoroll === "preset") return;
-
+    if (options.isoroll === "preset") {
+      return;
+    }
     const isoFlags           = (changes as Record<string, Record<string, unknown>>)?.flags?.[MODULE_ID] ?? {};
     const tileFlippedChanged = "tileFlipped" in isoFlags;
     const boundHChanged      = "boundHeight" in isoFlags;
-    const sizeChanged        = "width" in changes || "height" in changes;
-
-    // Native size change (no isoroll option): rescale boundHeight proportionally.
-    // Skipped for our own gizmo drags (isoroll:"gizmoDrag"), grid rescales (isoroll:"gridRescale"),
-    // swapSide (tileFlippedChanged), and explicit boundH edits (boundHChanged).
-    if (sizeChanged && !tileFlippedChanged && !boundHChanged && !options.isoroll) {
-      const pre = WallManager.preSizes.get(doc.id!);
-      WallManager.preSizes.delete(doc.id!);
-      if (pre) {
-        const oldMax = Math.max(pre.w, pre.h);
-        const newMax = Math.max(doc.width ?? 0, doc.height ?? 0);
-        if (oldMax > 0 && Math.abs(newMax / oldMax - 1) > 1e-4) {
-          const ratio    = newMax / oldMax;
-          const newBoundH = VolumeFlags.getTileHeight(doc) * ratio;
-          wrap(async () => {
-            await doc.update({
-              [`flags.${MODULE_ID}.boundHeight`]:     newBoundH,
-              [`flags.${MODULE_ID}.boundHeightBase`]: { w: doc.width ?? 0, h: doc.height ?? 0 },
-            }, { isoroll: "gizmoDrag", isUndo: true });
-          }, "boundH rescale");
-          // Linked-wall position update deferred to the subsequent boundHChanged hook.
-          if (getLinkedWallIds(doc).length) return;
-        }
-      }
-    }
-
-    if (!getLinkedWallIds(doc).length) return;
-
-    const posOrSize         = "x" in changes || "y" in changes || "width" in changes || "height" in changes;
-    const elevChanged       = "elevation" in changes;
-    const imagePropsChanged = "imageOffset" in isoFlags || "imageScale" in isoFlags;
-
-    if (tileFlippedChanged) {
-      // swapSide changes width+height+tileFlipped in one update.
-      // flipLinkedWallAnchorsX handles the full transform so skip updateLinkedWallPositions.
-      const sizeSwapped = "width" in changes && "height" in changes;
-      wrap(() => flipLinkedWallAnchorsX(doc, sizeSwapped), "wall flip");
-    } else if (posOrSize || elevChanged || imagePropsChanged || boundHChanged) {
-      wrap(() => updateLinkedWallPositions(doc), "wall position update");
+    const tileHadWalls = handleNativeSizeChange(doc, changes, isoFlags, options, WallManager.preSizes);
+    if (!tileHadWalls && getLinkedWallIds(doc).length) {
+      scheduleWallUpdate(doc, changes, isoFlags, tileFlippedChanged, boundHChanged);
     }
   }
 
   static onDeleteTile(doc: TileDocument): void {
-    // Skip unsetFlag — tile doc is already removed from the collection.
     wrap(async () => {
-      const ids = getLinkedWallIds(doc).filter(id => !!wallsLayer().get(id));
-      if (ids.length) await scene().deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete" });
+      const layer = wallsLayer();
+      const allIds = getLinkedWallIds(doc);
+      const ids = allIds.filter(id => !!layer.get(id));
+      if (ids.length) {
+        const sc = scene();
+        await sc.deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete" });
+      }
     }, "wall cascade delete");
   }
 
-  static onDeleteWall(
-    doc: WallDocument, options: Record<string, unknown>,
-  ): void {
-    // Skip when deleteLinkedWalls bulk-deleted — it handles the flag clear directly
-    if (options.isoroll === "wallBulkDelete") return;
-    const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
-    if (!tileId) return;
-    const tileObj = CanvasEnv.getTile(tileId);
-    if (!tileObj) return;
-    const ids = getLinkedWallIds(tileObj.document).filter(id => id !== doc.id);
-    wrap(() => setLinkedWallIds(tileObj.document, ids, { isUndo: true }), "wall id prune");
-    WallOverlay.refresh(tileObj);
+  static onDeleteWall(doc: WallDocument, options: Record<string, unknown>): void {
+    if (options.isoroll !== "wallBulkDelete") {
+      const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
+      if (tileId) {
+        const tileObj = CanvasEnv.getTile(tileId);
+        if (tileObj) {
+          const allIds = getLinkedWallIds(tileObj.document);
+          const ids = allIds.filter(id => id !== doc.id);
+          wrap(() => setLinkedWallIds(tileObj.document, ids, { isUndo: true }), "wall id prune");
+          WallOverlay.refresh(tileObj);
+        }
+      }
+    }
   }
 
   static onUpdateWall(
@@ -122,40 +108,22 @@ export class WallManager {
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
   ): void {
-    // Skip anchor-sync updates (would cause infinite loop)
-    if (options.isoroll === "anchorUpdate") return;
-    const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
-    if (!tileId) return;
-    const tileObj = CanvasEnv.getTile(tileId);
-    if (!tileObj) return;
-
-    // User manually moved wall in Walls layer → recompute stored anchor.
-    // Skipped during grid rescale: Foundry rescales wall c-coords before our tile update fires,
-    // so canvasToAnchor would use stale tile dimensions and corrupt the stored anchor.
-    if (!CanvasEnv.isGridRescaling() && options.isoroll !== "wallMove" && options.isoroll !== "wallEndpointDrag" && "c" in changes) {
-      wrap(async () => {
-        const c = (doc as unknown as { c: number[] }).c;
-        await scene().updateEmbeddedDocuments("Wall",
-          [{ _id: doc.id, flags: { [MODULE_ID]: { tileAnchor: canvasToAnchor(tileObj.document as TileDoc, c) } } }],
-          { isoroll: "anchorUpdate" });
-      }, "wall anchor sync");
-    }
-
-    WallOverlay.refresh(tileObj);
-    debounced(tileUpsertTimers, tileId, () => upsertTile(tileObj.document));
-
-    if ("ds" in changes) {
-      wrap(() => applyDoorBehavior(tileObj.document, (changes.ds as number) > 0), "door behavior");
+    if (options.isoroll !== "anchorUpdate") {
+      const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
+      if (tileId) {
+        const tileObj = CanvasEnv.getTile(tileId);
+        if (tileObj) {
+          doUpdateWall(doc, changes, options, tileId, tileObj);
+        }
+      }
     }
   }
 
   // ── Public façade ────────────────────────────────────────────────────────
 
-  // Drag lifecycle — called by tile-gizmos to keep wall overlay visible during move drag
   static markWallDrag(tileId: string): void  { WallOverlay.markDragActive(tileId); }
   static clearWallDrag(tileId: string): void { WallOverlay.clearDragActive(tileId); }
 
-  // Reads — delegate to wall-flags / WallOverlay
   static getLinkedWallIds(doc: TileDocument): string[]      { return getLinkedWallIds(doc); }
   static hasLinkedDoor(doc: TileDocument): boolean          { return hasLinkedDoor(doc); }
   static getDoorBehavior(doc: TileDocument): DoorBehavior   { return getDoorBehavior(doc); }
@@ -163,20 +131,28 @@ export class WallManager {
   static enterSelect(tile: Tile): void                      { WallOverlay.enterSelect(tile); }
   static exitSelect(tile: Tile): void                       { WallOverlay.exitSelect(tile); }
 
-  // Mutations — run op then refresh overlay
   static async generateBaseWalls(doc: TileDocument): Promise<void> {
     await generateBaseWalls(doc);
-    WallManager._refreshByDoc(doc);
+    const tile = CanvasEnv.getTile(doc.id!);
+    if (tile) {
+      WallOverlay.showIfActive(tile);
+    }
   }
 
   static async deleteLinkedWalls(doc: TileDocument): Promise<void> {
     await _deleteLinkedWalls(doc);
-    WallManager._refreshByDoc(doc);
+    const tile = CanvasEnv.getTile(doc.id!);
+    if (tile) {
+      WallOverlay.showIfActive(tile);
+    }
   }
 
   static async unlinkAllWalls(doc: TileDocument): Promise<void> {
     await _unlinkAllWalls(doc);
-    WallManager._refreshByDoc(doc);
+    const tile = CanvasEnv.getTile(doc.id!);
+    if (tile) {
+      WallOverlay.showIfActive(tile);
+    }
   }
 
   static async cycleDoorBehavior(doc: TileDocument): Promise<DoorBehavior> {
@@ -186,10 +162,4 @@ export class WallManager {
   static async setDoorBehavior(doc: TileDocument, b: DoorBehavior): Promise<void> {
     await setDoorBehavior(doc, b);
   }
-
-  private static _refreshByDoc(doc: TileDocument): void {
-    const tile = CanvasEnv.getTile(doc.id!);
-    if (tile) WallOverlay.showIfActive(tile);
-  }
-
 }

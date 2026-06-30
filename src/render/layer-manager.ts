@@ -11,11 +11,14 @@ export const LayerManager = {
   // Get or create a named layer on canvas.stage. Recreates if detached.
   ensureLayer(key: string): PIXI.Container {
     let l = layers.get(key);
-    if (l && !l.parent) l = undefined;
+    if (l && !l.parent) {
+      l = undefined;
+    }
     if (!l) {
       l = new PIXI.Container();
       l.eventMode = "passive";
-      stage().addChild(l);
+      const s = stage();
+      s.addChild(l);
       layers.set(key, l);
     }
     return l;
@@ -24,24 +27,38 @@ export const LayerManager = {
   // Move layer to top of stage display list, then enforce declared z-order if set.
   bringToTop(key: string): void {
     const l = layers.get(key);
-    if (!l) return;
-    try { stage().removeChild(l); } catch { /* detached */ }
-    stage().addChild(l);
-    if (zOrder.length) LayerManager.enforceOrder();
+    if (!l) {
+      return;
+    }
+    const s = stage();
+    try {
+      s.removeChild(l);
+    } catch { /* detached */ }
+    s.addChild(l);
+    if (zOrder.length) {
+      LayerManager.enforceOrder();
+    }
   },
 
   // Destroy a layer and all its children; remove from registry.
   clearLayer(key: string): void {
     const l = layers.get(key);
-    if (!l) return;
-    try { stage().removeChild(l); } catch { /* detached */ }
+    if (!l) {
+      return;
+    }
+    const s = stage();
+    try {
+      s.removeChild(l);
+    } catch { /* detached */ }
     l.destroy({ children: true });
     layers.delete(key);
   },
 
   // Destroy all registered layers.
   clearAll(): void {
-    for (const key of [...layers.keys()]) LayerManager.clearLayer(key);
+    for (const key of [...layers.keys()]) {
+      LayerManager.clearLayer(key);
+    }
   },
 
   // Set the canonical z-order. Call from module.ts after all activate()s.
@@ -51,12 +68,18 @@ export const LayerManager = {
 
   // Re-sort all active layers to match the declared order.
   enforceOrder(): void {
-    if (!zOrder.length) return;
+    if (!zOrder.length) {
+      return;
+    }
     const s = stage();
     for (const key of zOrder) {
       const l = layers.get(key);
-      if (!l?.parent) continue;
-      try { s.removeChild(l); } catch { /* detached */ }
+      if (!l?.parent) {
+        continue;
+      }
+      try {
+        s.removeChild(l);
+      } catch { /* detached */ }
       s.addChild(l);
     }
   },
@@ -65,7 +88,9 @@ export const LayerManager = {
 // Removes and destroys a mapped PIXI container by id. No-op if id not in map.
 export function destroyMapped(map: Map<string, PIXI.Container>, id: string): void {
   const c = map.get(id);
-  if (!c) return;
+  if (!c) {
+    return;
+  }
   c.parent?.removeChild(c);
   c.destroy({ children: true });
   map.delete(id);

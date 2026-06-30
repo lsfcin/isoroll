@@ -26,7 +26,9 @@ export class DepthSorter {
 
   static sort(): void {
     const primary = CanvasEnv.primaryLayer();
-    if (!primary) return;
+    if (!primary) {
+      return;
+    }
 
     const gridSize = CanvasEnv.gridSize();
 

@@ -45,7 +45,9 @@ export class CanvasTransform {
 
   private static applyStage(): void {
     const stage = canvas.app?.stage;
-    if (!stage) return;
+    if (!stage) {
+      return;
+    }
     const proj = CanvasTransform.previewProjection ?? currentProjection();
     stage.rotation = proj.rotation;
     stage.skew.set(proj.skewX, proj.skewY);
@@ -53,7 +55,9 @@ export class CanvasTransform {
 
   private static resetStage(): void {
     const stage = canvas.app?.stage;
-    if (!stage) return;
+    if (!stage) {
+      return;
+    }
     stage.rotation = 0;
     stage.skew.set(0, 0);
   }
@@ -61,8 +65,12 @@ export class CanvasTransform {
   // #drawOutline() rect becomes a diamond through the stage transform — hide when bg is untransformed.
   private static setOutlineVisible(v: boolean): void {
     type CanvasIface = { interface?: PIXI.Container };
-    const outline = (canvas as unknown as CanvasIface).interface?.children.find((c): c is PIXI.Graphics => c instanceof PIXI.Graphics);
-    if (outline) outline.visible = v;
+    const iface = (canvas as unknown as CanvasIface).interface;
+    const children = iface?.children;
+    const outline = children?.find((c): c is PIXI.Graphics => c instanceof PIXI.Graphics);
+    if (outline) {
+      outline.visible = v;
+    }
   }
 
   static applyCurrentState(): void {
@@ -83,8 +91,14 @@ export class CanvasTransform {
   }
 
   static refresh(): void {
-    for (const token of canvas.tokens?.placeables ?? []) token.refresh();
-    for (const tile of canvas.tiles?.placeables ?? []) tile.refresh();
+    const tokens = canvas.tokens?.placeables ?? [];
+    const tiles = canvas.tiles?.placeables ?? [];
+    for (const token of tokens) {
+      token.refresh();
+    }
+    for (const tile of tiles) {
+      tile.refresh();
+    }
   }
 
   static onCanvasReady(): void {
@@ -92,9 +106,13 @@ export class CanvasTransform {
     // reset() only when sprite is unchanged (same canvas session, no canvas.draw() redraw).
     // If bg is a new sprite (canvas.draw() was called), original values are stale — skipping
     // reset() keeps the sprite at Foundry's freshly-drawn position before we recapture.
-    if (bg && bg === BackgroundTransform.lastCapture) BackgroundTransform.reset();
+    if (bg && bg === BackgroundTransform.lastCapture) {
+      BackgroundTransform.reset();
+    }
     BackgroundTransform.clearCapture();
-    if (bg) BackgroundTransform.capture(bg);
+    if (bg) {
+      BackgroundTransform.capture(bg);
+    }
     CanvasTransform.applyCurrentState();
     CanvasTransform.syncHudAfterStageApply();
   }
@@ -105,9 +123,12 @@ export class CanvasTransform {
   // Force both to sync here so the first right-click sees the correct positions.
   private static syncHudAfterStageApply(): void {
     const stage = canvas.app?.stage;
-    if (!stage) return;
+    if (!stage) {
+      return;
+    }
     // Step 1: flush worldTransform cache from localTransform (stage is root — no parent).
-    stage.transform.updateLocalTransform();
+    const transform = stage.transform;
+    transform.updateLocalTransform();
     stage.worldTransform.copyFrom(stage.localTransform);
     // Step 2: align #hud CSS to match wt.tx/ty (same as what canvasPan does).
     const wt  = stage.worldTransform;
@@ -119,11 +140,21 @@ export class CanvasTransform {
   }
 
   static onUpdateScene(scene: Scene, changes: Record<string, unknown>): void {
-    if (scene.id !== canvas.scene?.id) return;
-    const changed = (changes as { flags?: Record<string, unknown> }).flags?.[MODULE_ID];
-    if (changed === undefined) return;
-    CanvasTransform.applyCurrentState();
-    CanvasTransform.refresh();
+    let result: void;
+    if (scene.id !== canvas.scene?.id) {
+      result = undefined;
+    } else {
+      const changedFlags = (changes as { flags?: Record<string, unknown> }).flags;
+      const changed = changedFlags?.[MODULE_ID];
+      if (changed === undefined) {
+        result = undefined;
+      } else {
+        CanvasTransform.applyCurrentState();
+        CanvasTransform.refresh();
+        result = undefined;
+      }
+    }
+    return result;
   }
 
   // If a pending SceneConfig iso change differs from saved flags, the stage was reverted
@@ -135,17 +166,19 @@ export class CanvasTransform {
     if (lps && lps.enabled !== savedEnabled) {
       if (lps.enabled) {
         CanvasTransform.applyStage();
-        if (!lps.transformBg) BackgroundTransform.apply();
-        else BackgroundTransform.reset();
+        if (!lps.transformBg) {
+          BackgroundTransform.apply();
+        } else {
+          BackgroundTransform.reset();
+        }
       } else {
         CanvasTransform.resetStage();
         BackgroundTransform.reset();
       }
     }
-    BackgroundTransform.onRenderGridConfig(
-      CanvasTransform.gctEffectiveEnabled(),
-      CanvasTransform.gctEffectiveTransformBg(),
-    );
+    const effEnabled = CanvasTransform.gctEffectiveEnabled();
+    const effTransformBg = CanvasTransform.gctEffectiveTransformBg();
+    BackgroundTransform.onRenderGridConfig(effEnabled, effTransformBg);
   }
 
   static onCloseGridConfig(): void {
@@ -154,7 +187,9 @@ export class CanvasTransform {
   }
 
   static onCloseSceneConfig(): void {
-    if (!CanvasTransform.previewOverride && !CanvasTransform.previewProjection) return;
+    if (!CanvasTransform.previewOverride && !CanvasTransform.previewProjection) {
+      return;
+    }
     CanvasTransform.lastPreviewState = CanvasTransform.previewOverride; // capture before clearing
     CanvasTransform.previewOverride = null;
     CanvasTransform.previewProjection = null;

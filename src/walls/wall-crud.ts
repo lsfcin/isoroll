@@ -1,16 +1,16 @@
-// Create, delete, link, and extract linked wall documents for a tile.
-
 import { MODULE_ID, VolumeFlags } from "../core";
 import { WallHistory } from "./wall-history";
 import type { WallDef, WallConfig, TileAnchor } from "./wall-types";
 import {
-  wallsLayer, scene, defToCanvas, anchorToCanvas, imageRect, canvasToAnchor, tileRect,
+  wallsLayer, scene, defToCanvas, canvasToAnchor, tileRect,
   type TileDoc, type WallDoc,
 } from "./wall-coords";
 import { getLinkedWallIds, setLinkedWallIds } from "./wall-flags";
 
+type Updateable = { update(d: object, o?: object): Promise<unknown> };
+
 export function generateBaseWallDefs(doc: TileDocument): WallDef[] {
-  const tDoc      = doc as TileDoc;
+  const tDoc = doc as TileDoc;
   const { left, top, w, h } = tileRect(tDoc);
   const topOffset = VolumeFlags.getTileHeight(doc);
   const corners: [number, number, number, number][] = [
@@ -42,92 +42,158 @@ export async function createWallsFromDefs(doc: TileDocument, defs: WallDef[]): P
       },
     };
   });
-  const created = await scene().createEmbeddedDocuments("Wall", wallData, { isUndo: true });
-  return created.map(w => w.id ?? "").filter(Boolean);
+  const sc = scene();
+  const created = await sc.createEmbeddedDocuments("Wall", wallData, { isUndo: true });
+  const mapped = created.map(w => w.id ?? "");
+  return mapped.filter(Boolean);
 }
 
 export async function deleteLinkedWalls(doc: TileDocument, skipHistory = false): Promise<void> {
-  const ids = getLinkedWallIds(doc).filter(id => wallsLayer().get(id));
+  const layer = wallsLayer();
+  const allIds = getLinkedWallIds(doc);
+  const ids = allIds.filter(id => layer.get(id));
   if (!skipHistory && ids.length) {
-    const prevData = ids.map(id => (wallsLayer().get(id)!.document as any).toObject());
+    const prevData = ids.map(id => {
+      const wdoc = layer.get(id)!.document as unknown as { toObject(): object };
+      return wdoc.toObject();
+    });
     WallHistory.push({ k: "delete", tileId: doc.id ?? "", prevData });
   }
-  if (ids.length) await scene().deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete", isUndo: true });
-  await (doc as unknown as { update(d: object, o?: object): Promise<unknown> })
-    .update({ [`flags.${MODULE_ID}.-=linkedWallIds`]: null }, { isUndo: true });
+  const sc = scene();
+  if (ids.length) {
+    await sc.deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete", isUndo: true });
+  }
+  const tileUpdateable = doc as unknown as Updateable;
+  await tileUpdateable.update({ [`flags.${MODULE_ID}.-=linkedWallIds`]: null }, { isUndo: true });
 }
 
-/** Links currently controlled walls to the tile. Returns count newly linked. */
 export async function linkSelectedWalls(doc: TileDocument): Promise<number> {
-  const controlled = wallsLayer().controlled;
-  if (!controlled.length) return 0;
-  const existing     = new Set(getLinkedWallIds(doc));
-  const baseElevation = VolumeFlags.getTileBaseElevation(doc);
-  const wallUpdates: { _id: string; flags: object }[] = [];
-  for (const wall of controlled) {
-    const id = wall.document.id as string | null;
-    if (!id) continue;
-    existing.add(id);
-    wallUpdates.push({ _id: id, flags: { [MODULE_ID]: {
-      parentTileId: doc.id,
-      tileAnchor:  canvasToAnchor(doc as TileDoc, wall.document.c),
-      wallTop:     baseElevation + VolumeFlags.getTileHeight(doc),
-      wallBottom:  baseElevation,
-    }}});
+  const layer = wallsLayer();
+  const controlled = layer.controlled;
+  let result = 0;
+  if (controlled.length) {
+    const allLinked = getLinkedWallIds(doc);
+    const existing = new Set(allLinked);
+    const baseElevation = VolumeFlags.getTileBaseElevation(doc);
+    const tileHeight = VolumeFlags.getTileHeight(doc);
+    const wallUpdates: { _id: string; flags: object }[] = [];
+    for (const wall of controlled) {
+      const id = wall.document.id as string | null;
+      if (id) {
+        existing.add(id);
+        const anchor = canvasToAnchor(doc as TileDoc, wall.document.c);
+        wallUpdates.push({ _id: id, flags: { [MODULE_ID]: {
+          parentTileId: doc.id,
+          tileAnchor:  anchor,
+          wallTop:     baseElevation + tileHeight,
+          wallBottom:  baseElevation,
+        }}});
+      }
+    }
+    if (wallUpdates.length) {
+      const sc = scene();
+      await sc.updateEmbeddedDocuments("Wall", wallUpdates);
+      await setLinkedWallIds(doc, [...existing]);
+      result = wallUpdates.length;
+    }
   }
-  if (!wallUpdates.length) return 0;
-  await scene().updateEmbeddedDocuments("Wall", wallUpdates);
-  await setLinkedWallIds(doc, [...existing]);
-  return wallUpdates.length;
+  return result;
 }
 
 export async function unlinkAllWalls(doc: TileDocument): Promise<void> {
-  const ids = getLinkedWallIds(doc).filter(id => wallsLayer().get(id));
+  const layer = wallsLayer();
+  const allIds = getLinkedWallIds(doc);
+  const ids = allIds.filter(id => layer.get(id));
   WallHistory.push({ k: "unlink-all", tileId: doc.id ?? "", prevIds: ids });
+  const sc = scene();
   if (ids.length) {
-    await scene().updateEmbeddedDocuments("Wall", ids.map(id => ({
-      _id: id, flags: { [MODULE_ID]: { parentTileId: null, tileAnchor: null } },
-    })), { isUndo: true });
+    const wallFlagUpdates = ids.map(id => ({
+      _id: id,
+      flags: { [MODULE_ID]: { parentTileId: null, tileAnchor: null } },
+    }));
+    await sc.updateEmbeddedDocuments("Wall", wallFlagUpdates, { isUndo: true });
   }
-  await (doc as unknown as { update(d: object, o?: object): Promise<unknown> })
-    .update({ [`flags.${MODULE_ID}.-=linkedWallIds`]: null }, { isUndo: true });
+  const tileUpdateable = doc as unknown as Updateable;
+  await tileUpdateable.update({ [`flags.${MODULE_ID}.-=linkedWallIds`]: null }, { isUndo: true });
 }
 
 export async function generateBaseWalls(doc: TileDocument): Promise<void> {
-  const prevData = getLinkedWallIds(doc).filter(id => wallsLayer().get(id))
-    .map(id => (wallsLayer().get(id)!.document as any).toObject());
+  const layer = wallsLayer();
+  const allLinked = getLinkedWallIds(doc);
+  const linkedIds = allLinked.filter(id => layer.get(id));
+  const prevData = linkedIds.map(id => {
+    const wdoc = layer.get(id)!.document as unknown as { toObject(): object };
+    return wdoc.toObject();
+  });
   await deleteLinkedWalls(doc, true);
-  const newIds = await createWallsFromDefs(doc, generateBaseWallDefs(doc));
+  const baseDefs = generateBaseWallDefs(doc);
+  const newIds = await createWallsFromDefs(doc, baseDefs);
   await setLinkedWallIds(doc, newIds, { isUndo: true });
   WallHistory.push({ k: "create", tileId: doc.id ?? "", newIds, prevData });
 }
 
+function buildWallConfig(wdoc: WallDoc): Partial<WallConfig> {
+  const config: Partial<WallConfig> = {};
+  if (wdoc.door) {
+    config.door = wdoc.door;
+  }
+  if (wdoc.move) {
+    config.move = wdoc.move;
+  }
+  if (wdoc.sense) {
+    config.sense = wdoc.sense;
+  }
+  if (wdoc.light) {
+    config.light = wdoc.light;
+  }
+  if (wdoc.sound) {
+    config.sound = wdoc.sound;
+  }
+  if (wdoc.dir) {
+    config.dir = wdoc.dir;
+  }
+  return config;
+}
+
+function buildWallDef(
+  id: string, layer: ReturnType<typeof wallsLayer>, baseElevation: number,
+): WallDef | null {
+  const wall = layer.get(id);
+  let result: WallDef | null = null;
+  if (wall) {
+    const anchor = wall.document.getFlag(MODULE_ID, "tileAnchor") as TileAnchor | undefined;
+    if (anchor) {
+      const wallTop    = (wall.document.getFlag(MODULE_ID, "wallTop")    as number | undefined) ?? baseElevation + 1;
+      const wallBottom = (wall.document.getFlag(MODULE_ID, "wallBottom") as number | undefined) ?? baseElevation;
+      const wdoc = wall.document as WallDoc;
+      const config = buildWallConfig(wdoc);
+      result = {
+        ax: anchor.ax, ay: anchor.ay, bx: anchor.bx, by: anchor.by,
+        topOffset: wallTop - baseElevation, bottomOffset: wallBottom - baseElevation, config,
+      };
+    }
+  }
+  return result;
+}
+
 export function extractWallDefs(doc: TileDocument): WallDef[] {
   const ids = getLinkedWallIds(doc);
-  if (!ids.length) return [];
+  const layer = wallsLayer();
   const baseElevation = VolumeFlags.getTileBaseElevation(doc);
-  return ids.flatMap(id => {
-    const wall = wallsLayer().get(id);
-    if (!wall) return [];
-    const anchor = wall.document.getFlag(MODULE_ID, "tileAnchor") as TileAnchor | undefined;
-    if (!anchor) return [];
-    const wallTop    = (wall.document.getFlag(MODULE_ID, "wallTop")    as number | undefined) ?? baseElevation + 1;
-    const wallBottom = (wall.document.getFlag(MODULE_ID, "wallBottom") as number | undefined) ?? baseElevation;
-    const wdoc = wall.document as WallDoc;
-    const config: Partial<WallConfig> = {};
-    if (wdoc.door)  config.door  = wdoc.door;
-    if (wdoc.move)  config.move  = wdoc.move;
-    if (wdoc.sense) config.sense = wdoc.sense;
-    if (wdoc.light) config.light = wdoc.light;
-    if (wdoc.sound) config.sound = wdoc.sound;
-    if (wdoc.dir)   config.dir   = wdoc.dir;
-    return [{ ax: anchor.ax, ay: anchor.ay, bx: anchor.bx, by: anchor.by,
-      topOffset: wallTop - baseElevation, bottomOffset: wallBottom - baseElevation, config }];
-  });
+  const defs: WallDef[] = [];
+  for (const id of ids) {
+    const def = buildWallDef(id, layer, baseElevation);
+    if (def) {
+      defs.push(def);
+    }
+  }
+  return defs;
 }
 
 export async function applyWallDefs(doc: TileDocument, defs: WallDef[]): Promise<void> {
-  if (!defs.length) return;
-  await deleteLinkedWalls(doc);
-  await setLinkedWallIds(doc, await createWallsFromDefs(doc, defs));
+  if (defs.length) {
+    await deleteLinkedWalls(doc);
+    const newIds = await createWallsFromDefs(doc, defs);
+    await setLinkedWallIds(doc, newIds);
+  }
 }
