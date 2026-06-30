@@ -56,12 +56,17 @@ export function drawCellMarkers(wc: PIXI.Container, p: SliceDebugParams): void {
       const wy = snapY + (dr + 0.5) * gs;
       const uv = transformCoord({ x: wx, y: wy }, "WORLD", "IMAGE", { mesh }) as P2;
       const imgX = (flipped ? 2 * ax - uv.x : uv.x) * fw;
+      const bounds = [0, ...cuts, fw];
       let si = 0;
-      for (let s = 0; s < cuts.length; s++) {
-        if (imgX >= cuts[s]) si = s + 1;
-        else break;
+      let bestDist = Infinity;
+      for (let s = 0; s < nSlices; s++) {
+        const mid = (bounds[s] + bounds[s + 1]) / 2;
+        const dist = Math.abs(imgX - mid);
+        if (dist < bestDist) {
+          bestDist = dist;
+          si = s;
+        }
       }
-      si = Math.min(si, nSlices - 1);
       _drawTriangle(wc, wx, wy, r, SLICE_COLORS[si % SLICE_COLORS.length]);
     }
   }
