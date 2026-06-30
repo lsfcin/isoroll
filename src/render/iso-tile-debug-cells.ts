@@ -16,6 +16,21 @@ type GfxX = PIXI.Graphics & {
 
 type MeshRef = PIXI.DisplayObject & { anchor?: PIXI.ObservablePoint };
 
+// Draws a small filled circle (corner marker) at world position (wx, wy).
+function _drawDot(wc: PIXI.Container, wx: number, wy: number, r: number, color: number): void {
+  const g = new PIXI.Graphics() as GfxX;
+  g.eventMode = "passive";
+  if (!_isV8(g)) {
+    g.beginFill!(color, 1);
+    (g as unknown as { drawCircle(x: number, y: number, r: number): void }).drawCircle(wx, wy, r);
+    g.endFill!();
+  } else {
+    (g as unknown as { circle(x: number, y: number, r: number): void }).circle(wx, wy, r);
+    g.fill!({ color });
+  }
+  wc.addChild(g);
+}
+
 // Draws a colored equilateral triangle (pointing up) at world position (wx, wy).
 function _drawTriangle(wc: PIXI.Container, wx: number, wy: number, r: number, color: number): void {
   const hr = r * Math.sqrt(3) / 2;
@@ -44,45 +59,60 @@ function _imgX(wx: number, wy: number, ax: number, fw: number, flipped: boolean,
   return (flipped ? 2 * ax - uv.x : uv.x) * fw;
 }
 
-// Draws one colored triangle per grid cell, matching the slice whose frontier cell center is
-// nearest in image-x to the grid cell's center. This implements "slice centralized over cell"
-// correctly for multi-row tiles where screen-x ≠ image-x due to iso mesh skew.
+// Draws one colored triangle per overlapping slice per grid cell.
+// Uses only the NORTH (NE world corner, top of screen diamond) and SOUTH (SW world corner,
+// bottom of screen diamond). Both share worldX+worldY = const → identical imageX → zero range
+// in pure iso. ±1px epsilon handles cells whose N/S imageX lands exactly on a cut, associating
+// them with both adjacent slices. Result: exactly 1 slice per cell, or 2 at boundaries.
 export function drawCellMarkers(wc: PIXI.Container, p: SliceDebugParams): void {
-  const { tile, mesh, origFrame, kStart, nSlices, Wg, Hg, flipped } = p;
+  const { tile, mesh, origFrame, nSlices, Wg, Hg, flipped, cuts } = p;
   const gs = CanvasEnv.gridSize();
   const nwX = tile.document.x - (tile.document.width ?? 0) / 2;
   const nwY = tile.document.y - (tile.document.height ?? 0) / 2;
   const snapX = Math.floor(nwX / gs) * gs;
   const snapY = Math.floor(nwY / gs) * gs;
-  const gridC0 = Math.round(snapX / gs);
-  const gridR0 = Math.round(snapY / gs);
   const ax = (mesh as MeshRef).anchor?.x ?? 0.5;
   const fw = origFrame.width;
   const r = gs * 0.18;
   const meshRef = mesh as MeshRef;
 
-  // Pre-compute each slice's frontier cell center image-x.
-  const frontierImgX: number[] = new Array(nSlices);
-  for (let si = 0; si < nSlices; si++) {
-    const effectiveI = flipped ? nSlices - 1 - si : si;
-    const d = kStart + effectiveI;
-    const rc = Math.min(Hg - 1, d);
-    const cc = d - rc;
-    frontierImgX[si] = _imgX((gridC0 + cc + 0.5) * gs, (gridR0 + rc + 0.5) * gs, ax, fw, flipped, meshRef);
+  // Slice x-extents in image space.
+  const sliceBounds: [number, number][] = [];
+  for (let i = 0; i < nSlices; i++) {
+    sliceBounds.push([i === 0 ? 0 : cuts[i - 1], i === nSlices - 1 ? fw : cuts[i]]);
   }
 
   for (let dc = 0; dc < Wg; dc++) {
     for (let dr = 0; dr < Hg; dr++) {
-      const wx = snapX + (dc + 0.5) * gs;
-      const wy = snapY + (dr + 0.5) * gs;
-      const cellImgX = _imgX(wx, wy, ax, fw, flipped, meshRef);
-      let si = 0;
-      let bestDist = Infinity;
-      for (let s = 0; s < nSlices; s++) {
-        const dist = Math.abs(cellImgX - frontierImgX[s]);
-        if (dist < bestDist) { bestDist = dist; si = s; }
+      const cx = snapX + dc * gs;
+      const cy = snapY + dr * gs;
+      // NORTH corner = top of screen diamond    = NE world corner (cx+gs, cy)
+      // SOUTH corner = bottom of screen diamond = SW world corner (cx,    cy+gs)
+      // Both share worldX+worldY = cx+cy+gs → same imageX in this projection → zero range.
+      const northX = _imgX(cx + gs, cy,      ax, fw, flipped, meshRef);
+      const southX = _imgX(cx,      cy + gs, ax, fw, flipped, meshRef);
+
+      // Visual: white dot at N corner, yellow dot at S corner.
+      const dotR = r * 0.35;
+      _drawDot(wc, cx + gs, cy,      dotR, 0xffffff);  // N = white  (top  of diamond)
+      _drawDot(wc, cx,      cy + gs, dotR, 0xffee00);  // S = yellow (bottom of diamond)
+
+      const cellMinX = Math.min(northX, southX) - 1;
+      const cellMaxX = Math.max(northX, southX) + 1;
+
+      const overlapping: number[] = [];
+      for (let si = 0; si < nSlices; si++) {
+        const [sliceL, sliceR] = sliceBounds[si];
+        if (cellMinX < sliceR && cellMaxX > sliceL) overlapping.push(si);
       }
-      _drawTriangle(wc, wx, wy, r, SLICE_COLORS[si % SLICE_COLORS.length]);
+
+      const wx = cx + gs * 0.5;
+      const wy = cy + gs * 0.5;
+      const n = overlapping.length;
+      for (let k = 0; k < n; k++) {
+        const wyOff = wy + (k - (n - 1) / 2) * r * 1.5;
+        _drawTriangle(wc, wx, wyOff, r, SLICE_COLORS[overlapping[k] % SLICE_COLORS.length]);
+      }
     }
   }
 }
