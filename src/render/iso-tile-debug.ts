@@ -52,8 +52,8 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
   const snapY = Math.floor(nwY / gs) * gs;
   const gridC0 = Math.round(snapX / gs);
   const gridR0 = Math.round(snapY / gs);
-  const ax = mesh.anchor?.x ?? 0;
-  const ay = mesh.anchor?.y ?? 0;
+  const ax = mesh.anchor?.x ?? 0.5;
+  const ay = mesh.anchor?.y ?? 0.5;
   const sx = mesh.scale?.x ?? 1;
   const sy = mesh.scale?.y ?? 1;
   const fw = origFrame.width;
