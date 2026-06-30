@@ -89,13 +89,14 @@ export function computeSliceCuts(tile: Tile, mesh: Mesh, origFrame: PIXI.Rectang
     const uv = transformCoord(p, "WORLD", "IMAGE", { mesh }) as P2;
     const uvx = flipped ? 2 * ax - uv.x : uv.x;
     const rounded = Math.round(uvx * origFrame.width);
-    const clamped = Math.min(origFrame.width - 1, rounded);
-    return Math.max(0, clamped);
+    // Clamp to [0, fw] (fw included so out-of-bounds corners become 0 or fw, not fw-1).
+    return Math.max(0, Math.min(origFrame.width, rounded));
   });
   const rawCuts = [...projected];
   projected.sort((a, b) => a - b);
-  // Drop texture boundaries (global min & max). Internal cuts = projected[1 .. n-2].
-  const cuts = projected.slice(1, projected.length - 1);
+  // Keep only strictly interior values (> 0 and < fw); deduplicate.
+  // Out-of-bounds corners clamp to 0 or fw and are excluded, preventing phantom zero-width slices.
+  const cuts = [...new Set(projected.filter(v => v > 0 && v < origFrame.width))];
   const meshRot = mesh.rotation ?? 0;
   const meshScX = Math.abs(mesh.scale?.x ?? 1);
   const meshFlipped = (mesh.scale?.x ?? 1) < 0;
