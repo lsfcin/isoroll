@@ -17,26 +17,26 @@ export interface WorldBoxVerts {
 
 export type TileFootprint = { tx: number; ty: number; tw: number; th: number };
 
-function pt(x: number, y: number): P2 { return { x, y }; }
+function pt(x: number, y: number): P2 {
+  return { x, y };
+}
 
 function buildVerts(
   tx: number, ty: number, tw: number, th: number,
   elevPx: number, elevTopPx: number, hx: number, hy: number, elevation: number,
 ): WorldBoxVerts {
-  return {
-    NW_base: pt(tx + hx * elevPx,       ty + hy * elevPx),
-    NE_base: pt(tx + tw + hx * elevPx,  ty + hy * elevPx),
-    SW_base: pt(tx + hx * elevPx,       ty + th + hy * elevPx),
-    SE_base: pt(tx + tw + hx * elevPx,  ty + th + hy * elevPx),
-    NW_top:  pt(tx + hx * elevTopPx,       ty + hy * elevTopPx),
-    NE_top:  pt(tx + tw + hx * elevTopPx,  ty + hy * elevTopPx),
-    SW_top:  pt(tx + hx * elevTopPx,       ty + th + hy * elevTopPx),
-    SE_top:  pt(tx + tw + hx * elevTopPx,  ty + th + hy * elevTopPx),
-    ground:     pt(tx + tw / 2,                          ty + th / 2),
-    baseCenter: pt(tx + tw / 2 + hx * elevPx,    ty + th / 2 + hy * elevPx),
-    topCenter:  pt(tx + tw / 2 + hx * elevTopPx, ty + th / 2 + hy * elevTopPx),
-    elevation,
-  };
+  const NW_base = pt(tx + hx * elevPx,          ty + hy * elevPx);
+  const NE_base = pt(tx + tw + hx * elevPx,     ty + hy * elevPx);
+  const SW_base = pt(tx + hx * elevPx,          ty + th + hy * elevPx);
+  const SE_base = pt(tx + tw + hx * elevPx,     ty + th + hy * elevPx);
+  const NW_top  = pt(tx + hx * elevTopPx,       ty + hy * elevTopPx);
+  const NE_top  = pt(tx + tw + hx * elevTopPx,  ty + hy * elevTopPx);
+  const SW_top  = pt(tx + hx * elevTopPx,       ty + th + hy * elevTopPx);
+  const SE_top  = pt(tx + tw + hx * elevTopPx,  ty + th + hy * elevTopPx);
+  const ground      = pt(tx + tw / 2,                           ty + th / 2);
+  const baseCenter  = pt(tx + tw / 2 + hx * elevPx,    ty + th / 2 + hy * elevPx);
+  const topCenter   = pt(tx + tw / 2 + hx * elevTopPx, ty + th / 2 + hy * elevTopPx);
+  return { NW_base, NE_base, SW_base, SE_base, NW_top, NE_top, SW_top, SE_top, ground, baseCenter, topCenter, elevation };
 }
 
 export const IsoGeometry = {

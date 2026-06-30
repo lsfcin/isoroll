@@ -18,6 +18,6 @@
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`index.ts`](index.ts) | — | — | **facade** — Public API for the resolver module — asset stance fallback chain |
+| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the resolver module — asset stance fallback chain |
 | [`asset-resolver.ts`](asset-resolver.ts) | [`asset-resolver.d.ts`](asset-resolver.d.ts) | `stanceFallbackChain`, `resolveTokenAsset`, `resolveBestTokenAsset`, `resolveTileAsset` | ← add first-line comment |
 <!-- routing:end -->

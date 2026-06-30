@@ -1,5 +1,5 @@
 // Pure drag-math helpers for VolumeGizmos: axis projection, snapping, handle positions.
-import { MODULE_ID, canvasZoom, gridDistance, elevToCanvas, screenToCanvas, CanvasEnv } from "../core";
+import { canvasZoom, gridDistance, elevToCanvas, screenToCanvas, CanvasEnv } from "../core";
 import { currentProjection } from "../transform";
 
 import { snapQuarterPx, snapQuarterUnits, projectImgOffset, projectImgYScale, projectImgScale } from "../gizmos";
@@ -56,141 +56,125 @@ export function handlePositions(
   };
 }
 
-// Project screen delta onto the resize/elevation axis, snap, return new values.
-// wt = canvas.app.stage.worldTransform; zoom = canvasZoom() (separate so callers can reuse).
-export function projectDrag(
-  drag: DragState, gx: number, gy: number,
-): { tw: number; th: number; boundH: number; elev: number; docX: number; docY: number; imgOffX: number; imgOffY: number; imgScale: number; imgYScale: number } {
-  const dx = gx - drag.startGX, dy = gy - drag.startGY;
-  const wt       = CanvasEnv.worldTransform();
-  const zoom     = canvasZoom();
-  const gridSize = CanvasEnv.gridSize();
-  const gridDist = gridDistance();
+type DragResult = {
+  tw: number; th: number; boundH: number; elev: number;
+  docX: number; docY: number;
+  imgOffX: number; imgOffY: number; imgScale: number; imgYScale: number;
+};
 
-  let tw = drag.startW, th = drag.startH, boundH = drag.startBoundH, elev = drag.startElev;
-  let docX = drag.startDocX, docY = drag.startDocY;
-  let imgOffX = drag.startImgOffX, imgOffY = drag.startImgOffY;
-  let imgScale = drag.startImgScale;
-  let imgYScale = drag.startImgYScale;
+type Wt = PIXI.Matrix;
+
+function applyScaleDrag(
+  drag: DragState, dx: number, dy: number,
+  wt: Wt, zoom: number, gridSize: number, r: DragResult,
+): void {
+  // Project screen delta onto the canvas diagonal (+1,+1) — the SE direction.
+  const d     = (dx * wt.a + dy * wt.b + dx * wt.c + dy * wt.d) / (2 * zoom);
+  const ratio = drag.startH > 0 ? drag.startW / drag.startH : 1;
+  const snpW  = snapQuarterPx(drag.startW + d, gridSize);
+  r.tw = Math.max(gridSize * 0.25, snpW);
+  const snpH  = snapQuarterPx(r.tw / ratio, gridSize);
+  r.th = Math.max(gridSize * 0.25, snpH);
+}
+
+function applySizeDrag(
+  drag: DragState, dx: number, dy: number,
+  wt: Wt, zoom: number, gridSize: number, gridDist: number,
+  r: DragResult,
+): void {
   switch (drag.type) {
     case "width": {
-      const d = (dx * wt.a + dy * wt.b) / zoom;
-      tw = Math.max(gridSize * 0.25, snapQuarterPx(drag.startW - d, gridSize));
+      const d   = (dx * wt.a + dy * wt.b) / zoom;
+      const snp = snapQuarterPx(drag.startW - d, gridSize);
+      r.tw = Math.max(gridSize * 0.25, snp);
       break;
     }
     case "height": {
-      const d = (dx * wt.c + dy * wt.d) / zoom;
-      th = Math.max(gridSize * 0.25, snapQuarterPx(drag.startH + d, gridSize));
+      const d   = (dx * wt.c + dy * wt.d) / zoom;
+      const snp = snapQuarterPx(drag.startH + d, gridSize);
+      r.th = Math.max(gridSize * 0.25, snp);
       break;
     }
     case "boundH": {
       const delta = (-dy) / (zoom * gridSize);
-      boundH = Math.max(0.25, snapQuarterUnits(drag.startBoundH + delta));
+      const snp   = snapQuarterUnits(drag.startBoundH + delta);
+      r.boundH = Math.max(0.25, snp);
       break;
     }
     case "elevation": {
       // Screen up (dy < 0) = increase elevation; snap to integer feet
       const deltaFeet = (-dy) / (zoom * gridSize / gridDist);
-      elev = Math.round(drag.startElev + deltaFeet);
+      r.elev = Math.round(drag.startElev + deltaFeet);
       break;
     }
     case "scale": {
-      // Project screen delta onto the canvas diagonal (+1,+1) — the SE direction.
-      // Positive = dragging toward SE = growing. Scale both width and height proportionally.
-      const d = (dx * wt.a + dy * wt.b + dx * wt.c + dy * wt.d) / (2 * zoom);
-      const ratio = drag.startH > 0 ? drag.startW / drag.startH : 1;
-      tw = Math.max(gridSize * 0.25, snapQuarterPx(drag.startW + d, gridSize));
-      th = Math.max(gridSize * 0.25, snapQuarterPx(tw / ratio, gridSize));
+      applyScaleDrag(drag, dx, dy, wt, zoom, gridSize, r);
       break;
     }
+    default: {
+      break;
+    }
+  }
+}
+
+function applyPosDrag(
+  drag: DragState, dx: number, dy: number, gx: number, gy: number,
+  wt: Wt, zoom: number, gridSize: number, gridDist: number,
+  r: DragResult,
+): void {
+  switch (drag.type) {
     case "move": {
       const { x: cdx, y: cdy } = screenToCanvas(dx, dy, wt);
-      docX = snapQuarterPx(drag.startDocX + cdx, gridSize);
-      docY = snapQuarterPx(drag.startDocY + cdy, gridSize);
+      r.docX = snapQuarterPx(drag.startDocX + cdx, gridSize);
+      r.docY = snapQuarterPx(drag.startDocY + cdy, gridSize);
       break;
     }
     case "imgOffset": {
-      ({ x: imgOffX, y: imgOffY } = projectImgOffset(dx, dy, wt, drag.startImgOffX, drag.startImgOffY));
+      const off = projectImgOffset(dx, dy, wt, drag.startImgOffX, drag.startImgOffY);
+      r.imgOffX = off.x;
+      r.imgOffY = off.y;
       break;
     }
     case "imgScale": {
-      const heightDir   = currentProjection().heightDir;
+      const proj   = currentProjection();
+      const hDir   = proj.heightDir;
       const elevPx = elevToCanvas(drag.startElev, gridSize, gridDist);
-      const cx = drag.startDocX + heightDir.x * elevPx + drag.startImgOffX;
-      const cy = drag.startDocY + heightDir.y * elevPx + drag.startImgOffY;
-      imgScale = projectImgScale(gx, gy, drag.startGX, drag.startGY, drag.startImgScale, cx, cy, wt);
+      const cx     = drag.startDocX + hDir.x * elevPx + drag.startImgOffX;
+      const cy     = drag.startDocY + hDir.y * elevPx + drag.startImgOffY;
+      r.imgScale = projectImgScale(gx, gy, drag.startGX, drag.startGY, drag.startImgScale, cx, cy, wt);
       break;
     }
     case "imgYScale": {
-      imgYScale = projectImgYScale(dx, dy, wt, zoom, drag.startImgYScale, drag.startImgHalfH);
+      r.imgYScale = projectImgYScale(dx, dy, wt, zoom, drag.startImgYScale, drag.startImgHalfH);
+      break;
+    }
+    default: {
       break;
     }
   }
-  return { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY, imgScale, imgYScale };
 }
 
-// All drag updates suppress Foundry's auto-store (isUndo:true). storeDragHistory() must be
-// called once on pointerup to push the pre-drag original manually. This ensures one correct
-// undo entry regardless of how many pointermove frames fired during the drag.
-const DRAG_OPTS = { isoroll: "gizmoDrag", isUndo: true } as const;
-
-export function commitDrag(drag: DragState, gx: number, gy: number): void {
-  const { tw, th, boundH, elev, docX, docY, imgOffX, imgOffY, imgScale, imgYScale } = projectDrag(drag, gx, gy);
-  switch (drag.type) {
-    case "width":     void drag.tile.document.update({ width: tw },            DRAG_OPTS); break;
-    case "height":    void drag.tile.document.update({ height: th },           DRAG_OPTS); break;
-    case "boundH": {
-      const tw2 = drag.tile.document.width ?? 0;
-      const th2 = drag.tile.document.height ?? 0;
-      void drag.tile.document.update({
-        [`flags.${MODULE_ID}.boundHeight`]:     boundH,
-        [`flags.${MODULE_ID}.boundHeightBase`]: { w: tw2, h: th2 },
-      }, DRAG_OPTS);
-      break;
-    }
-    case "elevation": void drag.tile.document.update({ elevation: elev },      DRAG_OPTS); break;
-    case "scale": {
-      const scaleMax  = Math.max(drag.startW, drag.startH);
-      const newMax    = Math.max(tw, th);
-      const newBoundH = scaleMax > 0 ? drag.startBoundH * newMax / scaleMax : drag.startBoundH;
-      void drag.tile.document.update({
-        width: tw, height: th,
-        [`flags.${MODULE_ID}.boundHeight`]:     newBoundH,
-        [`flags.${MODULE_ID}.boundHeightBase`]: { w: tw, h: th },
-      }, DRAG_OPTS);
-      break;
-    }
-    case "move":      void drag.tile.document.update({ x: docX, y: docY },     DRAG_OPTS); break;
-    case "imgOffset": {
-      const gridSize = CanvasEnv.gridSize();
-      void drag.tile.document.update({ [`flags.${MODULE_ID}.imageOffset`]: { x: imgOffX / gridSize, y: imgOffY / gridSize } }, DRAG_OPTS);
-      break;
-    }
-    case "imgScale":   void drag.tile.document.update({ [`flags.${MODULE_ID}.imageScale`]:  imgScale  }, DRAG_OPTS); break;
-    case "imgYScale":  void drag.tile.document.update({ [`flags.${MODULE_ID}.imageYScale`]: imgYScale }, DRAG_OPTS); break;
-    case "swapSide":   break; // handled via pointerdown, not drag
-  }
+// Project screen delta onto the resize/elevation axis, snap, return new values.
+// wt = canvas.app.stage.worldTransform; zoom = canvasZoom() (separate so callers can reuse).
+export function projectDrag(drag: DragState, gx: number, gy: number): DragResult {
+  const dx       = gx - drag.startGX;
+  const dy       = gy - drag.startGY;
+  const wt       = CanvasEnv.worldTransform();
+  const zoom     = canvasZoom();
+  const gridSize = CanvasEnv.gridSize();
+  const gridDist = gridDistance();
+  const r: DragResult = {
+    tw: drag.startW, th: drag.startH,
+    boundH: drag.startBoundH, elev: drag.startElev,
+    docX: drag.startDocX, docY: drag.startDocY,
+    imgOffX: drag.startImgOffX, imgOffY: drag.startImgOffY,
+    imgScale: drag.startImgScale, imgYScale: drag.startImgYScale,
+  };
+  applySizeDrag(drag, dx, dy, wt, zoom, gridSize, gridDist, r);
+  applyPosDrag(drag, dx, dy, gx, gy, wt, zoom, gridSize, gridDist, r);
+  return r;
 }
 
-// Push pre-drag document state to canvas.tiles.history so one Ctrl+Z restores correctly.
-export function storeDragHistory(drag: DragState): void {
-  const id = drag.tile.id; if (!id) return;
-  const gs = CanvasEnv.gridSize();
-  const o: Record<string, unknown> = { _id: id };
-  const fk = (k: string) => `flags.${MODULE_ID}.${k}`;
-  const bh = { w: drag.startW, h: drag.startH };
-  switch (drag.type) {
-    case "width":     o.width = drag.startW; break;
-    case "height":    o.height = drag.startH; break;
-    case "boundH":    o[fk("boundHeight")] = drag.startBoundH; o[fk("boundHeightBase")] = bh; break;
-    case "elevation": o.elevation = drag.startElev; break;
-    case "scale":     o.width = drag.startW; o.height = drag.startH; o[fk("boundHeight")] = drag.startBoundH; o[fk("boundHeightBase")] = bh; break;
-    case "move":      o.x = drag.startDocX; o.y = drag.startDocY; break;
-    case "imgOffset": o[fk("imageOffset")]  = { x: drag.startImgOffX / gs, y: drag.startImgOffY / gs }; break;
-    case "imgScale":  o[fk("imageScale")]   = drag.startImgScale; break;
-    case "imgYScale": o[fk("imageYScale")]  = drag.startImgYScale; break;
-    case "swapSide":  return;
-  }
-  CanvasEnv.pushTilesHistory({ type: "update", data: [o], options: { isoroll: "gizmoDrag" } });
-  console.debug(`[isoroll] storeDragHistory | type=${drag.type} tile=${id}`, o);
-}
+// Re-export commit and history helpers so existing importers of this module are unaffected.
+export { commitDrag } from "./tile-drag-commit";
+export { storeDragHistory } from "./tile-drag-history";

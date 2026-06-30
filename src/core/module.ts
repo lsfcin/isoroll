@@ -22,14 +22,13 @@ Hooks.once("init", () => {
   IsoSpriteLayer.activate();    // beforeunload listener
 
   const gate = new RenderGate();
-  gate
-    .registerToken(IsoSpriteLayer.token)
-    .registerToken(TokenBackground as unknown as TokenRenderer)
-    .registerToken(TokenGizmos     as unknown as TokenRenderer)
-    .registerTile(IsoSpriteLayer.tile)
-    .registerTile(VolumeOverlay    as unknown as TileRenderer)
-    .registerTile(VolumeGizmos     as unknown as TileRenderer)
-    .registerTile(WallOverlay      as unknown as TileRenderer);
+  gate.registerToken(IsoSpriteLayer.token);
+  gate.registerToken(TokenBackground as unknown as TokenRenderer);
+  gate.registerToken(TokenGizmos as unknown as TokenRenderer);
+  gate.registerTile(IsoSpriteLayer.tile);
+  gate.registerTile(VolumeOverlay as unknown as TileRenderer);
+  gate.registerTile(VolumeGizmos as unknown as TileRenderer);
+  gate.registerTile(WallOverlay as unknown as TileRenderer);
 
   registerAllHooks();
 

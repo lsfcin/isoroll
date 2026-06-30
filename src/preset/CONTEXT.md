@@ -31,9 +31,10 @@
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the preset module — image preset system |
+| [`preset-api.ts`](preset-api.ts) | — | `selectedTile`, `selectedToken`, `tileApiFn`, `tileSaveFn`, `tokenApiFn` | Public isoroll preset API: save/apply helpers wired to globalThis.ISOROLL_PRESETS. |
 | [`preset-apply.ts`](preset-apply.ts) | [`preset-apply.d.ts`](preset-apply.d.ts) | `tilePresetData`, `applyTile`, `applyToken`, `applyBackground`, `autoApplyTile` | Preset apply: compute update data, apply to doc, auto-apply from file/cache. |
-| [`preset-diff.ts`](preset-diff.ts) | [`preset-diff.d.ts`](preset-diff.d.ts) | `changedFlagKeys`, `TILE_PRESET_KEYS`, `TOKEN_PRESET_KEYS`, `BG_PRESET_FLAG_KEYS`, `intersects` | Change-detection helpers: flag-key sets and changed-field predicates. |
-| [`preset-manager.ts`](preset-manager.ts) | [`preset-manager.d.ts`](preset-manager.d.ts) | — | ← add first-line comment |
+| [`preset-diff.ts`](preset-diff.ts) | [`preset-diff.d.ts`](preset-diff.d.ts) | `changedFlagKeys`, `intersects`, `bgNativeChanged`, `TILE_PRESET_KEYS`, `TOKEN_PRESET_KEYS` | Change-detection helpers: flag-key sets and changed-field predicates. |
+| [`preset-manager.ts`](preset-manager.ts) | [`preset-manager.d.ts`](preset-manager.d.ts) | — | Preset event handlers wired to Foundry hooks in core/hook-registry.ts. |
 | [`preset-ops.ts`](preset-ops.ts) | [`preset-ops.d.ts`](preset-ops.d.ts) | `asTD`, `asUD`, `toScene`, `asFD`, `asTDp` | Shared type shims and helpers used across preset-apply, preset-upsert, preset-diff. |
 | [`preset-storage.ts`](preset-storage.ts) | [`preset-storage.d.ts`](preset-storage.d.ts) | `deriveKey`, `getCachedPreset`, `preloadCache`, `readPreset`, `writePreset` | ← add first-line comment |
 | [`preset-types.ts`](preset-types.ts) | [`preset-types.d.ts`](preset-types.d.ts) | — | ← add first-line comment |
