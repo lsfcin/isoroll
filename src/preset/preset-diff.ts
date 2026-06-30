@@ -6,10 +6,37 @@ export const TOKEN_PRESET_KEYS = new Set(["boundHeight","imageScale","imageYScal
 export const BG_PRESET_FLAG_KEYS = new Set(["backgroundYScale"]);
 
 export function changedFlagKeys(changes: Record<string, unknown>): Set<string> {
-  const f = (changes.flags as Record<string, unknown> | undefined)?.[MODULE_ID];
-  if (!f || typeof f !== "object") return new Set();
-  return new Set(Object.keys(f as object));
+  const flags = changes.flags as Record<string, unknown> | undefined;
+  const f = flags?.[MODULE_ID];
+  let result: Set<string>;
+  if (!f || typeof f !== "object") {
+    result = new Set();
+  } else {
+    const keys = Object.keys(f as object);
+    result = new Set(keys);
+  }
+  return result;
 }
-export const intersects      = (a: Set<string>, b: Set<string>) => { for (const k of a) if (b.has(k)) return true; return false; };
-export const bgNativeChanged = (c: Record<string, unknown>) => { const bg = c.background as Record<string, unknown> | undefined; const gr = c.grid as Record<string, unknown> | undefined; return !!(bg?.scaleX !== undefined || bg?.offsetX !== undefined || bg?.offsetY !== undefined || gr?.size !== undefined); };
+
+export function intersects(a: Set<string>, b: Set<string>): boolean {
+  let result = false;
+  for (const k of a) {
+    if (b.has(k)) {
+      result = true;
+      break;
+    }
+  }
+  return result;
+}
+
+export function bgNativeChanged(c: Record<string, unknown>): boolean {
+  const bg = c.background as Record<string, unknown> | undefined;
+  const gr = c.grid as Record<string, unknown> | undefined;
+  const bgScaleX = bg?.scaleX !== undefined;
+  const bgOffsetX = bg?.offsetX !== undefined;
+  const bgOffsetY = bg?.offsetY !== undefined;
+  const grSize = gr?.size !== undefined;
+  return !!(bgScaleX || bgOffsetX || bgOffsetY || grSize);
+}
+
 export const tileNativeChanged = (c: Record<string, unknown>) => c.width !== undefined || c.height !== undefined;

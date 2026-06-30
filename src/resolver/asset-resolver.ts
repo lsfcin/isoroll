@@ -76,13 +76,10 @@ export function resolveBestTokenAsset(
   facing: Facing = DEFAULT_FACING,
   availableStances: Set<Stance>,
 ): string {
-  for (const s of stanceFallbackChain(stance)) {
-    if (availableStances.has(s)) {
-      return resolveTokenAsset(name, s, facing);
-    }
-  }
-  // ultimate fallback: idle, regardless of availableStances
-  return resolveTokenAsset(name, "idle", facing);
+  const chain = stanceFallbackChain(stance);
+  const matched = chain.find(s => availableStances.has(s));
+  const resolvedStance: Stance = matched ?? "idle";
+  return resolveTokenAsset(name, resolvedStance, facing);
 }
 
 export function resolveTileAsset(name: string, facing: Facing = DEFAULT_FACING): string {

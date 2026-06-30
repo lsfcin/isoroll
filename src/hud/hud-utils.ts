@@ -18,13 +18,15 @@ export function hudButton(opts: HudButtonOpts): string {
 
 /** Remove isoroll elements matching selector and unbind .isoroll click handlers. */
 export function clearIsorollHud($html: JQuery, selector: string): void {
-  $html.find(selector).remove();
+  const $found = $html.find(selector);
+  $found.remove();
   $html.off("click.isoroll");
 }
 
 /** Append HTML string into the given HUD column. */
 export function appendHudButtons($html: JQuery, col: "left" | "right", html: string): void {
-  $html.find(`.col.${col}`).append(html);
+  const $col = $html.find(`.col.${col}`);
+  $col.append(html);
 }
 
 /** Wire an async click handler with .isoroll namespace; errors go to console.warn. */
@@ -42,9 +44,16 @@ export function updateHudButton(
   $btn: JQuery,
   opts: { active?: boolean; icon?: string; tooltip?: string },
 ): void {
-  if (opts.active   !== undefined) $btn.toggleClass("active", opts.active);
-  if (opts.icon     !== undefined) $btn.find("i").attr("class", `fas ${opts.icon}`);
-  if (opts.tooltip  !== undefined) $btn.attr("data-tooltip", opts.tooltip);
+  if (opts.active !== undefined) {
+    $btn.toggleClass("active", opts.active);
+  }
+  if (opts.icon !== undefined) {
+    const $i = $btn.find("i");
+    $i.attr("class", `fas ${opts.icon}`);
+  }
+  if (opts.tooltip !== undefined) {
+    $btn.attr("data-tooltip", opts.tooltip);
+  }
 }
 
 /**
@@ -53,10 +62,14 @@ export function updateHudButton(
  * Returns 0 when the stage transform is not yet available.
  */
 export function isoVisualCssWidth(w: number, h: number): number {
-  const wt   = canvas.app?.stage?.worldTransform;
+  const appStage = canvas.app?.stage;
+  const wt   = appStage?.worldTransform;
   const zoom = canvasZoom();
-  if (!wt) return 0;
-  return (wt.a / zoom) * w + (wt.c / zoom) * h;
+  let result = 0;
+  if (wt) {
+    result = (wt.a / zoom) * w + (wt.c / zoom) * h;
+  }
+  return result;
 }
 
 /** True when isometric mode is active on the current scene. */
@@ -73,11 +86,15 @@ export function isIsoActive(): boolean {
 export function isoHudCenter(
   x: number, y: number,
 ): { left: number; top: number } | null {
-  const wt   = canvas.app?.stage?.worldTransform;
+  const appStage = canvas.app?.stage;
+  const wt   = appStage?.worldTransform;
   const zoom = canvasZoom();
-  if (!wt) return null;
-  return {
-    left: (wt.a * x + wt.c * y) / zoom,
-    top:  (wt.b * x + wt.d * y) / zoom,
-  };
+  let result: { left: number; top: number } | null = null;
+  if (wt) {
+    result = {
+      left: (wt.a * x + wt.c * y) / zoom,
+      top:  (wt.b * x + wt.d * y) / zoom,
+    };
+  }
+  return result;
 }

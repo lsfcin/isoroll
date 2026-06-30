@@ -45,21 +45,13 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | `flags.isoroll.showVolumeManipulation` | boolean | tile+token | true | Show 3D box + elevation handle on select (tiles also: width/height/boundH/scale/move) |
 | `flags.isoroll.presetEnabled` | boolean | tile+token | true | Opt-out of image preset auto-apply/upsert for this specific object |
 
-## Known Limitations / Gotchas
+## Known Limitations
 
 - Token rotation: v14 auto-facing suppressed for undistorted tokens; 8-directional sprite selection not yet implemented (placeholder in `object-transform.ts`)
 - Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP
-- `tile.x/tile.y` = 0 in v14 — use `tile.document.x/y` (CENTER, not top-left); top-left = `doc.x - width/2, doc.y - height/2`
-- **`setFlag` does NOT trigger `refreshTile`**: flag-only updates (`changes` contains only `flags.*`) set no Tile render flags in `_onUpdate`. Use the `updateTile` hook → `onUpdateTileFlags` which manually calls `tile.renderFlags.set({ refreshMesh: true })`.
-- `mesh.scale.set()` (absolute) is safe on every refresh; only `*=` patterns need meshReset guard
-- `addIsorollTab` has no double-inject guard — if `renderSceneConfig` fires more than once for the same dialog (edge case), the Iso tab will appear twice; add `if ($html.find(\`a[data-tab="${TAB}"]\`).length) return;` at the top of `addIsorollTab` if this becomes a problem
-- AppV2 `stopPropagation` on custom tab click leaves `tabGroups[group]` stale; clicking back to native tabs requires explicit `addClass("active")` on the content section (see `ui/scene-config.ts`)
-- **GridConfig `_processSubmitData`** only calls `super._processSubmitData` when one of 7 native fields changed. Module-specific fields silently skipped. Workaround: instance-level patch on `app._processSubmitData` at `renderGridConfig` time (done in `background/bg-html.ts`).
-- **GridConfig `updateTransform` centering**: when overriding the bg sprite's `updateTransform`, `scY` in the position formula must include `bgYScale` — if only `scale.set()` uses it, the visual center shifts vertically instead of scaling around center.
-- **PIXI `worldTransform` cache on `canvasReady`**: after `stage.rotation/skew` are set, `worldTransform` is stale (identity) until the next PIXI render frame. Also, Foundry only sets `#hud style.left/top = wt.tx/ty` inside `canvasPan` — never on initial load. Fix: `syncHudAfterStageApply()` in `stage-transform.ts` flushes the cache (`updateLocalTransform` + `copyFrom`) and syncs `#hud` CSS immediately. Do NOT call `stage.updateTransform()` — crashes when `stage.parent` is null (true during `canvasReady`).
-- **HUD `_updatePosition` pattern**: both TileHUD and TokenHUD use prototype patches on `CONFIG.Tile/Token.hudClass.prototype._updatePosition`. Never use `renderTileHUD`/`renderTokenHUD` hooks — they miss document-update re-renders and RAF timing can stomp Foundry's `transform: scale(uiScale)`. Only set `pos.left/top/width` — never `pos.scale`.
-- **`preCreateTile` + `updateSource`**: calling `doc.updateSource(data)` in `preCreateTile` does modify the creation data. But calling `doc.update()` again in `createTile` with the same data causes a PIXI sprite blink. Solution: skip the `createTile` fallback when `getCachedPreset(key)` confirms `preCreateTile` already applied.
-- **`FilePicker.upload` 5-param API**: param 4 is `body` (extra FormData entries, pass `{}`), param 5 is `options` (`notify: false` lives here). Passing `{ notify: false }` as param 4 silently ignores it.
+- `setFlag` not triggering `refreshTile` → [KNOWN-BUGS B25](KNOWN-BUGS.md)
+
+> Implementation gotchas (hidden invariants, Foundry quirks) → [SPECS.md § Implementation Gotchas](SPECS.md#implementation-gotchas)
 
 ## See Also
 
@@ -77,11 +69,13 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
+| [`HISTORY.md`](HISTORY.md) | — | — | History |
 | [`KNOWN-BUGS.md`](KNOWN-BUGS.md) | — | — | isoroll-module — Known Bugs |
+| [`REFACTOR.md`](REFACTOR.md) | — | — | IsoRenderer Refactor — Phase 9+ |
 | [`ROADMAP.md`](ROADMAP.md) | — | — | isoroll — Roadmap |
 | [`SETUP.md`](SETUP.md) | — | — | isoroll — Development Setup |
 | [`SPECS.md`](SPECS.md) | — | — | isoroll — Specs |
-| [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module source |
+| [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
 | [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
 | [`vite.config.ts`](vite.config.ts) | — | — | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
 <!-- routing:end -->

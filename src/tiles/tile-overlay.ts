@@ -13,7 +13,9 @@ export class VolumeOverlay {
   // ---- TileRenderer interface ----
 
   static create(tile: Tile): void {
-    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) return;
+    if (tile.document.getFlag(MODULE_ID, "transformTile") === true) {
+      return;
+    }
     VolumeOverlay._renderShadow(tile);
   }
 
@@ -21,13 +23,20 @@ export class VolumeOverlay {
 
   static rebuild(tile: Tile): void {
     const snap = VolumeOverlay.shadowSnap(tile);
-    if (VolumeOverlay.shadowState.get(tile.id) !== snap) VolumeOverlay._renderShadow(tile);
-    if (VolumeOverlay._handles.has(tile.id)) VolumeOverlay.show(tile);
+    if (VolumeOverlay.shadowState.get(tile.id) !== snap) {
+      VolumeOverlay._renderShadow(tile);
+    }
+    if (VolumeOverlay._handles.has(tile.id)) {
+      VolumeOverlay.show(tile);
+    }
   }
 
   static onControl(tile: Tile, controlled: boolean): void {
-    if (controlled) VolumeOverlay.show(tile);
-    else VolumeOverlay.removeBox(tile.id);
+    if (controlled) {
+      VolumeOverlay.show(tile);
+    } else {
+      VolumeOverlay.removeBox(tile.id);
+    }
   }
 
   static onDestroy(id: string): void { VolumeOverlay.hide(id); }
@@ -36,28 +45,40 @@ export class VolumeOverlay {
 
   private static shadowSnap(tile: Tile): string {
     const d = tile.document;
-    return `${d.x},${d.y},${d.width},${d.height},${(d as unknown as {elevation?:number}).elevation??0},${+VolumeFlags.getShadowEnabled(d,false)},${VolumeFlags.getShadowShape(d,"rect")},${VolumeFlags.getShadowRadius(d)},${VolumeFlags.getShadowOpacity(d,0.5)}`;
+    const elev = (d as unknown as { elevation?: number }).elevation ?? 0;
+    const shadowEnabled = +VolumeFlags.getShadowEnabled(d, false);
+    const shadowShape = VolumeFlags.getShadowShape(d, "rect");
+    const shadowRadius = VolumeFlags.getShadowRadius(d);
+    const shadowOpacity = VolumeFlags.getShadowOpacity(d, 0.5);
+    return `${d.x},${d.y},${d.width},${d.height},${elev},${shadowEnabled},${shadowShape},${shadowRadius},${shadowOpacity}`;
   }
 
   private static _renderShadow(tile: Tile): void {
-    VolumeOverlay.shadowState.set(tile.id, VolumeOverlay.shadowSnap(tile));
+    const snap = VolumeOverlay.shadowSnap(tile);
+    VolumeOverlay.shadowState.set(tile.id, snap);
     const d = tile.document;
     const v = IsoGeometry.tileVerts(tile);
-    if (!VolumeFlags.getShadowEnabled(d, false) || v.elevation < 0) {
+    const shadowEnabled = VolumeFlags.getShadowEnabled(d, false);
+    if (!shadowEnabled || v.elevation < 0) {
       IsoRenderer.clear(`tile-${tile.id}:shadow`);
       return;
     }
-    const rx = (d.width  ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
-    const ry = (d.height ?? 0) / 2 * VolumeFlags.getShadowRadius(d);
+    const shadowRadius = VolumeFlags.getShadowRadius(d);
+    const rx = (d.width  ?? 0) / 2 * shadowRadius;
+    const ry = (d.height ?? 0) / 2 * shadowRadius;
+    const shadowShape = VolumeFlags.getShadowShape(d, "rect");
+    const shadowOp = VolumeFlags.getShadowOpacity(d, 0.5);
+    const tex = shadowTexture(shadowShape);
+    const alpha = shadowAlpha(v.elevation, shadowOp);
     IsoRenderer.render({
       key:   `tile-${tile.id}:shadow`,
       owner: { kind: "tile", id: tile.id },
       visual: {
         kind:    "sprite",
-        texture: shadowTexture(VolumeFlags.getShadowShape(d, "rect")),
+        texture: tex,
         anchor:  { x: 0.5, y: 0.5 },
         scale:   { x: rx * 2, y: ry * 2 },
-        alpha:   shadowAlpha(v.elevation, VolumeFlags.getShadowOpacity(d, 0.5)),
+        alpha,
       },
       space:     "WORLD",
       placement: { anchor: { x: v.ground.x, y: v.ground.y } },
@@ -66,7 +87,8 @@ export class VolumeOverlay {
   }
 
   private static removeBox(tileId: string): void {
-    VolumeOverlay._handles.get(tileId)?.remove();
+    const handle = VolumeOverlay._handles.get(tileId);
+    handle?.remove();
     VolumeOverlay._handles.delete(tileId);
   }
 
@@ -101,13 +123,22 @@ export class VolumeOverlay {
     const showVol = VolumeFlags.getShowVolumeManipulation(tile.document, true);
     const showImg = VolumeFlags.getShowImageManipulation(tile.document, true);
     const v = IsoGeometry.tileVerts(tile);
-    if (showImg) drawMeshContour(g, MeshAccessor.geometryOf(tile), CanvasEnv.worldTransform());
-    if (showVol) {
-      if (v.elevation > 0) drawAnchorLine(g, v);
-      drawBox(g, v);
-      if (v.elevation < 0) drawAnchorLine(g, v);
+    if (showImg) {
+      const geom = MeshAccessor.geometryOf(tile);
+      const wt = CanvasEnv.worldTransform();
+      drawMeshContour(g, geom, wt);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (DEBUG_COORD) drawCoordDebug(g as any, tile, v.baseCenter);
+    if (showVol) {
+      if (v.elevation > 0) {
+        drawAnchorLine(g, v);
+      }
+      drawBox(g, v);
+      if (v.elevation < 0) {
+        drawAnchorLine(g, v);
+      }
+    }
+    if (DEBUG_COORD) {
+      drawCoordDebug(g as unknown as Parameters<typeof drawCoordDebug>[0], tile, v.baseCenter);
+    }
   }
 }

@@ -16,14 +16,22 @@ export async function setLinkedWallIds(doc: TileDocument, ids: string[], opts: o
 
 export async function pruneLinkedWalls(doc: TileDocument): Promise<void> {
   const ids = getLinkedWallIds(doc);
-  const live = ids.filter(id => wallsLayer().get(id));
-  if (live.length !== ids.length) await setLinkedWallIds(doc, live);
+  const layer = wallsLayer();
+  const live = ids.filter(id => layer.get(id));
+  if (live.length !== ids.length) {
+    await setLinkedWallIds(doc, live);
+  }
 }
 
 export function getDoorBehavior(doc: TileDocument): DoorBehavior {
   const v = doc.getFlag(MODULE_ID, "doorBehavior");
-  if (v && typeof v === "object" && "mode" in v) return v as DoorBehavior;
-  return { mode: "none" };
+  let result: DoorBehavior;
+  if (v && typeof v === "object" && "mode" in v) {
+    result = v as DoorBehavior;
+  } else {
+    result = { mode: "none" };
+  }
+  return result;
 }
 
 export async function setDoorBehavior(doc: TileDocument, b: DoorBehavior): Promise<void> {
@@ -31,15 +39,21 @@ export async function setDoorBehavior(doc: TileDocument, b: DoorBehavior): Promi
 }
 
 export function hasLinkedDoor(doc: TileDocument): boolean {
-  return getLinkedWallIds(doc).some(id => {
-    const w = wallsLayer().get(id);
-    return w && ((w.document as WallDoc).door ?? 0) > 0;
+  const ids = getLinkedWallIds(doc);
+  const layer = wallsLayer();
+  return ids.some(id => {
+    const w = layer.get(id);
+    const wdoc = w ? (w.document as WallDoc) : null;
+    return wdoc && (wdoc.door ?? 0) > 0;
   });
 }
 
 export function isLinkedDoorOpen(doc: TileDocument): boolean {
-  return getLinkedWallIds(doc).some(id => {
-    const w = wallsLayer().get(id);
-    return w && ((w.document as WallDoc).door ?? 0) > 0 && ((w.document as WallDoc).ds ?? 0) > 0;
+  const ids = getLinkedWallIds(doc);
+  const layer = wallsLayer();
+  return ids.some(id => {
+    const w = layer.get(id);
+    const wdoc = w ? (w.document as WallDoc) : null;
+    return wdoc && (wdoc.door ?? 0) > 0 && (wdoc.ds ?? 0) > 0;
   });
 }

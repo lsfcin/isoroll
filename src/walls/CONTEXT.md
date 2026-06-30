@@ -35,11 +35,14 @@ Wall anchor points are stored in **IMAGE [0,1]² space** (same as `imageOffset` 
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the walls module — linked wall system |
 | [`wall-coords.ts`](wall-coords.ts) | [`wall-coords.d.ts`](wall-coords.d.ts) | `wallsLayer`, `scene`, `tileRect`, `imageRect`, `imageRectAt` | Canvas coordinate helpers and Foundry shims for the walls system. |
 | [`wall-crud.ts`](wall-crud.ts) | [`wall-crud.d.ts`](wall-crud.d.ts) | `generateBaseWallDefs`, `createWallsFromDefs`, `deleteLinkedWalls`, `linkSelectedWalls`, `unlinkAllWalls` | Create, delete, link, and extract linked wall documents for a tile. |
+| [`wall-dblclick.ts`](wall-dblclick.ts) | — | `wallDblClick` | Shared double-click detection for wall overlay handles. |
 | [`wall-door.ts`](wall-door.ts) | [`wall-door.d.ts`](wall-door.d.ts) | `applyDoorBehavior`, `cycleDoorBehavior` | Door-behavior application and cycling for linked-wall tiles. |
 | [`wall-flags.ts`](wall-flags.ts) | [`wall-flags.d.ts`](wall-flags.d.ts) | `getLinkedWallIds`, `setLinkedWallIds`, `pruneLinkedWalls`, `getDoorBehavior`, `setDoorBehavior` | Linked-wall and door-behavior flag accessors for tile documents. |
-| [`wall-history.ts`](wall-history.ts) | [`wall-history.d.ts`](wall-history.d.ts) | `WallHistory`, `tileHistLen`, `recreateWalls`, `refreshTile` | Undo stack for isoroll wall operations on the Tiles layer. |
-| [`wall-manager.ts`](wall-manager.ts) | [`wall-manager.d.ts`](wall-manager.d.ts) | — | ← add first-line comment |
-| [`wall-overlay-ops.ts`](wall-overlay-ops.ts) | [`wall-overlay-ops.d.ts`](wall-overlay-ops.d.ts) | `wallColor`, `drawWallDisplay`, `drawWallSelect`, `WALL_COLORS`, `drawEpDot` | Per-wall IsoRenderer drawing + endpoint drag logic. |
+| [`wall-history.ts`](wall-history.ts) | [`wall-history.d.ts`](wall-history.d.ts) | `WallHistory`, `tileHistLen`, `undoToggle`, `undoMove`, `undoCreate` | Undo stack for isoroll wall operations on the Tiles layer. |
+| [`wall-manager-impl.ts`](wall-manager-impl.ts) | — | `handleNativeSizeChange`, `scheduleWallUpdate`, `doUpdateWall`, `wrap` | Implementation helpers for WallManager hook handlers (split out to stay under 200 lines). |
+| [`wall-manager.ts`](wall-manager.ts) | [`wall-manager.d.ts`](wall-manager.d.ts) | `wrap`, `currentTileHistLen`, `isInputTarget`, `handleKeydown` | ← add first-line comment |
+| [`wall-overlay-ops.ts`](wall-overlay-ops.ts) | [`wall-overlay-ops.d.ts`](wall-overlay-ops.d.ts) | `wallColor`, `drawEpDot`, `drawWallLine`, `lineVis`, `toCanvas` | Per-wall IsoRenderer drawing + endpoint drag logic. |
+| [`wall-overlay-select.ts`](wall-overlay-select.ts) | — | `drawWallSelect`, `toggleWallLink`, `renderSelectWall` | Wall select-mode overlay: toggle link, double-click to open sheet, render select handles. |
 | [`wall-overlay.ts`](wall-overlay.ts) | [`wall-overlay.d.ts`](wall-overlay.d.ts) | — | PIXI overlay: shows linked walls when tile is selected, with select-mode picking. |
 | [`wall-sync.ts`](wall-sync.ts) | [`wall-sync.d.ts`](wall-sync.d.ts) | `updateLinkedWallPositions`, `flipLinkedWallAnchorsX` | Linked-wall position synchronization when a tile moves or flips. |
 | [`wall-types.ts`](wall-types.ts) | [`wall-types.d.ts`](wall-types.d.ts) | — | ← add first-line comment |

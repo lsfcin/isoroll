@@ -8,6 +8,7 @@ import { BackgroundGizmos } from "../background";
 import { TileHud, TokenHud } from "../hud";
 import { WallManager, WallOverlay } from "../walls";
 import { LayerManager, LAYER_KEYS, IsoSpriteLayer, RenderGate } from "../render";
+import { debugSlices, debugGrid } from "../render";
 import type { TokenRenderer, TileRenderer } from "../render";
 
 Hooks.once("init", () => {
@@ -21,14 +22,13 @@ Hooks.once("init", () => {
   IsoSpriteLayer.activate();    // beforeunload listener
 
   const gate = new RenderGate();
-  gate
-    .registerToken(IsoSpriteLayer.token)
-    .registerToken(TokenBackground as unknown as TokenRenderer)
-    .registerToken(TokenGizmos     as unknown as TokenRenderer)
-    .registerTile(IsoSpriteLayer.tile)
-    .registerTile(VolumeOverlay    as unknown as TileRenderer)
-    .registerTile(VolumeGizmos     as unknown as TileRenderer)
-    .registerTile(WallOverlay      as unknown as TileRenderer);
+  gate.registerToken(IsoSpriteLayer.token);
+  gate.registerToken(TokenBackground as unknown as TokenRenderer);
+  gate.registerToken(TokenGizmos as unknown as TokenRenderer);
+  gate.registerTile(IsoSpriteLayer.tile);
+  gate.registerTile(VolumeOverlay as unknown as TileRenderer);
+  gate.registerTile(VolumeGizmos as unknown as TileRenderer);
+  gate.registerTile(WallOverlay as unknown as TileRenderer);
 
   registerAllHooks();
 
@@ -42,5 +42,6 @@ Hooks.once("init", () => {
     LAYER_KEYS.WALL_OVERLAY,
   ]);
 
+  (globalThis as Record<string, unknown>).isoroll = { debugSlices, debugGrid };
   console.log("isoroll | initialized");
 });

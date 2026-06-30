@@ -8,7 +8,9 @@ let bgYScaleOverride: number | null = null;
 export function getBgYScale(): number {
   return bgYScaleOverride ?? (canvas.scene?.getFlag(MODULE_ID, "backgroundYScale") as number | undefined) ?? 1;
 }
-export function setBgYScaleOverride(v: number | null): void { bgYScaleOverride = v; }
+export function setBgYScaleOverride(v: number | null): void {
+  bgYScaleOverride = v;
+}
 
 type BgState = {
   rotation: number; skewX: number; skewY: number;
@@ -16,6 +18,64 @@ type BgState = {
   posX: number; posY: number;
   anchorX: number; anchorY: number;
 };
+
+type WithBg = { background?: PIXI.Sprite };
+type WithPrimary = { primary?: WithBg };
+type WithEnvironment = { environment?: WithPrimary };
+
+function applyGridConfigPatch(bg: PIXI.Sprite): void {
+  const proj = currentProjection();
+  const origUpdate = bg.updateTransform.bind(bg);
+  (bg as unknown as { updateTransform: () => void }).updateTransform = function(this: PIXI.Sprite) {
+    const x = this.x, y = this.y;
+    const sx = this.scale.x, sy = this.scale.y;
+    const rot = this.rotation;
+    const ax = (this.anchor as PIXI.ObservablePoint).x;
+    const ay = (this.anchor as PIXI.ObservablePoint).y;
+    const skx = (this.skew as PIXI.ObservablePoint).x;
+    const sky = (this.skew as PIXI.ObservablePoint).y;
+    const tw = this.texture?.width ?? 1;
+    const th = this.texture?.height ?? 1;
+    // anchor=0,0: position = texture top-left; center computed via R·S matrix below
+    (this.anchor as PIXI.ObservablePoint).set(0, 0);
+    this.rotation = proj.reverseRotation;
+    (this.skew as PIXI.ObservablePoint).set(proj.reverseSkewX, proj.reverseSkewY);
+    const bgYS = getBgYScale();
+    const cosR = Math.cos(proj.reverseRotation);
+    const sinR = Math.sin(proj.reverseRotation);
+    const scX = sx * proj.counterFactor;
+    const scY = sx * proj.ratio * proj.counterFactor * bgYS;
+    this.scale.set(scX, scY);
+    // center = position + R·S·(-tw/2,-th/2); skew=0 for all presets
+    this.position.set(
+      x + sx * tw * 0.5 + cosR * scX * (-tw * 0.5) - sinR * scY * (-th * 0.5),
+      y + sy * th * 0.5 + sinR * scX * (-tw * 0.5) + cosR * scY * (-th * 0.5),
+    );
+    origUpdate.call(this);
+    // restore so next frame starts clean (#refreshPreview resets x/y/scale on every form change)
+    (this.anchor as PIXI.ObservablePoint).set(ax, ay);
+    this.rotation = rot;
+    (this.skew as PIXI.ObservablePoint).set(skx, sky);
+    this.scale.set(sx, sy);
+    this.position.set(x, y);
+  };
+}
+
+function findPreviewContainer(): PIXI.Container | null {
+  const appStage = canvas.app?.stage;
+  let previewContainer: PIXI.Container | null = null;
+  if (appStage) {
+    const stageChildren = (appStage as PIXI.Container).children;
+    for (let i = stageChildren.length - 1; i >= 0; i--) {
+      const c = stageChildren[i];
+      if (c instanceof PIXI.Container && c.constructor === PIXI.Container) {
+        previewContainer = c;
+        break;
+      }
+    }
+  }
+  return previewContainer;
+}
 
 export class BackgroundTransform {
   private static originalBg: BgState | null = null;
@@ -29,18 +89,26 @@ export class BackgroundTransform {
   // canvas.environment.primary.background is the rendered sprite in v14.
   // canvas.primary.background exists but transforming it has no visual effect.
   static getSprite(): PIXI.Sprite | null {
-    type WithBg = { background?: PIXI.Sprite };
-    type WithPrimary = { primary?: WithBg };
-    const envBg = (canvas as unknown as { environment?: WithPrimary }).environment?.primary?.background;
-    if (envBg) return envBg;
-    return (canvas.primary as unknown as WithBg).background ?? null;
+    const env = (canvas as unknown as WithEnvironment).environment;
+    const envPrimary = env?.primary;
+    const envBg = envPrimary?.background;
+    let result: PIXI.Sprite | null;
+    if (envBg) {
+      result = envBg;
+    } else {
+      result = (canvas.primary as unknown as WithBg).background ?? null;
+    }
+    return result;
   }
 
   static capture(bg: PIXI.Sprite): void {
     BackgroundTransform.lastCapturedSprite = bg;
+    const bgSkew = bg.skew;
+    const bgScale = bg.scale;
+    const bgPos = bg.position;
     BackgroundTransform.originalBg = {
-      rotation: bg.rotation, skewX: bg.skew.x, skewY: bg.skew.y,
-      scaleX: bg.scale.x, scaleY: bg.scale.y, posX: bg.position.x, posY: bg.position.y,
+      rotation: bg.rotation, skewX: bgSkew.x, skewY: bgSkew.y,
+      scaleX: bgScale.x, scaleY: bgScale.y, posX: bgPos.x, posY: bgPos.y,
       anchorX: bg.anchor?.x ?? 0, anchorY: bg.anchor?.y ?? 0,
     };
   }
@@ -50,28 +118,30 @@ export class BackgroundTransform {
   static apply(): void {
     const bg = BackgroundTransform.getSprite();
     const orig = BackgroundTransform.originalBg;
-    if (!bg || !orig) return;
-    const proj = currentProjection();
-    const { reverseRotation, reverseSkewX, reverseSkewY, ratio, counterFactor } = proj;
-    // Use canvas.dimensions.sceneX/Y so position tracks scene offset (scene flags are static)
-    const dims = canvas.dimensions as unknown as { sceneX: number; sceneY: number; sceneWidth: number; sceneHeight: number };
-    const bgYS = getBgYScale();
-    bg.anchor?.set(0.5, 0.5);
-    bg.rotation = reverseRotation;
-    bg.skew.set(reverseSkewX, reverseSkewY);
-    bg.scale.set(orig.scaleX * counterFactor, orig.scaleX * ratio * counterFactor * bgYS);
-    bg.position.set(dims.sceneX + dims.sceneWidth / 2, dims.sceneY + dims.sceneHeight / 2);
+    if (bg && orig) {
+      const proj = currentProjection();
+      const { reverseRotation, reverseSkewX, reverseSkewY, ratio, counterFactor } = proj;
+      // Use canvas.dimensions.sceneX/Y so position tracks scene offset (scene flags are static)
+      const dims = canvas.dimensions as unknown as { sceneX: number; sceneY: number; sceneWidth: number; sceneHeight: number };
+      const bgYS = getBgYScale();
+      bg.anchor?.set(0.5, 0.5);
+      bg.rotation = reverseRotation;
+      bg.skew.set(reverseSkewX, reverseSkewY);
+      bg.scale.set(orig.scaleX * counterFactor, orig.scaleX * ratio * counterFactor * bgYS);
+      bg.position.set(dims.sceneX + dims.sceneWidth / 2, dims.sceneY + dims.sceneHeight / 2);
+    }
   }
 
   static reset(): void {
     const bg = BackgroundTransform.getSprite();
     const orig = BackgroundTransform.originalBg;
-    if (!bg || !orig) return;
-    bg.anchor?.set(orig.anchorX, orig.anchorY);
-    bg.rotation = orig.rotation;
-    bg.skew.set(orig.skewX, orig.skewY);
-    bg.scale.set(orig.scaleX, orig.scaleY);
-    bg.position.set(orig.posX, orig.posY);
+    if (bg && orig) {
+      bg.anchor?.set(orig.anchorX, orig.anchorY);
+      bg.rotation = orig.rotation;
+      bg.skew.set(orig.skewX, orig.skewY);
+      bg.scale.set(orig.scaleX, orig.scaleY);
+      bg.position.set(orig.posX, orig.posY);
+    }
   }
 
   static clearCapture(): void {
@@ -80,8 +150,8 @@ export class BackgroundTransform {
 
   static clearGridConfigPatch(): void {
     if (BackgroundTransform.patchedSprite && BackgroundTransform.savedUpdateTransform) {
-      (BackgroundTransform.patchedSprite as unknown as { updateTransform: () => void }).updateTransform =
-        BackgroundTransform.savedUpdateTransform;
+      const patched = BackgroundTransform.patchedSprite as unknown as { updateTransform: () => void };
+      patched.updateTransform = BackgroundTransform.savedUpdateTransform;
     }
     BackgroundTransform.patchedSprite = null;
     BackgroundTransform.savedUpdateTransform = null;
@@ -91,15 +161,18 @@ export class BackgroundTransform {
   // Returns null when GridConfig is not open or before first render.
   static findGridConfigPreviewBg(): PIXI.Sprite | null {
     const stage = canvas.app?.stage as PIXI.Container | undefined;
-    if (!stage) return null;
-    for (let i = stage.children.length - 1; i >= 0; i--) {
-      const c = stage.children[i];
-      if (c instanceof PIXI.Container && c.constructor === PIXI.Container) {
-        const bg = c.children[1];
-        return (bg instanceof PIXI.Sprite) ? bg : null;
+    let result: PIXI.Sprite | null = null;
+    if (stage) {
+      for (let i = stage.children.length - 1; i >= 0; i--) {
+        const c = stage.children[i];
+        if (c instanceof PIXI.Container && c.constructor === PIXI.Container) {
+          const bg = c.children[1];
+          result = (bg instanceof PIXI.Sprite) ? bg : null;
+          break;
+        }
       }
     }
-    return null;
+    return result;
   }
 
   // Override bg sprite's updateTransform so #refreshPreview picks up each frame.
@@ -107,57 +180,16 @@ export class BackgroundTransform {
   // Called from CanvasTransform.onRenderGridConfig with effective state (respects
   // pending SceneConfig changes captured in lastPreviewState).
   static onRenderGridConfig(enabled: boolean, bgTransform: boolean): void {
-    if (!enabled || bgTransform) return;
-    const stage = canvas.app?.stage;
-    if (!stage) return;
-    const stageChildren = (stage as PIXI.Container).children;
-    let previewContainer: PIXI.Container | null = null;
-    for (let i = stageChildren.length - 1; i >= 0; i--) {
-      const c = stageChildren[i];
-      if (c instanceof PIXI.Container && c.constructor === PIXI.Container) {
-        previewContainer = c;
-        break;
+    if (enabled && !bgTransform) {
+      const previewContainer = findPreviewContainer();
+      if (previewContainer) {
+        const bg = previewContainer.children[1];
+        if (bg instanceof PIXI.Sprite) {
+          BackgroundTransform.patchedSprite = bg;
+          BackgroundTransform.savedUpdateTransform = bg.updateTransform.bind(bg);
+          applyGridConfigPatch(bg);
+        }
       }
     }
-    if (!previewContainer) return;
-    const bg = previewContainer.children[1];
-    if (!(bg instanceof PIXI.Sprite)) return;
-    const proj = currentProjection();
-    BackgroundTransform.patchedSprite = bg;
-    BackgroundTransform.savedUpdateTransform = bg.updateTransform.bind(bg);
-    const origUpdate = BackgroundTransform.savedUpdateTransform;
-    (bg as unknown as { updateTransform: () => void }).updateTransform = function(this: PIXI.Sprite) {
-      const x = this.x, y = this.y;
-      const sx = this.scale.x, sy = this.scale.y;
-      const rot = this.rotation;
-      const ax = (this.anchor as PIXI.ObservablePoint).x;
-      const ay = (this.anchor as PIXI.ObservablePoint).y;
-      const skx = (this.skew as PIXI.ObservablePoint).x;
-      const sky = (this.skew as PIXI.ObservablePoint).y;
-      const tw = this.texture?.width ?? 1;
-      const th = this.texture?.height ?? 1;
-      // anchor=0,0: position = texture top-left; center computed via R·S matrix below
-      (this.anchor as PIXI.ObservablePoint).set(0, 0);
-      this.rotation = proj.reverseRotation;
-      (this.skew as PIXI.ObservablePoint).set(proj.reverseSkewX, proj.reverseSkewY);
-      const bgYS = getBgYScale();
-      const cosR = Math.cos(proj.reverseRotation);
-      const sinR = Math.sin(proj.reverseRotation);
-      const scX = sx * proj.counterFactor;
-      const scY = sx * proj.ratio * proj.counterFactor * bgYS;
-      this.scale.set(scX, scY);
-      // center = position + R·S·(-tw/2,-th/2); skew=0 for all presets
-      this.position.set(
-        x + sx * tw * 0.5 + cosR * scX * (-tw * 0.5) - sinR * scY * (-th * 0.5),
-        y + sy * th * 0.5 + sinR * scX * (-tw * 0.5) + cosR * scY * (-th * 0.5),
-      );
-      origUpdate.call(this);
-      // restore so next frame starts clean (#refreshPreview resets x/y/scale on every form change)
-      (this.anchor as PIXI.ObservablePoint).set(ax, ay);
-      this.rotation = rot;
-      (this.skew as PIXI.ObservablePoint).set(skx, sky);
-      this.scale.set(sx, sy);
-      this.position.set(x, y);
-    };
   }
 }
