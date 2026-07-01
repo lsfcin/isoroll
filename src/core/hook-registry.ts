@@ -51,7 +51,9 @@ function registerTileAndTokenHooks(): void {
   Hooks.on("controlToken", (t: Token, c: boolean) => c ? onTokenSelect(t) : onTokenDeselect(t));
 
   // ── createTile ────────────────────────────────────────────────────────────
+  // Order: preset apply first → wall paste clone (skips if preset already created walls)
   Hooks.on("createTile", PresetManager.onCreateTile);
+  Hooks.on("createTile", WallManager.onCreateTile);
 
   // ── createToken ───────────────────────────────────────────────────────────
   Hooks.on("createToken", PresetManager.onCreateToken);
@@ -86,6 +88,8 @@ function registerTileAndTokenHooks(): void {
   Hooks.on("drawToken", onTokenDraw);
 
   // ── preCreateTile ────────────────────────────────────────────────────────
+  // Order: wall paste detection first (clears stale IDs) → preset apply
+  Hooks.on("preCreateTile", WallManager.onPreCreateTile);
   Hooks.on("preCreateTile", PresetManager.onPreCreateTile);
 
   // ── preUpdateTile ─────────────────────────────────────────────────────────

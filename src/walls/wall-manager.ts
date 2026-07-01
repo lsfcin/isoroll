@@ -1,10 +1,10 @@
 
 import { MODULE_ID, scheduleWrap, CanvasEnv } from "../core";
 import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "./wall-flags";
-import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls } from "./wall-crud";
+import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls, extractWallDefs, applyWallDefs } from "./wall-crud";
 import { scene, wallsLayer } from "./wall-coords";
 import { cycleDoorBehavior as _cycleDoorBehavior } from "./wall-door";
-import type { DoorBehavior } from "./wall-types";
+import type { DoorBehavior, WallDef } from "./wall-types";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
 import { handleNativeSizeChange, scheduleWallUpdate, doUpdateWall } from "./wall-manager-impl";
@@ -39,6 +39,29 @@ function handleKeydown(e: KeyboardEvent): void {
 
 export class WallManager {
   static preSizes: Map<string, { w: number; h: number }> = new Map();
+  static pendingPasteWalls: Map<string, WallDef[]> = new Map();
+
+  static onPreCreateTile(doc: TileDocument): void {
+    const staleIds = getLinkedWallIds(doc);
+    if (!staleIds.length) return;
+    const defs = extractWallDefs(doc);
+    // Clear stale IDs so preset's deleteLinkedWalls cannot reach the original tile's walls.
+    (doc as unknown as { updateSource?(d: object): void })
+      .updateSource?.({ flags: { [MODULE_ID]: { linkedWallIds: [] } } });
+    if (defs.length) {
+      WallManager.pendingPasteWalls.set(doc.id!, defs);
+    }
+  }
+
+  static onCreateTile(doc: TileDocument): void {
+    const defs = WallManager.pendingPasteWalls.get(doc.id!);
+    WallManager.pendingPasteWalls.delete(doc.id!);
+    if (!defs) return;
+    // Only clone walls when the preset did not already apply its own walls.
+    if (!getLinkedWallIds(doc).length) {
+      wrap(() => applyWallDefs(doc, defs), "paste wall clone");
+    }
+  }
 
   static activate(): void {
     window.addEventListener("keydown", handleKeydown);

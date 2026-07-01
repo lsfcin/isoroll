@@ -75,10 +75,12 @@ export function doUpdateWall(
   const noRescale   = !CanvasEnv.isGridRescaling();
   const notWallMove = options.isoroll !== "wallMove" && options.isoroll !== "wallEndpointDrag";
   if (noRescale && notWallMove && "c" in changes) {
+    const docWithC = doc as unknown as { c: number[]; updateSource?(d: object): void };
+    const c = docWithC.c;
+    const anchor = canvasToAnchor(tileObj.document as TileDoc, c);
+    // Sync: update in-memory anchor so the RAF-deferred show() reads the new anchor.
+    docWithC.updateSource?.({ flags: { [MODULE_ID]: { tileAnchor: anchor } } });
     wrap(async () => {
-      const docWithC = doc as unknown as { c: number[] };
-      const c = docWithC.c;
-      const anchor = canvasToAnchor(tileObj.document as TileDoc, c);
       const sc = scene();
       await sc.updateEmbeddedDocuments("Wall",
         [{ _id: doc.id, flags: { [MODULE_ID]: { tileAnchor: anchor } } }],

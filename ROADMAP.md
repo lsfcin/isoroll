@@ -6,11 +6,11 @@
 
 ## Status
 
-Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary image) is next feature priority. Phase 1 (token depth) still pending.
+Feature Phases 3 + 4 complete (see HISTORY.md). **Phase 5 (door secondary image) is next feature priority.**
 
-IsoRenderer refactor — Phases 0–11 complete, merged to `develop` (see HISTORY.md). Wall bugs 3a/3b/3c + B29 fixed. Occluder lifecycle path verified and flag removed.
+IsoRenderer refactor — Phases 0–11 complete, merged to `develop`. Wall bugs 3a/3b/3c + B29 + B28 + B31 fixed (see HISTORY.md). Occluder lifecycle path verified.
 
-**Active branch:** `feature/phase-6-sort-slicing` — slice z-ordering solved. Cell→slice association algorithm implemented and verified via `debugSlices(true)`. Next: per-slice fog visibility (Phase 6B below).
+**Active branch:** `develop` — Phase 6 slice z-ordering complete and merged. Phase 6B (per-slice fog) deferred (see below). B28 and B31 resolved this session.
 
 ## Backlog
 
@@ -117,35 +117,6 @@ Calls `sliceCellOverlaps`, then for each slice i:
 - [x] Implement `applySliceFog()` using per-cell visibility tests
 - [x] Wire `applySliceFog()` into `onSightRefresh()` replacing the current whole-tile broadcast
 - [ ] Verify slices appear on the correct layer (not behind fog) — compare with `_createTileSlices` layer call
-
----
-
-## Phase 1 — Token Depth Refinement 🔲 PENDING
-
-### Problem
-
-`DepthSorter` uses a single-pass sort with key `x/gs + y/gs + elev/gs` on all `canvas.primary.children`. Two tokens at the same grid cell and same elevation get identical keys → render order is arbitrary and may flicker every canvas refresh.
-
-### Solution
-
-After the main sort, run a pairwise epsilon-offset pass over tokens with close sort keys. If token A's footprint occludes token B (A is south/east of B in isometric space), nudge A's effective sort key by a small epsilon so it consistently renders in front. Uses `occludes(a, b)` pairwise test: `a.x <= b.x && (a.y + a.height) >= b.y`.
-
-### Checklist
-
-- [ ] Implement `occludes(a, b)` helper in `depth-sorter.ts`
-- [ ] Add second-pass epsilon-offset loop in `DepthSorter.sort()` after main sort
-
-### Key Files
-
-- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` (main sort on `canvas.primary`), `DepthSorter.objectSortKey()` (key formula)
-
-### References
-
-- isometric-perspective fork `foreground.js` — `refineTokenOrdering()` (lines 408–428), `occludes()` (lines 343–352)
-
-### Scope
-
-Only token-to-token ordering. Tile-to-tile and tile-to-token ordering handled by main sort key (elevation-aware, correct for non-overlapping objects).
 
 ---
 

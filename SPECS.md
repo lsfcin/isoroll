@@ -42,7 +42,7 @@
   - Future: formula changes per viewing direction in 8+1 multiview strategy (see ROADMAP Future)
 - **Iso-diagonal slicing:** Multi-cell tiles split into `Wg + Hg - 1` vertical strips, each assigned its frontier cell depth. Avoids per-tile cyclic occlusion. See Phase 6 in ROADMAP for full algorithm.
 - **Key invariant:** `mesh.x ≠ tile.document.x`. Formula: `mesh.x = doc.x + heightDir.x * elevPx + imageOffset.x * gridSize` (from `tile-transform.ts::onRefreshTile`). Any code computing world positions from tile geometry must use `mesh.x/y`, not `doc.x/y`.
-- **swapSide visual-dims invariant:** `applyTileCounter` uses `Math.max(docW, docH, docBoundH)` for uniform scale — visual pixel size stays the same before and after `swapSide`. `_gridMetrics` uses `visW = flipped ? docH : docW` to recover the pre-swap visual width (since `swapSide` swaps `docW↔docH`, `docH` after swap equals `docW` before).
+- **swapSide visual-dims invariant:** `applyTileCounter` uses `Math.max(docW, docH, docBoundH)` for uniform scale — visual pixel size stays the same before and after `swapSide`. `_gridMetrics` reads `doc.width`/`doc.height` directly — `swapSide()` already swaps them, so no un-swap needed. (Old code had `visW = flipped ? docH : docW` which double-swapped, causing wrong Wg/Hg — fixed in B28.)
 - Implemented in `src/render/iso-sprite-layer.ts` (`IsoSpriteLayer._onTick`) and `src/render/iso-tile-renderer.ts` (`_createTileSlices`, `sync`)
 
 ### Occlusion
@@ -50,6 +50,7 @@
 - **Tile fades, NOT token** — tile gets `alpha = occlusionOpacity` when a token is behind it
 - Check: tile.sortKey > token.sortKey + XY footprint overlap + Z overlap
 - `OcclusionOpacity` setting: 0=invisible, 1=no effect (default 0.3)
+- **Iso-sliced tile invariant:** `_evaluateTile` in `occluder.ts` branches on `tileSlices.has(tile.id)`. Iso tiles always get `mesh.alpha = 0`; standard tiles get the normal fade. Reason: `canvas.perception.update()` runs at PIXI UTILITY priority (-50), after isoroll's `_onTick` at -25 — it triggers `refreshTile → evaluateAll`, which would reset `mesh.alpha = 1.0` AFTER `_onTick` corrected it, causing a one-frame native-mesh flash visible through Foundry's VisibilityFilter.
 
 ### Per-Scene Enablement
 
