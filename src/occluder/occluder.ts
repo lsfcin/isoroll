@@ -2,6 +2,7 @@
 // Boundary: may use tile.mesh.alpha directly (listed boundary). All canvas reads via CanvasEnv.
 
 import { CanvasEnv, VolumeFlags } from "../core";
+import { tileSlices } from "../render";
 
 export function evaluateAll(): void {
   if (!VolumeFlags.isSceneEnabled()) {
@@ -14,7 +15,10 @@ export function evaluateAll(): void {
 }
 
 function _evaluateTile(tile: Tile, occlusionOpacity: number): void {
-  if (tile.mesh) {
+  if (!tile.mesh) return;
+  if (tileSlices.has(tile.id)) {
+    tile.mesh.alpha = 0;
+  } else {
     tile.mesh.alpha = _hasTokenBehind(tile) ? occlusionOpacity : 1.0;
   }
 }

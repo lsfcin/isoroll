@@ -161,6 +161,23 @@ Never two live versions of the same logic simultaneously. New file created with 
 
 ---
 
+## Resolved Bugs — 2026-07-01 (session 2)
+
+- **B31** — Unseen iso tiles flicker during/after token movement. Two root causes fixed:
+  1. **Fog AABB used doc-space coords, ignoring elevation** (`a210e26`): `onSightRefresh` passed `docX - w/2, docY - h/2` to `applyTileFog`. For elevated tiles, `mesh.x/y` = `doc.x/y + heightDir*elevPx + imgOffset*gs`, so the fog test fired on the wrong world position. Fix: destructure `getMesh(t)` to get `cx/cy` from `mesh.x/y` in `iso-tile-renderer.ts::onSightRefresh`.
+  2. **Occluder set `mesh.alpha = 1.0` for iso tiles after `_onTick` corrected it** (`57c79fd`): `occluder.ts::_evaluateTile` wrote `mesh.alpha = 1.0` for all tiles unconditionally. `evaluateAll()` fires from Foundry's `canvas.perception.update()` at UTILITY priority (-50) — after isoroll's `_onTick` at -25 had already zeroed it — so the GPU rendered the native tile in `canvas.primary` for one frame (appearing partially lit by Foundry's VisibilityFilter). Fix: `_evaluateTile` now branches on `tileSlices.has(tile.id)`: iso tiles get `mesh.alpha = 0`, standard tiles keep the existing occlusion logic. `tileSlices` exported through `render/index.ts` facade. *(branch `fix/b31-tile-flash`)*
+
+---
+
+## Resolved Bugs — 2026-07-01
+
+- **B28** — Swap-tile slice grid footprint wrong after `swapSide()`. Three layered root causes, each fixed separately:
+  1. **Wrong Wg/Hg** (`96667d5`): `_gridMetrics` applied `flipped ? docH : docW` to un-swap dims, but `swapSide()` had already swapped `doc.width ↔ doc.height` — double-swap produced wrong Wg/Hg (e.g. 2×5 instead of 4×1). Fix: removed the un-swap branch; `doc.width`/`doc.height` are already visual dims post-swap.
+  2. **Descending UV cuts → 1px-wide middle slices** (`c517728`): `scale.x < 0` made `transformCoord` return frontier-corner UV values in descending order; unsorted `cuts` array produced negative slice widths clamped to 1px. Fix: `projected.sort((a,b)=>a-b)` before dedup. Stale debug containers on swap also fixed here (clear before redraw).
+  3. **Wrong cut positions** (`aa6f9f0`): `transformCoord` uses `Math.abs(scale.x)` internally, ignoring mirror. True UV for flipped tile is `2*ax − uv.x`. Without this, cuts landed at cell midpoints. Fix: `const uvx = flipped ? 2 * ax - uv.x : uv.x` in `computeSliceCuts` and matching fix in debug label rendering. `effectiveI = flipped ? nSlices-1-i : i` handles depth-order reversal in `buildSlice`.
+
+---
+
 ## Resolved Bugs — 2026-06-22
 
 - **B29** — Linked-wall displacement undo broken. Root cause: `epUp()` in `wall-overlay-ops.ts` called `scene().updateEmbeddedDocuments(...)` without first pushing a `"move"` entry to `WallHistory`. Fix: one-liner `WallHistory.push({ k:"move", wallId: d.wallId, prevC: d.c })` before the update call. `d.c` holds pre-drag canvas coords captured at `drawWallDisplay` time. `onUpdateWall` anchor-sync runs on undo too (option is `"undoMove"`, not exempted), so anchor stays consistent after undo. *(63f757f)*

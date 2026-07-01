@@ -11,4 +11,4 @@ export type { WorldBoxVerts, TileFootprint, P2 as GeomP2 } from './iso-geometry'
 export { MeshAccessor } from './mesh-accessor';
 export type { MeshGeometry } from './mesh-accessor';
 export * from './render-lifecycle';
-export { debugSlices, DEBUG_SLICES, debugGrid } from './iso-tile-renderer';
+export { debugSlices, DEBUG_SLICES, debugGrid, tileSlices } from './iso-tile-renderer';
