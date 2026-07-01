@@ -131,11 +131,13 @@ export class WallManager {
     changes: Record<string, unknown>,
     options: Record<string, unknown>,
   ): void {
-    const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
-    if (tileId) {
-      const tileObj = CanvasEnv.getTile(tileId);
-      if (tileObj) {
-        doUpdateWall(doc, changes, options, tileId, tileObj);
+    if (options.isoroll !== "anchorUpdate") {
+      const tileId = doc.getFlag(MODULE_ID, "parentTileId") as string | undefined;
+      if (tileId) {
+        const tileObj = CanvasEnv.getTile(tileId);
+        if (tileObj) {
+          doUpdateWall(doc, changes, options, tileId, tileObj);
+        }
       }
     }
   }
