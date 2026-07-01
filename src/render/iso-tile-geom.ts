@@ -190,7 +190,8 @@ export function buildSlice(mesh: Mesh, origFrame: PIXI.Rectangle, i: number, sta
   const d = kStart + effectiveI;
   const rc = Math.min(Hg - 1, d);
   const cc = d - rc;
-  sp.zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE;
+  const tileSort = (doc as unknown as { sort?: number }).sort ?? 0;
+  sp.zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE + tileSort;
   applyDocState(sp, doc);
   layer.addChild(sp);
   return sp;

@@ -89,7 +89,8 @@ function _syncTileSlices(tile: Tile, slices: PIXI.Sprite[], nSlices: number, mes
     const rc = Math.min(Hg - 1, d);
     const cc = d - rc;
     syncSlicePos(slices[i], mesh);
-    slices[i].zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE;
+    const tileSort = (doc as unknown as { sort?: number }).sort ?? 0;
+    slices[i].zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE + tileSort;
     slices[i].alpha = docAlpha(doc);
     if (doc.hidden) {
       slices[i].visible = false;

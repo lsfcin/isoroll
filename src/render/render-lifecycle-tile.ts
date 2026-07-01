@@ -13,7 +13,7 @@ export function drawTile(
       const previewRenderers = tileRenderers.filter(r => r.handlesPreview);
       previewRenderers.forEach(r => r.create(tile));
     } else {
-      tileRenderers.forEach(r => r.create(tile));
+      tileRenderers.forEach(r => r.rebuild(tile));
     }
   }
 }

@@ -74,6 +74,18 @@ sprite is confirmed ready, or hook into a later Foundry lifecycle event.
 
 ---
 
+## B32 — Tile-slice z-ordering inconsistent when two tiles share equal depth bands (FIXED)
+
+**Symptom:** Two tiles crossing in an X pattern (e.g., 4×1 horizontal and 1×4 flipped vertical) display correct z-ordering on first placement but wrong ordering after moving and returning to the same position. Specifically a slice at a shallower isometric depth (e.g., cell (5,7), depth=2) renders on top of a slice at a deeper depth (e.g., cell (4,8), depth=4).
+
+**Root cause (two mechanisms):**
+1. **Z-index collision**: For the X-cross configuration, all slice pairs from the two tiles receive identical z-indices. PIXI's stable sort breaks ties by PIXI-container insertion order.
+2. **Insertion order change**: Foundry fires `drawTile` after a native drag ends. The handler called `IsoTileRenderer.create()` — which destroys and re-appends slices to the END of the PIXI container — permanently changing the tiebreaker order.
+   During a gizmo drag, z-indices temporarily diverge (tile at different position), PIXI physically reorders its children array, and when the tile returns the modified order persists.
+
+**Fix (committed on `fix/b32-slice-zorder-collision`):**
+- `render-lifecycle-tile.ts` `drawTile()`: changed `r.create()` → `r.rebuild()` for normal-state tiles. `rebuild()` is a no-op when slices already exist, preventing spurious destroy+re-insert.
+- `iso-tile-geom.ts` `buildSlice()` and `iso-tile-renderer.ts` `_syncTileSlices()`: added `tile.document.sort` as a tiebreaker in the z-index formula (`... * DEPTH_SCALE + tileSort`). Foundry sort values are small integers so depth ordering is never violated. Users can now set tile Sort in TileConfig to control which tile appears in front at equal depths.
 
 ---
 
