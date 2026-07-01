@@ -10,9 +10,113 @@ Feature Phases 3 + 4 complete (see HISTORY.md). Feature Phase 5 (door secondary 
 
 IsoRenderer refactor — Phases 0–11 complete, merged to `develop` (see HISTORY.md). Wall bugs 3a/3b/3c + B29 fixed. Occluder lifecycle path verified and flag removed.
 
+**Active branch:** `feature/phase-6-sort-slicing` — slice z-ordering solved. Cell→slice association algorithm implemented and verified via `debugSlices(true)`. Next: per-slice fog visibility (Phase 6B below).
+
 ## Backlog
 
 - **Shadow params in presets** — shadow shape, radius, opacity, and enabled state should be included when saving/loading image presets for tiles and tokens. Currently presets only capture image transform fields.
+
+---
+
+## Phase 6B — Per-Slice Fog Visibility 🔲 DEFERRED
+
+### Deferred Reason
+
+Per-slice fog creates hard immersion breaks: vertical-crop slice boundaries are visible
+in the fog edge, cutting the 3D tile silhouette in an obviously wrong way for voxel-art tiles.
+Whole-tile fog (broadcast from `slices[0]`) reinstated. Revisit only after finding a fog-edge
+approach that respects the tile's silhouette (e.g. silhouette mask, per-cell alpha, or
+geometry-aware fade rather than a hard crop boundary).
+
+**Already implemented and committed:**
+- `sliceCellOverlaps()` in `src/render/iso-tile-geom.ts` — cell→slice mapping utility, ready for reuse.
+- `drawCellMarkers()` refactored in `src/render/iso-tile-debug-cells.ts` to call `sliceCellOverlaps`.
+- `applySliceFog()` logic in git working-tree history (never committed); see session 2026-06-30.
+
+### Context
+
+Slice z-ordering is solved. Each tile is split into `Wg+Hg-1` PIXI.Sprite slices on the
+`LAYER_KEYS.ISO_SPRITES` (`"iso-sprites"`) layer on `canvas.stage`. The cell→slice
+association algorithm is implemented in `src/render/iso-tile-geom.ts::sliceCellOverlaps`.
+
+**Layer warning (for future implementors):** A prior attempt applied fog to slices placed in the
+wrong layer — they appeared BEHIND the fog layer. Always use `LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES)`
+— same call used in `_createTileSlices()` in `iso-tile-renderer.ts`.
+
+### Fog State Vocabulary
+
+No formal enum. Three states in the fog system:
+- **VISIBLE** — `testPointVisible(pt, viewers)` returns true → `tint = 0xffffff`, `visible = true`, id added to `seenTileIds`
+- **EXPLORED** — in `seenTileIds` but not currently visible → `tint = EXPLORED_TINT (0x808080)`, `visible = true`
+- **UNSEEN** — never seen, not visible → `visible = false` (if `hideOnFog=true`) or checked via `canvas.fog.isPointExplored` (if `hideOnFog=false`)
+
+Functions in `src/render/fog-state.ts`: `testPointVisible`, `testPerimeterVisible`, `applyNonVisibleFog`, `seenTileIds`, `EXPLORED_TINT`.
+Functions in `src/render/fog-apply.ts`: `applyTileFog` (current whole-tile version), `getViewers`.
+
+### Current behavior (to replace)
+
+`onSightRefresh()` in `iso-tile-renderer.ts:141–167`:
+1. Calls `applyTileFog(slices[0], ...)` — tests the whole tile AABB
+2. Broadcasts `slices[0].tint/visible/alpha/filters` to all other slices
+
+All slices share identical fog state — no per-slice granularity.
+
+### Target behavior
+
+Each slice gets fog state from the MAX visibility of its overlapping grid cells:
+- VISIBLE beats EXPLORED beats UNSEEN
+- Test each cell's world center with `testPointVisible({ x: cx + gs/2, y: cy + gs/2 }, viewers)`
+- Store per-cell result, then for each slice pick the best cell result
+- Apply tint/visible/alpha to that slice independently (not copied from slice[0])
+- `seenTileIds` stays at tile granularity (tracks if ANY slice was ever seen)
+
+### Implementation plan
+
+**Step 1 — Extract shared cell→slice overlap utility** (new export, probably in `iso-tile-geom.ts` or a new `iso-tile-cell-overlap.ts`):
+
+```typescript
+// Returns for each slice index the list of overlapping cell (dc,dr) pairs.
+// Same N/S corner algorithm as drawCellMarkers — NORTH=(cx+gs,cy), SOUTH=(cx,cy+gs).
+export function sliceCellOverlaps(
+  cuts: number[], fw: number, Wg: number, Hg: number,
+  snapX: number, snapY: number, gs: number,
+  ax: number, flipped: boolean, mesh: MeshRef
+): Map<number, Array<{dc: number; dr: number}>>
+```
+
+**Step 2 — New `applySliceFog` function** (new helper in `fog-apply.ts` or `iso-tile-renderer.ts`):
+
+```typescript
+function applySliceFog(
+  slices: PIXI.Sprite[], tile: Tile,
+  doc: PlaceableDoc, tileId: string,
+  hideOnFog: boolean, viewers: Token[]
+): void
+```
+
+Calls `sliceCellOverlaps`, then for each slice i:
+1. Get overlapping cells
+2. For each cell test `testPointVisible(cellCenter, viewers)`
+3. Best result → apply tint/visible to `slices[i]`
+4. Still add tileId to `seenTileIds` if ANY cell of ANY slice is currently visible
+
+**Step 3 — Wire into `onSightRefresh()`** — replace `applyTileFog` + broadcast loop with `applySliceFog`.
+
+### Key Files
+
+- `src/render/iso-tile-renderer.ts` — `onSightRefresh()` (lines 141–167), `_createTileSlices()` (line 62 for layer reference)
+- `src/render/iso-tile-debug-cells.ts` — `drawCellMarkers()` — source of truth for N/S corner algorithm and `sliceBounds` construction; duplicate logic to shared util
+- `src/render/fog-apply.ts` — `applyTileFog()` (current whole-tile impl to keep as fallback)
+- `src/render/fog-state.ts` — `testPointVisible`, `seenTileIds`, `EXPLORED_TINT`, `applyNonVisibleFog`
+- `src/render/layer-manager.ts` — `LAYER_KEYS.ISO_SPRITES = "iso-sprites"` — must match layer used in `buildSlice()`
+
+### Checklist
+
+- [x] Extract `sliceCellOverlaps()` utility (shared by debug + fog)
+- [x] Update `drawCellMarkers()` to call utility instead of inline logic
+- [x] Implement `applySliceFog()` using per-cell visibility tests
+- [x] Wire `applySliceFog()` into `onSightRefresh()` replacing the current whole-tile broadcast
+- [ ] Verify slices appear on the correct layer (not behind fog) — compare with `_createTileSlices` layer call
 
 ---
 

@@ -89,17 +89,59 @@ export function computeSliceCuts(tile: Tile, mesh: Mesh, origFrame: PIXI.Rectang
     const uv = transformCoord(p, "WORLD", "IMAGE", { mesh }) as P2;
     const uvx = flipped ? 2 * ax - uv.x : uv.x;
     const rounded = Math.round(uvx * origFrame.width);
-    const clamped = Math.min(origFrame.width - 1, rounded);
-    return Math.max(0, clamped);
+    // Clamp to [0, fw] (fw included so out-of-bounds corners become 0 or fw, not fw-1).
+    return Math.max(0, Math.min(origFrame.width, rounded));
   });
   const rawCuts = [...projected];
   projected.sort((a, b) => a - b);
-  // Drop texture boundaries (global min & max). Internal cuts = projected[1 .. n-2].
-  const cuts = projected.slice(1, projected.length - 1);
+  // Keep only strictly interior values (> 0 and < fw); deduplicate.
+  // Out-of-bounds corners clamp to 0 or fw and are excluded, preventing phantom zero-width slices.
+  const cuts = [...new Set(projected.filter(v => v > 0 && v < origFrame.width))];
   const meshRot = mesh.rotation ?? 0;
   const meshScX = Math.abs(mesh.scale?.x ?? 1);
   const meshFlipped = (mesh.scale?.x ?? 1) < 0;
   return { cuts, rawCuts, frontierWorldPts: corners, meshRot, meshScX, meshFlipped };
+}
+
+// ---- Cell→slice overlap utility ----
+
+// Project world point to image-x, applying flip-mirror around anchor.
+function _imgX(wx: number, wy: number, ax: number, fw: number, flipped: boolean, mesh: Mesh): number {
+  const uv = transformCoord({ x: wx, y: wy }, "WORLD", "IMAGE", { mesh }) as P2;
+  const uvx = flipped ? 2 * ax - uv.x : uv.x;
+  return uvx * fw;
+}
+
+// Returns, for each slice index, the list of overlapping grid cells (dc, dr).
+// Uses N corner=(cx+gs, cy) and S corner=(cx, cy+gs); ±1px epsilon handles boundary cells.
+// Same algorithm as drawCellMarkers in iso-tile-debug-cells.ts.
+export function sliceCellOverlaps(
+  cuts: number[], fw: number, Wg: number, Hg: number,
+  snapX: number, snapY: number, gs: number,
+  ax: number, flipped: boolean, mesh: Mesh
+): Map<number, Array<{ dc: number; dr: number }>> {
+  const nSlices = cuts.length + 1;
+  const result = new Map<number, Array<{ dc: number; dr: number }>>();
+  const sliceBounds: [number, number][] = [];
+  for (let i = 0; i < nSlices; i++) {
+    result.set(i, []);
+    sliceBounds.push([i === 0 ? 0 : cuts[i - 1], i === nSlices - 1 ? fw : cuts[i]]);
+  }
+  for (let dc = 0; dc < Wg; dc++) {
+    for (let dr = 0; dr < Hg; dr++) {
+      const cx = snapX + dc * gs;
+      const cy = snapY + dr * gs;
+      const northX = _imgX(cx + gs, cy,      ax, fw, flipped, mesh);
+      const southX = _imgX(cx,      cy + gs, ax, fw, flipped, mesh);
+      const cellMin = Math.min(northX, southX) - 1;
+      const cellMax = Math.max(northX, southX) + 1;
+      for (let si = 0; si < nSlices; si++) {
+        const [sL, sR] = sliceBounds[si];
+        if (cellMin < sR && cellMax > sL) result.get(si)!.push({ dc, dr });
+      }
+    }
+  }
+  return result;
 }
 
 // ---- Sprite helpers (stateless) ----

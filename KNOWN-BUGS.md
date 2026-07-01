@@ -104,6 +104,64 @@ is set relative to `docW` vs visual dims.
 
 ---
 
+## B30 — Copy-paste tile does not carry linked walls
+
+**Symptom:** Ctrl+C / Ctrl+V (or drag-duplicate) of a tile produces a new tile without
+linked walls. The pasted tile has no walls associated and the wall overlay is absent.
+
+**Expected:** Paste should duplicate the wall group along with the tile and link them
+to the new tile document.
+
+**Likely cause:** Foundry's tile paste path creates a new `TileDocument` by copying
+the source document's data, which includes `flags.isoroll.linkedWalls` (the array of
+wall IDs). Those IDs point to the ORIGINAL tile's walls, not newly created ones.
+Our paste hook (if any) does not detect the duplication, re-create the wall documents,
+and remap the flag to the new IDs. Net result: the new tile's flag is stale (references
+old walls) or absent (flags stripped on paste).
+
+**Files to investigate:**
+- `src/walls/wall-manager.ts` or `wall-manager-impl.ts` — look for a `createTile` /
+  `onDropTile` / `onPasteTile` hook that should handle duplication
+- Foundry hook `preCreateTile` / `createTile` — check if we intercept tile creation
+  triggered by paste vs. drop, and whether we clone wall documents there
+
+---
+
+## B31 — Unseen iso tiles flicker during / after token movement
+
+**Symptom:** An iso tile with `hideOnFog=true` (or any unseen tile) briefly becomes
+visible while a token is moving, then disappears again when movement stops. Also
+blinks intermittently while the token is stationary if the revealed fog circle overlaps
+with the tile's sprite screen area — even though the tile's grid base is in the dark.
+
+**Root cause (hypothesis):** `onSightRefresh` tests the tile's world-space AABB
+(`document.x/y` ± `width/height`) against `testPerimeterVisible`. For elevated iso
+tiles the sprite is shifted from the grid footprint (the counter-transform moves the
+mesh upward in iso screen space to simulate height). The world AABB and the sprite
+screen area therefore diverge: the fog test can report "visible" when the sprite is
+in the dark, or "not visible" when the sprite is actually in the revealed circle.
+
+During token motion Foundry fires `sightRefresh` on every animation frame. If any
+intermediate frame moves the revealed area over the world AABB (even for one tick),
+the tile flashes visible, then disappears on the next frame.
+
+**Secondary factor:** Foundry's visibility polygon may expand mid-animation (smear
+across the movement path), temporarily covering the tile AABB regardless of elevation.
+
+**Files:**
+- `src/render/iso-tile-renderer.ts` — `onSightRefresh`: the `docX/docY/w/h` AABB
+  passed to `applyTileFog` should be replaced with the mesh-space AABB (includes
+  elevation offset). See `mesh.x / mesh.y` set by `tile-transform.ts::onRefreshTile`.
+- `src/render/fog-apply.ts` — `applyTileFog` / `testPerimeterVisible`
+- `src/transform/tile-transform.ts` — `onRefreshTile`: how `mesh.x/y` relates to
+  `document.x/y + elevationOffset`
+
+**Workaround:** None. Noticeable mainly on tiles with large `boundHeight` or where
+the grid footprint is far from the visible sprite (e.g. wall tiles placed at the scene
+edge).
+
+---
+
 ## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays
 
 **Observation:** Opening the TileConfig or TokenConfig popup causes all isoroll visuals
