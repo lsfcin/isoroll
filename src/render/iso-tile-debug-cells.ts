@@ -1,7 +1,6 @@
 // iso-tile-debug-cells.ts — per-cell slice marker rendering for debugSlices mode.
 import { CanvasEnv } from "../core";
-import { transformCoord } from "../transform";
-import type { P2 } from "../transform";
+import { sliceCellOverlaps } from "./iso-tile-geom";
 import { SLICE_COLORS, _isV8 } from "./iso-tile-debug-paint";
 import type { SliceDebugParams } from "./iso-tile-debug";
 
@@ -16,7 +15,6 @@ type GfxX = PIXI.Graphics & {
 
 type MeshRef = PIXI.DisplayObject & { anchor?: PIXI.ObservablePoint };
 
-// Draws a small filled circle (corner marker) at world position (wx, wy).
 function _drawDot(wc: PIXI.Container, wx: number, wy: number, r: number, color: number): void {
   const g = new PIXI.Graphics() as GfxX;
   g.eventMode = "passive";
@@ -53,19 +51,13 @@ function _drawTriangle(wc: PIXI.Container, wx: number, wy: number, r: number, co
   wc.addChild(g);
 }
 
-// Project a world point to image-x, applying flip mirroring around anchor.
-function _imgX(wx: number, wy: number, ax: number, fw: number, flipped: boolean, mesh: MeshRef): number {
-  const uv = transformCoord({ x: wx, y: wy }, "WORLD", "IMAGE", { mesh }) as P2;
-  return (flipped ? 2 * ax - uv.x : uv.x) * fw;
-}
-
 // Draws one colored triangle per overlapping slice per grid cell.
 // Uses only the NORTH (NE world corner, top of screen diamond) and SOUTH (SW world corner,
 // bottom of screen diamond). Both share worldX+worldY = const → identical imageX → zero range
 // in pure iso. ±1px epsilon handles cells whose N/S imageX lands exactly on a cut, associating
 // them with both adjacent slices. Result: exactly 1 slice per cell, or 2 at boundaries.
 export function drawCellMarkers(wc: PIXI.Container, p: SliceDebugParams): void {
-  const { tile, mesh, origFrame, nSlices, Wg, Hg, flipped, cuts } = p;
+  const { tile, mesh, origFrame, Wg, Hg, flipped, cuts } = p;
   const gs = CanvasEnv.gridSize();
   const nwX = tile.document.x - (tile.document.width ?? 0) / 2;
   const nwY = tile.document.y - (tile.document.height ?? 0) / 2;
@@ -76,36 +68,28 @@ export function drawCellMarkers(wc: PIXI.Container, p: SliceDebugParams): void {
   const r = gs * 0.18;
   const meshRef = mesh as MeshRef;
 
-  // Slice x-extents in image space.
-  const sliceBounds: [number, number][] = [];
-  for (let i = 0; i < nSlices; i++) {
-    sliceBounds.push([i === 0 ? 0 : cuts[i - 1], i === nSlices - 1 ? fw : cuts[i]]);
+  // slice → overlapping cells; invert to cell key → overlapping slice indices for drawing.
+  const overlaps = sliceCellOverlaps(cuts, fw, Wg, Hg, snapX, snapY, gs, ax, flipped, meshRef);
+  const cellToSlices = new Map<number, number[]>();
+  for (const [si, cells] of overlaps) {
+    for (const { dc, dr } of cells) {
+      const key = dc * Hg + dr;
+      const arr = cellToSlices.get(key) ?? [];
+      arr.push(si);
+      cellToSlices.set(key, arr);
+    }
   }
 
   for (let dc = 0; dc < Wg; dc++) {
     for (let dr = 0; dr < Hg; dr++) {
       const cx = snapX + dc * gs;
       const cy = snapY + dr * gs;
-      // NORTH corner = top of screen diamond    = NE world corner (cx+gs, cy)
-      // SOUTH corner = bottom of screen diamond = SW world corner (cx,    cy+gs)
-      // Both share worldX+worldY = cx+cy+gs → same imageX in this projection → zero range.
-      const northX = _imgX(cx + gs, cy,      ax, fw, flipped, meshRef);
-      const southX = _imgX(cx,      cy + gs, ax, fw, flipped, meshRef);
-
-      // Visual: white dot at N corner, yellow dot at S corner.
+      // N = top of screen diamond (NE world corner), S = bottom (SW world corner).
       const dotR = r * 0.35;
-      _drawDot(wc, cx + gs, cy,      dotR, 0xffffff);  // N = white  (top  of diamond)
-      _drawDot(wc, cx,      cy + gs, dotR, 0xffee00);  // S = yellow (bottom of diamond)
+      _drawDot(wc, cx + gs, cy,      dotR, 0xffffff);  // N = white
+      _drawDot(wc, cx,      cy + gs, dotR, 0xffee00);  // S = yellow
 
-      const cellMinX = Math.min(northX, southX) - 1;
-      const cellMaxX = Math.max(northX, southX) + 1;
-
-      const overlapping: number[] = [];
-      for (let si = 0; si < nSlices; si++) {
-        const [sliceL, sliceR] = sliceBounds[si];
-        if (cellMinX < sliceR && cellMaxX > sliceL) overlapping.push(si);
-      }
-
+      const overlapping = cellToSlices.get(dc * Hg + dr) ?? [];
       const wx = cx + gs * 0.5;
       const wy = cy + gs * 0.5;
       const n = overlapping.length;

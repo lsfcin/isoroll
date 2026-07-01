@@ -103,6 +103,47 @@ export function computeSliceCuts(tile: Tile, mesh: Mesh, origFrame: PIXI.Rectang
   return { cuts, rawCuts, frontierWorldPts: corners, meshRot, meshScX, meshFlipped };
 }
 
+// ---- Cell→slice overlap utility ----
+
+// Project world point to image-x, applying flip-mirror around anchor.
+function _imgX(wx: number, wy: number, ax: number, fw: number, flipped: boolean, mesh: Mesh): number {
+  const uv = transformCoord({ x: wx, y: wy }, "WORLD", "IMAGE", { mesh }) as P2;
+  const uvx = flipped ? 2 * ax - uv.x : uv.x;
+  return uvx * fw;
+}
+
+// Returns, for each slice index, the list of overlapping grid cells (dc, dr).
+// Uses N corner=(cx+gs, cy) and S corner=(cx, cy+gs); ±1px epsilon handles boundary cells.
+// Same algorithm as drawCellMarkers in iso-tile-debug-cells.ts.
+export function sliceCellOverlaps(
+  cuts: number[], fw: number, Wg: number, Hg: number,
+  snapX: number, snapY: number, gs: number,
+  ax: number, flipped: boolean, mesh: Mesh
+): Map<number, Array<{ dc: number; dr: number }>> {
+  const nSlices = cuts.length + 1;
+  const result = new Map<number, Array<{ dc: number; dr: number }>>();
+  const sliceBounds: [number, number][] = [];
+  for (let i = 0; i < nSlices; i++) {
+    result.set(i, []);
+    sliceBounds.push([i === 0 ? 0 : cuts[i - 1], i === nSlices - 1 ? fw : cuts[i]]);
+  }
+  for (let dc = 0; dc < Wg; dc++) {
+    for (let dr = 0; dr < Hg; dr++) {
+      const cx = snapX + dc * gs;
+      const cy = snapY + dr * gs;
+      const northX = _imgX(cx + gs, cy,      ax, fw, flipped, mesh);
+      const southX = _imgX(cx,      cy + gs, ax, fw, flipped, mesh);
+      const cellMin = Math.min(northX, southX) - 1;
+      const cellMax = Math.max(northX, southX) + 1;
+      for (let si = 0; si < nSlices; si++) {
+        const [sL, sR] = sliceBounds[si];
+        if (cellMin < sR && cellMax > sL) result.get(si)!.push({ dc, dr });
+      }
+    }
+  }
+  return result;
+}
+
 // ---- Sprite helpers (stateless) ----
 
 export const DEPTH_SCALE = 10000;
