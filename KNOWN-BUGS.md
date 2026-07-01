@@ -75,30 +75,6 @@ sprite is confirmed ready, or hook into a later Foundry lifecycle event.
 ---
 
 
-## B30 — Copy-paste tile does not carry linked walls
-
-**Symptom:** Ctrl+C / Ctrl+V (or drag-duplicate) of a tile produces a new tile without
-linked walls. The pasted tile has no walls associated and the wall overlay is absent.
-
-**Expected:** Paste should duplicate the wall group along with the tile and link them
-to the new tile document.
-
-**Likely cause:** Foundry's tile paste path creates a new `TileDocument` by copying
-the source document's data, which includes `flags.isoroll.linkedWalls` (the array of
-wall IDs). Those IDs point to the ORIGINAL tile's walls, not newly created ones.
-Our paste hook (if any) does not detect the duplication, re-create the wall documents,
-and remap the flag to the new IDs. Net result: the new tile's flag is stale (references
-old walls) or absent (flags stripped on paste).
-
-**Files to investigate:**
-- `src/walls/wall-manager.ts` or `wall-manager-impl.ts` — look for a `createTile` /
-  `onDropTile` / `onPasteTile` hook that should handle duplication
-- Foundry hook `preCreateTile` / `createTile` — check if we intercept tile creation
-  triggered by paste vs. drop, and whether we clone wall documents there
-
----
-
-
 ---
 
 ## Design Discussion — TileConfig / TokenConfig popup hides isoroll overlays
