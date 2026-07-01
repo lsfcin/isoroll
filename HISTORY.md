@@ -161,6 +161,12 @@ Never two live versions of the same logic simultaneously. New file created with 
 
 ---
 
+## Resolved Bugs — 2026-07-01 (session 2)
+
+- **B31** — Unseen iso tiles flicker during/after token movement. `onSightRefresh` passed the tile's document-space AABB (`docX - w/2, docY - h/2`) to `applyTileFog`. For elevated tiles, `tile-transform.ts` shifts `mesh.x/y` away from `doc.x/y` by `heightDir * elevPx + imgOffset * gs`. During token movement Foundry fires `sightRefresh` every frame and sweeps the visibility polygon; this temporarily covered the document AABB while the visual sprite was elsewhere, causing a one-frame flash. Fix: in `onSightRefresh`, call `getMesh(t)` and use `mesh?.x ?? docX` / `mesh?.y ?? docY` as the AABB center — `mesh.x/y` already encodes elevation and image offsets, no duplication of transform math needed. One-liner change in `iso-tile-renderer.ts::onSightRefresh`. *(0ecfb25 + this fix)*
+
+---
+
 ## Resolved Bugs — 2026-07-01
 
 - **B28** — Swap-tile slice grid footprint wrong after `swapSide()`. Three layered root causes, each fixed separately:

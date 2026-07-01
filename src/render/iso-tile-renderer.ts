@@ -5,7 +5,6 @@ import { PlaceableDoc, docAlpha, applyTileFog, getViewers, tryRestoreFromStorage
 import type { TileRenderer } from "./tile-renderer";
 import { drawSliceDebug, clearSliceDebug, clearAllSliceDebug, drawGridDebug, clearGridDebug } from "./iso-tile-debug";
 import { type Mesh, type SliceState, type SliceGeom, gridMetrics, tileSliceCount, computeSliceCuts, DEPTH_SCALE, syncSlicePos, buildSlice } from "./iso-tile-geom";
-
 export { type Mesh, DEPTH_SCALE } from "./iso-tile-geom";
 
 function getMesh(obj: unknown): Mesh | undefined {
@@ -154,9 +153,10 @@ export const IsoTileRenderer: TileRenderer = {
       const h = t.document.height ?? 0;
       const docX = t.document.x ?? 0;
       const docY = t.document.y ?? 0;
+      const { x: cx = docX, y: cy = docY } = getMesh(t) ?? {};
       const tileDoc = t.document as unknown as PlaceableDoc;
       const hideOnFog = VolumeFlags.getHideOnFog(t.document);
-      applyTileFog(slices[0], tileDoc, t.id, docX - w / 2, docY - h / 2, w, h, hideOnFog, viewers);
+      applyTileFog(slices[0], tileDoc, t.id, cx - w / 2, cy - h / 2, w, h, hideOnFog, viewers);
       for (let i = 1; i < slices.length; i++) {
         slices[i].alpha = slices[0].alpha;
         slices[i].visible = slices[0].visible;
