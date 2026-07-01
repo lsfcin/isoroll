@@ -54,7 +54,6 @@ function _createTileSlices(tile: Tile): void {
   }
   const doc = tile.document as unknown as PlaceableDoc;
   const { gs, nwX, nwY, Wg, Hg, kStart } = gridMetrics(tile);
-  const nSlices = Math.max(1, Wg + Hg - 1);
   const origFrame = mesh.texture.frame;
   const gridC0 = Math.floor(nwX / gs);
   const gridR0 = Math.floor(nwY / gs);
@@ -63,6 +62,7 @@ function _createTileSlices(tile: Tile): void {
   const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
   const state = computeSliceCuts(tile, mesh, origFrame);
   tileSliceCuts.set(id, state);
+  const nSlices = Math.max(1, state.cuts.length + 1);
   const slices: PIXI.Sprite[] = [];
   const gp: SliceGeom = { gridC0, gridR0, kStart, Hg, elev, flipped };
   for (let i = 0; i < nSlices; i++) {
@@ -113,8 +113,8 @@ export const IsoTileRenderer: TileRenderer = {
     const slices = tileSlices.get(tile.id);
     const mesh = slices ? getMesh(tile) : undefined;
     if (slices && mesh) {
-      const nSlices = tileSliceCount(tile);
       const state = tileSliceCuts.get(tile.id);
+      const nSlices = state ? state.cuts.length + 1 : tileSliceCount(tile);
       const curRot = mesh.rotation ?? 0;
       const absCurRot = Math.abs(curRot - (state?.meshRot ?? 0));
       const curScX = Math.abs(mesh.scale?.x ?? 1);
