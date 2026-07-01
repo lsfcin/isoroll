@@ -161,6 +161,15 @@ Never two live versions of the same logic simultaneously. New file created with 
 
 ---
 
+## Resolved Bugs — 2026-07-01
+
+- **B28** — Swap-tile slice grid footprint wrong after `swapSide()`. Three layered root causes, each fixed separately:
+  1. **Wrong Wg/Hg** (`96667d5`): `_gridMetrics` applied `flipped ? docH : docW` to un-swap dims, but `swapSide()` had already swapped `doc.width ↔ doc.height` — double-swap produced wrong Wg/Hg (e.g. 2×5 instead of 4×1). Fix: removed the un-swap branch; `doc.width`/`doc.height` are already visual dims post-swap.
+  2. **Descending UV cuts → 1px-wide middle slices** (`c517728`): `scale.x < 0` made `transformCoord` return frontier-corner UV values in descending order; unsorted `cuts` array produced negative slice widths clamped to 1px. Fix: `projected.sort((a,b)=>a-b)` before dedup. Stale debug containers on swap also fixed here (clear before redraw).
+  3. **Wrong cut positions** (`aa6f9f0`): `transformCoord` uses `Math.abs(scale.x)` internally, ignoring mirror. True UV for flipped tile is `2*ax − uv.x`. Without this, cuts landed at cell midpoints. Fix: `const uvx = flipped ? 2 * ax - uv.x : uv.x` in `computeSliceCuts` and matching fix in debug label rendering. `effectiveI = flipped ? nSlices-1-i : i` handles depth-order reversal in `buildSlice`.
+
+---
+
 ## Resolved Bugs — 2026-06-22
 
 - **B29** — Linked-wall displacement undo broken. Root cause: `epUp()` in `wall-overlay-ops.ts` called `scene().updateEmbeddedDocuments(...)` without first pushing a `"move"` entry to `WallHistory`. Fix: one-liner `WallHistory.push({ k:"move", wallId: d.wallId, prevC: d.c })` before the update call. `d.c` holds pre-drag canvas coords captured at `drawWallDisplay` time. `onUpdateWall` anchor-sync runs on undo too (option is `"undoMove"`, not exempted), so anchor stays consistent after undo. *(63f757f)*
