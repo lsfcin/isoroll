@@ -163,7 +163,9 @@ Never two live versions of the same logic simultaneously. New file created with 
 
 ## Resolved Bugs — 2026-07-01 (session 2)
 
-- **B31** — Unseen iso tiles flicker during/after token movement. `onSightRefresh` passed the tile's document-space AABB (`docX - w/2, docY - h/2`) to `applyTileFog`. For elevated tiles, `tile-transform.ts` shifts `mesh.x/y` away from `doc.x/y` by `heightDir * elevPx + imgOffset * gs`. During token movement Foundry fires `sightRefresh` every frame and sweeps the visibility polygon; this temporarily covered the document AABB while the visual sprite was elsewhere, causing a one-frame flash. Fix: in `onSightRefresh`, call `getMesh(t)` and use `mesh?.x ?? docX` / `mesh?.y ?? docY` as the AABB center — `mesh.x/y` already encodes elevation and image offsets, no duplication of transform math needed. One-liner change in `iso-tile-renderer.ts::onSightRefresh`. *(0ecfb25 + this fix)*
+- **B31** — Unseen iso tiles flicker during/after token movement. Two root causes fixed:
+  1. **Fog AABB used doc-space coords, ignoring elevation** (`a210e26`): `onSightRefresh` passed `docX - w/2, docY - h/2` to `applyTileFog`. For elevated tiles, `mesh.x/y` = `doc.x/y + heightDir*elevPx + imgOffset*gs`, so the fog test fired on the wrong world position. Fix: destructure `getMesh(t)` to get `cx/cy` from `mesh.x/y` in `iso-tile-renderer.ts::onSightRefresh`.
+  2. **Occluder set `mesh.alpha = 1.0` for iso tiles after `_onTick` corrected it** (`57c79fd`): `occluder.ts::_evaluateTile` wrote `mesh.alpha = 1.0` for all tiles unconditionally. `evaluateAll()` fires from Foundry's `canvas.perception.update()` at UTILITY priority (-50) — after isoroll's `_onTick` at -25 had already zeroed it — so the GPU rendered the native tile in `canvas.primary` for one frame (appearing partially lit by Foundry's VisibilityFilter). Fix: `_evaluateTile` now branches on `tileSlices.has(tile.id)`: iso tiles get `mesh.alpha = 0`, standard tiles keep the existing occlusion logic. `tileSlices` exported through `render/index.ts` facade. *(branch `fix/b31-tile-flash`)*
 
 ---
 
