@@ -11,8 +11,15 @@ export async function connect() {
 }
 
 async function waitReady(page) {
+  await page.waitForFunction(() => globalThis.game?.ready === true, null, { timeout: 60000 });
+  // No active scene (e.g. after fixture cleanup) is a valid ready state — specs
+  // activate their own fixture scenes.
   await page.waitForFunction(
-    () => globalThis.game?.ready === true && globalThis.canvas?.ready === true,
+    () => {
+      const active = globalThis.game.scenes?.active;
+      const ready = globalThis.canvas?.ready === true;
+      return ready || !active;
+    },
     null,
     { timeout: 60000 },
   );
@@ -82,6 +89,10 @@ export async function loadFixture(page, fx) {
 
 export async function deleteFixtureScenes(page) {
   await page.evaluate(async () => {
+    const keeper = game.scenes.find((s) => !s.name.startsWith("fx-"));
+    if (keeper && game.scenes.active?.name?.startsWith("fx-")) {
+      await keeper.activate();
+    }
     const fixtures = game.scenes.filter((s) => s.name.startsWith("fx-"));
     for (const s of fixtures) {
       await s.delete();
