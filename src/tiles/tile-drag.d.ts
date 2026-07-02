@@ -36,7 +36,7 @@ export declare function handlePositions(tx: number, ty: number, tw: number, th: 
     cx: number;
     cy: number;
 }>;
-export declare function projectDrag(drag: DragState, gx: number, gy: number): {
+type DragResult = {
     tw: number;
     th: number;
     boundH: number;
@@ -48,5 +48,6 @@ export declare function projectDrag(drag: DragState, gx: number, gy: number): {
     imgScale: number;
     imgYScale: number;
 };
-export declare function commitDrag(drag: DragState, gx: number, gy: number): void;
-export declare function storeDragHistory(drag: DragState): void;
+export declare function projectDrag(drag: DragState, gx: number, gy: number): DragResult;
+export { commitDrag } from "./tile-drag-commit";
+export { storeDragHistory } from "./tile-drag-history";

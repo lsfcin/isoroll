@@ -1,3 +1,4 @@
+import type { MeshGeometry, DrawAPI } from '../render';
 export interface MeshLike {
     x: number;
     y: number;
@@ -15,4 +16,4 @@ export interface MeshLike {
         y: number;
     };
 }
-export declare function drawMeshContour(g: PIXI.Graphics, mesh: MeshLike): void;
+export declare function drawMeshContour(g: DrawAPI, geo: MeshGeometry | null, wt: PIXI.Matrix): void;

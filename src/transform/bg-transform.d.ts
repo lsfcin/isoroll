@@ -12,5 +12,6 @@ export declare class BackgroundTransform {
     static reset(): void;
     static clearCapture(): void;
     static clearGridConfigPatch(): void;
+    static findGridConfigPreviewBg(): PIXI.Sprite | null;
     static onRenderGridConfig(enabled: boolean, bgTransform: boolean): void;
 }

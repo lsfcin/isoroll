@@ -1,4 +1,3 @@
-import type { P2 } from "../transform";
 type Mesh = PIXI.DisplayObject & {
     texture?: PIXI.Texture;
     anchor?: PIXI.ObservablePoint;
@@ -12,8 +11,8 @@ export interface SliceDebugParams {
     origFrame: PIXI.Rectangle;
     cuts: number[];
     rawCuts: number[];
-    frontierWorldPts: P2[];
-    kStart: number;
+    faces: import("./iso-tile-depth").SliceFace[];
+    frontierWorldPts: import("../transform").P2[];
     Wg: number;
     Hg: number;
     nSlices: number;

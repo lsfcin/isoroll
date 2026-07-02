@@ -1,66 +1,38 @@
-
 import { MODULE_ID, scheduleWrap, CanvasEnv } from "../core";
-import { getLinkedWallIds, setLinkedWallIds, hasLinkedDoor, getDoorBehavior, setDoorBehavior } from "./wall-flags";
-import { generateBaseWalls, deleteLinkedWalls as _deleteLinkedWalls, unlinkAllWalls as _unlinkAllWalls, extractWallDefs, applyWallDefs } from "./wall-crud";
+import {
+  getLinkedWallIds,
+  setLinkedWallIds,
+  hasLinkedDoor,
+  getDoorBehavior,
+  setDoorBehavior,
+} from "./wall-flags";
+import {
+  generateBaseWalls,
+  deleteLinkedWalls as _deleteLinkedWalls,
+  unlinkAllWalls as _unlinkAllWalls,
+} from "./wall-crud";
 import { scene, wallsLayer } from "./wall-coords";
 import { cycleDoorBehavior as _cycleDoorBehavior } from "./wall-door";
-import type { DoorBehavior, WallDef } from "./wall-types";
+import type { DoorBehavior } from "./wall-types";
 import { WallOverlay } from "./wall-overlay";
 import { WallHistory } from "./wall-history";
+import { handleKeydown } from "./wall-keys";
+import { onPreCreateTilePaste, onCreateTilePaste } from "./wall-paste";
 import { handleNativeSizeChange, scheduleWallUpdate, doUpdateWall } from "./wall-manager-impl";
 
 function wrap(fn: () => Promise<void>, label: string): void {
   scheduleWrap(fn, label, 0);
 }
 
-function currentTileHistLen(): number {
-  const tiles = (canvas as unknown as { tiles?: { history?: unknown[] } }).tiles;
-  return tiles?.history?.length ?? 0;
-}
-
-function isInputTarget(target: EventTarget | null): boolean {
-  const el = target as HTMLElement | null;
-  const matches = el?.matches?.("input,textarea,[contenteditable]");
-  return !!matches;
-}
-
-function handleKeydown(e: KeyboardEvent): void {
-  const isCtrlZ = e.ctrlKey && e.key === "z" && !e.shiftKey;
-  const notInput = !isInputTarget(e.target);
-  const hasHistory = !!WallHistory.size;
-  const notDeferred = currentTileHistLen() <= WallHistory.topTileHistLen;
-  if (isCtrlZ && notInput && hasHistory && notDeferred) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    const undoPromise = WallHistory.undo();
-    undoPromise.catch(console.warn);
-  }
-}
-
 export class WallManager {
   static preSizes: Map<string, { w: number; h: number }> = new Map();
-  static pendingPasteWalls: Map<string, WallDef[]> = new Map();
 
   static onPreCreateTile(doc: TileDocument): void {
-    const staleIds = getLinkedWallIds(doc);
-    if (!staleIds.length) return;
-    const defs = extractWallDefs(doc);
-    // Clear stale IDs so preset's deleteLinkedWalls cannot reach the original tile's walls.
-    (doc as unknown as { updateSource?(d: object): void })
-      .updateSource?.({ flags: { [MODULE_ID]: { linkedWallIds: [] } } });
-    if (defs.length) {
-      WallManager.pendingPasteWalls.set(doc.id!, defs);
-    }
+    onPreCreateTilePaste(doc);
   }
 
   static onCreateTile(doc: TileDocument): void {
-    const defs = WallManager.pendingPasteWalls.get(doc.id!);
-    WallManager.pendingPasteWalls.delete(doc.id!);
-    if (!defs) return;
-    // Only clone walls when the preset did not already apply its own walls.
-    if (!getLinkedWallIds(doc).length) {
-      wrap(() => applyWallDefs(doc, defs), "paste wall clone");
-    }
+    onCreateTilePaste(doc);
   }
 
   static activate(): void {
@@ -68,7 +40,9 @@ export class WallManager {
     WallOverlay.activate();
   }
 
-  static onCanvasReady(): void { WallHistory.clear(); }
+  static onCanvasReady(): void {
+    WallHistory.clear();
+  }
 
   static onPreUpdateTile(
     doc: TileDocument,
@@ -90,10 +64,16 @@ export class WallManager {
     if (options.isoroll === "preset") {
       return;
     }
-    const isoFlags           = (changes as Record<string, Record<string, unknown>>)?.flags?.[MODULE_ID] ?? {};
+    const isoFlags = (changes as Record<string, Record<string, unknown>>)?.flags?.[MODULE_ID] ?? {};
     const tileFlippedChanged = "tileFlipped" in isoFlags;
-    const boundHChanged      = "boundHeight" in isoFlags;
-    const tileHadWalls = handleNativeSizeChange(doc, changes, isoFlags, options, WallManager.preSizes);
+    const boundHChanged = "boundHeight" in isoFlags;
+    const tileHadWalls = handleNativeSizeChange(
+      doc,
+      changes,
+      isoFlags,
+      options,
+      WallManager.preSizes,
+    );
     if (!tileHadWalls && getLinkedWallIds(doc).length) {
       scheduleWallUpdate(doc, changes, isoFlags, tileFlippedChanged, boundHChanged);
     }
@@ -103,7 +83,7 @@ export class WallManager {
     wrap(async () => {
       const layer = wallsLayer();
       const allIds = getLinkedWallIds(doc);
-      const ids = allIds.filter(id => !!layer.get(id));
+      const ids = allIds.filter((id) => !!layer.get(id));
       if (ids.length) {
         const sc = scene();
         await sc.deleteEmbeddedDocuments("Wall", ids, { isoroll: "wallBulkDelete" });
@@ -118,7 +98,7 @@ export class WallManager {
         const tileObj = CanvasEnv.getTile(tileId);
         if (tileObj) {
           const allIds = getLinkedWallIds(tileObj.document);
-          const ids = allIds.filter(id => id !== doc.id);
+          const ids = allIds.filter((id) => id !== doc.id);
           wrap(() => setLinkedWallIds(tileObj.document, ids, { isUndo: true }), "wall id prune");
           WallOverlay.refresh(tileObj);
         }
@@ -144,15 +124,31 @@ export class WallManager {
 
   // ── Public façade ────────────────────────────────────────────────────────
 
-  static markWallDrag(tileId: string): void  { WallOverlay.markDragActive(tileId); }
-  static clearWallDrag(tileId: string): void { WallOverlay.clearDragActive(tileId); }
+  static markWallDrag(tileId: string): void {
+    WallOverlay.markDragActive(tileId);
+  }
+  static clearWallDrag(tileId: string): void {
+    WallOverlay.clearDragActive(tileId);
+  }
 
-  static getLinkedWallIds(doc: TileDocument): string[]      { return getLinkedWallIds(doc); }
-  static hasLinkedDoor(doc: TileDocument): boolean          { return hasLinkedDoor(doc); }
-  static getDoorBehavior(doc: TileDocument): DoorBehavior   { return getDoorBehavior(doc); }
-  static isSelectMode(tileId: string): boolean              { return WallOverlay.isSelectMode(tileId); }
-  static enterSelect(tile: Tile): void                      { WallOverlay.enterSelect(tile); }
-  static exitSelect(tile: Tile): void                       { WallOverlay.exitSelect(tile); }
+  static getLinkedWallIds(doc: TileDocument): string[] {
+    return getLinkedWallIds(doc);
+  }
+  static hasLinkedDoor(doc: TileDocument): boolean {
+    return hasLinkedDoor(doc);
+  }
+  static getDoorBehavior(doc: TileDocument): DoorBehavior {
+    return getDoorBehavior(doc);
+  }
+  static isSelectMode(tileId: string): boolean {
+    return WallOverlay.isSelectMode(tileId);
+  }
+  static enterSelect(tile: Tile): void {
+    WallOverlay.enterSelect(tile);
+  }
+  static exitSelect(tile: Tile): void {
+    WallOverlay.exitSelect(tile);
+  }
 
   static async generateBaseWalls(doc: TileDocument): Promise<void> {
     await generateBaseWalls(doc);

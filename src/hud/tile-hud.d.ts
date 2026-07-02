@@ -1,4 +1,6 @@
 export declare class TileHud {
     static activate(): void;
-    private static onRenderTileHUD;
+    static onRenderTileHUD(hud: {
+        object: Tile;
+    }, html: JQuery | HTMLElement): void;
 }

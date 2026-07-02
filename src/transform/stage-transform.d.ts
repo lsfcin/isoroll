@@ -21,10 +21,10 @@ export declare class CanvasTransform {
     private static setOutlineVisible;
     static applyCurrentState(): void;
     static refresh(): void;
-    private static onCanvasReady;
+    static onCanvasReady(): void;
     private static syncHudAfterStageApply;
-    private static onUpdateScene;
-    private static onRenderGridConfig;
-    private static onCloseGridConfig;
-    private static onCloseSceneConfig;
+    static onUpdateScene(scene: Scene, changes: Record<string, unknown>): void;
+    static onRenderGridConfig(): void;
+    static onCloseGridConfig(): void;
+    static onCloseSceneConfig(): void;
 }

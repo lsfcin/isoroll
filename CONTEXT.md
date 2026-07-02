@@ -66,6 +66,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | Subdirectory | Description |
 |--------------|-------------|
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
+| [`test/`](test/CONTEXT.md) | — |
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
@@ -78,4 +79,5 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
 | [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
 | [`vite.config.ts`](vite.config.ts) | — | — | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
+| [`vitest.config.ts`](vitest.config.ts) | — | — | Vitest config — T1 unit tests for pure math modules (see workspace VERIFY.md). |
 <!-- routing:end -->

@@ -1,17 +1,9 @@
-import type { TokenRenderer } from "./token-renderer";
-import type { TileRenderer } from "./tile-renderer";
+import type { TokenRenderer } from './token-renderer';
+import type { TileRenderer } from './tile-renderer';
 export declare class RenderGate {
-    private tokenRenderers;
-    private tileRenderers;
     registerToken(r: TokenRenderer): this;
     registerTile(r: TileRenderer): this;
     activate(): void;
-    private onCanvasReady;
-    private onUpdateScene;
-    private onDrawToken;
-    private onControlToken;
-    private onRefreshToken;
-    private onDrawTile;
-    private onControlTile;
-    private onRefreshTile;
+    static onUpdateToken(doc: TokenDocument, changes: Record<string, unknown>): void;
+    static onUpdateTile(doc: unknown, changes: Record<string, unknown>): void;
 }
