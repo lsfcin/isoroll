@@ -16,6 +16,11 @@ rescale logic as tokens/walls — only SIZE should be stable.
 
 **Affected:** `onPreUpdateScene` / `onUpdateSceneGridRescale` in `object-transform.ts`.
 
+**Finding (2026-07-02, spec `test/e2e/b2-rescale.spec.mjs`):** the direct `scene.update({grid:{size}})`
+path rescales tile position CORRECTLY — the spec guards it. The bug therefore lives in the
+GridConfig dialog path (preview/submit); a GridConfig-driven spec variant is still needed
+to reproduce.
+
 ---
 
 ## B25 — imageOffset anchor not refreshed on the spot when flag changes
@@ -88,6 +93,10 @@ Slice→depth-cell assignment was *index arithmetic* — `d = kStart + i` walked
 - Verified headless (puppeteer + dumpZOrder + pixel diff): junction bands deterministic, stable across move-and-return, and pixel-identical after adversarially reversing the PIXI children order.
 
 **Note (pre-existing, discovered during verification):** un-hiding a tile does not restore slice visibility — `_syncTileSlices` sets `visible=false` when `doc.hidden` but never resets it on unhide; slices reappear only after a rebuild. Tracked as B33 below.
+
+**Regression spec:** `test/e2e/b32-junction.spec.mjs` — mechanically verified 2026-07-02
+(no cross-tile ties, no depth violations, dump stable across move-and-return). Golden:
+`test/e2e/goldens/junction.png`. Run: `npm run verify:full`.
 
 ---
 
