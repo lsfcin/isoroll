@@ -9,6 +9,7 @@
     "lint": "eslint src --ext .ts",
     "test": "vitest run",
     "verify:fast": "npm run lint && vitest run",
+    "verify:full": "npm run verify:fast && npm run build && node test/e2e/run.mjs",
     "format": "prettier --write src/**/*.ts styles/**/*.scss"
   },
   "devDependencies": {
@@ -17,6 +18,7 @@
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
     "fast-check": "^4.8.0",
+    "playwright": "^1.61.1",
     "prettier": "^3.0.0",
     "sass": "^1.70.0",
     "typescript": "^5.4.0",

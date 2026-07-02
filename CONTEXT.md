@@ -66,7 +66,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | Subdirectory | Description |
 |--------------|-------------|
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
-| [`test/`](test/CONTEXT.md) | — |
+| [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/ (Playwrigh |
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|

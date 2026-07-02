@@ -41,9 +41,18 @@ export function consumeDumpFlag(): boolean {
 }
 
 // Per-slice zIndex log line for DEBUG_ZORDER create/sync tracing.
-export function logSliceZ(prefix: string, i: number, state: import("./iso-tile-geom").SliceState, nSlices: number, zIndex: number, extra: string): void {
+export function logSliceZ(
+  prefix: string,
+  i: number,
+  state: import("./iso-tile-geom").SliceState,
+  nSlices: number,
+  zIndex: number,
+  extra: string,
+): void {
   const cell = sliceDepthCell(i, nSlices, state.cuts, state.fw, state.faces);
-  console.log(`${prefix}slice[${i}] cell=(${cell.col},${cell.row}) depth=${cell.row - cell.col} zIndex=${zIndex}${extra}`);
+  console.log(
+    `${prefix}slice[${i}] cell=(${cell.col},${cell.row}) depth=${cell.row - cell.col} zIndex=${zIndex}${extra}`,
+  );
 }
 
 type SliceInfo = { id: string; i: number; col: number; row: number; depth: number };
@@ -72,7 +81,9 @@ function _dumpPerTile(layer: PIXI.Container, infoMap: Map<PIXI.Sprite, SliceInfo
       const inf = infoMap.get(s);
       const ci = (layer.children as unknown[]).indexOf(s);
       if (inf) {
-        console.log(`  slice[${inf.i}] cell=(${inf.col},${inf.row}) depth=${inf.depth} zIndex=${s.zIndex} childIdx=${ci}`);
+        console.log(
+          `  slice[${inf.i}] cell=(${inf.col},${inf.row}) depth=${inf.depth} zIndex=${s.zIndex} childIdx=${ci}`,
+        );
       }
     }
     console.groupEnd();
@@ -80,25 +91,71 @@ function _dumpPerTile(layer: PIXI.Container, infoMap: Map<PIXI.Sprite, SliceInfo
 }
 
 function _dumpLayerOrder(layer: PIXI.Container, infoMap: Map<PIXI.Sprite, SliceInfo>): void {
-  console.groupCollapsed('layer order (0=back, last=front)');
+  console.groupCollapsed("layer order (0=back, last=front)");
   (layer.children as unknown[]).forEach((child, idx) => {
     const s = child as PIXI.Sprite;
     const inf = infoMap.get(s);
     if (inf) {
       const short = inf.id.slice(0, 8);
-      console.log(`  [${idx}] tile=${short} slice[${inf.i}] cell=(${inf.col},${inf.row}) depth=${inf.depth} zIndex=${s.zIndex}`);
+      console.log(
+        `  [${idx}] tile=${short} slice[${inf.i}] cell=(${inf.col},${inf.row}) depth=${inf.depth} zIndex=${s.zIndex}`,
+      );
     } else {
-      console.log(`  [${idx}] <other> zIndex=${(s as unknown as { zIndex?: number }).zIndex ?? '?'}`);
+      console.log(
+        `  [${idx}] <other> zIndex=${(s as unknown as { zIndex?: number }).zIndex ?? "?"}`,
+      );
     }
   });
   console.groupEnd();
 }
 
-export function dumpZOrder(label = 'snapshot'): void {
+export function dumpZOrder(label = "snapshot"): void {
   const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
   const infoMap = _collectSliceInfo();
   console.group(`[isoroll zorder] ${label}`);
   _dumpPerTile(layer, infoMap);
   _dumpLayerOrder(layer, infoMap);
   console.groupEnd();
+}
+
+// Machine-readable slice snapshot for the headless harness (test/e2e). One entry per live
+// slice; bounds are PIXI global (viewport) space — comparable across tiles. Calls the same
+// live-path helpers as rendering (Principle 4, workspace VERIFY.md): never re-derives depth.
+export interface SliceDump {
+  tileId: string;
+  slice: number;
+  col: number;
+  row: number;
+  depth: number;
+  zIndex: number;
+  childIdx: number;
+  visible: boolean;
+  alpha: number;
+  bounds: { x: number; y: number; w: number; h: number };
+}
+
+export function dumpZOrderJSON(): SliceDump[] {
+  const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
+  const infoMap = _collectSliceInfo();
+  const children = layer.children as unknown[];
+  const out: SliceDump[] = [];
+  for (const [sprite, inf] of infoMap) {
+    const b = sprite.getBounds();
+    const childIdx = children.indexOf(sprite);
+    const bounds = { x: b.x, y: b.y, w: b.width, h: b.height };
+    const entry = {
+      tileId: inf.id,
+      slice: inf.i,
+      col: inf.col,
+      row: inf.row,
+      depth: inf.depth,
+      zIndex: sprite.zIndex,
+      childIdx,
+      visible: sprite.visible,
+      alpha: sprite.alpha,
+      bounds,
+    };
+    out.push(entry);
+  }
+  return out;
 }
