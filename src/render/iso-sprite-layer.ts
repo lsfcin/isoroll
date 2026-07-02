@@ -5,7 +5,9 @@
 import { CanvasEnv } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
 import { clearSeenTiles, saveSessionToStorage } from "./fog-helpers";
-import { tileSlices, IsoTileRenderer, DEPTH_SCALE } from "./iso-tile-renderer";
+import { tileSlices, IsoTileRenderer } from "./iso-tile-renderer";
+import { depthZIndex, TOKEN_BAND } from "./iso-tile-depth";
+import { consumeDumpFlag, dumpZOrder } from "./iso-tile-zdebug";
 import { IsoTokenRenderer, tokenClones, getMesh } from "./iso-token-renderer";
 
 export { cloneSprite, syncSprite, IsoTokenRenderer } from "./iso-token-renderer";
@@ -38,11 +40,15 @@ export const IsoSpriteLayer = {
         continue;
       }
       const elev = (token.document.elevation ?? 0) / gs;
-      clone.zIndex = (token.y / gs - token.x / gs + elev + 0.5) * DEPTH_SCALE;
+      clone.zIndex = depthZIndex(token.y / gs, token.x / gs, elev, TOKEN_BAND);
     }
     // PIXI v8 doesn't auto-call sortChildren() from sortableChildren alone — force it every tick.
     const isoLayer = IsoSpriteLayer.getLayer();
     isoLayer.sortChildren();
+    const dumpPending = consumeDumpFlag();
+    if (dumpPending) {
+      dumpZOrder('post-sort');
+    }
   },
   _onCanvasInit(): void {
     IsoTokenRenderer.clearAll();

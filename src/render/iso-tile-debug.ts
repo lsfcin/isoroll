@@ -17,8 +17,8 @@ export interface SliceDebugParams {
   origFrame: PIXI.Rectangle;
   cuts: number[];
   rawCuts: number[];
+  faces: import("./iso-tile-depth").SliceFace[];
   frontierWorldPts: import("../transform").P2[];
-  kStart: number;
   Wg: number;
   Hg: number;
   nSlices: number;

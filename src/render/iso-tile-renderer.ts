@@ -3,9 +3,10 @@ import { MODULE_ID, VolumeFlags, CanvasEnv } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
 import { PlaceableDoc, docAlpha, applyTileFog, getViewers, tryRestoreFromStorage, maybeInvalidateRestoredTiles } from "./fog-helpers";
 import type { TileRenderer } from "./tile-renderer";
-import { drawSliceDebug, clearSliceDebug, clearAllSliceDebug, drawGridDebug, clearGridDebug } from "./iso-tile-debug";
-import { type Mesh, type SliceState, type SliceGeom, gridMetrics, tileSliceCount, computeSliceCuts, DEPTH_SCALE, syncSlicePos, buildSlice } from "./iso-tile-geom";
-export { type Mesh, DEPTH_SCALE } from "./iso-tile-geom";
+import { drawSliceDebug, clearSliceDebug, clearAllSliceDebug } from "./iso-tile-debug";
+import { type Mesh, type SliceState, type SliceGeom, gridMetrics, tileSliceCount, computeSliceCuts, syncSlicePos, buildSlice } from "./iso-tile-geom";
+import { sliceDepthCell, depthZIndex, tileSortBand } from "./iso-tile-depth";
+import { DEBUG_SLICES, DEBUG_ZORDER, logSliceZ } from "./iso-tile-zdebug";
 
 function getMesh(obj: unknown): Mesh | undefined {
   const m = (obj as { mesh?: Mesh }).mesh;
@@ -13,49 +14,42 @@ function getMesh(obj: unknown): Mesh | undefined {
 }
 
 export const tileSlices = new Map<string, PIXI.Sprite[]>();
-const tileSliceCuts = new Map<string, SliceState>();
-function needsTileClone(t: Tile): boolean {
-  return t.document.getFlag(MODULE_ID, "transformTile") !== true;
-}
-const getTile = (id: string) => CanvasEnv.getTile(id);
+export const tileSliceCuts = new Map<string, SliceState>();
+const needsTileClone = (t: Tile): boolean => t.document.getFlag(MODULE_ID, "transformTile") !== true;
 
-export let DEBUG_SLICES = false;
-export function debugSlices(on: boolean): void {
-  DEBUG_SLICES = on;
-  IsoTileRenderer.clearAll();
+// Bounded cross-tile tiebreaker: rank of this tile among all tiles by (sort, id).
+function _tileBand(tile: Tile): number {
+  const peers: Array<{ id: string; sort: number }> = [];
   for (const t of CanvasEnv.tiles()) {
-    IsoTileRenderer.create(t);
+    const sort = (t.document as unknown as { sort?: number }).sort ?? 0;
+    peers.push({ id: t.id, sort });
   }
-}
-export function debugGrid(on: boolean): void {
-  if (!on) {
-    clearGridDebug();
-    return;
-  }
-  const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
-  drawGridDebug(layer);
+  return tileSortBand(tile.id, peers);
 }
 
-function _createTileSlices(tile: Tile): void {
-  const id = tile.id;
-  const old = tileSlices.get(id);
-  if (old) {
-    for (const s of old) {
+function _destroySlices(id: string): void {
+  const slices = tileSlices.get(id);
+  if (slices) {
+    for (const s of slices) {
       s.parent?.removeChild(s);
       s.destroy();
     }
     tileSlices.delete(id);
   }
   tileSliceCuts.delete(id);
+}
+
+function _createTileSlices(tile: Tile): void {
+  const id = tile.id;
+  const oldCount = tileSlices.get(id)?.length ?? 0;
+  _destroySlices(id);
   const mesh = getMesh(tile);
   if (!mesh?.texture) {
     return;
   }
   const doc = tile.document as unknown as PlaceableDoc;
-  const { gs, nwX, nwY, Wg, Hg, kStart } = gridMetrics(tile);
+  const { Wg, Hg } = gridMetrics(tile);
   const origFrame = mesh.texture.frame;
-  const gridC0 = Math.floor(nwX / gs);
-  const gridR0 = Math.floor(nwY / gs);
   const elev = VolumeFlags.getTileBaseElevation(tile.document);
   const flipped = VolumeFlags.getTileFlipped(tile.document);
   const layer = LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
@@ -63,40 +57,56 @@ function _createTileSlices(tile: Tile): void {
   tileSliceCuts.set(id, state);
   const nSlices = Math.max(1, state.cuts.length + 1);
   const slices: PIXI.Sprite[] = [];
-  const gp: SliceGeom = { gridC0, gridR0, kStart, Hg, elev, flipped };
+  const gp: SliceGeom = { elev, band: _tileBand(tile) };
+  if (DEBUG_ZORDER) {
+    const short = id.slice(0, 8);
+    console.group(`[zorder:create] tile=${short} nSlices=${nSlices} (had ${oldCount} old)`);
+  }
   for (let i = 0; i < nSlices; i++) {
     const sp = buildSlice(mesh, origFrame, i, state, nSlices, gp, doc, layer);
     slices.push(sp);
     tileSlices.set(id, slices);
+    if (DEBUG_ZORDER) {
+      logSliceZ("  ", i, state, nSlices, sp.zIndex, "");
+    }
+  }
+  if (DEBUG_ZORDER) {
+    console.groupEnd();
   }
   mesh.alpha = 0;
   if (DEBUG_SLICES) {
     clearSliceDebug(id);
-    drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, rawCuts: state.rawCuts, frontierWorldPts: state.frontierWorldPts, kStart, Wg, Hg, nSlices, flipped }, layer);
+    drawSliceDebug({ id, tile, mesh, origFrame, cuts: state.cuts, rawCuts: state.rawCuts, faces: state.faces, frontierWorldPts: state.frontierWorldPts, Wg, Hg, nSlices, flipped }, layer);
   }
 }
 
-function _syncTileSlices(tile: Tile, slices: PIXI.Sprite[], nSlices: number, mesh: Mesh): void {
+function _syncTileSlices(tile: Tile, slices: PIXI.Sprite[], state: SliceState, mesh: Mesh): void {
   const doc = tile.document as unknown as PlaceableDoc;
-  const { gs, nwX, nwY, kStart, Hg } = gridMetrics(tile);
-  const gridC0 = Math.floor(nwX / gs);
-  const gridR0 = Math.floor(nwY / gs);
+  const nSlices = state.cuts.length + 1;
   const elev = VolumeFlags.getTileBaseElevation(tile.document);
-  const flipped = VolumeFlags.getTileFlipped(tile.document);
+  const band = _tileBand(tile);
+  if (DEBUG_ZORDER) {
+    const short = tile.id.slice(0, 8);
+    console.group(`[zorder:sync] tile=${short} nSlices=${nSlices}`);
+  }
   for (let i = 0; i < nSlices; i++) {
-    const effectiveI = flipped ? nSlices - 1 - i : i;
-    const d = kStart + effectiveI;
-    const rc = Math.min(Hg - 1, d);
-    const cc = d - rc;
     syncSlicePos(slices[i], mesh);
-    const tileSort = (doc as unknown as { sort?: number }).sort ?? 0;
-    slices[i].zIndex = ((gridR0 + rc) - (gridC0 + cc) + elev) * DEPTH_SCALE + tileSort;
+    const cell = sliceDepthCell(i, nSlices, state.cuts, state.fw, state.faces);
+    const prevZIndex = DEBUG_ZORDER ? slices[i].zIndex : 0;
+    slices[i].zIndex = depthZIndex(cell.row, cell.col, elev, band);
+    if (DEBUG_ZORDER) {
+      const delta = prevZIndex !== slices[i].zIndex ? ` (was ${prevZIndex})` : '';
+      logSliceZ("  ", i, state, nSlices, slices[i].zIndex, delta);
+    }
     slices[i].alpha = docAlpha(doc);
     if (doc.hidden) {
       slices[i].visible = false;
       slices[i].tint = 0xffffff;
       slices[i].filters = null;
     }
+  }
+  if (DEBUG_ZORDER) {
+    console.groupEnd();
   }
   mesh.alpha = 0;
 }
@@ -125,7 +135,7 @@ export const IsoTileRenderer: TileRenderer = {
       if (needsRebuild) {
         IsoTileRenderer.create(tile);
       } else {
-        _syncTileSlices(tile, slices, nSlices, mesh);
+        _syncTileSlices(tile, slices, state!, mesh);
       }
     }
   },
@@ -167,33 +177,22 @@ export const IsoTileRenderer: TileRenderer = {
     }
   },
   hide(id: string): void {
-    const slices = tileSlices.get(id);
-    if (!slices) {
+    if (!tileSlices.has(id)) {
       return;
     }
-    const tile = getTile(id);
+    const tile = CanvasEnv.getTile(id);
     const mesh = tile ? getMesh(tile) : undefined;
     const doc = tile?.document as unknown as PlaceableDoc | undefined;
-    for (const s of slices) {
-      s.parent?.removeChild(s);
-      s.destroy();
-    }
-    tileSlices.delete(id);
-    tileSliceCuts.delete(id);
+    _destroySlices(id);
     clearSliceDebug(id);
     if (mesh && doc) {
       mesh.alpha = docAlpha(doc);
     }
   },
   clearAll(): void {
-    for (const [, slices] of tileSlices) {
-      for (const s of slices) {
-        s.parent?.removeChild(s);
-        s.destroy();
-      }
+    for (const id of [...tileSlices.keys()]) {
+      _destroySlices(id);
     }
-    tileSlices.clear();
-    tileSliceCuts.clear();
     clearAllSliceDebug();
   },
 };

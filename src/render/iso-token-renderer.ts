@@ -3,7 +3,7 @@ import { MODULE_ID, VolumeFlags, CanvasEnv } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
 import { PlaceableDoc, docAlpha, applyDocState, applyTokenFog, getViewers } from "./fog-helpers";
 import type { TokenRenderer } from "./token-renderer";
-import { DEPTH_SCALE } from "./iso-tile-renderer";
+import { depthZIndex, TOKEN_BAND } from "./iso-tile-depth";
 
 export type Mesh = PIXI.DisplayObject & {
   texture?: PIXI.Texture;
@@ -70,8 +70,8 @@ function _updateTokenZIndex(token: Token): void {
   const elev = (token.document.elevation ?? 0) / gs;
   // Depth = row - col (y/gs - x/gs): NE-camera viewpoint where SW face is closest.
   // Replace with view-dependent formula when implementing the 8+1 multiview strategy.
-  // +0.5 places token strictly between adjacent tile slice depths — eliminates insertion-order ties.
-  clone.zIndex = (token.y / gs - token.x / gs + elev + 0.5) * DEPTH_SCALE;
+  // TOKEN_BAND places token strictly between adjacent tile slice depths — eliminates insertion-order ties.
+  clone.zIndex = depthZIndex(token.y / gs, token.x / gs, elev, TOKEN_BAND);
 }
 
 function _createClone(mesh: Mesh | undefined, doc: PlaceableDoc, id: string): void {

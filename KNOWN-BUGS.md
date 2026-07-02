@@ -74,18 +74,28 @@ sprite is confirmed ready, or hook into a later Foundry lifecycle event.
 
 ---
 
-## B32 — Tile-slice z-ordering inconsistent when two tiles share equal depth bands (FIXED)
+## B32 — Tile-slice z-ordering inconsistent between adjacent/crossing tiles (FIXED)
 
-**Symptom:** Two tiles crossing in an X pattern (e.g., 4×1 horizontal and 1×4 flipped vertical) display correct z-ordering on first placement but wrong ordering after moving and returning to the same position. Specifically a slice at a shallower isometric depth (e.g., cell (5,7), depth=2) renders on top of a slice at a deeper depth (e.g., cell (4,8), depth=4).
+**Symptom:** At wall junctions (L, T, X), a slice that should render behind a neighbor tile's slice sometimes renders fully on top. Correct on some placements/sessions, wrong on others; moving tiles could flip the outcome.
 
-**Root cause (two mechanisms):**
-1. **Z-index collision**: For the X-cross configuration, all slice pairs from the two tiles receive identical z-indices. PIXI's stable sort breaks ties by PIXI-container insertion order.
-2. **Insertion order change**: Foundry fires `drawTile` after a native drag ends. The handler called `IsoTileRenderer.create()` — which destroys and re-appends slices to the END of the PIXI container — permanently changing the tiebreaker order.
-   During a gizmo drag, z-indices temporarily diverge (tile at different position), PIXI physically reorders its children array, and when the tile returns the modified order persists.
+**Root cause (found via headless dumpZOrder + per-slice screen bounds):**
+Slice→depth-cell assignment was *index arithmetic* — `d = kStart + i` walked the footprint frontier assuming cut k is the boundary between frontier cells k and k+1. Wall art overhangs its footprint, so frontier corners could project *inside* the texture on one side and fall off (clamp+filter) on the other. The cut set then shifts relative to the walk: e.g. a 1×4 wall with left overhang got cuts `{W(r0)..W(r0+3)}` instead of `{W(r0+1)..E}` — every slice assigned the cell one band deeper, plus a footprint-overflow cell for the last slice. The wrong bands collided exactly with the neighbor tile's correct bands, producing zIndex ties whose winner was PIXI insertion order (session/drag-history dependent). Secondary defects: `kStart = min(Wg-1, Hg-1)` shifted all bands for tiles fractionally overlapping cells on both axes, and the raw `document.sort` tiebreaker (Foundry sorts are 100000-spaced) could swallow whole depth bands.
 
-**Fix (committed on `fix/b32-slice-zorder-collision`):**
-- `render-lifecycle-tile.ts` `drawTile()`: changed `r.create()` → `r.rebuild()` for normal-state tiles. `rebuild()` is a no-op when slices already exist, preventing spurious destroy+re-insert.
-- `iso-tile-geom.ts` `buildSlice()` and `iso-tile-renderer.ts` `_syncTileSlices()`: added `tile.document.sort` as a tiebreaker in the z-index formula (`... * DEPTH_SCALE + tileSort`). Foundry sort values are small integers so depth ordering is never violated. Users can now set tile Sort in TileConfig to control which tile appears in front at equal depths.
+**Fix (branch `fix/b32-slice-zorder-collision`):**
+- `iso-tile-depth.ts` (new): geometric assignment — `frontierFaces()` gives each frontier cell's visible-face interval; `computeSliceCuts()` projects faces with the same flip-mirror+clamp as cuts (same texture space); `sliceDepthCell()` picks the face nearest the slice's image-x midpoint. Overhang clamps to the nearest edge face. Replaces the index walk at all five former copies (buildSlice, sync, dump, create-log, debug labels — labels now show the exact cells feeding zIndex by construction).
+- `kStart` removed entirely; cuts are now derived from the same face endpoints (frontierCorners folded in).
+- `tileSortBand()`: cross-tile tiebreaker is the tile's *rank* by `(sort, id)`, bounded below `TOKEN_BAND` — deterministic, no exact cross-tile ties, `document.sort` still controls front/back at equal depth.
+- Verified headless (puppeteer + dumpZOrder + pixel diff): junction bands deterministic, stable across move-and-return, and pixel-identical after adversarially reversing the PIXI children order.
+
+**Note (pre-existing, discovered during verification):** un-hiding a tile does not restore slice visibility — `_syncTileSlices` sets `visible=false` when `doc.hidden` but never resets it on unhide; slices reappear only after a rebuild. Tracked as B33 below.
+
+---
+
+## B33 — Un-hiding a tile leaves its slices invisible
+
+**Symptom:** Toggle a sliced tile hidden, then visible again: the tile stays invisible until its slices are rebuilt (scene reload, move, or debugSlices toggle).
+
+**Root cause:** `_syncTileSlices` (iso-tile-renderer.ts) applies `slices[i].visible = false` when `doc.hidden` but has no else-branch to restore `visible = true`; `onSightRefresh`/fog only copies slice[0] state to the rest.
 
 ---
 
