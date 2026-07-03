@@ -5,9 +5,12 @@ import { connect, deleteFixtureScenes, BASE_URL } from "./helpers.mjs";
 import b32 from "./b32-junction.spec.mjs";
 import b33 from "./b33-unhide.spec.mjs";
 import b2 from "./b2-rescale.spec.mjs";
+import b34 from "./b34-flip-offset.spec.mjs";
+import b32real from "./b32-real-junction.spec.mjs";
+import b35 from "./b35-stale-sync.spec.mjs";
 import goldenJunction from "./golden-junction.spec.mjs";
 
-const specs = [b32, b33, b2, goldenJunction];
+const specs = [b32, b33, b2, b34, b35, b32real, goldenJunction];
 
 let browser;
 let page;

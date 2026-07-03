@@ -25,4 +25,5 @@ export type MutMeshLike = {
 };
 export declare const EPS = 0.000001;
 export declare function onUpdateTileFlags(doc: unknown, changes: Record<string, unknown>): void;
+export declare function onPreUpdateTileFlip(doc: unknown, changes: Record<string, unknown>): void;
 export declare function onRefreshTile(tile: Tile, _flags?: Record<string, boolean>): void;

@@ -1,10 +1,31 @@
 // Preset apply: compute update data, apply to doc, auto-apply from file/cache.
 
-import { MODULE_ID } from "../core";
+import { MODULE_ID, VolumeFlags } from "../core";
 import { deriveKey, readPreset, getCachedPreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
 import { applyWallDefs } from "../walls";
-import { getSrc, toScene, asUD, asTDp, gridSize as getGridSize, getSceneBg, isPresetEnabled } from "./preset-ops";
+import {
+  getSrc,
+  toScene,
+  asUD,
+  asTDp,
+  gridSize as getGridSize,
+  getSceneBg,
+  isPresetEnabled,
+} from "./preset-ops";
+
+// Presets hold imageOffset in CANONICAL (unflipped) space; mirror it to the target
+// orientation when the preset spawns flipped tiles (B34).
+function orientedOffset(preset: { imageOffset: { x: number; y: number }; tileFlipped: boolean }): {
+  x: number;
+  y: number;
+} {
+  let result = preset.imageOffset;
+  if (preset.tileFlipped) {
+    result = VolumeFlags.mirrorImageOffset(preset.imageOffset);
+  }
+  return result;
+}
 
 export function tilePresetData(preset: TilePreset): object {
   const gridSize = getGridSize();
@@ -13,7 +34,7 @@ export function tilePresetData(preset: TilePreset): object {
       boundHeight: preset.boundHeight,
       imageScale: preset.imageScale,
       imageYScale: preset.imageYScale,
-      imageOffset: preset.imageOffset,
+      imageOffset: orientedOffset(preset),
       tileFlipped: preset.tileFlipped,
       foregroundTile: preset.foregroundTile,
     },
@@ -37,7 +58,7 @@ export async function applyToken(doc: unknown, preset: TokenPreset): Promise<voi
       boundHeight: preset.boundHeight,
       imageScale: preset.imageScale,
       imageYScale: preset.imageYScale,
-      imageOffset: preset.imageOffset,
+      imageOffset: orientedOffset(preset),
       tileFlipped: preset.tileFlipped,
     },
   };

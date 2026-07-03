@@ -25,6 +25,13 @@ export declare class VolumeFlags {
         x: number;
         y: number;
     };
+    static mirrorImageOffset(off: {
+        x: number;
+        y: number;
+    }): {
+        x: number;
+        y: number;
+    };
     static getImageScale(doc: {
         getFlag(s: string, k: string): unknown;
     }): number;

@@ -1,4 +1,4 @@
-// B33 regression — un-hiding a tile must restore slice visibility (known OPEN: xfail).
+// B33 regression — un-hiding a tile must restore slice visibility (fixed by the B35 reconcile).
 import assert from "node:assert/strict";
 import { loadFixture, createTiles, waitSlices, dump } from "./helpers.mjs";
 
@@ -6,7 +6,6 @@ const GS = 100;
 
 export default {
   name: "b33-unhide",
-  xfail: "B33",
   async run({ page }) {
     await loadFixture(page, { name: "fx-b33-unhide" });
     await createTiles(page, [

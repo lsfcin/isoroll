@@ -24,8 +24,23 @@ export type HandleCtx = {
     imgYScale: number;
     imgHalfH: number;
 };
+export type DragSnapshot = {
+    tx: number;
+    ty: number;
+    tw: number;
+    th: number;
+    boundH: number;
+    elev: number;
+    docX: number;
+    docY: number;
+    imgOffX: number;
+    imgOffY: number;
+    imgScale: number;
+    imgYScale: number;
+    imgHalfH: number;
+};
 export declare function swapSide(tile: Tile): void;
-export declare function beginDrag(type: HandleType, tile: Tile, gx: number, gy: number, tx: number, ty: number, tw: number, th: number, boundH: number, elev: number, docX: number, docY: number, imgOffX?: number, imgOffY?: number, imgScale?: number, imgYScale?: number, imgHalfH?: number): void;
+export declare function beginDrag(type: HandleType, tile: Tile, gx: number, gy: number, s: DragSnapshot): void;
 export declare function handlePointerDown(ctx: HandleCtx, e: {
     stopPropagation(): void;
     global: Pt2;

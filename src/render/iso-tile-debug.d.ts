@@ -19,6 +19,7 @@ export interface SliceDebugParams {
     flipped: boolean;
 }
 export declare function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void;
+export declare function maybeDrawSliceDebug(enabled: boolean, tile: Tile, mesh: SliceDebugParams["mesh"], origFrame: PIXI.Rectangle, state: Pick<SliceDebugParams, "cuts" | "rawCuts" | "faces" | "frontierWorldPts">, dims: Pick<SliceDebugParams, "Wg" | "Hg" | "nSlices" | "flipped">, layer: PIXI.Container): void;
 export declare function clearSliceDebug(id: string): void;
 export declare function clearAllSliceDebug(): void;
 export declare function drawGridDebug(layer: PIXI.Container): void;

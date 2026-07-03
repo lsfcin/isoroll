@@ -100,11 +100,80 @@ Slice→depth-cell assignment was *index arithmetic* — `d = kStart + i` walked
 
 ---
 
-## B33 — Un-hiding a tile leaves its slices invisible
+## B33 — Un-hiding a tile leaves its slices invisible (FIXED)
 
 **Symptom:** Toggle a sliced tile hidden, then visible again: the tile stays invisible until its slices are rebuilt (scene reload, move, or debugSlices toggle).
 
 **Root cause:** `_syncTileSlices` (iso-tile-renderer.ts) applies `slices[i].visible = false` when `doc.hidden` but has no else-branch to restore `visible = true`; `onSightRefresh`/fog only copies slice[0] state to the rest.
+
+**Fix (2026-07-02):** part of the B35 reconcile — `syncTileZ` (iso-tile-zsync.ts) restores
+`visible = true` when the document is not hidden; the fog pass re-hides when warranted.
+**Regression spec:** `test/e2e/b33-unhide.spec.mjs` (was xfail; now must pass).
+
+---
+
+## B35 — Stale slice sync: cached faces/bands survive document changes (FIXED)
+
+**Symptom (field report 2026-07-02):** junction z-order wrong after moving tiles in-session;
+`isoroll.debugSlices(true)` (clearAll + recreate) fixed it — the recreate-fixes-it signature
+of stale cached state. Same family as B33.
+
+**Root cause (two heads, one disease — per-event patching of the slice shadow state):**
+- H1: `sync()` reused `SliceState.faces` baked at CREATE time; `needsRebuild` checked
+  count/texture/rotation/scale/flip but never position. A moved tile kept the depth cells
+  of its OLD grid position until something forced a rebuild.
+- H2: the cross-tile band (`tileSortBand` rank) was recomputed lazily per tile; on tile
+  create/delete every OTHER tile's rank shifts, but only the affected tile refreshed —
+  peers kept stale bands baked into zIndex.
+
+**Fix — reconcile, not more cases (iso-tile-renderer.ts + iso-tile-zsync.ts):**
+- `sync()` recomputes `computeSliceCuts` from the CURRENT document/mesh every pass;
+  `sliceStateChanged` (structural diff: cut set, flip, rotation, scaleX) decides full
+  rebuild vs adopting the fresh state and re-driving zIndex in place.
+- `schedulePeerResync()` re-drives every tile's zIndex once per tick after any slice
+  create/destroy (bands are peer-relative by definition).
+- Renderer split into iso-tile-state / iso-tile-zsync / iso-tile-slice-build / iso-tile-fog-sync
+  (200-line gate); zIndex assignment now has exactly one home (`syncTileZ`).
+
+**Regression specs:** `test/e2e/b35-stale-sync.spec.mjs` (move-into-junction cells + peer-set
+band refresh), `b32-junction.spec.mjs` (now asserts AT the moved position — the original
+version only checked after move-and-return, which masked H1), unit `sliceStateChanged`
+property test (translation moves faces but not cuts).
+
+---
+
+## B34 — Flip-blind imageOffset: form toggle + preset propagate corrupted calibration (FIXED)
+
+**Symptom (field report 2026-07-02, "B32 not solved"):** wall junction in the Calibration
+scene rendered with cap stubs crossing mid-air (X above the corner). A/B against pre-B32
+builds showed identical output — not a z-order regression. Dump audit showed every
+cross-tile slice pair correctly ordered per footprint geometry. Root cause was DATA:
+the two junction tiles carried imageOffset ≈ {−0.14,+0.18} / {−0.18,+0.14} (anti-transposes
+of each other) instead of the calibrated ≈ {1.29,−1.47} — art floated ~1.5 cells off the
+footprints, so depth bands (anchored to footprints) disagreed with pixels.
+
+**Root cause (mechanism):** `imageOffset` is orientation-dependent (WORLD-space, mirrors
+as (x,y)→(−y,−x) under tileFlipped — verified empirically: ground line preserved to
+<0.1px, vs 71px error for the (−x,y) convention). Three code paths disagreed:
+- `swapSide` gizmo: toggled flip AND mirrored the offset ✓
+- TileConfig form: toggled flip WITHOUT mirroring ✗ → art jumps ~2× offset
+- preset system: stored and applied offset RAW with `tileFlipped` snapshot ✗ → a preset
+  saved from a flipped tile poisons every later tile; un-flipping a preset-spawned tile
+  via the form completes the corruption. Users then hand-drag art/docs to compensate,
+  which is how the junction tiles got their garbage calibrations.
+
+**Fix:**
+- `VolumeFlags.mirrorImageOffset()` — single shared transform (involutive), used by
+  swapSide, preset, and the new form-path compensation.
+- `onPreUpdateTileFlip` (preUpdateTile): flip toggled without a deliberate offset change
+  → offset auto-mirrored into the same update.
+- Presets now store imageOffset in CANONICAL (unflipped) space; apply mirrors it when the
+  preset spawns flipped tiles. **Migration:** presets saved pre-fix from flipped tiles
+  hold flipped-space offsets — re-save from a correctly calibrated tile (wall.rembg.png
+  preset repaired 2026-07-02).
+
+**Regression spec:** `test/e2e/b34-flip-offset.spec.mjs` (ground line invariant under
+form-path flip; offset involution under flip+unflip).
 
 ---
 

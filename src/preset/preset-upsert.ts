@@ -1,6 +1,6 @@
 // Preset upsert: debounce + extract + write for tile, token, and background presets.
 
-import { MODULE_ID } from "../core";
+import { MODULE_ID, VolumeFlags } from "../core";
 import { deriveKey, writePreset } from "./preset-storage";
 import type { TilePreset, TokenPreset, BackgroundPreset } from "./preset-types";
 import { extractWallDefs } from "../walls";
@@ -24,6 +24,17 @@ function getOff(d: unknown): { x: number; y: number } {
   return val ?? { x: 0, y: 0 };
 }
 
+// Presets store imageOffset in CANONICAL (unflipped) space; a flipped source doc holds
+// the mirrored value, so mirror it back before saving (mirror is involutive). B34.
+function getCanonicalOff(d: unknown, flipped: boolean): { x: number; y: number } {
+  const raw = getOff(d);
+  let result = raw;
+  if (flipped) {
+    result = VolumeFlags.mirrorImageOffset(raw);
+  }
+  return result;
+}
+
 function tileGW(d: unknown): number {
   const tdp = asTDp(d);
   const w = tdp.width ?? gridSize();
@@ -36,11 +47,16 @@ function tileGH(d: unknown): number {
   return h / gridSize();
 }
 
-export const tileUpsertTimers  = new Map<string, ReturnType<typeof setTimeout>>();
+export const tileUpsertTimers = new Map<string, ReturnType<typeof setTimeout>>();
 export const tokenUpsertTimers = new Map<string, ReturnType<typeof setTimeout>>();
-export const bgUpsertTimers    = new Map<string, ReturnType<typeof setTimeout>>();
+export const bgUpsertTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-export function debounced(timers: Map<string, ReturnType<typeof setTimeout>>, id: string, fn: () => Promise<void>, delay = 500): void {
+export function debounced(
+  timers: Map<string, ReturnType<typeof setTimeout>>,
+  id: string,
+  fn: () => Promise<void>,
+  delay = 500,
+): void {
   const t = timers.get(id);
   if (t !== undefined) {
     clearTimeout(t);
@@ -48,7 +64,7 @@ export function debounced(timers: Map<string, ReturnType<typeof setTimeout>>, id
   const timer = setTimeout(() => {
     timers.delete(id);
     const p = fn();
-    p.catch(e => console.warn("isoroll | preset upsert failed", e));
+    p.catch((e) => console.warn("isoroll | preset upsert failed", e));
   }, delay);
   timers.set(id, timer);
 }
@@ -61,8 +77,8 @@ function extractTile(doc: unknown, key: string): TilePreset {
   const boundHeight = getNum(doc, "boundHeight", 1);
   const imageScale = getNum(doc, "imageScale", 1);
   const imageYScale = getNum(doc, "imageYScale", 1);
-  const imageOffset = getOff(doc);
   const tileFlipped = getBool(doc, "tileFlipped", false);
+  const imageOffset = getCanonicalOff(doc, tileFlipped);
   const foregroundTile = getBool(doc, "foregroundTile", true);
   const updatedAt = Date.now();
   return {
@@ -85,8 +101,8 @@ function extractToken(doc: unknown, key: string): TokenPreset {
   const boundHeight = getNum(doc, "boundHeight", 2);
   const imageScale = getNum(doc, "imageScale", 1);
   const imageYScale = getNum(doc, "imageYScale", 1);
-  const imageOffset = getOff(doc);
   const tileFlipped = getBool(doc, "tileFlipped", false);
+  const imageOffset = getCanonicalOff(doc, tileFlipped);
   const updatedAt = Date.now();
   return {
     type: "token",

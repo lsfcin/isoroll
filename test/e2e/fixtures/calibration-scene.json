@@ -1,0 +1,303 @@
+{
+ "grid": 40,
+ "width": 1106,
+ "height": 1106,
+ "bg": "assets/backgrounds/background-calibration.webp",
+ "sceneFlags": {
+  "enabled": true,
+  "transformBackground": false,
+  "projection": "dimetric_2_1",
+  "customRotation": -45,
+  "customSkewX": 18.435,
+  "customSkewY": 18.435,
+  "customRatio": 2,
+  "backgroundYScale": 0.6362807452577309
+ },
+ "tiles": [
+  {
+   "texture": {
+    "src": "assets/wall.rembg.png",
+    "anchorX": 0.5,
+    "anchorY": 0.5,
+    "scaleX": 1,
+    "scaleY": 1,
+    "tint": "#ffffff",
+    "fit": "fill",
+    "alphaThreshold": 0.75
+   },
+   "x": 820,
+   "y": 1040,
+   "width": 40,
+   "height": 200,
+   "sort": 0,
+   "elevation": 0,
+   "levels": [
+    "defaultLevel0000"
+   ],
+   "alpha": 1,
+   "restrictions": {
+    "light": false,
+    "weather": false
+   },
+   "occlusion": {
+    "modes": [],
+    "alpha": 0
+   },
+   "video": {
+    "loop": true,
+    "autoplay": true,
+    "volume": 0
+   },
+   "flags": {
+    "isoroll": {
+     "boundHeight": 3.25,
+     "imageOffset": {
+      "x": 1.3376569259631688,
+      "y": -1.6173817991288189
+     },
+     "imageScale": 1.1062876102196655,
+     "imageYScale": 1.4730588272634366,
+     "tileFlipped": false,
+     "doorBehavior": {
+      "mode": "fade",
+      "opacity": 0.2
+     }
+    }
+   },
+   "rotation": 0,
+   "hidden": false,
+   "locked": false,
+   "_id": "xhn5nLwsbXirhLj8"
+  },
+  {
+   "texture": {
+    "src": "assets/teaser_1_solar_canyons.jpg",
+    "anchorX": 0.5,
+    "anchorY": 0.5,
+    "scaleX": 1,
+    "scaleY": 1,
+    "tint": "#ffffff",
+    "fit": "fill",
+    "alphaThreshold": 0.75
+   },
+   "x": 500,
+   "y": 1340,
+   "width": 480,
+   "height": 280,
+   "sort": 4,
+   "elevation": 0,
+   "levels": [
+    "defaultLevel0000"
+   ],
+   "alpha": 1,
+   "restrictions": {
+    "light": false,
+    "weather": false
+   },
+   "occlusion": {
+    "modes": [],
+    "alpha": 0
+   },
+   "video": {
+    "loop": true,
+    "autoplay": true,
+    "volume": 0
+   },
+   "flags": {
+    "isoroll": {
+     "foregroundTile": true,
+     "transformTile": true,
+     "showImageManipulation": true,
+     "showVolumeManipulation": true,
+     "presetEnabled": true,
+     "tileFlipped": false
+    }
+   },
+   "_id": "6qT9aygUQialwZzr",
+   "rotation": 0,
+   "hidden": false,
+   "locked": false,
+   "name": ""
+  },
+  {
+   "texture": {
+    "src": "assets/wall.rembg.png",
+    "anchorX": 0.5,
+    "anchorY": 0.5,
+    "scaleX": 1,
+    "scaleY": 1,
+    "tint": "#ffffff",
+    "fit": "fill",
+    "alphaThreshold": 0.75
+   },
+   "x": 1100,
+   "y": 1360,
+   "width": 40,
+   "height": 200,
+   "sort": 0,
+   "elevation": 0,
+   "levels": [
+    "defaultLevel0000"
+   ],
+   "alpha": 1,
+   "restrictions": {
+    "light": false,
+    "weather": false
+   },
+   "occlusion": {
+    "modes": [],
+    "alpha": 0
+   },
+   "video": {
+    "loop": true,
+    "autoplay": true,
+    "volume": 0
+   },
+   "flags": {
+    "isoroll": {
+     "boundHeight": 3.25,
+     "imageOffset": {
+      "x": 1.2910096920610017,
+      "y": -1.470790561879958
+     },
+     "imageScale": 1.1044949760898684,
+     "imageYScale": 1.4730588272634366,
+     "doorBehavior": {
+      "mode": "none",
+      "opacity": 0.2
+     },
+     "tileFlipped": false,
+     "foregroundTile": true,
+     "linkedWallIds": [
+      "FkpQav9lpdneNZxP",
+      "8PrzctPeIdgrCkIo",
+      "rrMQu0F6ulxpPryc",
+      "QDoGn9hMe87sqhnI",
+      "oduXvmmMegzKT2mw",
+      "sUitChc6e3Lu9qVs"
+     ]
+    }
+   },
+   "rotation": 0,
+   "hidden": false,
+   "locked": false,
+   "_id": "wN3RLIdQYRpQeJST"
+  },
+  {
+   "texture": {
+    "src": "assets/wall.rembg.png",
+    "anchorX": 0.5,
+    "anchorY": 0.5,
+    "scaleX": 1,
+    "scaleY": 1,
+    "tint": "#ffffff",
+    "fit": "fill",
+    "alphaThreshold": 0.75
+   },
+   "x": 360,
+   "y": 240,
+   "width": 200,
+   "height": 40,
+   "sort": 3,
+   "elevation": 0,
+   "levels": [
+    "defaultLevel0000"
+   ],
+   "alpha": 1,
+   "restrictions": {
+    "light": false,
+    "weather": false
+   },
+   "occlusion": {
+    "modes": [],
+    "alpha": 0
+   },
+   "video": {
+    "loop": true,
+    "autoplay": true,
+    "volume": 0
+   },
+   "flags": {
+    "isoroll": {
+     "boundHeight": 3.25,
+     "imageScale": 1.1062876102196655,
+     "imageYScale": 1.4730588272634366,
+     "imageOffset": {
+      "x": -0.14360449710471562,
+      "y": 0.18267143147781367
+     },
+     "tileFlipped": true,
+     "foregroundTile": true,
+     "linkedWallIds": [
+      "rVBgxTP8arFyTvnp",
+      "unUzfmxV6QU9BQBv",
+      "1LzpLKLdvDOV2zhL",
+      "90Mz3AP580KB32RF"
+     ]
+    }
+   },
+   "rotation": 0,
+   "hidden": false,
+   "locked": false,
+   "_id": "UBmqWKIBeD0cyWEi"
+  },
+  {
+   "texture": {
+    "src": "assets/wall.rembg.png",
+    "anchorX": 0.5,
+    "anchorY": 0.5,
+    "scaleX": 1,
+    "scaleY": 1,
+    "tint": "#ffffff",
+    "fit": "fill",
+    "alphaThreshold": 0.75
+   },
+   "x": 400,
+   "y": 300,
+   "width": 40,
+   "height": 200,
+   "sort": 3,
+   "elevation": 0,
+   "levels": [
+    "defaultLevel0000"
+   ],
+   "alpha": 1,
+   "restrictions": {
+    "light": false,
+    "weather": false
+   },
+   "occlusion": {
+    "modes": [],
+    "alpha": 0
+   },
+   "video": {
+    "loop": true,
+    "autoplay": true,
+    "volume": 0
+   },
+   "flags": {
+    "isoroll": {
+     "boundHeight": 3.25,
+     "imageScale": 1.1062876102196655,
+     "imageYScale": 1.4730588272634366,
+     "imageOffset": {
+      "x": -0.18267143147781367,
+      "y": 0.14360449710471562
+     },
+     "tileFlipped": false,
+     "foregroundTile": true,
+     "linkedWallIds": [
+      "cbQrJcZu2HKjC2Zu",
+      "fp2GZkQgpNyEFdSa",
+      "Cr9CP05wv0LNMMZb",
+      "FLurV9GiZdM3tFV5"
+     ]
+    }
+   },
+   "rotation": 0,
+   "hidden": false,
+   "locked": false,
+   "_id": "p1Hi1lkeiwrpLDc0"
+  }
+ ]
+}

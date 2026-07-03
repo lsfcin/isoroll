@@ -29,13 +29,24 @@ export default {
     assert.equal(crossTileTies(d1).length, 0, `cross-tile zIndex ties: ${JSON.stringify(crossTileTies(d1)[0] ?? "")}`);
     assert.equal(zOrderViolations(d1).length, 0, `depth/zIndex violations: ${JSON.stringify(zOrderViolations(d1)[0] ?? "")}`);
 
-    // Move wall A two cells east and back — dump must be identical (drag-history independence).
+    // Move wall A two cells east — assert AT THE MOVED POSITION (B35: a stale sync kept
+    // the old cells here and this spec masked it by only checking after moving back).
     const before = normalize(d1);
-    await page.evaluate(async (dx) => {
+    const movedId = await page.evaluate(async (dx) => {
       const tile = canvas.scene.tiles.contents[0];
       await tile.update({ x: tile.x + dx });
+      return tile.id;
     }, 2 * GS);
     await page.waitForTimeout(600);
+    const dMoved = await dump(page);
+    assert.equal(crossTileTies(dMoved).length, 0, "ties at moved position");
+    assert.equal(zOrderViolations(dMoved).length, 0, "violations at moved position");
+    const beforeCells = before.filter((s) => s.tileId === movedId);
+    const movedCells = normalize(dMoved).filter((s) => s.tileId === movedId);
+    for (let i = 0; i < movedCells.length; i++) {
+      assert.equal(movedCells[i].col, beforeCells[i].col + 2, `slice[${i}] cell col not updated after move (stale faces, B35)`);
+    }
+
     await page.evaluate(async (dx) => {
       const tile = canvas.scene.tiles.contents[0];
       await tile.update({ x: tile.x - dx });

@@ -4,7 +4,7 @@ import fc from "fast-check";
 import {
   computeSliceCuts,
   gridMetrics,
-  sliceCellOverlaps,
+  sliceStateChanged,
   tileSliceCount,
   type Mesh,
 } from "../../src/render/iso-tile-geom";
@@ -92,36 +92,29 @@ describe("computeSliceCuts", () => {
   });
 });
 
-describe("sliceCellOverlaps", () => {
-  it("every slice overlaps at least one cell; every footprint cell is covered", () => {
+describe("sliceStateChanged (B35 reconcile)", () => {
+  it("pure translation by whole cells is NOT structural: same cuts, no rebuild", () => {
     fc.assert(
-      fc.property(specArb("t"), (spec) => {
+      fc.property(specArb("t"), fc.integer({ min: 1, max: 5 }), (spec, dcells) => {
         const { tile, mesh, fw } = fakeTile(spec);
-        const state = computeSliceCuts(tile, mesh, new PIXI.Rectangle(0, 0, fw, spec.hCells * GS));
-        const snapX = spec.col * GS;
-        const snapY = spec.row * GS;
-        const overlaps = sliceCellOverlaps(
-          state.cuts,
-          state.fw,
-          spec.wCells,
-          spec.hCells,
-          snapX,
-          snapY,
-          GS,
-          0.5,
-          false,
-          mesh,
-        );
-        const covered = new Set<string>();
-        for (const [, cells] of overlaps) {
-          expect(cells.length).toBeGreaterThan(0);
-          for (const c of cells) {
-            covered.add(`${c.dc},${c.dr}`);
-          }
-        }
-        expect(covered.size).toBe(spec.wCells * spec.hCells);
+        const frame = new PIXI.Rectangle(0, 0, fw, spec.hCells * GS);
+        const before = computeSliceCuts(tile, mesh, frame);
+        const moved = fakeTile({ ...spec, col: spec.col + dcells });
+        const after = computeSliceCuts(moved.tile, moved.mesh, frame);
+        expect(sliceStateChanged(before, after, before.cuts.length + 1)).toBe(false);
+        // …but the faces DO move with the tile — the reconcile must adopt them (H1).
+        expect(after.faces[0].col).toBe(before.faces[0].col + dcells);
       }),
     );
+  });
+
+  it("slice-count mismatch or flip change is structural", () => {
+    const { tile, mesh, fw } = fakeTile({ col: 2, row: 2, wCells: 3, hCells: 1, id: "t", sort: 0 });
+    const frame = new PIXI.Rectangle(0, 0, fw, GS);
+    const state = computeSliceCuts(tile, mesh, frame);
+    expect(sliceStateChanged(state, state, state.cuts.length + 2)).toBe(true);
+    const flipped = { ...state, meshFlipped: !state.meshFlipped };
+    expect(sliceStateChanged(state, flipped, state.cuts.length + 1)).toBe(true);
   });
 });
 

@@ -3,7 +3,8 @@ import { CanvasEnv } from "../core";
 import { LayerManager, LAYER_KEYS } from "./layer-manager";
 import { sliceDepthCell } from "./iso-tile-depth";
 import { drawGridDebug, clearGridDebug } from "./iso-tile-debug";
-import { tileSlices, tileSliceCuts, IsoTileRenderer } from "./iso-tile-renderer";
+import { tileSlices, tileSliceCuts } from "./iso-tile-state";
+import { IsoTileRenderer } from "./iso-tile-renderer";
 
 export let DEBUG_SLICES = false;
 export function debugSlices(on: boolean): void {
@@ -38,6 +39,20 @@ export function consumeDumpFlag(): boolean {
   const v = _pendingDump;
   _pendingDump = false;
   return v;
+}
+
+// Console group opener for DEBUG_ZORDER create tracing (no-op when disabled).
+export function zorderCreateGroup(id: string, nSlices: number, oldCount: number): void {
+  if (DEBUG_ZORDER) {
+    const short = id.slice(0, 8);
+    console.group(`[zorder:create] tile=${short} nSlices=${nSlices} (had ${oldCount} old)`);
+  }
+}
+
+export function zorderGroupEnd(): void {
+  if (DEBUG_ZORDER) {
+    console.groupEnd();
+  }
 }
 
 // Per-slice zIndex log line for DEBUG_ZORDER create/sync tracing.
