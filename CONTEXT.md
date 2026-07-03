@@ -45,6 +45,13 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | `flags.isoroll.showVolumeManipulation` | boolean | tile+token | true | Show 3D box + elevation handle on select (tiles also: width/height/boundH/scale/move) |
 | `flags.isoroll.presetEnabled` | boolean | tile+token | true | Opt-out of image preset auto-apply/upsert for this specific object |
 
+## Verification
+
+- `npm run verify:fast` — lint + 17 unit/property tests (runs at every commit, gate-enforced)
+- `npm run verify:full` — fast + build + headless e2e vs live Foundry (`test/e2e/run.mjs`: B-spec regressions, golden diffs). Needs server at `localhost:30000`.
+- In-page oracle: `isoroll.dumpZOrderJSON()` — per-slice cell/depth/zIndex/visibility/bounds.
+- Rules + layout: [`test/CONTEXT.md`](test/CONTEXT.md); pattern: `core/tools/verify/CONTEXT.md`.
+
 ## Known Limitations
 
 - Token rotation: v14 auto-facing suppressed for undistorted tokens; 8-directional sprite selection not yet implemented (placeholder in `object-transform.ts`)
@@ -66,6 +73,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | Subdirectory | Description |
 |--------------|-------------|
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
+| [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/ (Playwrigh |
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
@@ -78,4 +86,5 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
 | [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
 | [`vite.config.ts`](vite.config.ts) | — | — | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
+| [`vitest.config.ts`](vitest.config.ts) | — | — | Vitest config — T1 unit tests for pure math modules (see workspace VERIFY.md). |
 <!-- routing:end -->

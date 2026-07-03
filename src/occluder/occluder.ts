@@ -15,7 +15,9 @@ export function evaluateAll(): void {
 }
 
 function _evaluateTile(tile: Tile, occlusionOpacity: number): void {
-  if (!tile.mesh) return;
+  if (!tile.mesh) {
+    return;
+  }
   if (tileSlices.has(tile.id)) {
     tile.mesh.alpha = 0;
   } else {
@@ -42,8 +44,12 @@ function _hasTokenBehind(tile: Tile): boolean {
       continue;
     }
     const b = token.bounds;
-    if (b.right > tileBounds.left && b.left < tileBounds.right &&
-        b.bottom > tileBounds.top && b.top < tileBounds.bottom) {
+    if (
+      b.right > tileBounds.left &&
+      b.left < tileBounds.right &&
+      b.bottom > tileBounds.top &&
+      b.top < tileBounds.bottom
+    ) {
       result = true;
     }
     if (result) {

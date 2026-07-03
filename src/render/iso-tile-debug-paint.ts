@@ -2,6 +2,7 @@
 import { CanvasEnv } from "../core";
 import { currentProjection } from "../transform";
 import type { P2 } from "../transform";
+import { sliceDepthCell } from "./iso-tile-depth";
 import type { SliceDebugParams } from "./iso-tile-debug";
 
 type PixiGfx = {
@@ -113,12 +114,7 @@ export function drawFrontierDots(id: string, frontierWorldPts: P2[], layer: PIXI
 }
 
 export function drawSliceOutlines(con: PIXI.Container, p: SliceDebugParams, fw: number, ax: number, ay: number, fh: number, sx: number, sy: number, tid: string): void {
-  const { cuts, nSlices, kStart, Hg, flipped, tile } = p;
-  const gs = CanvasEnv.gridSize();
-  const nwX = tile.document.x - tile.document.width / 2;
-  const nwY = tile.document.y - tile.document.height / 2;
-  const gridC0 = Math.floor(nwX / gs);
-  const gridR0 = Math.floor(nwY / gs);
+  const { cuts, nSlices, faces } = p;
   for (let i = 0; i < nSlices; i++) {
     const cl = i === 0 ? 0 : cuts[i - 1];
     const cr = i === nSlices - 1 ? fw : cuts[i];
@@ -137,13 +133,10 @@ export function drawSliceOutlines(con: PIXI.Container, p: SliceDebugParams, fw: 
       sga.stroke!({ color: col, width: 2, alpha: 0.7 });
     }
     con.addChild(sg);
-    const effectiveI = flipped ? nSlices - 1 - i : i;
-    const d = kStart + effectiveI;
-    const rc = Math.min(Hg - 1, d);
-    const cc = d - rc;
+    const cell = sliceDepthCell(i, nSlices, cuts, fw, faces);
     try {
       const sliceHex = i.toString(36);
-      const label = `${tid}·${sliceHex.toUpperCase()}\n(${gridC0 + cc},${gridR0 + rc})`;
+      const label = `${tid}·${sliceHex.toUpperCase()}\n(${cell.col},${cell.row})`;
       const t = makeText(label, col, 11);
       t.anchor?.set(0.5, 0);
       t.position.set((lx1 + lx2) / 2, ly1 + 4);

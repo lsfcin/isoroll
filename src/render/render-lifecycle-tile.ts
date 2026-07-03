@@ -2,6 +2,7 @@
 import type { TileRenderer } from './tile-renderer';
 import { evaluateAll as occluderEvaluateAll } from '../occluder';
 import type { PlaceableState } from './render-lifecycle-state';
+import { DEBUG_ZORDER, scheduleDumpZOrder } from './iso-tile-zdebug';
 
 export function drawTile(
   tile: Tile,
@@ -9,11 +10,15 @@ export function drawTile(
   tileRenderers: TileRenderer[],
 ): void {
   if (state !== "disabled" && state !== "transformed" && state !== "pending") {
+    if (DEBUG_ZORDER) {
+      const short = tile.id.slice(0, 8);
+      console.log(`[zorder:lifecycle] drawTile tile=${short} state=${state} path=${state === "preview" ? "preview-create" : "rebuild"}`);
+    }
     if (state === "preview") {
       const previewRenderers = tileRenderers.filter(r => r.handlesPreview);
       previewRenderers.forEach(r => r.create(tile));
     } else {
-      tileRenderers.forEach(r => r.create(tile));
+      tileRenderers.forEach(r => r.rebuild(tile));
     }
   }
 }
@@ -25,11 +30,24 @@ export function refreshTile(
   flags?: Record<string, boolean>,
 ): void {
   if (state === "disabled" || state === "transformed") {
+    if (DEBUG_ZORDER) {
+      const short = tile.id.slice(0, 8);
+      console.log(`[zorder:lifecycle] refreshTile tile=${short} state=${state} → hide`);
+    }
     tileRenderers.forEach(r => r.hide(tile.id));
   } else if (state !== "pending") {
-    tileRenderers.forEach(r => r.sync(tile));
+    if (DEBUG_ZORDER) {
+      const short = tile.id.slice(0, 8);
+      const flagsStr = JSON.stringify(flags ?? {});
+      console.log(`[zorder:lifecycle] refreshTile tile=${short} state=${state} flags=${flagsStr}`);
+      scheduleDumpZOrder();
+    }
+    // Preview clone shares tile.id with the original — only sync renderers that own preview sprites.
+    // Non-preview renderers (e.g. IsoTileRenderer) must not move the original tile's slices to the drag position.
+    const activeR = state === "preview" ? tileRenderers.filter(r => r.handlesPreview) : tileRenderers;
+    activeR.forEach(r => r.sync(tile));
     if (!(flags?.["refreshMesh"] && !flags?.["refreshPosition"])) {
-      tileRenderers.forEach(r => r.rebuild(tile));
+      activeR.forEach(r => r.rebuild(tile));
       occluderEvaluateAll();
     }
   }

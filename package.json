@@ -7,6 +7,9 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "verify:fast": "npm run lint && vitest run",
+    "verify:full": "npm run verify:fast && npm run build && node test/e2e/run.mjs",
     "format": "prettier --write src/**/*.ts styles/**/*.scss"
   },
   "devDependencies": {
@@ -14,9 +17,14 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
+    "fast-check": "^4.8.0",
+    "pixelmatch": "^7.2.0",
+    "playwright": "^1.61.1",
+    "pngjs": "^7.0.0",
     "prettier": "^3.0.0",
     "sass": "^1.70.0",
     "typescript": "^5.4.0",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "vitest": "^4.1.9"
   }
 }

@@ -25,6 +25,13 @@ export declare class VolumeFlags {
         x: number;
         y: number;
     };
+    static mirrorImageOffset(off: {
+        x: number;
+        y: number;
+    }): {
+        x: number;
+        y: number;
+    };
     static getImageScale(doc: {
         getFlag(s: string, k: string): unknown;
     }): number;
@@ -70,6 +77,10 @@ export declare class VolumeFlags {
     static getElevLineColor(doc: {
         getFlag(s: string, k: string): unknown;
     }): "black" | "player";
+    static getHideOnFog(doc: {
+        getFlag(s: string, k: string): unknown;
+    }): boolean;
+    static getOcclusionOpacity(): number;
 }
 export declare function getElevation(doc: object): number;
 export declare function isTransformedToken(token: Token): boolean;

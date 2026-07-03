@@ -1,6 +1,13 @@
 // iso-tile-debug.ts — visual debug overlay for iso tile slices
 import { CanvasEnv } from "../core";
-import { drawCutLines, drawCutMarkers, drawFrontierDots, drawSliceOutlines, drawCellLabels, makeText } from "./iso-tile-debug-paint";
+import {
+  drawCutLines,
+  drawCutMarkers,
+  drawFrontierDots,
+  drawSliceOutlines,
+  drawCellLabels,
+  makeText,
+} from "./iso-tile-debug-paint";
 import { drawCellMarkers } from "./iso-tile-debug-cells";
 
 type Mesh = PIXI.DisplayObject & {
@@ -17,8 +24,8 @@ export interface SliceDebugParams {
   origFrame: PIXI.Rectangle;
   cuts: number[];
   rawCuts: number[];
+  faces: import("./iso-tile-depth").SliceFace[];
   frontierWorldPts: import("../transform").P2[];
-  kStart: number;
   Wg: number;
   Hg: number;
   nSlices: number;
@@ -80,6 +87,38 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
   drawSliceOutlines(con, p, fw, ax, ay, fh, sx, sy, tid);
 }
 
+// Draw the per-slice overlay for a freshly created tile when enabled (caller passes the
+// flag to avoid an import cycle with iso-tile-zdebug, which owns the DEBUG_SLICES switch).
+// Assembles SliceDebugParams here so callers stay within function-length limits.
+export function maybeDrawSliceDebug(
+  enabled: boolean,
+  tile: Tile,
+  mesh: SliceDebugParams["mesh"],
+  origFrame: PIXI.Rectangle,
+  state: Pick<SliceDebugParams, "cuts" | "rawCuts" | "faces" | "frontierWorldPts">,
+  dims: Pick<SliceDebugParams, "Wg" | "Hg" | "nSlices" | "flipped">,
+  layer: PIXI.Container,
+): void {
+  if (enabled) {
+    const p: SliceDebugParams = {
+      id: tile.id,
+      tile,
+      mesh,
+      origFrame,
+      cuts: state.cuts,
+      rawCuts: state.rawCuts,
+      faces: state.faces,
+      frontierWorldPts: state.frontierWorldPts,
+      Wg: dims.Wg,
+      Hg: dims.Hg,
+      nSlices: dims.nSlices,
+      flipped: dims.flipped,
+    };
+    clearSliceDebug(p.id);
+    drawSliceDebug(p, layer);
+  }
+}
+
 export function clearSliceDebug(id: string): void {
   const c = debugContainers.get(id);
   if (c) {
@@ -108,7 +147,11 @@ export function clearAllSliceDebug(): void {
   debugWorldContainers.clear();
 }
 
-type GlobalCanvas = { canvas?: { dimensions?: { sceneX?: number; sceneY?: number; sceneWidth?: number; sceneHeight?: number } } };
+type GlobalCanvas = {
+  canvas?: {
+    dimensions?: { sceneX?: number; sceneY?: number; sceneWidth?: number; sceneHeight?: number };
+  };
+};
 let gridDebugContainer: PIXI.Container | null = null;
 
 export function drawGridDebug(layer: PIXI.Container): void {
@@ -131,7 +174,9 @@ export function drawGridDebug(layer: PIXI.Container): void {
         t.anchor?.set(0.5, 0.5);
         t.position.set((c + 0.5) * gs, (r + 0.5) * gs);
         con.addChild(t);
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
     }
   }
 }

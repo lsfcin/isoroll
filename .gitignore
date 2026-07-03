@@ -11,3 +11,4 @@ src/**/index.d.ts
 
 # codegraph local index
 .codegraph/
+test/e2e/output/

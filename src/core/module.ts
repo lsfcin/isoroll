@@ -8,18 +8,18 @@ import { BackgroundGizmos } from "../background";
 import { TileHud, TokenHud } from "../hud";
 import { WallManager, WallOverlay } from "../walls";
 import { LayerManager, LAYER_KEYS, IsoSpriteLayer, RenderGate } from "../render";
-import { debugSlices, debugGrid } from "../render";
+import { debugSlices, debugGrid, debugZOrder, dumpZOrder, dumpZOrderJSON, scheduleDumpZOrder } from "../render";
 import type { TokenRenderer, TileRenderer } from "../render";
 
 Hooks.once("init", () => {
   registerVolumeSettings();
   registerRulerPatch();
-  CanvasTransform.activate();   // no-op: hooks registered below
-  BackgroundGizmos.activate();  // BgHtml.setup() — must run before registerAllHooks
-  TileHud.activate();           // no-op
-  TokenHud.activate();          // no-op
-  WallManager.activate();       // keydown listener + WallOverlay.activate()
-  IsoSpriteLayer.activate();    // beforeunload listener
+  CanvasTransform.activate(); // no-op: hooks registered below
+  BackgroundGizmos.activate(); // BgHtml.setup() — must run before registerAllHooks
+  TileHud.activate(); // no-op
+  TokenHud.activate(); // no-op
+  WallManager.activate(); // keydown listener + WallOverlay.activate()
+  IsoSpriteLayer.activate(); // beforeunload listener
 
   const gate = new RenderGate();
   gate.registerToken(IsoSpriteLayer.token);
@@ -36,12 +36,22 @@ Hooks.once("init", () => {
     LAYER_KEYS.TILE_SHADOW,
     LAYER_KEYS.TOKEN_SHADOW,
     LAYER_KEYS.ISO_SPRITES,
-    LAYER_KEYS.TILE_OVERLAY, LAYER_KEYS.TILE_GIZMOS,
-    LAYER_KEYS.TOKEN_INDICATORS, LAYER_KEYS.TOKEN_GIZMOS, LAYER_KEYS.TOKEN_LABEL,
+    LAYER_KEYS.TILE_OVERLAY,
+    LAYER_KEYS.TILE_GIZMOS,
+    LAYER_KEYS.TOKEN_INDICATORS,
+    LAYER_KEYS.TOKEN_GIZMOS,
+    LAYER_KEYS.TOKEN_LABEL,
     LAYER_KEYS.BG_GIZMOS,
     LAYER_KEYS.WALL_OVERLAY,
   ]);
 
-  (globalThis as Record<string, unknown>).isoroll = { debugSlices, debugGrid };
+  (globalThis as Record<string, unknown>).isoroll = {
+    debugSlices,
+    debugGrid,
+    debugZOrder,
+    dumpZOrder,
+    dumpZOrderJSON,
+    scheduleDumpZOrder,
+  };
   console.log("isoroll | initialized");
 });

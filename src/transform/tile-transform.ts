@@ -42,16 +42,16 @@ function applyTileCounter(
       mesh.skew.set(0, 0);
     }
   }
-  const texW    = mesh.texture?.width  || 1;
-  const texH    = mesh.texture?.height || 1;
-  const maxDoc  = Math.max(docW, docH, docBoundH);
-  const maxTex  = Math.max(texW, texH);
-  const uniform = maxDoc / maxTex * imgScale;
-  const sx      = uniform * counterFactor;
-  const sy      = uniform * ratio * counterFactor * imgYScale;
-  const absSx   = Math.abs(mesh.scale.x);
-  const diffX   = Math.abs(absSx - sx);
-  const diffY   = Math.abs(mesh.scale.y - sy);
+  const texW = mesh.texture?.width || 1;
+  const texH = mesh.texture?.height || 1;
+  const maxDoc = Math.max(docW, docH, docBoundH);
+  const maxTex = Math.max(texW, texH);
+  const uniform = (maxDoc / maxTex) * imgScale;
+  const sx = uniform * counterFactor;
+  const sy = uniform * ratio * counterFactor * imgYScale;
+  const absSx = Math.abs(mesh.scale.x);
+  const diffX = Math.abs(absSx - sx);
+  const diffY = Math.abs(mesh.scale.y - sy);
   // Use abs on scale.x so a flipped tile (scale.x < 0) still passes as "correct magnitude".
   if (diffX > EPS || diffY > EPS) {
     mesh.scale.set(sx, sy);
@@ -65,7 +65,12 @@ export function onUpdateTileFlags(doc: unknown, changes: Record<string, unknown>
   if (flagChanges?.[MODULE_ID]) {
     const tile = (doc as { object?: unknown }).object;
     if (DEBUG_ANCHOR) {
-      console.log("[isoroll] onUpdateTileFlags: isoroll flags changed", flagChanges[MODULE_ID], "tile object:", tile ? "found" : "null");
+      console.log(
+        "[isoroll] onUpdateTileFlags: isoroll flags changed",
+        flagChanges[MODULE_ID],
+        "tile object:",
+        tile ? "found" : "null",
+      );
     }
     if (tile) {
       type HasRenderFlags = { renderFlags?: { set(f: Record<string, boolean>): void } };
@@ -73,6 +78,30 @@ export function onUpdateTileFlags(doc: unknown, changes: Record<string, unknown>
       if (t.renderFlags) {
         t.renderFlags.set({ refreshMesh: true });
       }
+    }
+  }
+}
+
+// preUpdateTile: toggling tileFlipped without a deliberate imageOffset change (TileConfig
+// form path) must mirror the offset, or the art jumps ~2x the offset and users hand-patch
+// docs/offsets into corrupted calibrations (B34). swapSide sends a changed offset -> skip.
+export function onPreUpdateTileFlip(doc: unknown, changes: Record<string, unknown>): void {
+  const iso = (changes as { flags?: Record<string, Record<string, unknown>> }).flags?.[MODULE_ID];
+  const hasFlip = iso !== undefined && "tileFlipped" in iso;
+  if (hasFlip) {
+    const fd = doc as { getFlag(s: string, k: string): unknown };
+    const current = VolumeFlags.getTileFlipped(fd as never);
+    const next = !!iso.tileFlipped;
+    const currOff = VolumeFlags.getImageOffset(fd);
+    const nextOff = iso.imageOffset as { x: number; y: number } | undefined;
+    let offChanged = false;
+    if (nextOff !== undefined) {
+      const dx = Math.abs(nextOff.x - currOff.x);
+      const dy = Math.abs(nextOff.y - currOff.y);
+      offChanged = dx > EPS || dy > EPS;
+    }
+    if (next !== current && !offChanged) {
+      iso.imageOffset = VolumeFlags.mirrorImageOffset(currOff);
     }
   }
 }
@@ -97,32 +126,34 @@ function setMeshAnchor(mesh: MutMeshLike, baseCenterWorld: P2): void {
     mesh.anchor.set(0.5, 0.5);
   }
   const anchorUV = transformCoord(baseCenterWorld, "WORLD", "IMAGE", { mesh }) as P2;
-  const clamp    = (v: number) => Math.max(0, Math.min(1, v));
-  const anchorX  = clamp(anchorUV.x);
-  const anchorY  = clamp(anchorUV.y);
+  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+  const anchorX = clamp(anchorUV.x);
+  const anchorY = clamp(anchorUV.y);
   if (mesh.anchor) {
     mesh.anchor.set(anchorX, anchorY);
   }
 }
 
 function applyMeshTransform(tile: Tile, mesh: MutMeshLike): void {
-  const gridSize   = canvas.grid?.size ?? 100;
-  const gridDist   = gridDistance();
-  const tileDoc    = tile.document as unknown as { elevation?: number };
-  const elev       = tileDoc.elevation ?? 0;
-  const boundH     = VolumeFlags.getEffectiveTileHeight(tile.document) * gridSize;
-  const elevPx     = elevToCanvas(elev, gridSize, gridDist);
-  const proj       = CanvasTransform.effectiveProjection();
-  const heightDir  = proj.heightDir;
-  const imgScale   = VolumeFlags.getImageScale(tile.document);
-  const imgYScale  = VolumeFlags.getImageYScale(tile.document);
+  const gridSize = canvas.grid?.size ?? 100;
+  const gridDist = gridDistance();
+  const tileDoc = tile.document as unknown as { elevation?: number };
+  const elev = tileDoc.elevation ?? 0;
+  const boundH = VolumeFlags.getEffectiveTileHeight(tile.document) * gridSize;
+  const elevPx = elevToCanvas(elev, gridSize, gridDist);
+  const proj = CanvasTransform.effectiveProjection();
+  const heightDir = proj.heightDir;
+  const imgScale = VolumeFlags.getImageScale(tile.document);
+  const imgYScale = VolumeFlags.getImageYScale(tile.document);
   const imgFlipped = VolumeFlags.getTileFlipped(tile.document);
   applyTileCounter(
     mesh,
     tile.document.rotation ?? 0,
     tile.document.width ?? 0,
     tile.document.height ?? 0,
-    boundH, imgScale, imgYScale,
+    boundH,
+    imgScale,
+    imgYScale,
   );
   // applyTileCounter sets scale.x > 0; negate only if still positive after that.
   if (imgFlipped && mesh.scale.x > 0) {
@@ -130,8 +161,8 @@ function applyMeshTransform(tile: Tile, mesh: MutMeshLike): void {
   }
 
   // We want the geometric center of the texture (0.5, 0.5) to map to the 3D box center.
-  const docX            = tile.document.x ?? 0;
-  const docY            = tile.document.y ?? 0;
+  const docX = tile.document.x ?? 0;
+  const docY = tile.document.y ?? 0;
   const baseCenterWorld: P2 = {
     x: docX + heightDir.x * elevPx,
     y: docY + heightDir.y * elevPx,

@@ -49,6 +49,12 @@ export declare function imageRect(doc: TileDoc): {
     sw: number;
     sh: number;
 };
+export declare function imageRectAt(doc: TileDoc, cx: number, cy: number): {
+    icx: number;
+    icy: number;
+    sw: number;
+    sh: number;
+};
 export declare function anchorToCanvas(icx: number, icy: number, sw: number, sh: number, a: TileAnchor): [number, number, number, number];
 export declare function defToCanvas(doc: TileDoc, def: WallDef): [number, number, number, number];
 export declare function canvasToAnchor(doc: TileDoc, c: number[]): TileAnchor;

@@ -9,7 +9,7 @@
 export declare class DepthSorter {
     static activate(): void;
     private static sortKey;
-    private static onRefresh;
+    static onRefresh(): void;
     static sort(): void;
     private static objectSortKey;
 }
