@@ -1,5 +1,6 @@
 # isoroll-module
 > Foundry VTT v14 isometric projection module — TypeScript + Vite + SCSS.
+> goal: [rpg-isoroll](../../brain/goals/rpg-isoroll.md)
 
 > **Foundry v14 patterns, gotchas, and coordinate math → `/foundry` skill**
 > (`core/skills/foundry.md` — run `/foundry` at session start)
@@ -72,6 +73,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | Subdirectory | Description |
 |--------------|-------------|
+| [`refs/`](refs/CONTEXT.md) | Captured references for isoroll-module — tier-1 links in [REFS.md](REFS.md); pro |
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
 | [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/ (Playwrigh |
 
