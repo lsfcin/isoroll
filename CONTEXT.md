@@ -63,10 +63,12 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 ## See Also
 
-- [ROADMAP.md](ROADMAP.md) — full phase plan, architecture decisions
+- [ROADMAP.md](ROADMAP.md) — Scene Painter track (program spine) + phase plan
+- `isoroll-content/SCENE-CREATION.md` — canonical scene-creation spec (contract, kill-log, P0–P9 program)
 - [KNOWN-BUGS.md](KNOWN-BUGS.md) — confirmed bugs with root-cause analysis
 - `isoroll-content/` repo — AI art pipeline (private)
 - `/foundry` skill — Foundry v14 gotchas, coordinate systems, hooks, component hierarchy
+- `/iso-visual` skill (`core/skills/iso-visual.md`) — visual-semantics conventions + verification rule; load for any visual/sprite/scene work
 
 <!-- routing:start -->
 ## Routing

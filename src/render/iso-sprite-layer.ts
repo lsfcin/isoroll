@@ -13,12 +13,14 @@ import { IsoTokenRenderer, tokenClones, getMesh } from "./iso-token-renderer";
 export { cloneSprite, syncSprite, IsoTokenRenderer } from "./iso-token-renderer";
 
 const getToken = (id: string) => CanvasEnv.getToken(id);
-const getTile  = (id: string) => CanvasEnv.getTile(id);
+const getTile = (id: string) => CanvasEnv.getTile(id);
 
 export const IsoSpriteLayer = {
   token: IsoTokenRenderer,
-  tile:  IsoTileRenderer,
-  getLayer(): PIXI.Container { return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES); },
+  tile: IsoTileRenderer,
+  getLayer(): PIXI.Container {
+    return LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES);
+  },
   _onTick(): void {
     LayerManager.enforceOrder();
     const gs = CanvasEnv.gridSize();
@@ -47,7 +49,7 @@ export const IsoSpriteLayer = {
     isoLayer.sortChildren();
     const dumpPending = consumeDumpFlag();
     if (dumpPending) {
-      dumpZOrder('post-sort');
+      dumpZOrder("post-sort");
     }
   },
   _onCanvasInit(): void {
@@ -67,7 +69,6 @@ export const IsoSpriteLayer = {
     ticker.remove(IsoSpriteLayer._onTick);
     LayerManager.clearLayer(LAYER_KEYS.ISO_SPRITES);
   },
-  _sort(): void {},
   onCanvasReady(): void {
     const ticker = CanvasEnv.appTicker();
     ticker.remove(IsoSpriteLayer._onTick);

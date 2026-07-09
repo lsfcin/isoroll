@@ -78,13 +78,11 @@ export function registerTileAndTokenHooks(): void {
   Hooks.on("preUpdateTile", WallManager.onPreUpdateTile);
 
   // ── refreshTile ───────────────────────────────────────────────────────────
-  // [DepthSorter.onRefresh is dormant — add Hooks.on("refreshTile", DepthSorter.onRefresh) when Phase 1 ships]
   // Order: object transform (counter-transform) → render lifecycle (rebuild clones)
   Hooks.on("refreshTile", onRefreshTile);
   Hooks.on("refreshTile", (t: Tile, f?: Record<string, boolean>) => onTileRefresh(t, f));
 
   // ── refreshToken ──────────────────────────────────────────────────────────
-  // [DepthSorter.onRefresh dormant — same as above]
   // Order: object transform → render lifecycle
   Hooks.on("refreshToken", onRefreshToken);
   Hooks.on("refreshToken", (t: Token, f?: Record<string, boolean>) => onTokenRefresh(t, f));

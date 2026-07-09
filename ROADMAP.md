@@ -6,7 +6,7 @@
 
 ## Status
 
-Feature Phases 3 + 4 complete (see HISTORY.md). **Phase 5 (door secondary image) is next feature priority.**
+Feature Phases 3 + 4 complete (see HISTORY.md). **Scene Painter track (below) is the program spine (approved plan 2026-07-09); Phase 5 (door secondary image) folds into its P9.**
 
 IsoRenderer refactor — Phases 0–11 complete, merged to `develop`. Wall bugs 3a/3b/3c + B29 + B28 + B31 fixed (see HISTORY.md). Occluder lifecycle path verified.
 
@@ -15,110 +15,74 @@ IsoRenderer refactor — Phases 0–11 complete, merged to `develop`. Wall bugs 
 ## Backlog
 
 - **Shadow params in presets** — shadow shape, radius, opacity, and enabled state should be included when saving/loading image presets for tiles and tokens. Currently presets only capture image transform fields.
+- **Compass / orientation HUD** — N/S/E/W indicator on the iso canvas; helps read direction. (INBOX 2026-07)
+- **Vertical sight** — line-of-sight accounting for elevation/height; not covered by any phase yet. (INBOX 2026-07)
+- **Reassess foreground-tile checkbox** — is the Iso-tab foreground checkbox still relevant to the current design? Decide keep/remove. (INBOX 2026-07)
 
 ---
 
-## Phase 6B — Per-Slice Fog Visibility 🔲 DEFERRED
+## Scene Painter Track (program P2–P9) — approved 2026-07-09
 
-### Deferred Reason
+> Canonical spec + contract + kill-log: `isoroll-content/SCENE-CREATION.md`. Content-side twin: `isoroll-content/ROADMAP-content-gen.md`. Every loop touching this track loads `/foundry` first.
 
-Per-slice fog creates hard immersion breaks: vertical-crop slice boundaries are visible
-in the fog edge, cutting the 3D tile silhouette in an obviously wrong way for voxel-art tiles.
-Whole-tile fog (broadcast from `slices[0]`) reinstated. Revisit only after finding a fog-edge
-approach that respects the tile's silhouette (e.g. silhouette mask, per-cell alpha, or
-geometry-aware fade rather than a hard crop boundary).
+Module-side phases, in dependency order:
 
-**Already implemented and committed:**
-- `sliceCellOverlaps()` in `src/render/iso-tile-geom.ts` — cell→slice mapping utility, ready for reuse.
-- `drawCellMarkers()` refactored in `src/render/iso-tile-debug-cells.ts` to call `sliceCellOverlaps`.
-- `applySliceFog()` logic in git working-tree history (never committed); see session 2026-06-30.
+1. **`module-walls-import` (P2, /loops medium)** — import scene manifest JSON (tiles + `WallDef[]`, schema = `src/walls/wall-types.d.ts`) → `createWallsFromDefs()` (`src/walls/wall-crud.ts`) + tile placement with `boundHeight`/`imageOffset` flags. Verify: gray l-room from content pipeline loads in live Foundry; wall count matches layout; vision blocked; `verify:full` green. Depends on content `export-manifest` loop.
+2. **TS assembler port (P4, /loops medium)** — port `scene_assemble.py` per-cell painter to TS (kit manifest → composed scene texture(s)). Verify: golden diff vs Python output on the l-room demo.
+3. **Floor/fog spike (P6, /loops high design + medium prototypes)** — floor must join the isoroll fog stack (`src/render/fog-apply.ts`, `fog-state.ts`, `iso-tile-fog-sync.ts` — sprites sit above Foundry default fog, darkened by isoroll). Prototype BOTH: (a) floor as isoroll tiles from merged massing strips; (b) live background regeneration (`transformBackground`, `backgroundYScale`, background gizmos). Measure slice count/perf + fog correctness. DECIDE here, record in SCENE-CREATION.md. ☐ Lucas co-decides.
+3.5. **Painter UX design (P6.5, design-first — added 2026-07-09 user request)** — interaction-design doc (contextual grammar, keys/mouse/HUD map) + clickable HTML prototype (browser, real gray-kit sprites) to iterate the "magic feel" before any Foundry code. ☐ Lucas plays prototype, iterates until it feels like magic. Output = the interaction spec P7 implements.
+4. **Painter MVP (P7, /loops high arch + medium code)** — implements the P6.5-approved interaction design as a new canvas layer: paint/erase wall/floor/door/window/stairs; autotile (blob/Wang bitmask; piece taxonomy in SCENE-CREATION.md § Painter grammar) picks kit pieces; live re-assembly via #2; WallDefs auto-registered; floor per #3; basic props layer. Verify: paint a room in live Foundry → walls/vision/fog correct without reload; interactions match P6.5 doc. ☐ usability session.
+5. **Multiview (P8)** — (a) dimetric view switch: rotation = cell remapping (never mirroring — chirality), wire the ORIENTATION-ROTATION HOOK (`src/render/iso-tile-depth.ts:21`), resolver facing selection (`src/resolver/asset-resolver.ts`, `DEFAULT_FACING` becomes dynamic), token 8-direction placeholder (`object-transform.ts`); (b) cardinal: second projection preset (custom projection flags exist) + cardinal kit art batch (content S0-E7). Verify: view toggle keeps z-order stable (`isoroll.dumpZOrderJSON()`); cross-view QC green.
+6. **Polish (P9)** — magic-feel pass (shortcuts + mouse + HUD redundancy, contextual grammar); Phase 5 door secondary image (below); door webm animations (desired; Foundry tiles play video natively). ☐ final usability + style verdict.
 
-### Context
-
-Slice z-ordering is solved. Each tile is split into `Wg+Hg-1` PIXI.Sprite slices on the
-`LAYER_KEYS.ISO_SPRITES` (`"iso-sprites"`) layer on `canvas.stage`. The cell→slice
-association algorithm is implemented in `src/render/iso-tile-geom.ts::sliceCellOverlaps`.
-
-**Layer warning (for future implementors):** A prior attempt applied fog to slices placed in the
-wrong layer — they appeared BEHIND the fog layer. Always use `LayerManager.ensureLayer(LAYER_KEYS.ISO_SPRITES)`
-— same call used in `_createTileSlices()` in `iso-tile-renderer.ts`.
-
-### Fog State Vocabulary
-
-No formal enum. Three states in the fog system:
-- **VISIBLE** — `testPointVisible(pt, viewers)` returns true → `tint = 0xffffff`, `visible = true`, id added to `seenTileIds`
-- **EXPLORED** — in `seenTileIds` but not currently visible → `tint = EXPLORED_TINT (0x808080)`, `visible = true`
-- **UNSEEN** — never seen, not visible → `visible = false` (if `hideOnFog=true`) or checked via `canvas.fog.isPointExplored` (if `hideOnFog=false`)
-
-Functions in `src/render/fog-state.ts`: `testPointVisible`, `testPerimeterVisible`, `applyNonVisibleFog`, `seenTileIds`, `EXPLORED_TINT`.
-Functions in `src/render/fog-apply.ts`: `applyTileFog` (current whole-tile version), `getViewers`.
-
-### Current behavior (to replace)
-
-`onSightRefresh()` in `iso-tile-renderer.ts:141–167`:
-1. Calls `applyTileFog(slices[0], ...)` — tests the whole tile AABB
-2. Broadcasts `slices[0].tint/visible/alpha/filters` to all other slices
-
-All slices share identical fog state — no per-slice granularity.
-
-### Target behavior
-
-Each slice gets fog state from the MAX visibility of its overlapping grid cells:
-- VISIBLE beats EXPLORED beats UNSEEN
-- Test each cell's world center with `testPointVisible({ x: cx + gs/2, y: cy + gs/2 }, viewers)`
-- Store per-cell result, then for each slice pick the best cell result
-- Apply tint/visible/alpha to that slice independently (not copied from slice[0])
-- `seenTileIds` stays at tile granularity (tracks if ANY slice was ever seen)
-
-### Implementation plan
-
-**Step 1 — Extract shared cell→slice overlap utility** (new export, probably in `iso-tile-geom.ts` or a new `iso-tile-cell-overlap.ts`):
-
-```typescript
-// Returns for each slice index the list of overlapping cell (dc,dr) pairs.
-// Same N/S corner algorithm as drawCellMarkers — NORTH=(cx+gs,cy), SOUTH=(cx,cy+gs).
-export function sliceCellOverlaps(
-  cuts: number[], fw: number, Wg: number, Hg: number,
-  snapX: number, snapY: number, gs: number,
-  ax: number, flipped: boolean, mesh: MeshRef
-): Map<number, Array<{dc: number; dr: number}>>
-```
-
-**Step 2 — New `applySliceFog` function** (new helper in `fog-apply.ts` or `iso-tile-renderer.ts`):
-
-```typescript
-function applySliceFog(
-  slices: PIXI.Sprite[], tile: Tile,
-  doc: PlaceableDoc, tileId: string,
-  hideOnFog: boolean, viewers: Token[]
-): void
-```
-
-Calls `sliceCellOverlaps`, then for each slice i:
-1. Get overlapping cells
-2. For each cell test `testPointVisible(cellCenter, viewers)`
-3. Best result → apply tint/visible to `slices[i]`
-4. Still add tileId to `seenTileIds` if ANY cell of ANY slice is currently visible
-
-**Step 3 — Wire into `onSightRefresh()`** — replace `applyTileFog` + broadcast loop with `applySliceFog`.
-
-### Key Files
-
-- `src/render/iso-tile-renderer.ts` — `onSightRefresh()` (lines 141–167), `_createTileSlices()` (line 62 for layer reference)
-- `src/render/iso-tile-debug-cells.ts` — `drawCellMarkers()` — source of truth for N/S corner algorithm and `sliceBounds` construction; duplicate logic to shared util
-- `src/render/fog-apply.ts` — `applyTileFog()` (current whole-tile impl to keep as fallback)
-- `src/render/fog-state.ts` — `testPointVisible`, `seenTileIds`, `EXPLORED_TINT`, `applyNonVisibleFog`
-- `src/render/layer-manager.ts` — `LAYER_KEYS.ISO_SPRITES = "iso-sprites"` — must match layer used in `buildSlice()`
-
-### Checklist
-
-- [x] Extract `sliceCellOverlaps()` utility (shared by debug + fog)
-- [x] Update `drawCellMarkers()` to call utility instead of inline logic
-- [x] Implement `applySliceFog()` using per-cell visibility tests
-- [x] Wire `applySliceFog()` into `onSightRefresh()` replacing the current whole-tile broadcast
-- [ ] Verify slices appear on the correct layer (not behind fog) — compare with `_createTileSlices` layer call
+Supersedes "Future — Multiview" below (kept for its INBOX notes). The 4+1-vs-8+1 question is DECIDED: 8+1, two art regimes (user decision 2026-07-09).
 
 ---
+
+## Phase 6 -- Iso-Diagonal Slice Depth Sorting :COMPLETE:
+
+### What was built
+
+All tiles are sliced into `Wg+Hg-1` `PIXI.Sprite` sub-frames (vertical bands of the original texture) and sorted on the `ISO_SPRITES` layer using PIXI's native `sortChildren()`. Tokens are inserted at a half-band offset between slices.
+
+**Depth formula (`src/render/iso-tile-depth.ts`)**
+- `depthZIndex(row, col, elev, band) = (row - col + elev) * DEPTH_SCALE + band`
+- `DEPTH_SCALE = 10000`, `TOKEN_BAND = 5000`
+- Tile slice band = `tileSortBand(tileId, peers)` -- peer tiebreaker based on `(document.sort, id)`
+- Each slice gets its own `zIndex` from `sliceDepthCell()`, which maps the slice to its nearest frontier face
+
+**PIXI layer setup (`src/render/iso-sprite-layer.ts`)**
+- `isoLayer.sortableChildren = true`
+- Ticker at priority `-25` forces `isoLayer.sortChildren()` every frame
+- Original tile meshes in `canvas.primary` are forced to `alpha=0` every tick
+
+### Key files
+
+- `src/render/iso-tile-renderer.ts` -- `_createTileSlices()` creates slices
+- `src/render/iso-tile-slice-build.ts` -- `buildSlice()` creates sub-frame sprites
+- `src/render/iso-tile-depth.ts` -- `depthZIndex()`, `frontierFaces()`, `sliceDepthCell()`, `tileSortBand()`
+- `src/render/iso-tile-zsync.ts` -- `syncTileZ()`, `tileBand()`
+- `src/render/iso-sprite-layer.ts` -- `_onTick()` drives `sortChildren()`
+
+### What was removed
+
+- `src/sorter/` (entire `DepthSorter` module) -- obsolete; incompatible with slice model
+- `IsoSpriteLayer._sort()` stub -- never called; sorting is done by PIXI
+- `src/render/iso-tile-debug-cells.ts` -- empty `drawCellMarkers()`, superseded by labels
+
+### Known limitations (future, not Phase 6)
+
+- `imageOffset` not handled in cut point calculation -- assumes `imageOffset=0`
+- Cross-tile cyclic occlusion possible with overlapping multi-cell tiles; no cycle detection yet
+- `tileSortBand` wraps at >5000 tiles (clamped to `TOKEN_BAND - 1`)
+
+### References
+
+- isometric-perspective fork `foreground.js`:
+  - `assignTileDepths()` (lines 316-341) -- banded depth model (no slicing)
+  - `computeTokenEntries()` (lines 354-406) -- token insertion between tile bands
+
+
 
 ## Phase 5 — Door Secondary Image 🔲 PENDING
 
@@ -148,127 +112,6 @@ Add a fourth door behavior mode `"image"` that swaps `tile.mesh.texture` to a co
 
 ---
 
-## Phase 6 — Painter's Algorithm: Research + Design Guidelines 🔲 PENDING
-
-### Problem
-
-The painter's algorithm (z-sort by key) breaks with cyclic occlusion: Tile A in front of B, B in front of C, C in front of A — no linear z-order satisfies all three. Inherent to isometric projection with arbitrarily-sized objects. Acute for multi-cell tiles: a single tile occupies multiple depth bands simultaneously, so one `zIndex` value is correct for part of the tile and wrong for the rest.
-
-Current `IsoSpriteLayer._sort()` is a stub (Phase 3 wiring only). No sort algorithm runs yet.
-
-### Core Design: Iso-Diagonal Slice Model
-
-**Insight (session 2026-06-11):** If every rendered object fits inside exactly one grid cell, painter's algorithm works — ties don't matter because adjacent cells never cyclically occlude each other. Multi-cell tiles break this because they straddle multiple depth bands simultaneously.
-
-**Solution: slice each multi-cell tile into per-iso-column strips, sort each strip independently.**
-
-#### Frontier Cells
-
-For a tile with footprint W×H grid cells (col 0..W-1, row 0..H-1), **frontier cells** are those on the SE-facing edges visible to the camera:
-
-```
-frontier(c, r) = (c == W-1) OR (r == H-1)
-```
-
-Example — 3×3 tile (iso projection, camera SE, depth = col+row):
-
-```
-iso-depth 0:      N              ← (0,0)  interior
-iso-depth 1:    N   N            ← (1,0),(0,1)  interior
-iso-depth 2:  F   N   F          ← (2,0),(1,1),(0,2)  edges=F, center=N
-iso-depth 3:    F   F            ← (2,1),(1,2)  both frontier
-iso-depth 4:      F              ← (2,2)  SE corner
-```
-
-Frontier count = W + H - 1. For 3×3: 5 frontier cells, 4 interior.
-
-#### Iso-Diagonal Columns (slices)
-
-In SE isometric projection, "iso-diagonal columns" are diagonals at constant `col - row`. For a W×H tile there are `W + H - 1` such diagonals (iso columns), indexed `k = 0..(W+H-2)`.
-
-Each iso column k contains all grid cells where `c - r = k - (H-1)`, clipped to the footprint. Sorting depth for iso column k = `tile_col + tile_row + k` (a continuous, monotonically increasing sequence across the tile).
-
-**Slicing maps tile image columns to iso-diagonal columns.** For an untransformed (counter-transformed) tile, the image x-axis aligns with the world's east direction, so image-space x increases monotonically with iso depth. This means:
-
-- Vertical cuts in image space at `W + H - 1` equally-spaced x-positions produce `W + H - 1` rectangular slices
-- Each slice i gets depth key = `tile_base_depth + i`
-- Adjacent slices are in strict depth order — no ties, no cycles within the tile itself
-- Each slice is an independent `PIXI.Sprite` (sub-frame of shared base texture, zero extra VRAM)
-
-#### Cut Point Calculation
-
-For an untransformed tile, the iso projection maps grid cell (c, r) to image-space x:
-
-```
-x_img(c, r) = img_width * (c * cos_θ - r * sin_θ + offset) / projected_tile_width
-```
-
-where θ is the iso stage rotation angle, and `projected_tile_width` is the tile's full width in iso-projected image space.
-
-Simpler approximation for implementation:
-- Iso column k → image x cut at `x_k = img_width * k / (W + H - 1)`
-- This is correct when imageOffset = 0 and the tile exactly fills its footprint
-- With imageOffset: shift all cut points by `imageOffset.x * gridSize / img_width`
-
-**Recompute when:** tile is dropped after drag, `imageOffset` changes, or scene gridSize changes. Not per-frame. Cache as `flags.isoroll.sliceCuts: number[]` (or compute on demand from flag values at draw time).
-
-#### Slice Depth Assignment
-
-```
-slice[i].zIndex = (tile_col + tile_row) * BAND + i
-```
-
-where `BAND` is large enough to separate tile sort bands without collision (e.g. `BAND = W + H` rounded up to next power of 2, or a fixed `BAND = 256` safe for tiles up to 256 cells wide).
-
-#### Token Insertion
-
-After tile slices have depth keys, insert each token clone between the slices it belongs between:
-
-- Token at `(tx, ty)` with size `(tw, th)` — compute its iso column: `k_token = tx/gridSize - ty/gridSize + (H - 1)` relative to the tile
-- Token depth = `(tile_col + tile_row) * BAND + k_token + 0.5` (float, between two slice keys)
-- Token renders in front of all slices at iso columns < k_token, behind all slices at iso columns > k_token
-
-#### Cyclic Occlusion (residual problem)
-
-Slicing eliminates within-tile cycles. Cross-tile cycles (Tile A slice in front of Tile B, but another slice of B in front of A) can still occur with overlapping tiles. This is inherent to painter's algorithm — Phase 6 research evaluates whether cycle detection or user-facing `document.sort` bands are the right mitigation.
-
-### Implementation Changes vs Phase 3
-
-| Phase 3 | Phase 6 |
-|---------|---------|
-| `tileClones: Map<string, PIXI.Sprite>` | `tileSlices: Map<string, PIXI.Sprite[]>` |
-| one Sprite per tile | `W+H-1` Sprites per tile, shared base texture |
-| `createTileClone(t)` | `createTileSlices(t)` — creates N sprites with `texture.frame` sub-rects |
-| `syncSprite(clone, mesh)` | `syncSlice(slices, mesh)` — update positions of all slices |
-| single `clone.zIndex` | each slice has its own zIndex |
-| `removeClone(...)` | destroy all slice sprites |
-
-`tokenClones` structure unchanged — tokens are already 1-cell sorted (or small enough that depth error is imperceptible).
-
-### Checklist
-
-- [x] Verify iso projection → image-space x mapping formula — uniform vertical cuts in image-x suffice; image-x increases monotonically with depth for counter-transformed tiles
-- [x] Implement `createTileSlices(tile)` using `PIXI.Texture` frame sub-rects (`_createTileSlices` in `src/render/iso-sprite-layer.ts`)
-- [x] Implement `syncSlices(slices, mesh)` — position all slices, keep them clipped to the corresponding image band (`_syncSlice`)
-- [x] Implement token depth insertion between tile slices — tokens use `(x/gs + y/gs + elev/gs) * DEPTH_SCALE`; tiles use `(baseDepth + i) * DEPTH_SCALE`; tokens interleave at their depth
-- [ ] Handle `imageOffset` shift in cut point calculation — deferred; cut formula assumes imageOffset=0 (correct for most tiles)
-- [ ] Research cyclic occlusion between different tiles (topological sort vs. `document.sort` bands)
-- [ ] Write recommendations: at what tile count does O(n²) cycle detection become expensive?
-- [ ] If sort-band UI is viable: add sort-band field to Iso tab in `src/ui/tile-config.ts`
-
-### Key Files
-
-- `src/render/iso-sprite-layer.ts` — `_sort()` stub, `tileClones` (becomes `tileSlices`)
-- `src/sorter/depth-sorter.ts` — `DepthSorter.sort()` calls `IsoSpriteLayer._sort()`
-- `src/transform/` — iso projection params needed for cut point formula
-
-### References
-
-- isometric-perspective fork `foreground.js`:
-  - `assignTileDepths()` (lines 316–341) — banded depth model (no slicing — tiles treated as single units, which is the problem we're solving)
-  - `computeTokenEntries()` (lines 354–406) — token insertion between tile bands
-
----
 
 ## Phase 7 — Image Edit Mode UX 🔲 PENDING
 
@@ -332,10 +175,10 @@ Stance switching exists but lacks system integration and manual override.
 
 ---
 
-## Future — Multiview 🔲 DEFERRED
+## Future — Multiview → PROMOTED to Scene Painter Track item 5 (P8)
 
-- 8 directional facings + TOP
-- Auto-detect from token movement direction
+- 8 directional facings + TOP — DECIDED 8+1 (2026-07-09): dimetric regime = cell remapping of existing art; cardinal regime = new kit art (content S0-E7) + cardinal projection preset.
+- Auto-detect from token movement direction — still open, part of P8 token work.
 
 ## Future — Animations 🔲 DEFERRED
 
