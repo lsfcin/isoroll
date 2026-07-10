@@ -1,0 +1,547 @@
+{
+  "scene": "l-room",
+  "view": "NW",
+  "pxPerVoxel": 96,
+  "tiles": [
+    {
+      "piece": "floor",
+      "asset": "floor.png",
+      "facing": "NW",
+      "u": 1,
+      "v": 1,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.5,
+        0.07142857142857142
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "floor",
+      "asset": "floor.png",
+      "facing": "NW",
+      "u": 1,
+      "v": 2,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.5,
+        0.07142857142857142
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "floor",
+      "asset": "floor.png",
+      "facing": "NW",
+      "u": 1,
+      "v": 3,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.5,
+        0.07142857142857142
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "floor",
+      "asset": "floor.png",
+      "facing": "NW",
+      "u": 1,
+      "v": 4,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.5,
+        0.07142857142857142
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "floor",
+      "asset": "floor.png",
+      "facing": "NW",
+      "u": 1,
+      "v": 5,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.5,
+        0.07142857142857142
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "floor",
+      "asset": "floor.png",
+      "facing": "NW",
+      "u": 1,
+      "v": 6,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.5,
+        0.07142857142857142
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 0,
+      "v": 0,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 1,
+      "v": 0,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "window_u",
+      "asset": "window_u.png",
+      "facing": "NW",
+      "u": 2,
+      "v": 0,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 3,
+      "v": 0,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 4,
+      "v": 0,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 0,
+      "v": 1,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 4,
+      "v": 1,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 0,
+      "v": 2,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 4,
+      "v": 2,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 0,
+      "v": 3,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 4,
+      "v": 3,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 0,
+      "v": 4,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 4,
+      "v": 4,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 5,
+      "v": 4,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 6,
+      "v": 4,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 7,
+      "v": 4,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 0,
+      "v": 5,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 7,
+      "v": 5,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 0,
+      "v": 6,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "door_v",
+      "asset": "door_v.png",
+      "facing": "NW",
+      "u": 7,
+      "v": 6,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 0,
+      "v": 7,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 1,
+      "v": 7,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 2,
+      "v": 7,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 3,
+      "v": 7,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 4,
+      "v": 7,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 5,
+      "v": 7,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 6,
+      "v": 7,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    },
+    {
+      "piece": "wall",
+      "asset": "wall.png",
+      "facing": "NW",
+      "u": 7,
+      "v": 7,
+      "boundHeight": 3,
+      "imageOffset": [
+        0.5,
+        0.74
+      ],
+      "pxPerVoxel": 96
+    }
+  ],
+  "walls": [
+    {
+      "ax": 0.0,
+      "ay": 0.0,
+      "bx": 0.625,
+      "by": 0.125,
+      "topOffset": 3,
+      "bottomOffset": 0,
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.5,
+      "ay": 0.5,
+      "bx": 1.0,
+      "by": 0.625,
+      "topOffset": 3,
+      "bottomOffset": 0,
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.0,
+      "ay": 0.875,
+      "bx": 1.0,
+      "by": 1.0,
+      "topOffset": 3,
+      "bottomOffset": 0,
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.0,
+      "ay": 0.125,
+      "bx": 0.125,
+      "by": 0.875,
+      "topOffset": 3,
+      "bottomOffset": 0,
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.5,
+      "ay": 0.125,
+      "bx": 0.625,
+      "by": 0.5,
+      "topOffset": 3,
+      "bottomOffset": 0,
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.875,
+      "ay": 0.625,
+      "bx": 1.0,
+      "by": 0.875,
+      "topOffset": 3,
+      "bottomOffset": 0,
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    }
+  ]
+}

@@ -60,3 +60,9 @@ class StubContainer {
   user: { isGM: true },
 };
 (globalThis as any).canvas = { grid: { size: 100, distance: 5 } };
+
+// import-scene-manifest.ts (T4) notifies via ui.notifications on validation failure — stub so
+// pure-logic tests don't crash on an undeclared global; tests assert on throw/call-count, not UI.
+(globalThis as any).ui = {
+  notifications: { error: () => undefined, warn: () => undefined, info: () => undefined },
+};

@@ -8,8 +8,28 @@ import { BackgroundGizmos } from "../background";
 import { TileHud, TokenHud } from "../hud";
 import { WallManager, WallOverlay } from "../walls";
 import { LayerManager, LAYER_KEYS, IsoSpriteLayer, RenderGate } from "../render";
-import { debugSlices, debugGrid, debugZOrder, dumpZOrder, dumpZOrderJSON, scheduleDumpZOrder } from "../render";
+import {
+  debugSlices,
+  debugGrid,
+  debugZOrder,
+  dumpZOrder,
+  dumpZOrderJSON,
+  scheduleDumpZOrder,
+} from "../render";
 import type { TokenRenderer, TileRenderer } from "../render";
+import { importSceneManifest } from "../import";
+
+function registerIsorollGlobal(): void {
+  (globalThis as Record<string, unknown>).isoroll = {
+    importSceneManifest,
+    debugSlices,
+    debugGrid,
+    debugZOrder,
+    dumpZOrder,
+    dumpZOrderJSON,
+    scheduleDumpZOrder,
+  };
+}
 
 Hooks.once("init", () => {
   registerVolumeSettings();
@@ -45,13 +65,6 @@ Hooks.once("init", () => {
     LAYER_KEYS.WALL_OVERLAY,
   ]);
 
-  (globalThis as Record<string, unknown>).isoroll = {
-    debugSlices,
-    debugGrid,
-    debugZOrder,
-    dumpZOrder,
-    dumpZOrderJSON,
-    scheduleDumpZOrder,
-  };
+  registerIsorollGlobal();
   console.log("isoroll | initialized");
 });
