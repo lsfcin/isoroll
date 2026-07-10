@@ -14,6 +14,7 @@ IsoRenderer refactor — Phases 0–11 complete, merged to `develop`. Wall bugs 
 
 ## Backlog
 
+- **P4 — TS scene assembler (`ts-assembler`)** ✅ DONE — Pure TS twin of scene_assemble.py in src/assemble/; golden-diff parity vs Python on l-room + novel twin-room fixture (4 views, tie-rule validation, 59/59 tests green).
 - **Shadow params in presets** — shadow shape, radius, opacity, and enabled state should be included when saving/loading image presets for tiles and tokens. Currently presets only capture image transform fields.
 
 ---
