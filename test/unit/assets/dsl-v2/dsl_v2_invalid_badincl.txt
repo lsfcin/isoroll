@@ -1,0 +1,5 @@
+name: dsl-v2-invalid-badincl
+
+level 0:
+S
+stair: 0,0 0,0 form=solid dir=E incl=3ft z=0

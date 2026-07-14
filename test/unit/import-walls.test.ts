@@ -98,3 +98,40 @@ describe("manifestWallsToDefs — passthrough", () => {
     expect(defs[1].config).toEqual({ door: 1 });
   });
 });
+
+// C3 (dsl-v2-ts-twin, .loop/dsl-v2-ts-twin/3-arch.md, PIN-4) — WallDef.dir from opening side:
+// ManifestWall.dir (Python `"dir": box.axis`, a "u"/"v" wall-run axis) must pass through onto
+// the returned WallDef. Distinct from WallDef.config.dir (numeric door-swing side) — PIN-4 flags
+// this as the landmine a medium executor will likely confuse. Currently NOT passed through in
+// import-walls.ts — this is the not-yet-implemented seam (Loop 4b, T7 + wall-types.ts).
+describe("manifestWallsToDefs — dir passthrough (C3, PIN-4)", () => {
+  it("passes ManifestWall.dir through onto WallDef.dir, distinct from config.dir", () => {
+    const wall = {
+      ax: 0,
+      ay: 0,
+      bx: 0.5,
+      by: 0,
+      topOffset: 3,
+      bottomOffset: 0,
+      config: { dir: 1 }, // numeric door-swing side — must NOT be confused with the new field
+      dir: "u",
+    } as unknown as ManifestWall;
+    const [def] = manifestWallsToDefs([wall], fakeFrame(400, 400, 100), 8, 8, 100);
+    expect((def as unknown as { dir?: string }).dir).toBe("u");
+    expect(def.config).toEqual({ dir: 1 });
+  });
+
+  it("existing back-compat guard: no dir on the manifest wall yields no dir on WallDef", () => {
+    const wall: ManifestWall = {
+      ax: 0,
+      ay: 0,
+      bx: 0.5,
+      by: 0,
+      topOffset: 3,
+      bottomOffset: 0,
+      config: {},
+    };
+    const [def] = manifestWallsToDefs([wall], fakeFrame(400, 400, 100), 8, 8, 100);
+    expect(Object.prototype.hasOwnProperty.call(def, "dir")).toBe(false);
+  });
+});

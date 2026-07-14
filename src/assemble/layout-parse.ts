@@ -1,9 +1,13 @@
 // T3 — TS twin of layout_parse.py (DSL subset): parse, validate, rotate.
-import { readFileSync } from "node:fs";
-import { basename, extname } from "node:path";
-
+// Node-only load(path) lives in ./load.ts — kept out of this file so browser bundles that reach
+// parseText/rotateCw/massing (e.g. via spike-floor) never pull in "node:fs".
 import { DEFAULT_WALL_H, DOOR, FLOOR, SOLID, STAIRS, VOID, WINDOW } from "./types";
 import type { Layout } from "./types";
+// v2 (dsl-v2-ts-twin, T4): parseText dispatches "level N:" DSL text to the v2 parser. Static,
+// one-directional import (layout-dsl-v2 never imports back) — no cycle (3-arch.md module graph).
+import { parseTextV2 } from "./layout-dsl-v2";
+
+const HAS_LEVEL = /^level \d+:$/m;
 
 const KNOWN = new Set<string>([...SOLID, FLOOR, VOID, ...STAIRS]);
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -77,36 +81,36 @@ export function validate(layout: Layout): Layout {
 }
 
 export function parseText(text: string, name = "layout"): Layout {
-  const lines = text.split("\n");
-  const split = splitDirectives(lines);
-  const directives = split.directives;
-  const gridLines = split.gridLines;
-  const lineLengths = gridLines.map((l) => l.length);
-  const cols = lineLengths.length > 0 ? Math.max(...lineLengths) : 0;
-  const grid = gridLines.map((l) => l.padEnd(cols, " "));
-  const wallHRaw = directives.wall_h;
-  const wallH = wallHRaw !== undefined ? parseInt(wallHRaw, 10) : DEFAULT_WALL_H;
-  const layoutName = directives.name ?? name;
-  const layout: Layout = {
-    name: layoutName,
-    grid,
-    wallH,
-    rows: grid.length,
-    cols,
-    errors: [],
-    warnings: [],
-  };
-  if (grid.length === 0) {
-    layout.errors.push("empty grid");
+  const isV2 = HAS_LEVEL.test(text);
+  let layout: Layout;
+  if (isV2) {
+    layout = parseTextV2(text, name);
+  } else {
+    const lines = text.split("\n");
+    const split = splitDirectives(lines);
+    const directives = split.directives;
+    const gridLines = split.gridLines;
+    const lineLengths = gridLines.map((l) => l.length);
+    const cols = lineLengths.length > 0 ? Math.max(...lineLengths) : 0;
+    const grid = gridLines.map((l) => l.padEnd(cols, " "));
+    const wallHRaw = directives.wall_h;
+    const wallH = wallHRaw !== undefined ? parseInt(wallHRaw, 10) : DEFAULT_WALL_H;
+    const layoutName = directives.name ?? name;
+    const built: Layout = {
+      name: layoutName,
+      grid,
+      wallH,
+      rows: grid.length,
+      cols,
+      errors: [],
+      warnings: [],
+    };
+    if (grid.length === 0) {
+      built.errors.push("empty grid");
+    }
+    layout = validate(built);
   }
-  return validate(layout);
-}
-
-export function load(path: string): Layout {
-  const text = readFileSync(path, "utf-8");
-  const ext = extname(path);
-  const name = basename(path, ext);
-  return parseText(text, name);
+  return layout;
 }
 
 export function kind(layout: Layout, u: number, v: number): string {

@@ -1,0 +1,11 @@
+name: dsl-v2-groups
+
+level 0:
+ 
+S
+
+level 1:
+RRRR
+ S
+roof: 0,0 0,3 form=flat dir=N incl=5ft z=1 enclose=none
+stair: 1,0 1,1 form=solid dir=E incl=5ft z=0

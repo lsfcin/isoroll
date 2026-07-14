@@ -1,5 +1,6 @@
 # isoroll-module
 > Foundry VTT v14 isometric projection module — TypeScript + Vite + SCSS.
+> goal: [rpg-isoroll](../../brain/goals/rpg-isoroll.md)
 
 > **Foundry v14 patterns, gotchas, and coordinate math → `/foundry` skill**
 > (`core/skills/foundry.md` — run `/foundry` at session start)
@@ -87,4 +88,5 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
 | [`vite.config.ts`](vite.config.ts) | — | — | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
 | [`vitest.config.ts`](vitest.config.ts) | — | — | Vitest config — T1 unit tests for pure math modules (see workspace VERIFY.md). |
+| [`vitest.scenario.config.ts`](vitest.scenario.config.ts) | — | — | Loop 5 (.loop/dsl-v2-ts-twin) — scratch config to run the DSL v2 twin user-scenario script, |
 <!-- routing:end -->

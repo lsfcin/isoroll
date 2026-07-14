@@ -7,6 +7,9 @@ export declare const WINDOW = "W";
 export declare const STAIRS: readonly ["^", ">", "v", "<"];
 export declare const SOLID: string[];
 export declare const DEFAULT_WALL_H = 3;
+export declare const MARKERS: Set<string>;
+export declare const COMPASS_TO_ARROW: Record<string, string>;
+export declare const KNOWN_V2: Set<string>;
 export interface Layout {
     name: string;
     grid: string[];
@@ -15,6 +18,24 @@ export interface Layout {
     cols: number;
     errors: string[];
     warnings: string[];
+    levels?: Record<number, Level>;
+    groups?: Group[];
+}
+export interface Level {
+    g: string[];
+    side?: Record<string, string | number>;
+    type?: Record<string, string | number>;
+    wmat?: Record<string, string | number>;
+    fh?: Record<string, string | number>;
+}
+export interface Group {
+    kind: "roof" | "stair";
+    cells: [number, number][];
+    form: number;
+    dir: string;
+    incl: number;
+    z: number;
+    enclose: number | null;
 }
 export interface Opening {
     kind: "door" | "window";
@@ -26,9 +47,10 @@ export interface Box {
     l: number;
     d: number;
     h: number;
-    kind: "wall" | "floor" | "step";
+    kind: "wall" | "floor" | "step" | "GRP";
     openings: Opening[];
     axis: "u" | "v";
+    z0?: number;
 }
 export interface KitPieceMeta {
     origin: [number, number];

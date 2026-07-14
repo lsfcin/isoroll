@@ -15,6 +15,7 @@ IsoRenderer refactor — Phases 0–11 complete, merged to `develop`. Wall bugs 
 ## Backlog
 
 - **P4 — TS scene assembler (`ts-assembler`)** ✅ DONE — Pure TS twin of scene_assemble.py in src/assemble/; golden-diff parity vs Python on l-room + novel twin-room fixture (4 views, tie-rule validation, 59/59 tests green).
+- **P6 floor/fog spike (`floor-fog-spike`)** 🔲 IN FLOW — evidence spike: floor-as-iso-tiles (merged strips) vs live background regen, measured for fog participation. Plan: `.loop/floor-fog-spike/1-plan.md`. Decision left OPEN for Lucas (☐ co-decide); resolves SCENE-CREATION § Floor/background.
 - **Shadow params in presets** — shadow shape, radius, opacity, and enabled state should be included when saving/loading image presets for tiles and tokens. Currently presets only capture image transform fields.
 
 ---

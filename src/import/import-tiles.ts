@@ -13,7 +13,9 @@ export function manifestTileToData(t: ManifestTile, gridSize: number, assetBase:
       isoroll: {
         presetEnabled: true,
         boundHeight: t.boundHeight,
-        baseElevation: 0,
+        // v2 (dsl-v2-ts-twin, T7, C3): tile elevation from level/z0 — OPTIONAL manifest field,
+        // 0 is the v1 back-compat default (PIN-4).
+        baseElevation: t.z ?? 0,
         imageOffset: { x: t.imageOffset[0], y: t.imageOffset[1] },
       },
     },

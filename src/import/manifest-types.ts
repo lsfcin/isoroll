@@ -12,6 +12,9 @@ export interface ManifestTile {
   boundHeight: number;
   imageOffset: [number, number];
   pxPerVoxel: number;
+  // v2 (dsl-v2-ts-twin, T7, PIN-4): tile elevation from level/z0 (Python "z": box.z0). OPTIONAL —
+  // v1 manifests never set this; back-compat tiles keep baseElevation 0.
+  z?: number;
 }
 
 // Scene-grid-normalized wall endpoints (ax/ay/bx/by ∈ [0,1] over the full cols×rows layout) —
@@ -22,6 +25,9 @@ export type ManifestWall = Pick<WallDef, "topOffset" | "bottomOffset" | "config"
   ay: number;
   bx: number;
   by: number;
+  // v2 (dsl-v2-ts-twin, T7, PIN-4): wall-run axis (Python "dir": box.axis, "u"|"v") — distinct
+  // from config.dir (numeric door-swing side). OPTIONAL — v1 manifests never set this.
+  dir?: "u" | "v";
 };
 
 export interface SceneManifest {

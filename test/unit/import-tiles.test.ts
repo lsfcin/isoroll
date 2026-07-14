@@ -82,3 +82,23 @@ describe("manifestTileToData — texture + flags", () => {
     expect(data.flags.isoroll.imageOffset).toEqual({ x: 0.25, y: -0.4 });
   });
 });
+
+// C3 (dsl-v2-ts-twin, .loop/dsl-v2-ts-twin/3-arch.md, PIN-4) — tile elevation from level/z0:
+// ManifestTile.z (optional, from a v2 GRP box's z0) must flow through to flags.isoroll.baseElevation.
+// Currently hardcoded to 0 in import-tiles.ts — this is the not-yet-implemented seam (Loop 4b, T7).
+describe("manifestTileToData — z -> baseElevation (C3)", () => {
+  it("sets baseElevation from manifest tile z when present", () => {
+    const tileWithZ = { ...baseTile(), z: 5 } as ManifestTile & { z: number };
+    const data = manifestTileToData(tileWithZ, 100, "base") as {
+      flags: { isoroll: { baseElevation: number } };
+    };
+    expect(data.flags.isoroll.baseElevation).toBe(5);
+  });
+
+  it("existing back-compat guard: no z on the manifest tile still yields baseElevation 0", () => {
+    const data = manifestTileToData(baseTile({}), 100, "base") as {
+      flags: { isoroll: { baseElevation: number } };
+    };
+    expect(data.flags.isoroll.baseElevation).toBe(0);
+  });
+});

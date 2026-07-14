@@ -9,12 +9,14 @@ export interface ManifestTile {
     boundHeight: number;
     imageOffset: [number, number];
     pxPerVoxel: number;
+    z?: number;
 }
 export type ManifestWall = Pick<WallDef, "topOffset" | "bottomOffset" | "config"> & {
     ax: number;
     ay: number;
     bx: number;
     by: number;
+    dir?: "u" | "v";
 };
 export interface SceneManifest {
     scene: string;
