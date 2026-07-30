@@ -91,3 +91,15 @@ config popup opens, which our hooks interpret as a deselect.
 **Open question:** Is this the right UX? Overlays are editing tools — having them disappear
 while the config popup is open may be intentional (reduces clutter). The cost is one
 extra click (reselect) after closing the popup. Decide before fixing.
+
+## B28 — Painter/kit lighting rotates WITH the camera
+
+**Symptom (Lucas 2026-07-15):** rotating the view changes nothing about which faces are
+lit — the "sun" follows the camera. A south-facing wall should keep its world-lit tone
+while the camera yaws; instead every view gets identical FACE_TOP/LONG/CAP shading.
+
+**Root cause:** grayscale face ramp is assigned by SCREEN role per view
+(`tile_guide_render.py` convention, mirrored in `kit_module_render.py`), not by world
+normal. Fix = shade from world-frame face normal with a fixed sun (rotate normals per
+yaw). Same machinery as the normal-map lane (content ROADMAP.md § RICHNESS).
+Also: painter must support all 9 views (8 yaws + TOP) — content ROADMAP.md § PLAYABLE, D2.
