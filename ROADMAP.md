@@ -1,14 +1,14 @@
 # isoroll — Roadmap
-> Pending work only. Completed milestones move to HISTORY.md. See [SPECS.md](SPECS.md) for design decisions and [SETUP.md](SETUP.md) for dev setup.
+> Pending work only — a finished item is cut, not ticked; done work is deleted and git is the history. See [SPECS.md](SPECS.md) for design decisions and [SETUP.md](SETUP.md) for dev setup.
 
 <!-- Goal: agent-ready roadmap. Each milestone includes file paths, function names, flag names,
      and technical context sufficient for implementation without prior session context. -->
 
 ## Status
 
-Feature Phases 3 + 4 complete (see HISTORY.md). **Phase 5 (door secondary image) is next feature priority.**
+Feature Phases 3 + 4 complete. **Phase 5 (door secondary image) is next feature priority.**
 
-IsoRenderer refactor — Phases 0–11 complete, merged to `develop`. Wall bugs 3a/3b/3c + B29 + B28 + B31 fixed (see HISTORY.md). Occluder lifecycle path verified.
+IsoRenderer refactor — Phases 0–11 complete, merged to `develop`. Wall bugs 3a/3b/3c + B29 + B28 + B31 fixed. Occluder lifecycle path verified.
 
 **Active branch:** `develop` — Phase 6 slice z-ordering complete and merged. Phase 6B (per-slice fog) deferred (see below). B28 and B31 resolved this session.
 

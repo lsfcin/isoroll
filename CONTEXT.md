@@ -78,7 +78,6 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
-| [`HISTORY.md`](HISTORY.md) | — | — | History |
 | [`BUGS.md`](BUGS.md) | — | — | isoroll-module — Known Bugs |
 | [`REFACTOR.md`](REFACTOR.md) | — | — | IsoRenderer Refactor — Phase 9+ |
 | [`ROADMAP.md`](ROADMAP.md) | — | — | isoroll — Roadmap |

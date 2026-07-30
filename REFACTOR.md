@@ -1,6 +1,5 @@
 # IsoRenderer Refactor — Phase 9+
 > Phases 0–8 complete on branch `refactor/iso-renderer`.
-> Full design doc and completed phase history archived in HISTORY.md.
 > This file covers remaining cleanup and architectural gaps found in post-Phase-8 audit (2026-06-19).
 
 ---
