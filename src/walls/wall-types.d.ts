@@ -19,6 +19,7 @@ export interface WallDef {
     topOffset: number;
     bottomOffset: number;
     config: Partial<WallConfig>;
+    dir?: "u" | "v";
 }
 /** Stored in wall flags so WallManager can recompute position on tile move/resize. */
 export interface TileAnchor {
