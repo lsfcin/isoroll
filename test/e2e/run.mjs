@@ -10,8 +10,9 @@ import b32real from "./b32-real-junction.spec.mjs";
 import b35 from "./b35-stale-sync.spec.mjs";
 import goldenJunction from "./golden-junction.spec.mjs";
 import importManifest from "./import-manifest.spec.mjs";
+import importCabin from "./import-cabin.spec.mjs";
 
-const specs = [b32, b33, b2, b34, b35, b32real, goldenJunction, importManifest];
+const specs = [b32, b33, b2, b34, b35, b32real, goldenJunction, importManifest, importCabin];
 
 let browser;
 let page;

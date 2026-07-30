@@ -1,0 +1,2256 @@
+{
+  "scene": "cabin",
+  "view": "E",
+  "pxPerVoxel": 126.0,
+  "chunk": {
+    "index": [
+      0,
+      0
+    ],
+    "cols": 7,
+    "rows": 10
+  },
+  "tiles": [
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 1,
+      "v": 1,
+      "z": 0,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 1,
+      "v": 2,
+      "z": 0,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 1,
+      "v": 3,
+      "z": 0,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 4,
+      "v": 3,
+      "z": 0,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 1,
+      "v": 5,
+      "z": 0,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 1,
+      "v": 6,
+      "z": 0,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 1,
+      "v": 7,
+      "z": 0,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 1,
+      "v": 8,
+      "z": 0,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 1,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 2,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 3,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 4,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 5,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 1,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 1,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 2,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 2,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "door_v",
+      "mat": "stone",
+      "side": "",
+      "asset": "door_v.png",
+      "facing": "E",
+      "u": 0,
+      "v": 3,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        172.35931829197023
+      ],
+      "sizePx": [
+        182,
+        262
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 3,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 4,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 1,
+      "v": 4,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 2,
+      "v": 4,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 3,
+      "v": 4,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "door_u",
+      "mat": "stone",
+      "side": "",
+      "asset": "door_u.png",
+      "facing": "E",
+      "u": 4,
+      "v": 4,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        18.909545442950503,
+        252.4522727852475
+      ],
+      "sizePx": [
+        20,
+        342
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 5,
+      "v": 4,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 4,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 5,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 5,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 6,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 6,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 7,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 7,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 8,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 8,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 0,
+      "v": 9,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 1,
+      "v": 9,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 2,
+      "v": 9,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "window_u",
+      "mat": "stone",
+      "side": "",
+      "asset": "window_u.png",
+      "facing": "E",
+      "u": 3,
+      "v": 9,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        18.909545442950503,
+        126.45227278524749
+      ],
+      "sizePx": [
+        20,
+        216
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 4,
+      "v": 9,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 5,
+      "v": 9,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "wood",
+      "side": "",
+      "asset": "wall__wood.png",
+      "facing": "E",
+      "u": 6,
+      "v": 9,
+      "z": 0,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 3,
+      "v": 1,
+      "z": 2,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 3,
+      "v": 2,
+      "z": 2,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 3,
+      "v": 3,
+      "z": 2,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor.png",
+      "facing": "E",
+      "u": 5,
+      "v": 3,
+      "z": 2,
+      "boundHeight": 0,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "sizePx": [
+        182,
+        106
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 2,
+      "v": 0,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 3,
+      "v": 0,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 4,
+      "v": 0,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 5,
+      "v": 0,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 6,
+      "v": 0,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 2,
+      "v": 1,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 6,
+      "v": 1,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 2,
+      "v": 2,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 6,
+      "v": 2,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 2,
+      "v": 3,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 6,
+      "v": 3,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 2,
+      "v": 4,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 3,
+      "v": 4,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 4,
+      "v": 4,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 5,
+      "v": 4,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone.png",
+      "facing": "E",
+      "u": 6,
+      "v": 4,
+      "z": 2,
+      "boundHeight": 2,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "sizePx": [
+        182,
+        468
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "stair",
+      "mat": "",
+      "side": "E",
+      "asset": "stair_E.png",
+      "facing": "E",
+      "u": 4,
+      "v": 3,
+      "z": 1,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        59.20227278524749
+      ],
+      "sizePx": [
+        182,
+        50
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "stair",
+      "mat": "",
+      "side": "E",
+      "asset": "stair_E.png",
+      "facing": "E",
+      "u": 3,
+      "v": 3,
+      "z": 0,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        59.20227278524749
+      ],
+      "sizePx": [
+        182,
+        50
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 5,
+      "v": 5,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 5,
+      "v": 6,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 5,
+      "v": 7,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 5,
+      "v": 8,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 4,
+      "v": 5,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 4,
+      "v": 6,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 4,
+      "v": 7,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 4,
+      "v": 8,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 3,
+      "v": 5,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 3,
+      "v": 6,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 3,
+      "v": 7,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 3,
+      "v": 8,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 2,
+      "v": 5,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 2,
+      "v": 6,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 2,
+      "v": 7,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 2,
+      "v": 8,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 1,
+      "v": 5,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 1,
+      "v": 6,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 1,
+      "v": 7,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    },
+    {
+      "piece": "roof",
+      "mat": "",
+      "side": "E",
+      "asset": "roof_E.png",
+      "facing": "E",
+      "u": 1,
+      "v": 8,
+      "z": 2,
+      "boundHeight": 1,
+      "imageOffset": [
+        0.0,
+        0.0
+      ],
+      "originPx": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "sizePx": [
+        182,
+        178
+      ],
+      "pxPerVoxel": 126.0
+    }
+  ],
+  "walls": [
+    {
+      "ax": 0.0,
+      "ay": 0.0,
+      "bx": 1.0,
+      "by": 0.1,
+      "topOffset": 2,
+      "bottomOffset": 0,
+      "boundHeight": 2,
+      "dir": "u",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.0,
+      "ay": 0.4,
+      "bx": 1.0,
+      "by": 0.5,
+      "topOffset": 2,
+      "bottomOffset": 0,
+      "boundHeight": 2,
+      "dir": "u",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.0,
+      "ay": 0.9,
+      "bx": 1.0,
+      "by": 1.0,
+      "topOffset": 2,
+      "bottomOffset": 0,
+      "boundHeight": 2,
+      "dir": "u",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.0,
+      "ay": 0.1,
+      "bx": 0.14285714285714285,
+      "by": 0.4,
+      "topOffset": 2,
+      "bottomOffset": 0,
+      "boundHeight": 2,
+      "dir": "v",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.0,
+      "ay": 0.5,
+      "bx": 0.14285714285714285,
+      "by": 0.9,
+      "topOffset": 2,
+      "bottomOffset": 0,
+      "boundHeight": 2,
+      "dir": "v",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.8571428571428571,
+      "ay": 0.1,
+      "bx": 1.0,
+      "by": 0.4,
+      "topOffset": 2,
+      "bottomOffset": 0,
+      "boundHeight": 2,
+      "dir": "v",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.8571428571428571,
+      "ay": 0.5,
+      "bx": 1.0,
+      "by": 0.9,
+      "topOffset": 2,
+      "bottomOffset": 0,
+      "boundHeight": 2,
+      "dir": "v",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.2857142857142857,
+      "ay": 0.0,
+      "bx": 1.0,
+      "by": 0.1,
+      "topOffset": 2,
+      "bottomOffset": 2,
+      "boundHeight": 2,
+      "dir": "u",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.2857142857142857,
+      "ay": 0.4,
+      "bx": 1.0,
+      "by": 0.5,
+      "topOffset": 2,
+      "bottomOffset": 2,
+      "boundHeight": 2,
+      "dir": "u",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.2857142857142857,
+      "ay": 0.1,
+      "bx": 0.42857142857142855,
+      "by": 0.4,
+      "topOffset": 2,
+      "bottomOffset": 2,
+      "boundHeight": 2,
+      "dir": "v",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    },
+    {
+      "ax": 0.8571428571428571,
+      "ay": 0.1,
+      "bx": 1.0,
+      "by": 0.4,
+      "topOffset": 2,
+      "bottomOffset": 2,
+      "boundHeight": 2,
+      "dir": "v",
+      "config": {
+        "move": 1,
+        "sense": 1,
+        "sound": 1,
+        "light": 1,
+        "door": 0,
+        "dir": 0
+      }
+    }
+  ],
+  "kit": "/mnt/workspace/code/isoroll-module/test/e2e/assets/cabin/kit/cardinal"
+}

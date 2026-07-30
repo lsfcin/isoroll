@@ -18,6 +18,13 @@ const MAX_DIFF_RATIO = 0.005;
 // Fix camera + hide DOM UI so the capture depends only on canvas content.
 export async function stabilize(page, view) {
   await page.evaluate(async (v) => {
+    // A world launched paused draws the PAUSED banner over the capture — that was the whole of a
+    // 10% "golden mismatch" that had nothing to do with the canvas. Unpause AND hide the element:
+    // unpausing is the root fix, hiding keeps the capture deterministic for a non-GM session too.
+    if (globalThis.game?.paused && globalThis.game.user?.isGM) {
+      await globalThis.game.togglePause(false);
+    }
+    document.getElementById("pause")?.style.setProperty("display", "none");
     document.getElementById("interface")?.style.setProperty("display", "none");
     document.getElementById("ui-left")?.style.setProperty("display", "none");
     document.getElementById("ui-top")?.style.setProperty("display", "none");
@@ -31,7 +38,7 @@ export async function stabilize(page, view) {
 
 export async function restoreUI(page) {
   await page.evaluate(() => {
-    for (const id of ["interface", "ui-left", "ui-top", "ui-right", "ui-bottom"]) {
+    for (const id of ["pause", "interface", "ui-left", "ui-top", "ui-right", "ui-bottom"]) {
       document.getElementById(id)?.style.removeProperty("display");
     }
     canvas.stage.eventMode = "static";
