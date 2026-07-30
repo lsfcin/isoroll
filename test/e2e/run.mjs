@@ -1,6 +1,6 @@
 // e2e runner — executes regression specs against a live Foundry server; exit 1 on unexpected failure.
-// XFAIL semantics: specs marked xfail (open KNOWN-BUGS) are expected to fail; a pass is
-// reported as XPASS = the bug looks fixed — remove xfail and update KNOWN-BUGS (gate applies).
+// XFAIL semantics: specs marked xfail (open BUGS) are expected to fail; a pass is
+// reported as XPASS = the bug looks fixed — remove xfail and update BUGS (gate applies).
 import { connect, deleteFixtureScenes, BASE_URL } from "./helpers.mjs";
 import b32 from "./b32-junction.spec.mjs";
 import b33 from "./b33-unhide.spec.mjs";
@@ -33,7 +33,7 @@ for (const spec of specs) {
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     if (spec.xfail) {
       xpassed++;
-      console.log(`XPASS ${spec.name} (${secs}s) — ${spec.xfail} looks FIXED: remove xfail, update KNOWN-BUGS`);
+      console.log(`XPASS ${spec.name} (${secs}s) — ${spec.xfail} looks FIXED: remove xfail, update BUGS`);
     } else {
       console.log(`PASS  ${spec.name} (${secs}s)`);
     }

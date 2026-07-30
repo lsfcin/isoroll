@@ -317,7 +317,7 @@ Bisect against `3403e6e` to confirm onset. Check:
 - `wall-overlay-ops.ts` drag `onUp` path → does it call `WallHistory.push({ k:"move", ... })`?
 - `wall-history.ts` `undo()` case `k === "move"` — does it reconstruct the displacement correctly?
 
-See KNOWN-BUGS.md B29 for full symptom description.
+See BUGS.md B29 for full symptom description.
 
 ### Occluder new path (`isorollNewOccluder=true`)
 

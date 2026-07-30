@@ -10,7 +10,7 @@
 
 ## Rules
 
-- Regression specs are named `b<N>-<slug>.spec.mjs` — KNOWN-BUGS.md status flips to FIXED only with a matching spec (enforced by workspace hook).
+- Regression specs are named `b<N>-<slug>.spec.mjs` — BUGS.md status flips to FIXED only with a matching spec (enforced by workspace hook).
 - Specs for OPEN bugs set `xfail` with the bug id; the runner treats their failure as expected and flags XPASS when the bug is gone.
 - Oracles assert on the JSON dump only, never on pixels; the dump calls live-path functions (never re-derives depth).
 - Every visually-confirmed bug exports its scene as a fixture here.

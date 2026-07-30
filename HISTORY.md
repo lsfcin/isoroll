@@ -145,7 +145,7 @@ export function onGridConfigPreview(params: object): void
 - **Phase 5** — IsoRenderer core + VolumeOverlay tile box: full IsoRenderer implemented and proven end-to-end.
 - **Phase 6** — All overlays migrated: VolumeOverlay (token), TokenBackground, VolumeGizmos, TokenGizmos, BackgroundGizmos, WallOverlay, Occluder (gated behind `isorollNewOccluder` flag).
 - **Phase 7** — UI + Background: bg-html/bg-drag/tile-config/token-config boundary violations fixed; GridConfig flow verified.
-- **Phase 8** — Cleanup + enforcement: tile shadow migrated to IsoRenderer `kind:"sprite"`; boundary grep audit clean; KNOWN-BUGS + ROADMAP updated.
+- **Phase 8** — Cleanup + enforcement: tile shadow migrated to IsoRenderer `kind:"sprite"`; boundary grep audit clean; BUGS + ROADMAP updated.
 
 ### Migration Strategy: Strangler Fig
 

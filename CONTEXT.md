@@ -57,14 +57,14 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 - Token rotation: v14 auto-facing suppressed for undistorted tokens; 8-directional sprite selection not yet implemented (placeholder in `object-transform.ts`)
 - Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP
-- `setFlag` not triggering `refreshTile` → [KNOWN-BUGS B25](KNOWN-BUGS.md)
+- `setFlag` not triggering `refreshTile` → [BUGS B25](BUGS.md)
 
 > Implementation gotchas (hidden invariants, Foundry quirks) → [SPECS.md § Implementation Gotchas](SPECS.md#implementation-gotchas)
 
 ## See Also
 
 - [ROADMAP.md](ROADMAP.md) — full phase plan, architecture decisions
-- [KNOWN-BUGS.md](KNOWN-BUGS.md) — confirmed bugs with root-cause analysis
+- [BUGS.md](BUGS.md) — confirmed bugs with root-cause analysis
 - `isoroll-content/` repo — AI art pipeline (private)
 - `/foundry` skill — Foundry v14 gotchas, coordinate systems, hooks, component hierarchy
 
@@ -79,7 +79,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
 | [`HISTORY.md`](HISTORY.md) | — | — | History |
-| [`KNOWN-BUGS.md`](KNOWN-BUGS.md) | — | — | isoroll-module — Known Bugs |
+| [`BUGS.md`](BUGS.md) | — | — | isoroll-module — Known Bugs |
 | [`REFACTOR.md`](REFACTOR.md) | — | — | IsoRenderer Refactor — Phase 9+ |
 | [`ROADMAP.md`](ROADMAP.md) | — | — | isoroll — Roadmap |
 | [`SETUP.md`](SETUP.md) | — | — | isoroll — Development Setup |

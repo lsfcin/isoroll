@@ -13,7 +13,7 @@
 
 - **`_processSubmitData` only calls `super` for 7 native fields**: module-specific fields (e.g. `backgroundYScale`) are silently skipped. Fix: instance-level patch on `app._processSubmitData` at `renderGridConfig` time (done in `bg-html.ts`).
 - **`updateTransform` centering**: when overriding the bg sprite's `updateTransform`, `scY` in the position formula must include `bgYScale`. If only `scale.set()` uses it, the visual center shifts vertically instead of scaling around center.
-- **GridConfig `renderGridConfig` hook**: fires after `#createPreview()` completes AND on Reset Changes (form re-render only — preview container persists). Arrow keys in GridConfig move background in projected grid axes (diagonal), not screen axes — see B22 in KNOWN-BUGS.md.
+- **GridConfig `renderGridConfig` hook**: fires after `#createPreview()` completes AND on Reset Changes (form re-render only — preview container persists). Arrow keys in GridConfig move background in projected grid axes (diagonal), not screen axes — see B22 in BUGS.md.
 
 ## Routing
 

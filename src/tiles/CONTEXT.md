@@ -7,7 +7,7 @@
 |------|---------------|
 | `tile-overlay.ts` | `VolumeOverlay` — 3D bounding box + image contour on selected tiles. Hook: `refreshTile`. Blink guard: skips redraw when `tile.hasPreview` (server update fires on original with old position while clone still alive). |
 | `tile-gizmos.ts` | `VolumeGizmos` — all interactive handles: volume (width/height/boundH/elevation/scale/move) + image (imgOffset/imgScale/imgYScale/swapSide). Hook: `controlTile` + `refreshTile`. |
-| `tile-drag.ts` | `DragState`, `HandleType`, `handlePositions()`, `projectDrag()`, `commitDrag()`. `commitDrag` calls `setFlag` for image handles (imgOffset/imgScale/imgYScale) and `document.update` for volume handles. `startPointerDrag` called with same `commitDrag` on both move and end — see B14 in KNOWN-BUGS.md. |
+| `tile-drag.ts` | `DragState`, `HandleType`, `handlePositions()`, `projectDrag()`, `commitDrag()`. `commitDrag` calls `setFlag` for image handles (imgOffset/imgScale/imgYScale) and `document.update` for volume handles. `startPointerDrag` called with same `commitDrag` on both move and end — see B14 in BUGS.md. |
 
 ## Key Gotchas
 
