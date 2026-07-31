@@ -18,10 +18,12 @@
 <!-- routing:start -->
 ## Routing
 
-| File | Interface | API | Description |
-|------|-----------|-----|-------------|
-| [`unit/coord-map.test.ts`](unit/coord-map.test.ts) | — | `expectClose` | T1 unit tests — coord-map: roundtrip identities for every coordinate system pair. |
-| [`unit/iso-tile-depth.test.ts`](unit/iso-tile-depth.test.ts) | — | `projectedFaces` | T1 unit tests — iso-tile-depth: frontier faces, depth-cell assignment, zIndex banding (B32 oracle). |
-| [`unit/iso-tile-geom.test.ts`](unit/iso-tile-geom.test.ts) | — | `fakeMesh`, `fakeTile` | T1 unit tests — iso-tile-geom: slice cuts, cell overlaps, and the cross-tile no-ties zIndex oracle (B32). |
-| [`unit/setup.ts`](unit/setup.ts) | — | — | Vitest global stubs — minimal Foundry/PIXI globals so pure-math modules import cleanly in Node. |
+| Subdirectory | Description |
+|--------------|-------------|
+| [`unit/`](unit/CONTEXT.md) | — |
+
+| File | API | Description |
+|------|-----|-------------|
+| [`e2e/dsl-v2-twin-scenario.test.ts`](e2e/dsl-v2-twin-scenario.test.ts) | `runPythonOracle`, `tsLevelsAsPairs` | Loop 5 (.loop/dsl-v2-ts-twin/5-user.md) — DSL v2 twin guarantee, scripted end-to-end scenario. |
+| [`manual/cabin-test.js`](manual/cabin-test.js) | — | Manual test setup — builds the cabin test scene from scratch in a live world. |
 <!-- routing:end -->

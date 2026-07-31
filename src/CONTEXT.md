@@ -52,4 +52,16 @@
 | [`transform/`](transform/CONTEXT.md) | Coordinate math, stage/object counter-transforms, HUD patches — no UI, no PIXI d |
 | [`ui/`](ui/CONTEXT.md) | Config form tab injection for SceneConfig, TileConfig, and TokenConfig (AppV2). |
 | [`walls/`](walls/CONTEXT.md) | Linked wall system: generate, sync, door, undo, overlay, and lifecycle managemen |
+
+| File | Interface | API | Description |
+|------|-----------|-----|-------------|
+| [`spike-floor/index.ts`](spike-floor/index.ts) | [`spike-floor/index.d.ts`](spike-floor/index.d.ts) | `floorSpecsFor`, `backgroundSpecFor`, `syncFog` | **facade** — Spike facade — exposed on globalThis.isoroll.spike (src/core/module.ts) so the throwaway e2e |
+| [`painter/gestures.ts`](painter/gestures.ts) | [`painter/gestures.d.ts`](painter/gestures.d.ts) | `cellAt`, `lineCells`, `rectCells`, `nearestWallSide` | T2 — cell hit-test + gesture geometry (3-arch.md painter-mvp-1). Pure: no PIXI, no Foundry. |
+| [`painter/model.ts`](painter/model.ts) | [`painter/model.d.ts`](painter/model.d.ts) | `setChar`, `writeCell`, `cloneLevel`, `levelTemplateDims`, `blankLevel` | T1 — painter edit model (3-arch.md painter-mvp-1). Loop 4b: model.ts's only frozen contract is |
+| [`painter/reassemble-perf.ts`](painter/reassemble-perf.ts) | [`painter/reassemble-perf.d.ts`](painter/reassemble-perf.d.ts) | `checkSliceBudget`, `SLICE_WARN_THRESHOLD` | T5 — slice-count perf gate (3-arch.md painter-mvp-1, C6). Pure. |
+| [`painter/reassemble-plan.ts`](painter/reassemble-plan.ts) | [`painter/reassemble-plan.d.ts`](painter/reassemble-plan.d.ts) | `buildReassemblePlan`, `floorTileFromBox`, `mergeFloorStrips`, `wallEndpoint`, `wallDefFromBox` | T5 — pure re-assembly plan builder (3-arch.md painter-mvp-1, the C6 seam). Loop 4b: |
+| [`painter/types.ts`](painter/types.ts) | [`painter/types.d.ts`](painter/types.d.ts) | — | T1 — pure types for the painter edit model (3-arch.md painter-mvp-1, Loop 4a seam). No logic. |
+| [`spike-floor/bg-regen-proto.ts`](spike-floor/bg-regen-proto.ts) | [`spike-floor/bg-regen-proto.d.ts`](spike-floor/bg-regen-proto.d.ts) | `buildBackgroundSpec` | T2 — spike prototype (b): pure builder mapping a view to a scene-background update payload |
+| [`spike-floor/floor-tiles-proto.ts`](spike-floor/floor-tiles-proto.ts) | [`spike-floor/floor-tiles-proto.d.ts`](spike-floor/floor-tiles-proto.d.ts) | `buildFloorTileSpecs`, `FLOOR_TEXTURE` | T1 — spike prototype (a): pure builder turning merged floor massing runs (NOT per-cell, NOT |
+| [`spike-floor/measure.ts`](spike-floor/measure.ts) | [`spike-floor/measure.d.ts`](spike-floor/measure.d.ts) | `classifyFog`, `fogCoverage`, `countFloorTiles`, `countSlices`, `dumpFogSlices` | T3 — measurement oracle. ONE classifier (classifyFog) shared by vitest + e2e (via the |
 <!-- routing:end -->

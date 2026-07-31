@@ -19,5 +19,5 @@
 | File | Interface | API | Description |
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the occluder module — tile alpha fade when a token moves behind it |
-| [`occluder.ts`](occluder.ts) | [`occluder.d.ts`](occluder.d.ts) | `evaluateAll`, `_evaluateTile`, `_hasTokenBehind` | Alpha occlusion — fades tiles when a token is behind them. |
+| [`occluder.ts`](occluder.ts) | [`occluder.d.ts`](occluder.d.ts) | `evaluateAll` | Alpha occlusion — fades tiles when a token is behind them. |
 <!-- routing:end -->

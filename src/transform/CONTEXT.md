@@ -86,5 +86,5 @@ Curried API: `toWorld(params)(point)` / `fromWorld(params)(point)` in each `coor
 | [`stage-transform.ts`](stage-transform.ts) | [`stage-transform.d.ts`](stage-transform.d.ts) | — | Stage isometric transform coordinator: rotation/skew, preview override, object refresh. |
 | [`tile-transform-rescale.ts`](tile-transform-rescale.ts) | [`tile-transform-rescale.d.ts`](tile-transform-rescale.d.ts) | `onPreUpdateScene`, `onUpdateSceneGridRescale`, `syncWallsAfterRescale`, `buildRescaleUpdates`, `doRescale` | Grid-rescale scene update handlers: pre-update capture, rescale apply, wall sync. |
 | [`tile-transform.ts`](tile-transform.ts) | [`tile-transform.d.ts`](tile-transform.d.ts) | `onUpdateTileFlags`, `onPreUpdateTileFlip`, `onRefreshTile`, `EPS`, `applyTileCounter` | Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers. |
-| [`token-transform.ts`](token-transform.ts) | [`token-transform.d.ts`](token-transform.d.ts) | `onRefreshToken`, `_applyMeshScaleAndRotation`, `_applyMeshTransform` | Token counter-transform: refreshToken hook handler. |
+| [`token-transform.ts`](token-transform.ts) | [`token-transform.d.ts`](token-transform.d.ts) | `onRefreshToken` | Token counter-transform: refreshToken hook handler. |
 <!-- routing:end -->

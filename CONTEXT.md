@@ -76,16 +76,16 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
 | [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/ (Playwrigh |
 
-| File | Interface | API | Description |
-|------|-----------|-----|-------------|
-| [`BUGS.md`](BUGS.md) | — | — | isoroll-module — Known Bugs |
-| [`REFACTOR.md`](REFACTOR.md) | — | — | IsoRenderer Refactor — Phase 9+ |
-| [`ROADMAP.md`](ROADMAP.md) | — | — | isoroll — Roadmap |
-| [`SETUP.md`](SETUP.md) | — | — | isoroll — Development Setup |
-| [`SPECS.md`](SPECS.md) | — | — | isoroll — Specs |
-| [`eslint.config.js`](eslint.config.js) | — | — | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
-| [`styles/isoroll.scss`](styles/isoroll.scss) | — | — | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
-| [`vite.config.ts`](vite.config.ts) | — | — | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
-| [`vitest.config.ts`](vitest.config.ts) | — | — | Vitest config — T1 unit tests for pure math modules (see workspace VERIFY.md). |
-| [`vitest.scenario.config.ts`](vitest.scenario.config.ts) | — | — | Loop 5 (.loop/dsl-v2-ts-twin) — scratch config to run the DSL v2 twin user-scenario script, |
+| File | Description |
+|------|-------------|
+| [`BUGS.md`](BUGS.md) | isoroll-module — Known Bugs |
+| [`REFACTOR.md`](REFACTOR.md) | IsoRenderer Refactor — Phase 9+ |
+| [`ROADMAP.md`](ROADMAP.md) | isoroll — Roadmap |
+| [`SETUP.md`](SETUP.md) | isoroll — Development Setup |
+| [`SPECS.md`](SPECS.md) | isoroll — Specs |
+| [`eslint.config.js`](eslint.config.js) | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
+| [`styles/isoroll.scss`](styles/isoroll.scss) | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
+| [`vite.config.ts`](vite.config.ts) | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
+| [`vitest.config.ts`](vitest.config.ts) | Vitest config — T1 unit tests for pure math modules (see workspace VERIFY.md). |
+| [`vitest.scenario.config.ts`](vitest.scenario.config.ts) | Loop 5 (.loop/dsl-v2-ts-twin) — scratch config to run the DSL v2 twin user-scenario script, |
 <!-- routing:end -->

@@ -16,8 +16,8 @@
 <!-- routing:start -->
 ## Routing
 
-| File | Interface | API | Description |
-|------|-----------|-----|-------------|
-| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the sorter module — depth sort for isometric z-ordering (dormant) |
-| [`depth-sorter.ts`](depth-sorter.ts) | [`depth-sorter.d.ts`](depth-sorter.d.ts) | — | ← add first-line comment |
+| File | Interface | Description |
+|------|-----------|-------------|
+| [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | **facade** — Public API for the sorter module — depth sort for isometric z-ordering (dormant) |
+| [`depth-sorter.ts`](depth-sorter.ts) | [`depth-sorter.d.ts`](depth-sorter.d.ts) | ← add first-line comment |
 <!-- routing:end -->

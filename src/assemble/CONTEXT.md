@@ -2,7 +2,7 @@
 > TS twin of the isoroll-content scene_assemble.py / layout_parse.py / layout_massing.py pipeline.
 > PURE - no Foundry document writes, no PIXI dependency in the core plan. Rendering only, so this
 > is safe to call per-stroke from a live painter (P7) as well as from batch/offline tooling.
-> goal: [rpg-isoroll](../../brain/goals/rpg-isoroll.md)
+> goal: [rpg-isoroll](../../../../brain/goals/rpg-isoroll.md)
 
 ## Files
 
