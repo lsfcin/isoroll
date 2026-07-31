@@ -20,6 +20,10 @@
       "u": 1,
       "v": 0,
       "z": 0,
+      "cells": [
+        1,
+        1
+      ],
       "boundHeight": 0,
       "imageOffset": [
         0.0,
@@ -44,6 +48,10 @@
       "u": 0,
       "v": 0,
       "z": 0,
+      "cells": [
+        1,
+        1
+      ],
       "boundHeight": 2,
       "imageOffset": [
         0.0,

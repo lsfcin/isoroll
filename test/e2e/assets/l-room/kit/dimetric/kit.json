@@ -1,0 +1,229 @@
+{
+  "px_per_unit": 126.0,
+  "wall_h": 3.0,
+  "family": "dimetric",
+  "arm": "a",
+  "pieces": {
+    "floor": {
+      "origin": [
+        127.0,
+        15.560000000000002
+      ],
+      "size": [
+        255,
+        142
+      ],
+      "module": "base",
+      "yaw": "y0",
+      "mat": "stone"
+    },
+    "door_u": {
+      "origin": [
+        14.299999999999983,
+        252.35000000000002
+      ],
+      "size": [
+        142,
+        322
+      ],
+      "module": "door_1x2",
+      "yaw": "y0",
+      "mat": "wood"
+    },
+    "door_v": {
+      "origin": [
+        14.299999999999983,
+        195.64999999999998
+      ],
+      "size": [
+        142,
+        322
+      ],
+      "module": "door_1x2",
+      "yaw": "y90",
+      "mat": "wood"
+    },
+    "window_u": {
+      "origin": [
+        14.299999999999983,
+        126.35000000000002
+      ],
+      "size": [
+        142,
+        196
+      ],
+      "module": "window_1x1",
+      "yaw": "y0",
+      "mat": "wood"
+    },
+    "window_v": {
+      "origin": [
+        14.299999999999983,
+        69.65
+      ],
+      "size": [
+        142,
+        196
+      ],
+      "module": "window_1x1",
+      "yaw": "y90",
+      "mat": "wood"
+    },
+    "diag_u": {
+      "origin": [
+        9.0,
+        378.0
+      ],
+      "size": [
+        18,
+        505
+      ],
+      "module": "diag_half",
+      "yaw": "y0",
+      "mat": "stone"
+    },
+    "diag_v": {
+      "origin": [
+        127.0,
+        319.0
+      ],
+      "size": [
+        255,
+        386
+      ],
+      "module": "diag_half",
+      "yaw": "y90",
+      "mat": "stone"
+    },
+    "wall__stone": {
+      "origin": [
+        127.0,
+        378.0
+      ],
+      "size": [
+        255,
+        505
+      ],
+      "module": "wall_band",
+      "yaw": "y0",
+      "mat": "stone"
+    },
+    "wall__wood": {
+      "origin": [
+        127.0,
+        378.0
+      ],
+      "size": [
+        255,
+        505
+      ],
+      "module": "wall_band",
+      "yaw": "y0",
+      "mat": "wood"
+    },
+    "roof_E": {
+      "origin": [
+        127.89999999999998,
+        69.64999999999998
+      ],
+      "size": [
+        218,
+        196
+      ],
+      "module": "roof_cell",
+      "yaw": "y0",
+      "mat": "thatch"
+    },
+    "stair_E": {
+      "origin": [
+        126.0,
+        78.75
+      ],
+      "size": [
+        253,
+        127
+      ],
+      "module": "stair_45",
+      "yaw": "y0",
+      "mat": "stone"
+    },
+    "roof_S": {
+      "origin": [
+        38.900000000000006,
+        45.04999999999998
+      ],
+      "size": [
+        166,
+        172
+      ],
+      "module": "roof_cell",
+      "yaw": "y90",
+      "mat": "thatch"
+    },
+    "stair_S": {
+      "origin": [
+        126.0,
+        78.75
+      ],
+      "size": [
+        253,
+        127
+      ],
+      "module": "stair_45",
+      "yaw": "y90",
+      "mat": "stone"
+    },
+    "roof_W": {
+      "origin": [
+        127.10000000000002,
+        45.05000000000001
+      ],
+      "size": [
+        166,
+        172
+      ],
+      "module": "roof_cell",
+      "yaw": "y180",
+      "mat": "thatch"
+    },
+    "stair_W": {
+      "origin": [
+        126.0,
+        126.0
+      ],
+      "size": [
+        254,
+        253
+      ],
+      "module": "stair_45",
+      "yaw": "y180",
+      "mat": "stone"
+    },
+    "roof_N": {
+      "origin": [
+        90.1,
+        69.65
+      ],
+      "size": [
+        218,
+        196
+      ],
+      "module": "roof_cell",
+      "yaw": "y270",
+      "mat": "thatch"
+    },
+    "stair_N": {
+      "origin": [
+        127.0,
+        126.0
+      ],
+      "size": [
+        254,
+        253
+      ],
+      "module": "stair_45",
+      "yaw": "y270",
+      "mat": "stone"
+    }
+  }
+}

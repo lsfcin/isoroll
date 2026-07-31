@@ -12,8 +12,21 @@ import goldenJunction from "./golden-junction.spec.mjs";
 import importManifest from "./import-manifest.spec.mjs";
 import importCabin from "./import-cabin.spec.mjs";
 import parityOneCell from "./parity-one-cell.spec.mjs";
+import parityLRoom from "./parity-l-room.spec.mjs";
 
-const specs = [b32, b33, b2, b34, b35, b32real, goldenJunction, importManifest, importCabin, parityOneCell];
+const specs = [
+  b32,
+  b33,
+  b2,
+  b34,
+  b35,
+  b32real,
+  goldenJunction,
+  importManifest,
+  importCabin,
+  parityOneCell,
+  parityLRoom,
+];
 
 let browser;
 let page;

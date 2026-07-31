@@ -1,14 +1,28 @@
 // Pure manifest-tile → Foundry Tile creation-data mapping (C1, T2). v14 center convention.
 import type { ManifestTile } from "./manifest-types";
 
+type Box = { x: number; y: number; width: number; height: number };
+
 // The bake's camera and the module's stage camera are one grid TURN apart. isoroll-content projects
 // x = u - v, y = 0.5(u + v) - z (view_table.py `_DIMETRIC`); the module's stage projects
 // x = a(X + Y), y = 0.5a(Y - X) - a*elev. Setting those equal gives Y = u, X = -v: the manifest's
 // +u axis is the module's +y, its +v axis the module's -x. Importing (u,v) straight into (x,y)
 // lays the scene out a quarter turn off, which no per-piece nudge can undo. `rows` only slides the
 // result back into positive world coordinates.
-function cellCenter(t: ManifestTile, gridSize: number, rows: number): { x: number; y: number } {
-  return { x: (rows - t.v - 0.5) * gridSize, y: (t.u + 0.5) * gridSize };
+//
+// The turn transposes the footprint with everything else: a box l cells along u by d along v is
+// d*gridSize WIDE and l*gridSize TALL in world space. v14 tile documents are centre-anchored.
+function footprintBox(t: ManifestTile, gridSize: number, rows: number): Box {
+  const cells = t.cells;
+  const usable = Array.isArray(cells) && cells.length === 2 && cells[0] > 0 && cells[1] > 0;
+  const alongU = usable ? cells[0] : 1;
+  const alongV = usable ? cells[1] : 1;
+  return {
+    x: (rows - t.v - alongV / 2) * gridSize,
+    y: (t.u + alongU / 2) * gridSize,
+    width: alongV * gridSize,
+    height: alongU * gridSize,
+  };
 }
 
 type SpriteFlag = { originPx: { x: number; y: number }; pxPerVoxel: number };
@@ -30,16 +44,16 @@ export function manifestTileToData(
   assetBase: string,
   rows: number,
 ): object {
-  const center = cellCenter(t, gridSize, rows);
+  const box = footprintBox(t, gridSize, rows);
   const sprite = spriteFlag(t);
   return {
-    x: center.x,
-    y: center.y,
-    // The tile document is the VOLUME, not the picture: a merge=False massing box is one cell of
-    // footprint, `boundHeight` cells tall. Sizing it from the sprite (255x505 px of wall art at
-    // 126 px/voxel) confused the two — a 2:1 projection makes any sprite wider than its own cell.
-    width: gridSize,
-    height: gridSize,
+    x: box.x,
+    y: box.y,
+    // The tile document is the VOLUME, not the picture: a massing box is `cells` of footprint,
+    // `boundHeight` tall. Sizing it from the sprite (255x505 px of wall art at 126 px/voxel)
+    // confused the two — a 2:1 projection makes any sprite wider than its own cell.
+    width: box.width,
+    height: box.height,
     rotation: 0,
     texture: { src: `${assetBase}/${t.asset}` },
     flags: {

@@ -21,6 +21,11 @@ export interface ManifestTile {
   // manifests baked before this date carry neither, and fall back to a gridSize square.
   sizePx?: [number, number];
   originPx?: [number, number];
+  // Footprint in cells, [l, d] along the manifest's own u and v axes (isoroll-content 2026-07-31).
+  // merge=False is per-cell for walls but not for floors — a floor strip is ONE box spanning l
+  // cells — so (u,v) alone does not say how much ground a tile covers. OPTIONAL: an older manifest
+  // has no footprint at all, and every piece falls back to a single cell.
+  cells?: [number, number];
   // Semantic tile identity beyond the piece name: material and, for oriented group pieces (roof,
   // stair), which compass side it faces. Resolution to a file already happened in `asset`.
   mat?: string;

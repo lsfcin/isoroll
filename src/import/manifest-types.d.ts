@@ -12,6 +12,7 @@ export interface ManifestTile {
     z?: number;
     sizePx?: [number, number];
     originPx?: [number, number];
+    cells?: [number, number];
     mat?: string;
     side?: string;
 }

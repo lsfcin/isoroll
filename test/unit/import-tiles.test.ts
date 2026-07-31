@@ -78,6 +78,26 @@ describe("manifestTileToData — the document is the volume, not the picture", (
       ),
     );
   });
+
+  // CP-3 — floors merge into strips, so a box is not always one cell. The turn transposes the
+  // footprint with everything else: l cells along the manifest's u is world HEIGHT, d is WIDTH.
+  it("transposes a multi-cell footprint and keeps the box centred on it", () => {
+    const strip = baseTile({ u: 2, v: 1, cells: [6, 1] });
+    const data = manifestTileToData(strip, 100, "base", 8) as Geometry;
+    expect(data.width).toBe(100);
+    expect(data.height).toBe(600);
+    expect(data.x).toBe((8 - 1 - 0.5) * 100);
+    expect(data.y).toBe((2 + 3) * 100);
+  });
+
+  it("falls back to a single cell when the manifest predates `cells`", () => {
+    for (const cells of [undefined, [0, 1], [2]]) {
+      const tile = baseTile({ cells } as Partial<ManifestTile>);
+      const data = manifestTileToData(tile, 100, "base", 4) as Geometry;
+      expect(data.width).toBe(100);
+      expect(data.height).toBe(100);
+    }
+  });
 });
 
 describe("manifestTileToData — texture + flags", () => {

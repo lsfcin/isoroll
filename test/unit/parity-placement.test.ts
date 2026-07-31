@@ -1,12 +1,12 @@
-// T1 — the OFFLINE twin of test/e2e/parity-one-cell.spec.mjs: does the placement rule reproduce
+// T1 — the OFFLINE twin of the parity e2e specs: does the placement rule reproduce
 // isoroll-content's plan, on paper, before Foundry is even started?
 //
-// It composes the same three pieces the live path does — import-tiles (which cell goes where),
-// tile-sprite-anchor (how big the sprite is and which texel is pinned) — and projects the result
-// with the stage matrix PIXI builds from the projection preset. What it CANNOT check is that
-// Foundry and PIXI then do what this model says; that is exactly what the e2e spec is for. What it
-// buys is that a placement bug is caught in 40ms instead of needing a live server, and that the
-// three CP-2 causes (density scale, origin anchor, grid turn) can never come back silently.
+// It composes the same pieces the live path does — import-tiles (which cell goes where, and how
+// much ground it covers) and tile-sprite-anchor (how big the sprite is, which texel is pinned) —
+// and projects the result with the stage matrix PIXI builds from the projection preset. What it
+// CANNOT check is that Foundry and PIXI then do what this model says; that is what the e2e specs
+// are for. What it buys is a placement bug caught in 40ms with no server, and three causes that
+// can never come back silently: density scale, origin anchor, grid turn.
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { manifestTileToData } from "../../src/import/import-tiles";
@@ -14,15 +14,20 @@ import type { ManifestTile } from "../../src/import/manifest-types";
 import { DIMETRIC_2_1 } from "../../src/transform/constants";
 import { spriteOriginWorld, spriteUniformScale } from "../../src/transform/tile-sprite-anchor";
 
-const ASSETS = new URL("../e2e/assets/one-cell/manifests/", import.meta.url);
 const GRID = 100;
 const TOLERANCE_PX = 1.5;
+// Same fixtures the e2e specs run: 1 cell (CP-1/CP-2), then a whole flat layer (CP-3).
+const FIXTURES = ["one-cell", "l-room"];
 
 type PlanTile = { asset: string; u: number; v: number; left: number; top: number };
 type Plan = { pxPerVoxel: number; tiles: PlanTile[] };
+type Manifest = { chunk: { rows: number }; tiles: ManifestTile[] };
 
-function load<T>(name: string): T {
-  const path = new URL(name, ASSETS);
+function load<T>(fixture: string, kind: string): T {
+  const path = new URL(
+    `../e2e/assets/${fixture}/manifests/${fixture}_sw_${kind}.json`,
+    import.meta.url,
+  );
   return JSON.parse(readFileSync(path, "utf8")) as T;
 }
 
@@ -54,11 +59,9 @@ function spriteTopLeft(t: ManifestTile, rows: number): { x: number; y: number } 
   return { x: stage.x - originPx[0] * uniform, y: stage.y - originPx[1] * uniform };
 }
 
-describe("placement parity — one-cell fixture, offline", () => {
-  const plan = load<Plan>("one-cell_sw_plan.json");
-  const manifest = load<{ chunk: { rows: number }; tiles: ManifestTile[] }>(
-    "one-cell_sw_manifest.json",
-  );
+describe.each(FIXTURES)("placement parity — %s fixture, offline", (fixture) => {
+  const plan = load<Plan>(fixture, "plan");
+  const manifest = load<Manifest>(fixture, "manifest");
   const rows = manifest.chunk.rows;
   // Same conversion the e2e comparator uses: both sides are SCREEN px, so the ratio is the
   // projected size of a grid unit over the baked size of a voxel.
@@ -68,25 +71,33 @@ describe("placement parity — one-cell fixture, offline", () => {
     DIMETRIC_2_1,
   );
 
+  // The two files are NOT in the same order — the plan is sorted into painter order, the manifest
+  // follows massing order — so they pair by identity, exactly as test/e2e/parity.mjs does.
+  const keyOf = (asset: string, u: number, v: number) => `${asset}@${u},${v}`;
+  const byKey = new Map(manifest.tiles.map((t) => [keyOf(t.asset, t.u, t.v), t]));
+
+  it("gives every plan row exactly one manifest tile to pair with", () => {
+    expect(byKey.size).toBe(manifest.tiles.length);
+    expect(manifest.tiles.length).toBe(plan.tiles.length);
+    for (const row of plan.tiles) {
+      expect(
+        byKey.has(keyOf(`${row.asset}.png`, row.u, row.v)),
+        keyOf(row.asset, row.u, row.v),
+      ).toBe(true);
+    }
+  });
+
   it("puts every sprite where the offline renderer put it, relative to the first", () => {
+    const tileFor = (row: PlanTile) =>
+      byKey.get(keyOf(`${row.asset}.png`, row.u, row.v)) as ManifestTile;
     const anchorPlan = plan.tiles[0];
-    const anchorActual = spriteTopLeft(manifest.tiles[0], rows);
-    for (let i = 0; i < plan.tiles.length; i++) {
-      const row = plan.tiles[i];
-      const actual = spriteTopLeft(manifest.tiles[i], rows);
+    const anchorActual = spriteTopLeft(tileFor(anchorPlan), rows);
+    for (const row of plan.tiles) {
+      const actual = spriteTopLeft(tileFor(row), rows);
       const dx = actual.x - anchorActual.x - (row.left - anchorPlan.left) * scale;
       const dy = actual.y - anchorActual.y - (row.top - anchorPlan.top) * scale;
       expect(Math.abs(dx), `${row.asset}@${row.u},${row.v} dx`).toBeLessThan(TOLERANCE_PX);
       expect(Math.abs(dy), `${row.asset}@${row.u},${row.v} dy`).toBeLessThan(TOLERANCE_PX);
-    }
-  });
-
-  it("pairs the plan and the manifest tile for tile — a reordering would fake the test above", () => {
-    for (let i = 0; i < plan.tiles.length; i++) {
-      const row = plan.tiles[i];
-      const tile = manifest.tiles[i];
-      expect(tile.asset).toBe(`${row.asset}.png`);
-      expect([tile.u, tile.v]).toEqual([row.u, row.v]);
     }
   });
 });
