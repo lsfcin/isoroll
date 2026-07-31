@@ -30,7 +30,7 @@ from the module's per-tile IMAGE-normalized `WallDef` space. `import-walls.ts` b
 |------|-----------|-----|-------------|
 | [`index.ts`](index.ts) | [`index.d.ts`](index.d.ts) | — | **facade** — Public API for the import module — programmatic scene manifest import. |
 | [`import-scene-manifest.ts`](import-scene-manifest.ts) | [`import-scene-manifest.d.ts`](import-scene-manifest.d.ts) | `importSceneManifest`, `toV14WallConfig` | Orchestrates a scene-manifest import: validate-before-write atomic guard (C3), then creates |
-| [`import-tiles.ts`](import-tiles.ts) | [`import-tiles.d.ts`](import-tiles.d.ts) | `manifestTileToData` | Pure manifest-tile → Foundry Tile creation-data mapping (C1, T2). v14 center convention. |
+| [`import-tiles.ts`](import-tiles.ts) | [`import-tiles.d.ts`](import-tiles.d.ts) | `manifestTileToData`, `tileSize` | Pure manifest-tile → Foundry Tile creation-data mapping (C1, T2). v14 center convention. |
 | [`import-walls.ts`](import-walls.ts) | [`import-walls.d.ts`](import-walls.d.ts) | `manifestWallsToDefs` | Manifest wall[] → per-tile WallDef[] for createWallsFromDefs (C1/C2, T3). Bridges the |
 | [`manifest-types.ts`](manifest-types.ts) | [`manifest-types.d.ts`](manifest-types.d.ts) | — | Scene manifest shapes for programmatic import — mirrors isoroll-content's scene_manifest.py output. |
 | [`manifest-validate.ts`](manifest-validate.ts) | [`manifest-validate.d.ts`](manifest-validate.d.ts) | `validateManifest`, `inUnit`, `validateWall`, `validateTile` | Pure structural validator for scene manifests (C3) — mirrors isoroll-content's |

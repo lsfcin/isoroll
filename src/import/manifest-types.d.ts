@@ -10,6 +10,10 @@ export interface ManifestTile {
     imageOffset: [number, number];
     pxPerVoxel: number;
     z?: number;
+    sizePx?: [number, number];
+    originPx?: [number, number];
+    mat?: string;
+    side?: string;
 }
 export type ManifestWall = Pick<WallDef, "topOffset" | "bottomOffset" | "config"> & {
     ax: number;

@@ -54,6 +54,53 @@ describe("manifestTileToData — geometry", () => {
   });
 });
 
+// 2026-07-31 — a baked sprite carries its own pixel density and size; the tile rect must be that
+// size in world units, so ONE VOXEL READS AS ONE GRID UNIT. Squaring every tile to gridSize is what
+// made the first live cabin import render as scattered blocks instead of a building: a 255x505 wall
+// sprite was crushed into 100x100. The gridSize square survives only as the no-sizePx fallback,
+// which is what the "geometry" block above still pins.
+describe("manifestTileToData — baked sprite world size", () => {
+  const sized = (over: Partial<ManifestTile> = {}) =>
+    baseTile({ pxPerVoxel: 126, sizePx: [255, 505], originPx: [127, 378], ...over });
+
+  it("converts sprite pixels to world units at the sprite's own density", () => {
+    const data = manifestTileToData(sized(), 100, "base") as { width: number; height: number };
+    expect(data.width).toBeCloseTo((255 * 100) / 126, 6);
+    expect(data.height).toBeCloseTo((505 * 100) / 126, 6);
+  });
+
+  it("keeps one voxel equal to one grid unit at any bake density", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 16, max: 512 }),
+        fc.integer({ min: 1, max: 6 }),
+        fc.integer({ min: 1, max: 6 }),
+        fc.integer({ min: 25, max: 400 }),
+        (density, voxelsW, voxelsH, grid) => {
+          const tile = sized({
+            pxPerVoxel: density,
+            sizePx: [density * voxelsW, density * voxelsH],
+          });
+          const data = manifestTileToData(tile, grid, "base") as { width: number; height: number };
+          expect(data.width).toBeCloseTo(voxelsW * grid, 6);
+          expect(data.height).toBeCloseTo(voxelsH * grid, 6);
+        },
+      ),
+    );
+  });
+
+  it("ignores a degenerate sizePx rather than collapsing the tile to nothing", () => {
+    for (const bad of [
+      [0, 100],
+      [100, 0],
+      [-5, 5],
+    ] as [number, number][]) {
+      const data = manifestTileToData(sized({ sizePx: bad }), 100, "base") as { width: number };
+      expect(data.width).toBe(100);
+    }
+  });
+});
+
 describe("manifestTileToData — texture + flags", () => {
   it("joins assetBase and asset for texture.src", () => {
     const data = manifestTileToData(
