@@ -25,8 +25,10 @@ export type {
 } from "./iso-renderer";
 export { IsoGeometry } from "./iso-geometry";
 export type { WorldBoxVerts, TileFootprint, P2 as GeomP2 } from "./iso-geometry";
-export { MeshAccessor } from "./mesh-accessor";
-export type { MeshGeometry } from "./mesh-accessor";
+export { MeshAccessor, meshQuad, meshBounds } from "./mesh-accessor";
+export type { MeshGeometry, Quad } from "./mesh-accessor";
+export { dumpTileRects } from "./iso-tile-rects";
+export type { TileRect } from "./iso-tile-rects";
 export * from "./render-lifecycle";
 export { tileSlices } from "./iso-tile-renderer";
 export {

@@ -113,13 +113,16 @@ describe("manifestTileToData — texture + flags", () => {
     expect(data.texture.src).toBe("modules/isoroll/test/e2e/assets/kit/wall_N.png");
   });
 
-  it("sets flags.isoroll.boundHeight from the manifest tile, baseElevation 0, presetEnabled true", () => {
+  // presetEnabled is FALSE for imported tiles (2026-07-31): a baked kit asset has never been
+  // through the preset system, so auto-apply can only miss, and every miss is a real 404 —
+  // 86 tiles meant 86 failed requests. It would also race the wall frame by rewriting geometry.
+  it("sets flags.isoroll.boundHeight from the manifest tile, baseElevation 0, presetEnabled false", () => {
     const data = manifestTileToData(baseTile({ boundHeight: 3 }), 100, "base") as {
       flags: { isoroll: { boundHeight: number; baseElevation: number; presetEnabled: boolean } };
     };
     expect(data.flags.isoroll.boundHeight).toBe(3);
     expect(data.flags.isoroll.baseElevation).toBe(0);
-    expect(data.flags.isoroll.presetEnabled).toBe(true);
+    expect(data.flags.isoroll.presetEnabled).toBe(false);
   });
 
   it("stores manifest imageOffset DIRECT as {x,y} — no unit conversion (Deferred #2)", () => {

@@ -1,0 +1,229 @@
+{
+  "px_per_unit": 126.0,
+  "wall_h": 3.0,
+  "family": "cardinal",
+  "arm": "a",
+  "pieces": {
+    "floor": {
+      "origin": [
+        180.09545442950503,
+        16.01227278524749
+      ],
+      "size": [
+        182,
+        106
+      ],
+      "module": "base",
+      "yaw": "y0",
+      "mat": "stone"
+    },
+    "door_u": {
+      "origin": [
+        18.909545442950503,
+        252.4522727852475
+      ],
+      "size": [
+        20,
+        342
+      ],
+      "module": "door_1x2",
+      "yaw": "y0",
+      "mat": "wood"
+    },
+    "door_v": {
+      "origin": [
+        180.09545442950503,
+        172.35931829197023
+      ],
+      "size": [
+        182,
+        262
+      ],
+      "module": "door_1x2",
+      "yaw": "y90",
+      "mat": "wood"
+    },
+    "window_u": {
+      "origin": [
+        18.909545442950503,
+        126.45227278524749
+      ],
+      "size": [
+        20,
+        216
+      ],
+      "module": "window_1x1",
+      "yaw": "y0",
+      "mat": "wood"
+    },
+    "window_v": {
+      "origin": [
+        180.09545442950503,
+        46.359318291970254
+      ],
+      "size": [
+        182,
+        136
+      ],
+      "module": "window_1x1",
+      "yaw": "y90",
+      "mat": "wood"
+    },
+    "diag_u": {
+      "origin": [
+        185.09545442950497,
+        381.4522727852475
+      ],
+      "size": [
+        192,
+        474
+      ],
+      "module": "diag_half",
+      "yaw": "y0",
+      "mat": "stone"
+    },
+    "diag_v": {
+      "origin": [
+        185.09545442950497,
+        381.4522727852475
+      ],
+      "size": [
+        192,
+        474
+      ],
+      "module": "diag_half",
+      "yaw": "y90",
+      "mat": "stone"
+    },
+    "wall__stone": {
+      "origin": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "size": [
+        182,
+        468
+      ],
+      "module": "wall_band",
+      "yaw": "y0",
+      "mat": "stone"
+    },
+    "wall__wood": {
+      "origin": [
+        180.09545442950503,
+        378.4522727852475
+      ],
+      "size": [
+        182,
+        468
+      ],
+      "module": "wall_band",
+      "yaw": "y0",
+      "mat": "wood"
+    },
+    "roof_E": {
+      "origin": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "size": [
+        182,
+        178
+      ],
+      "module": "roof_cell",
+      "yaw": "y0",
+      "mat": "thatch"
+    },
+    "stair_E": {
+      "origin": [
+        180.09545442950503,
+        59.20227278524749
+      ],
+      "size": [
+        182,
+        50
+      ],
+      "module": "stair_45",
+      "yaw": "y0",
+      "mat": "stone"
+    },
+    "roof_S": {
+      "origin": [
+        180.09545442950503,
+        26.36886373492075
+      ],
+      "size": [
+        182,
+        116
+      ],
+      "module": "roof_cell",
+      "yaw": "y90",
+      "mat": "thatch"
+    },
+    "stair_S": {
+      "origin": [
+        180.09545442950503,
+        126.20227278524749
+      ],
+      "size": [
+        182,
+        184
+      ],
+      "module": "stair_45",
+      "yaw": "y90",
+      "mat": "stone"
+    },
+    "roof_W": {
+      "origin": [
+        180.09545442950503,
+        88.55227278524751
+      ],
+      "size": [
+        182,
+        178
+      ],
+      "module": "roof_cell",
+      "yaw": "y180",
+      "mat": "thatch"
+    },
+    "stair_W": {
+      "origin": [
+        180.09545442950503,
+        126.45227278524749
+      ],
+      "size": [
+        182,
+        216
+      ],
+      "module": "stair_45",
+      "yaw": "y180",
+      "mat": "stone"
+    },
+    "roof_N": {
+      "origin": [
+        180.09545442950497,
+        62.187954620821756
+      ],
+      "size": [
+        182,
+        152
+      ],
+      "module": "roof_cell",
+      "yaw": "y270",
+      "mat": "thatch"
+    },
+    "stair_N": {
+      "origin": [
+        180.09545442950497,
+        126.20227278524749
+      ],
+      "size": [
+        182,
+        184
+      ],
+      "module": "stair_45",
+      "yaw": "y270",
+      "mat": "stone"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "view": "SW",
+  "pxPerVoxel": 126.0,
+  "canvas": {
+    "width": 413,
+    "height": 599
+  },
+  "tiles": [
+    {
+      "piece": "floor",
+      "mat": "stone",
+      "side": "",
+      "asset": "floor",
+      "u": 1,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 0,
+      "left": 142.0,
+      "top": 441.44,
+      "width": 255,
+      "height": 142
+    },
+    {
+      "piece": "wall",
+      "mat": "stone",
+      "side": "",
+      "asset": "wall__stone",
+      "u": 0,
+      "v": 0,
+      "z": 0,
+      "boundHeight": 2,
+      "left": 16.0,
+      "top": 16.0,
+      "width": 255,
+      "height": 505
+    }
+  ]
+}

@@ -25,7 +25,12 @@ export function manifestTileToData(t: ManifestTile, gridSize: number, assetBase:
     texture: { src: `${assetBase}/${t.asset}` },
     flags: {
       isoroll: {
-        presetEnabled: true,
+        // A baked kit asset has never been through the preset system, so auto-apply can only miss —
+        // and every miss is a real 404 (preset-storage.readPreset fetches /isoroll/presets/<src>.json).
+        // 86 tiles meant 86 failed requests and a console the user cannot read past. An imported
+        // tile's geometry comes from the manifest; a preset overwriting width/height/boundHeight/
+        // imageOffset behind it would also race the wall frame (wall-coords.imageRect).
+        presetEnabled: false,
         boundHeight: t.boundHeight,
         // v2 (dsl-v2-ts-twin, T7, C3): tile elevation from level/z0 — OPTIONAL manifest field,
         // 0 is the v1 back-compat default (PIN-4).

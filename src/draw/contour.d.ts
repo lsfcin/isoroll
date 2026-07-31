@@ -1,4 +1,4 @@
-import type { MeshGeometry, DrawAPI } from '../render';
+import type { MeshGeometry, DrawAPI } from "../render";
 export interface MeshLike {
     x: number;
     y: number;

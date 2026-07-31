@@ -15,9 +15,11 @@ import {
   dumpZOrder,
   dumpZOrderJSON,
   scheduleDumpZOrder,
+  dumpTileRects,
 } from "../render";
 import type { TokenRenderer, TileRenderer } from "../render";
 import { importSceneManifest } from "../import";
+import * as spikeApi from "../spike-floor"; // THROWAWAY (.loop/floor-fog-spike) — revert at Loop 6
 
 function registerIsorollGlobal(): void {
   (globalThis as Record<string, unknown>).isoroll = {
@@ -28,6 +30,8 @@ function registerIsorollGlobal(): void {
     dumpZOrder,
     dumpZOrderJSON,
     scheduleDumpZOrder,
+    dumpTileRects,
+    spike: spikeApi,
   };
 }
 

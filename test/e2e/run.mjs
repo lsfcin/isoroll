@@ -11,8 +11,9 @@ import b35 from "./b35-stale-sync.spec.mjs";
 import goldenJunction from "./golden-junction.spec.mjs";
 import importManifest from "./import-manifest.spec.mjs";
 import importCabin from "./import-cabin.spec.mjs";
+import parityOneCell from "./parity-one-cell.spec.mjs";
 
-const specs = [b32, b33, b2, b34, b35, b32real, goldenJunction, importManifest, importCabin];
+const specs = [b32, b33, b2, b34, b35, b32real, goldenJunction, importManifest, importCabin, parityOneCell];
 
 let browser;
 let page;
