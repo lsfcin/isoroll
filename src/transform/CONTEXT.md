@@ -17,7 +17,9 @@
 | `stage-transform.ts` | `CanvasTransform` — stage rotation+skew, `effectiveProjection()`, `previewOverride`, hooks: canvasReady/updateScene |
 | `bg-transform.ts` | Background sprite counter-transform: `getBgYScale()`, `setBgYScaleOverride()`, `applyBgTransform()` |
 | `object-transform.ts` | Hook registrations: `refreshToken` → `onRefreshToken`, `refreshTile` → `onRefreshTile`, `updateTile` → `onUpdateTileFlags`, `preUpdateScene` / `updateScene` for grid rescale |
-| `tile-transform.ts` | Tile counter-transform: `onRefreshTile()`, `onUpdateTileFlags()` (forces refresh when isoroll flags change via setFlag), `onPreUpdateScene()`, `onUpdateSceneGridRescale()`, `applyTileCounter()` |
+| `tile-transform.ts` | Tile counter-transform HOOKS only: `onRefreshTile()`, `onUpdateTileFlags()` (forces refresh when isoroll flags change via setFlag), `onPreUpdateTileFlip()`, re-exports the rescale handlers |
+| `tile-mesh-place.ts` | Where the mesh sits and how big it is: `applyMeshTransform()`, the counter-transform, and the two placement rules (box fit vs baked sprite) |
+| `tile-sprite-anchor.ts` | Baked-sprite placement math, pure: `groundFactor()`, `spriteUniformScale()`, `spriteAnchorUV()`, `spriteOriginWorld()`, `readSpriteMeta()` |
 | `token-transform.ts` | Token counter-transform: `onRefreshToken()`, `tokenBase` WeakMap for base-position caching |
 | `ruler-patch.ts` | Prototype patches: `_getWaypointLabelContext` (Ruler + TokenRuler), `_updatePosition` (TileHUD + TokenHUD) for iso-correct CSS positioning |
 
@@ -53,7 +55,10 @@ Curried API: `toWorld(params)(point)` / `fromWorld(params)(point)` in each `coor
 - **`mesh.scale.set()` safe every refresh** — absolute, not cumulative. No meshReset guard needed. Only guard `*=` patterns.
 - **Animation frames fire `refreshMesh`, not `refreshPosition`**: token hide/show alpha lerp fires `refreshMesh` every frame. Do NOT capture `tokenBase` on refreshMesh — offset accumulates and image drifts.
 - **`imageOffset` coordinate space**: stored as `canvas_px / gridSize` (WORLD displacement normalized). In `onRefreshTile`: `mesh.x = baseCenterWorld.x + imgOff.x * gridSize`. To convert imgOff to IMAGE space: two `transformCoord` calls → subtract (displacement, not absolute point).
-- **Anchor computation order**: `applyTileCounter` (sets scale/rotation) → temp `mesh.anchor=(0.5,0.5)` + `mesh.x/y = boxTopCenter` → `anchorUV = WORLD→IMAGE(baseCenterWorld)` → `mesh.anchor = anchorUV` → `mesh.x/y = baseCenterWorld + imgOffPx`.
+- **Two placement rules, one hook** (`tile-mesh-place.ts`). Which one runs is decided by `flags.isoroll.sprite`:
+  - *Box fit* (hand-placed art). Anchor computation order: `applyTileCounter` (sets scale/rotation) → temp `mesh.anchor=(0.5,0.5)` + `mesh.x/y = boxTopCenter` → `anchorUV = WORLD→IMAGE(baseCenterWorld)` → `mesh.anchor = anchorUV` → `mesh.x/y = baseCenterWorld + imgOffPx`. Scale is `max(docW, docH, boundH) / max(texW, texH)` — a guess, because nothing knows the art's density.
+  - *Baked sprite* (imported manifest). Scale is `a * gridSize / pxPerVoxel` and the anchor is `originPx / texSize`, both straight from the bake; the mesh lands on the footprint's screen-TOP corner. No box fit, so a tall piece no longer inflates past its cell.
+- **Screen quantities carry `a = cos(rotation + skewY)`** (`groundFactor`, ~0.894 for dimetric 2:1). A world px is not a screen px: a 1×1 cell projects to a diamond `2a*gridSize` wide. Any conversion between a projected image (the offline bake, a screenshot) and world units that omits `a` is off by √5/2 = 1.118.
 - **`coord-sys-image.ts` uses `Math.abs(scale.x)`** — ignores flip sign. Roundtrip is self-consistent but UV is mirrored for flipped tiles.
 - **`worldTransform` cache on `canvasReady`**: stale (identity) until next PIXI frame. `syncHudAfterStageApply()` in `stage-transform.ts` flushes and syncs `#hud` CSS immediately. Do NOT call `stage.updateTransform()` — crashes when `stage.parent` is null.
 - **HUD patches**: `ruler-patch.ts` patches prototypes, never use `renderTileHUD`/`renderTokenHUD` hooks — miss document-update re-renders and RAF timing stomps `transform: scale(uiScale)`.
@@ -84,7 +89,9 @@ Curried API: `toWorld(params)(point)` / `fromWorld(params)(point)` in each `coor
 | [`object-transform.ts`](object-transform.ts) | [`object-transform.d.ts`](object-transform.d.ts) | — | ← add first-line comment |
 | [`ruler-patch.ts`](ruler-patch.ts) | [`ruler-patch.d.ts`](ruler-patch.d.ts) | `registerRulerPatch`, `patchRulerProto`, `applyTileHudPosition`, `patchTileHUDProto`, `applyTokenHudPosition` | ← add first-line comment |
 | [`stage-transform.ts`](stage-transform.ts) | [`stage-transform.d.ts`](stage-transform.d.ts) | — | Stage isometric transform coordinator: rotation/skew, preview override, object refresh. |
+| [`tile-mesh-place.ts`](tile-mesh-place.ts) | [`tile-mesh-place.d.ts`](tile-mesh-place.d.ts) | `applyMeshTransform`, `EPS`, `boxFitUniform`, `applyTileCounter`, `setMeshAnchor` | Where a tile's mesh sits and how big it is — the geometry half of the tile counter-transform. |
+| [`tile-sprite-anchor.ts`](tile-sprite-anchor.ts) | [`tile-sprite-anchor.d.ts`](tile-sprite-anchor.d.ts) | `groundFactor`, `spriteUniformScale`, `spriteAnchorUV`, `spriteOriginWorld`, `readSpriteMeta` | Baked-sprite placement: scale from the sprite's own pixel density, anchor on its origin pixel. |
 | [`tile-transform-rescale.ts`](tile-transform-rescale.ts) | [`tile-transform-rescale.d.ts`](tile-transform-rescale.d.ts) | `onPreUpdateScene`, `onUpdateSceneGridRescale`, `syncWallsAfterRescale`, `buildRescaleUpdates`, `doRescale` | Grid-rescale scene update handlers: pre-update capture, rescale apply, wall sync. |
-| [`tile-transform.ts`](tile-transform.ts) | [`tile-transform.d.ts`](tile-transform.d.ts) | `onUpdateTileFlags`, `onPreUpdateTileFlip`, `onRefreshTile`, `EPS`, `applyTileCounter` | Tile counter-transform: refreshTile hook, flag-change trigger, grid-rescale scene update handlers. |
+| [`tile-transform.ts`](tile-transform.ts) | [`tile-transform.d.ts`](tile-transform.d.ts) | `onUpdateTileFlags`, `onPreUpdateTileFlip`, `onRefreshTile`, `applyNativeRefresh` | Tile counter-transform hooks: refreshTile, flag-change trigger, flip mirroring, grid rescale. |
 | [`token-transform.ts`](token-transform.ts) | [`token-transform.d.ts`](token-transform.d.ts) | `onRefreshToken` | Token counter-transform: refreshToken hook handler. |
 <!-- routing:end -->

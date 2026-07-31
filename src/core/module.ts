@@ -16,6 +16,7 @@ import {
   dumpZOrderJSON,
   scheduleDumpZOrder,
   dumpTileRects,
+  dumpStageMetrics,
 } from "../render";
 import type { TokenRenderer, TileRenderer } from "../render";
 import { importSceneManifest } from "../import";
@@ -31,6 +32,7 @@ function registerIsorollGlobal(): void {
     dumpZOrderJSON,
     scheduleDumpZOrder,
     dumpTileRects,
+    dumpStageMetrics,
     spike: spikeApi,
   };
 }

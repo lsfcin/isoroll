@@ -25,8 +25,10 @@
 | [`painter-model.test.ts`](painter-model.test.ts) | `blankLayout`, `strokeAt` | T1 — unit seam for src/painter/model.ts (3-arch.md painter-mvp-1, Loop 4a). |
 | [`painter-reassemble-perf.test.ts`](painter-reassemble-perf.test.ts) | — | T5 — unit seam for src/painter/reassemble-perf.ts (3-arch.md painter-mvp-1, C6 perf gate). |
 | [`painter-reassemble-plan.test.ts`](painter-reassemble-plan.test.ts) | `loadLRoomLayout`, `loadLRoomModel` | T5 — unit seam for src/painter/reassemble-plan.ts (3-arch.md painter-mvp-1, the C6 seam). |
+| [`parity-placement.test.ts`](parity-placement.test.ts) | `load`, `stagePoint`, `spriteTopLeft` | T1 — the OFFLINE twin of test/e2e/parity-one-cell.spec.mjs: does the placement rule reproduce |
 | [`setup.ts`](setup.ts) | — | Vitest global stubs — minimal Foundry/PIXI globals so pure-math modules import cleanly in Node. |
 | [`spike-bg-regen.test.ts`](spike-bg-regen.test.ts) | — | T2 — oracle unit tests for buildBackgroundSpec: view -> filename map, flags, yScale passthrough. |
 | [`spike-floor-tiles.test.ts`](spike-floor-tiles.test.ts) | — | T1 — oracle unit tests for buildFloorTileSpecs. Fixture: test/unit/assets/l-room.txt (same |
 | [`spike-measure.test.ts`](spike-measure.test.ts) | — | T3 — oracle unit tests for the measurement module. classifyFog is the ONE classifier shared by |
+| [`tile-sprite-anchor.test.ts`](tile-sprite-anchor.test.ts) | — | T1 unit tests — tile-sprite-anchor: density scale, origin anchor, and the ground factor identity. |
 <!-- routing:end -->

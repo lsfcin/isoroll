@@ -7,9 +7,15 @@
 // the rule this project already had and broke (core/skills/iso-visual.md).
 //
 // Frames are reconciled by RELATIVE geometry, never by guessing a shared origin: one tile is the
-// anchor, every other tile is compared by its offset from that anchor, scaled by
-// gridSize / pxPerVoxel (one voxel is one grid unit). So a uniform shift of the whole scene is not
-// reported as 86 errors, and a single misplaced piece is not hidden by one.
+// anchor, every other tile is compared by its offset from that anchor. So a uniform shift of the
+// whole scene is not reported as 86 errors, and a single misplaced piece is not hidden by one.
+//
+// The two frames convert by pxPerGridUnit / pxPerVoxel, both of them SCREEN quantities:
+// `pxPerVoxel` is how many px of the assembled image a voxel spans, and `pxPerGridUnit` (from
+// isoroll.dumpStageMetrics()) is how many px of stage a grid unit spans under the live projection.
+// The first cut of this file used gridSize / pxPerVoxel, which is the WORLD ratio — off by the
+// projection's foreshortening, a = cos(rotation + skewY) = 0.894 for dimetric 2:1. It reported
+// sizes green anyway, because the importer sized tiles with the same wrong number.
 import { readFileSync } from "node:fs";
 
 export const TOLERANCE_PX = 1.5;
@@ -42,13 +48,14 @@ function indexActual(rects) {
 }
 
 /**
- * compare(plan, rects, gridSize) -> {
+ * compare(plan, rects, pxPerGridUnit) -> {
  *   scale, anchor, matched, missing[], extra[], missingMesh[], worst, offenders[]
  * }
+ * `pxPerGridUnit` comes from isoroll.dumpStageMetrics() — see the frame note at the top.
  * `offenders` lists every tile beyond TOLERANCE_PX, worst first, with its dx/dy and size error.
  */
-export function compare(plan, rects, gridSize, tolerance = TOLERANCE_PX) {
-  const scale = gridSize / plan.pxPerVoxel;
+export function compare(plan, rects, pxPerGridUnit, tolerance = TOLERANCE_PX) {
+  const scale = pxPerGridUnit / plan.pxPerVoxel;
   const { byKey, missingMesh } = indexActual(rects);
 
   const expected = plan.tiles.map((t) => ({ key: planKey(t), t }));

@@ -19,38 +19,33 @@ export default {
     );
     await loadFixture(page, { name: "fx-parity-one-cell", gridSize: GRID });
 
-    const rects = await page.evaluate(async (root) => {
+    const dump = await page.evaluate(async (root) => {
       const manifest = await (await fetch(`${root}/manifests/one-cell_sw_manifest.json`)).json();
       await globalThis.isoroll.importSceneManifest(manifest, { assetBase: `${root}/kit/dimetric` });
       // Textures load asynchronously; the mesh quad is meaningless until they are in.
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      return globalThis.isoroll.dumpTileRects();
+      return { rects: globalThis.isoroll.dumpTileRects(), metrics: globalThis.isoroll.dumpStageMetrics() };
     }, ROOT);
+    const { rects, metrics } = dump;
 
     assert.equal(rects.length, plan.tiles.length, `expected ${plan.tiles.length} tiles, got ${rects.length}`);
+    assert.equal(metrics.gridSize, GRID, `fixture grid changed: ${metrics.gridSize}`);
 
-    const result = compare(plan, rects, GRID);
+    const result = compare(plan, rects, metrics.pxPerGridUnit);
     assert.equal(result.missingMesh.length, 0, `tiles with no rendered mesh:\n${report(result)}`);
     assert.equal(result.missing.length, 0, `tiles the renderer placed but Foundry did not:\n${report(result)}`);
     assert.equal(result.extra.length, 0, `tiles Foundry has that the renderer does not:\n${report(result)}`);
 
-    // What CP-1 establishes: the harness works, sizes are right, and flat pieces sit where the
-    // offline renderer says. Sizes come from the manifest's sizePx at the sprite's own density, so
-    // a mismatch here means the tile rect no longer tracks the bake.
+    // Sizes come from the sprite's own density (flags.isoroll.sprite.pxPerVoxel) through the
+    // projection, so a mismatch here means the mesh scale no longer tracks the bake.
     assert.equal(result.sizeOffenders.length, 0, `sprite SIZE disagrees:\n${report(result)}`);
     assert.equal(result.flatOffenders.length, 0, `FLAT piece position disagrees:\n${report(result)}`);
 
-    // KNOWN GAP, owned by CP-2 — not a passing condition, a pinned defect.
-    // A tall piece is anchored by its texture CENTRE at the cell centre, while the offline renderer
-    // anchors by the piece's own world (0,0,0) origin (originPx in the manifest). The taller the
-    // sprite, the further apart those are, so the wall lands ~149px low. Pinned exactly so it
-    // cannot drift while CP-2 is pending; CP-2 deletes this block and asserts 0 instead.
-    const KNOWN_TALL_GAP = { dx: 10.31, dy: 148.67 };
-    for (const o of result.tallOffenders) {
-      assert.ok(
-        Math.abs(o.dx - KNOWN_TALL_GAP.dx) < 2 && Math.abs(o.dy - KNOWN_TALL_GAP.dy) < 2,
-        `tall-piece offset CHANGED from the pinned CP-2 gap (dx ${KNOWN_TALL_GAP.dx} dy ${KNOWN_TALL_GAP.dy}):\n${report(result)}`,
-      );
-    }
+    // CP-2: a TALL piece lands where the offline renderer put it too. It used to miss by
+    // (dx 10.3, dy 148.7) because the module anchored the texture's CENTRE on the volume box's
+    // centre while the bake anchors the piece's own world (0,0,0) — `originPx` — on the cell's
+    // top corner. The taller the sprite, the further apart those two are.
+    assert.equal(result.tallOffenders.length, 0, `TALL piece position disagrees:\n${report(result)}`);
+    assert.equal(result.offenders.length, 0, `placement disagrees:\n${report(result)}`);
   },
 };

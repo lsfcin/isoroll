@@ -45,6 +45,8 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | `flags.isoroll.showImageManipulation` | boolean | tile+token | true | Show image contour + imgOffset/imgScale/swapSide handles on select |
 | `flags.isoroll.showVolumeManipulation` | boolean | tile+token | true | Show 3D box + elevation handle on select (tiles also: width/height/boundH/scale/move) |
 | `flags.isoroll.presetEnabled` | boolean | tile+token | true | Opt-out of image preset auto-apply/upsert for this specific object |
+| `flags.isoroll.sprite` | `{originPx:{x,y}, pxPerVoxel}` | tile | — | Baked-sprite geometry from an imported manifest: texel of the piece's world (0,0,0), and texture px per voxel. Present ⇒ the mesh is scaled by density and anchored on that texel instead of fitted to the volume box (`transform/tile-sprite-anchor.ts`) |
+| `flags.isoroll.cell` | `{u,v}` | tile | — | The bake-frame cell an imported tile came from. Needed because the manifest grid sits a quarter turn off the module's (`import/import-tiles.ts`), so the document position no longer spells it out |
 
 ## Verification
 

@@ -44,6 +44,11 @@ export interface SceneManifest {
   scene: string;
   view: string;
   pxPerVoxel: number;
+  // D7 guard (isoroll-content scene_manifest.py): which slab of the layout this bake covers, and
+  // how big the whole layout is. `rows` is what turns a manifest cell into a world position, so a
+  // layout whose last row holds no tiles no longer shifts the whole scene. OPTIONAL: pre-chunk
+  // manifests fall back to max(u,v)+1, which is that same bug.
+  chunk?: { index: [number, number]; cols: number; rows: number };
   tiles: ManifestTile[];
   walls: ManifestWall[];
 }

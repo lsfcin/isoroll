@@ -54,13 +54,15 @@ export async function importSceneManifest(
   const gridSize = CanvasEnv.gridSize();
   const us = manifest.tiles.map((t) => t.u);
   const vs = manifest.tiles.map((t) => t.v);
-  const cols = Math.max(...us) + 1;
-  const rows = Math.max(...vs) + 1;
+  // The manifest states the layout's extent; max(u,v)+1 only measures where tiles happen to be.
+  // rows now positions every tile (import-tiles cellCenter), so guessing it shifts the scene.
+  const cols = manifest.chunk?.cols ?? Math.max(...us) + 1;
+  const rows = manifest.chunk?.rows ?? Math.max(...vs) + 1;
   const assetBase = opts.assetBase ?? DEFAULT_ASSET_BASE;
 
   try {
     const sc = scene();
-    const tileData = manifest.tiles.map((t) => manifestTileToData(t, gridSize, assetBase));
+    const tileData = manifest.tiles.map((t) => manifestTileToData(t, gridSize, assetBase, rows));
     const createdTiles = (await sc.createEmbeddedDocuments(
       "Tile",
       tileData,

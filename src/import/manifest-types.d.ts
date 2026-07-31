@@ -26,6 +26,11 @@ export interface SceneManifest {
     scene: string;
     view: string;
     pxPerVoxel: number;
+    chunk?: {
+        index: [number, number];
+        cols: number;
+        rows: number;
+    };
     tiles: ManifestTile[];
     walls: ManifestWall[];
 }

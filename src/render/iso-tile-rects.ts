@@ -48,6 +48,29 @@ export type TileRect = {
   worldRect: Rect | null;
 };
 
+export type StageMetrics = {
+  gridSize: number;
+  /**
+   * Stage px one grid unit spends on the screen horizontal — the live stage matrix's `a`, zoom
+   * divided out. The offline plan is in image px at `pxPerVoxel` px per voxel and a voxel is a
+   * grid unit, so `pxPerGridUnit / pxPerVoxel` converts any plan length into a stage length.
+   * Reported rather than recomputed test-side so the ruler is the projection Foundry is actually
+   * running, not a constant copied out of the module and free to drift from it.
+   */
+  pxPerGridUnit: number;
+  zoom: number;
+};
+
+export function dumpStageMetrics(): StageMetrics {
+  const gridSize = CanvasEnv.gridSize();
+  const env = globalThis as unknown as { canvas?: { stage?: PIXI.Container } };
+  const stage = env.canvas?.stage;
+  const wt = stage?.worldTransform;
+  const zoom = stage?.scale?.x || 1;
+  const a = wt ? wt.a / zoom : 1;
+  return { gridSize, pxPerGridUnit: a * gridSize, zoom };
+}
+
 function assetOf(doc: { texture?: { src?: string } }): string {
   const src = doc.texture?.src ?? "";
   const parts = src.split("/");
@@ -70,12 +93,27 @@ type TileDocShape = {
   texture?: { src?: string };
 };
 
+/**
+ * The tile's BAKE-frame cell, stored by the importer: the module's grid sits a quarter turn off
+ * the bake's (import/import-tiles.ts cellCenter), so the document position no longer spells it
+ * out. Hand-placed tiles have no such cell and fall back to the centre-anchored grid index.
+ */
+function cellOf(doc: TileDocShape, gridSize: number): { u: number; v: number } {
+  const flags = (doc as { flags?: Record<string, Record<string, unknown>> }).flags;
+  const stored = flags?.isoroll?.cell as { u: number; v: number } | undefined;
+  let cell = stored;
+  if (!stored) {
+    const u = Math.round(doc.x / gridSize - 0.5);
+    const v = Math.round(doc.y / gridSize - 0.5);
+    cell = { u, v };
+  }
+  return cell as { u: number; v: number };
+}
+
 /** Everything about a tile that comes from its document — no PIXI, no mesh. */
 function identityOf(doc: TileDocShape, gridSize: number): Omit<TileRect, "rect" | "worldRect"> {
   const asset = assetOf(doc);
-  // v14 tiles are centre-anchored, so the cell index is the centre minus the half cell.
-  const u = Math.round(doc.x / gridSize - 0.5);
-  const v = Math.round(doc.y / gridSize - 0.5);
+  const { u, v } = cellOf(doc, gridSize);
   const baseElevation = flagNumber(doc, "baseElevation", 0);
   const boundHeight = flagNumber(doc, "boundHeight", 1);
   const elevation = doc.elevation ?? 0;
