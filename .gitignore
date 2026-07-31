@@ -12,3 +12,6 @@ src/**/index.d.ts
 # codegraph local index
 .codegraph/
 test/e2e/output/
+
+# Console-paste helpers are not a compilation unit — the stub generator must not claim this dir.
+test/manual/jsconfig.json
