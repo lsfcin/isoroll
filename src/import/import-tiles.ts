@@ -1,28 +1,19 @@
 // Pure manifest-tile → Foundry Tile creation-data mapping (C1, T2). v14 center convention.
+import { cellToWorld } from "./bake-frame";
 import type { ManifestTile } from "./manifest-types";
 
 type Box = { x: number; y: number; width: number; height: number };
 
-// The bake's camera and the module's stage camera are one grid TURN apart. isoroll-content projects
-// x = u - v, y = 0.5(u + v) - z (view_table.py `_DIMETRIC`); the module's stage projects
-// x = a(X + Y), y = 0.5a(Y - X) - a*elev. Setting those equal gives Y = u, X = -v: the manifest's
-// +u axis is the module's +y, its +v axis the module's -x. Importing (u,v) straight into (x,y)
-// lays the scene out a quarter turn off, which no per-piece nudge can undo. `rows` only slides the
-// result back into positive world coordinates.
-//
-// The turn transposes the footprint with everything else: a box l cells along u by d along v is
-// d*gridSize WIDE and l*gridSize TALL in world space. v14 tile documents are centre-anchored.
+// The turn (bake-frame.ts) transposes the footprint with everything else: a box l cells along u by
+// d along v is d*gridSize WIDE and l*gridSize TALL in world space. v14 tiles are centre-anchored,
+// so the document sits on the box's centre.
 function footprintBox(t: ManifestTile, gridSize: number, rows: number): Box {
   const cells = t.cells;
   const usable = Array.isArray(cells) && cells.length === 2 && cells[0] > 0 && cells[1] > 0;
   const alongU = usable ? cells[0] : 1;
   const alongV = usable ? cells[1] : 1;
-  return {
-    x: (rows - t.v - alongV / 2) * gridSize,
-    y: (t.u + alongU / 2) * gridSize,
-    width: alongV * gridSize,
-    height: alongU * gridSize,
-  };
+  const centre = cellToWorld(t.u + alongU / 2, t.v + alongV / 2, rows, gridSize);
+  return { x: centre.x, y: centre.y, width: alongV * gridSize, height: alongU * gridSize };
 }
 
 type SpriteFlag = { originPx: { x: number; y: number }; pxPerVoxel: number };

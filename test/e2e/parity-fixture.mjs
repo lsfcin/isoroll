@@ -39,6 +39,9 @@ export async function importFixture(page, name) {
       return {
         rects: globalThis.isoroll.dumpTileRects(),
         metrics: globalThis.isoroll.dumpStageMetrics(),
+        // WORLD-space endpoints of every Foundry wall the import created.
+        walls: canvas.walls.placeables.map((w) => [...w.document.c]),
+        manifestWalls: parsed.walls.length,
       };
     },
     { root: cp.root, manifest: cp.manifest },
@@ -67,6 +70,51 @@ export function assertParity(name, loaded) {
   return result;
 }
 
+const EDGE_TOLERANCE_PX = 0.5;
+
+/** Is this world point inside the tile's footprint (document x/y = CENTRE in v14)? */
+function insideFootprint(tile, point) {
+  const halfW = tile.docWidth / 2 + EDGE_TOLERANCE_PX;
+  const halfH = tile.docHeight / 2 + EDGE_TOLERANCE_PX;
+  return (
+    Math.abs(point.x - tile.docX) <= halfW && Math.abs(point.y - tile.docY) <= halfH
+  );
+}
+
+/**
+ * CP-4 — every wall segment lies on wall TILES.
+ *
+ * Deliberately NOT a restatement of the wall formula: that is the trap CP-1 fell into, where both
+ * sides of a comparison shared a derivation and agreed on a wrong number. This checks the walls
+ * against the tile placement CP-3 already proved, through the one thing they must share — the
+ * ground they sit on. An identity import (no quarter turn) puts these samples on floor tiles or
+ * off the layout entirely.
+ */
+export function assertWalls(loaded) {
+  const { walls, manifestWalls, rects } = loaded;
+  assert.equal(walls.length, manifestWalls, `expected ${manifestWalls} Foundry walls, got ${walls.length}`);
+
+  const wallTiles = rects.filter((t) => t.boundHeight > 0);
+  assert.ok(wallTiles.length > 0, "fixture has no wall tiles to check against");
+  for (const [x1, y1, x2, y2] of walls) {
+    // Walls in this DSL run along a grid axis, so a segment with BOTH coordinates changing is not
+    // a wall — it is a box's diagonal. That is what reading the manifest's two corners as a
+    // segment produces, and sampling alone cannot see it: a diagonal of a 12x1 run never leaves
+    // the run's own wall cells.
+    const axisAligned =
+      Math.abs(x1 - x2) < EDGE_TOLERANCE_PX || Math.abs(y1 - y2) < EDGE_TOLERANCE_PX;
+    assert.ok(axisAligned, `wall [${x1},${y1}]->[${x2},${y2}] runs along neither grid axis`);
+    for (const t of [0.05, 0.25, 0.5, 0.75, 0.95]) {
+      const point = { x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t };
+      const on = wallTiles.some((tile) => insideFootprint(tile, point));
+      assert.ok(
+        on,
+        `wall [${x1},${y1}]->[${x2},${y2}] leaves its wall tiles at t=${t} (${point.x},${point.y})`,
+      );
+    }
+  }
+}
+
 /** The runner's spec shape for one fixture. */
 export function paritySpec(name) {
   return {
@@ -74,6 +122,7 @@ export function paritySpec(name) {
     async run({ page }) {
       const loaded = await importFixture(page, name);
       assertParity(name, loaded);
+      assertWalls(loaded);
     },
   };
 }

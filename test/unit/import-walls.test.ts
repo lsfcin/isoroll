@@ -50,24 +50,63 @@ describe("manifestWallsToDefs — frame independence (Deferred #1)", () => {
     );
   });
 
-  it("denormalizes the l-room fixture's first wall to the expected scene-grid position", () => {
-    // manifest wall {ax:0,ay:0,bx:0.625,by:0.125}, cols=rows=8, g=100 → C=[0,0,500,100].
+  // CP-4 (2026-08-01) — this used to pin C=[0,0,500,100]: the manifest's two corners read as a
+  // segment, with (u,v) put straight into (x,y). Both halves were wrong. The corners are the RUN's
+  // bounding rect, so the segment is that box's centreline along its own axis; and the bake grid
+  // sits a quarter turn off the module's world (import/bake-frame.ts), so u drives world y.
+  const wallOf = (over: Partial<ManifestWall> = {}): ManifestWall => ({
+    ax: 0,
+    ay: 0,
+    bx: 0.625,
+    by: 0.125,
+    topOffset: 3,
+    bottomOffset: 0,
+    config: {},
+    ...over,
+  });
+
+  it("runs a u-axis wall down the middle of its box, turned into world space", () => {
+    // {ax:0, ay:0, bx:0.625, by:0.125} over 8x8 = cells u 0..5, v 0..1. Centreline: v = 0.5,
+    // u 0..5. Turned: x = (rows - v) * g = 750 fixed, y = u * g = 0..500.
     const frame = fakeFrame(450, 450, 100);
-    const wall: ManifestWall = {
-      ax: 0,
-      ay: 0,
-      bx: 0.625,
-      by: 0.125,
-      topOffset: 3,
-      bottomOffset: 0,
-      config: {},
-    };
-    const [def] = manifestWallsToDefs([wall], frame, 8, 8, 100);
+    const [def] = manifestWallsToDefs([wallOf({ dir: "u" })], frame, 8, 8, 100);
     const c = defToCanvas(frame, def);
-    expect(c[0]).toBeCloseTo(0, 6);
+    expect(c[0]).toBeCloseTo(750, 6);
     expect(c[1]).toBeCloseTo(0, 6);
-    expect(c[2]).toBeCloseTo(500, 6);
-    expect(c[3]).toBeCloseTo(100, 6);
+    expect(c[2]).toBeCloseTo(750, 6);
+    expect(c[3]).toBeCloseTo(500, 6);
+  });
+
+  it("runs a v-axis wall down the OTHER middle — a 1x1 box is not two different diagonals", () => {
+    // A single wall cell at (0,0): u 0..1, v 0..1. The u run is the horizontal bisector, the v run
+    // the vertical one; reading the corners as a segment would make both the same diagonal.
+    const frame = fakeFrame(450, 450, 100);
+    const cell = { ax: 0, ay: 0, bx: 0.125, by: 0.125 };
+    const [alongU] = manifestWallsToDefs([wallOf({ ...cell, dir: "u" })], frame, 8, 8, 100);
+    const [alongV] = manifestWallsToDefs([wallOf({ ...cell, dir: "v" })], frame, 8, 8, 100);
+    expect(defToCanvas(frame, alongU)).toEqual([750, 0, 750, 100]);
+    expect(defToCanvas(frame, alongV)).toEqual([800, 50, 700, 50]);
+  });
+
+  it("keeps every wall inside the layout's world footprint", () => {
+    // EPS absorbs the anchor round-trip's float error only (a 60 comes back as 60.000000000000014);
+    // a wall outside the layout misses by whole cells, never by 1e-9.
+    const EPS = 1e-6;
+    fc.assert(
+      fc.property(
+        wallArb,
+        fc.integer({ min: 2, max: 12 }),
+        fc.integer({ min: 25, max: 200 }),
+        (w, n, g) => {
+          const frame = fakeFrame(0, 0, g);
+          const [def] = manifestWallsToDefs([w], frame, n, n, g);
+          for (const value of defToCanvas(frame, def)) {
+            expect(value).toBeGreaterThanOrEqual(-EPS);
+            expect(value).toBeLessThanOrEqual(n * g + EPS);
+          }
+        },
+      ),
+    );
   });
 });
 
