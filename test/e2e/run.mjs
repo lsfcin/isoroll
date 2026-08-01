@@ -12,7 +12,7 @@ import goldenJunction from "./golden-junction.spec.mjs";
 import importManifest from "./import-manifest.spec.mjs";
 import importCabin from "./import-cabin.spec.mjs";
 import parityOneCell from "./parity-one-cell.spec.mjs";
-import parityLRoom from "./parity-l-room.spec.mjs";
+import parityOpenRoom from "./parity-open-room.spec.mjs";
 
 const specs = [
   b32,
@@ -25,7 +25,7 @@ const specs = [
   importManifest,
   importCabin,
   parityOneCell,
-  parityLRoom,
+  parityOpenRoom,
 ];
 
 let browser;

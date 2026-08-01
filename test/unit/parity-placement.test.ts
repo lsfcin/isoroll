@@ -17,7 +17,7 @@ import { spriteOriginWorld, spriteUniformScale } from "../../src/transform/tile-
 const GRID = 100;
 const TOLERANCE_PX = 1.5;
 // Same fixtures the e2e specs run: 1 cell (CP-1/CP-2), then a whole flat layer (CP-3).
-const FIXTURES = ["one-cell", "l-room"];
+const FIXTURES = ["one-cell", "open-room"];
 
 type PlanTile = { asset: string; u: number; v: number; left: number; top: number };
 type Plan = { pxPerVoxel: number; tiles: PlanTile[] };

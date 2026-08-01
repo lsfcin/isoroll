@@ -13,7 +13,7 @@ export const GRID = 100;
 /** Baked by `iso-cli.py bake-scene --layout <layout> --out test/e2e/assets/<name> --preview`. */
 export const FIXTURES = {
   "one-cell": { slug: "one-cell", tiles: 2 },
-  "l-room": { slug: "l-room", tiles: 34 },
+  "open-room": { slug: "open-room", tiles: 128 },
 };
 
 function paths(name) {
