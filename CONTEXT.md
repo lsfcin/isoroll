@@ -61,7 +61,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 - Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP
 - `setFlag` not triggering `refreshTile` → [BUGS B25](BUGS.md)
 
-> Implementation gotchas (hidden invariants, Foundry quirks) → [SPECS.md § Implementation Gotchas](SPECS.md#implementation-gotchas)
+> Implementation gotchas (hidden invariants, Foundry quirks) → [SPECS-practice.md](SPECS-practice.md)
 
 ## See Also
 
@@ -75,15 +75,18 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | Subdirectory | Description |
 |--------------|-------------|
+| [`refs/`](refs/CONTEXT.md) | Captured references for isoroll-module — tier-1 links in `refs/REFS.md`; promote… |
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
-| [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/ (Playwrigh |
+| [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/… |
 
 | File | Description |
 |------|-------------|
 | [`BUGS.md`](BUGS.md) | isoroll-module — Known Bugs |
-| [`REFACTOR.md`](REFACTOR.md) | IsoRenderer Refactor — Phase 9+ |
-| [`ROADMAP.md`](ROADMAP.md) | isoroll — Roadmap |
+| [`REFACTOR.md`](REFACTOR.md) | Phases 0–8 complete on branch `refactor/iso-renderer`. |
+| [`ROADMAP.md`](ROADMAP.md) | Pending work only — a finished item is cut, not ticked; done work is deleted and… |
 | [`SETUP.md`](SETUP.md) | isoroll — Development Setup |
+| [`SPECS-decisions.md`](SPECS-decisions.md) | Every decision the module is built on, and what each one rules out. |
+| [`SPECS-practice.md`](SPECS-practice.md) | What bites when implementing against Foundry, and where each thing lives. |
 | [`SPECS.md`](SPECS.md) | isoroll — Specs |
 | [`eslint.config.js`](eslint.config.js) | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
 | [`styles/isoroll.scss`](styles/isoroll.scss) | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
