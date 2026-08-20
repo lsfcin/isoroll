@@ -59,14 +59,14 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 - Token rotation: v14 auto-facing suppressed for undistorted tokens; 8-directional sprite selection not yet implemented (placeholder in `object-transform.ts`)
 - Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP
-- `setFlag` not triggering `refreshTile` → [BUGS B25](BUGS.md)
+- `setFlag` not triggering `refreshTile` → [ISSUES B25](ISSUES.md)
 
 > Implementation gotchas (hidden invariants, Foundry quirks) → [SPECS-practice.md](SPECS-practice.md)
 
 ## See Also
 
 - [ROADMAP.md](ROADMAP.md) — full phase plan, architecture decisions
-- [BUGS.md](BUGS.md) — confirmed bugs with root-cause analysis
+- [ISSUES.md](ISSUES.md) — confirmed bugs with root-cause analysis
 - `isoroll-content/` repo — AI art pipeline (private)
 - `/foundry` skill — Foundry v14 gotchas, coordinate systems, hooks, component hierarchy
 
@@ -81,8 +81,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | File | Description |
 |------|-------------|
-| [`BUGS.md`](BUGS.md) | isoroll-module — Known Bugs |
-| [`REFACTOR.md`](REFACTOR.md) | Phases 0–8 complete on branch `refactor/iso-renderer`. |
+| [`ISSUES.md`](ISSUES.md) | isoroll-module — Issues |
 | [`ROADMAP.md`](ROADMAP.md) | Pending work only — a finished item is cut, not ticked; done work is deleted and… |
 | [`SETUP.md`](SETUP.md) | isoroll — Development Setup |
 | [`SPECS-decisions.md`](SPECS-decisions.md) | Every decision the module is built on, and what each one rules out. |

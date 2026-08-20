@@ -1,4 +1,4 @@
-# isoroll-module — Known Bugs
+# isoroll-module — Issues
 
 > Confirmed pre-existing on `main`. Fix after refactor — reorganized code will make
 > root causes easier to locate.
@@ -110,9 +110,9 @@ Also: painter must support all 9 views (8 yaws + TOP) — content ROADMAP.md § 
 
 **Symptom:** wall drag commit does not produce an undoable Tile-layer history entry.
 
-**Carried here 2026-08-19** from `REFACTOR.md` § Open Items, which was deleted under the
-workspace `.md` cap. That file pointed at "BUGS.md B29 for full symptom description" and
-B29 had never been written here — the description above was the only record of it.
+**Carried here 2026-08-19** from `REFACTOR.md` § Open Items, deleted under the workspace `.md`
+cap. That file pointed at this one for the full symptom description, and B29 had never been
+written here — so the two lines above were the only record of it anywhere.
 
 **Both diagnostic checks it asked for now come back positive**, so this may already be
 fixed and needs one Foundry run to confirm or close:
