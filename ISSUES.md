@@ -121,3 +121,17 @@ fixed and needs one Foundry run to confirm or close:
 
 Onset was to be bisected against `3403e6e`. Nothing has verified the *behaviour*, only that
 the code path exists — so this stays open until someone drags a linked wall and hits undo.
+
+## The TS assembler twin no longer mirrors the Python
+
+`src/assemble/massing.ts` still strip-merges floors in the RENDER lane. isoroll-content stopped
+doing that on 2026-08-01 (`_floor_cell_boxes`), because arm A pastes ONE one-cell sprite per box —
+so a merged 10-cell strip drew a tenth of itself, and nine tenths of every floor was missing from
+the bake. See isoroll-content ROADMAP § PARITY LADDER.
+
+**Nothing goes red**, which is the problem: `test/unit/assemble-golden.test.ts` compares the TS
+assembly against l-room PNGs rendered by the OLD Python, so both sides are stale together and the
+twin quietly stopped being a twin. Whoever next opens `src/assemble/` owns this — the subtree had
+uncommitted spike work when it was found, so it was written down rather than edited.
+
+Fix is `_floor_cell_boxes`'s one loop; the goldens then need re-rendering from current Python.

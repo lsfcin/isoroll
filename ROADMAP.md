@@ -18,6 +18,15 @@ IsoRenderer refactor — Phases 0–11 complete, merged to `develop`. Wall bugs 
 - **P6 floor/fog spike (`floor-fog-spike`)** 🔲 IN FLOW — evidence spike: floor-as-iso-tiles (merged strips) vs live background regen, measured for fog participation. Plan: `.loop/floor-fog-spike/1-plan.md`. Decision left OPEN for Lucas (☐ co-decide); resolves SCENE-CREATION § Floor/background.
 - **P7a — Painter MVP-1 (`painter-mvp-1`)** 🔲 IN FLOW — in-Foundry painter for the FROZEN grammar CORE (walls/floors/openings + slice + live re-assembly + auto WallDefs); MVP-2 (sloped groups / opacity-window / group-ops) deferred to a separate loop. Plan: `.loop/painter-mvp-1/1-plan.md`.
 - **Shadow params in presets** — shadow shape, radius, opacity, and enabled state should be included when saving/loading image presets for tiles and tokens. Currently presets only capture image transform fields.
+- **Assess Last Asylum for z-blocking** (INBOX 2026-08-01, ref in [refs/REFS.md](refs/REFS.md)) — Lucas flagged it as an isometric game that avoids z-blocking well. Look at it against **Phase 6** below and separate the two mechanisms it could be using: *authoring* discipline (level layout that never puts a tall occluder on a camera-near cell) versus *runtime* handling (cutaway walls, fade-on-overlap, per-slice sorting). Only the second is ours to copy; the first belongs to the painter grammar in `isoroll-content`. Scoping pass, not a build.
+
+## Rejected
+
+- **Matching the stage projection to the bake's camera** instead of turning the manifest's cells on
+  import (CP-2, 2026-08-01). It is expressible — rotation +45° with both skews negated reproduces
+  isoroll-content's `x = u - v` exactly — but it breaks the `a = c` invariant every preset is built
+  on, so `heightDir` stops being `{1,-1}` and `counterFactor`'s derivation no longer holds. The turn
+  belongs to the importer, the only thing that crosses the two frames.
 
 ---
 
