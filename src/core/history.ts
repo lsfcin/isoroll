@@ -1,5 +1,5 @@
 // Canonical pre-drag history push. Unifies the 4 inconsistent canvas.X.history.push sites.
-// Phase 8 implements; existing callers remain until then. See REFACTOR.md Phase 8 for undo safety note.
+// Undo safety: the pre-drag push must precede the mutation, or the entry reconstructs the wrong state.
 
 export type HistoryLayer = "tiles" | "tokens" | "walls";
 

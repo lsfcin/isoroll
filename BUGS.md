@@ -103,3 +103,21 @@ while the camera yaws; instead every view gets identical FACE_TOP/LONG/CAP shadi
 normal. Fix = shade from world-frame face normal with a fixed sun (rotate normals per
 yaw). Same machinery as the normal-map lane (content ROADMAP.md § RICHNESS).
 Also: painter must support all 9 views (8 yaws + TOP) — content ROADMAP.md § PLAYABLE, D2.
+
+---
+
+## B29 — Undo of linked-wall displacement lost
+
+**Symptom:** wall drag commit does not produce an undoable Tile-layer history entry.
+
+**Carried here 2026-08-19** from `REFACTOR.md` § Open Items, which was deleted under the
+workspace `.md` cap. That file pointed at "BUGS.md B29 for full symptom description" and
+B29 had never been written here — the description above was the only record of it.
+
+**Both diagnostic checks it asked for now come back positive**, so this may already be
+fixed and needs one Foundry run to confirm or close:
+- `wall-overlay-ops.ts:108` drag `onUp` path DOES call `WallHistory.push({ k:"move", ... })`
+- `wall-history.ts:58` has `undoMove`, and `:112` dispatches `e.k === "move"` to it
+
+Onset was to be bisected against `3403e6e`. Nothing has verified the *behaviour*, only that
+the code path exists — so this stays open until someone drags a linked wall and hits undo.
