@@ -24,6 +24,6 @@
 
 | File | API | Description |
 |------|-----|-------------|
-| [`e2e/dsl-v2-twin-scenario.test.ts`](e2e/dsl-v2-twin-scenario.test.ts) | `runPythonOracle`, `tsLevelsAsPairs` | Loop 5 (.loop/dsl-v2-ts-twin/5-user.md) — DSL v2 twin guarantee, scripted end-to-end scenario. |
+| [`e2e/dsl-v2-twin-scenario.test.ts`](e2e/dsl-v2-twin-scenario.test.ts) | `runPythonOracle`, `tsLevelsAsPairs` | Loop 5 (.craft/dsl-v2-ts-twin/5-user.md) — DSL v2 twin guarantee, scripted end-to-end scenario. |
 | [`manual/cabin-test.js`](manual/cabin-test.js) | — | Manual test setup — builds the cabin test scene from scratch in a live world. |
 <!-- routing:end -->

@@ -20,7 +20,7 @@ import {
 } from "../render";
 import type { TokenRenderer, TileRenderer } from "../render";
 import { importSceneManifest } from "../import";
-import * as spikeApi from "../spike-floor"; // THROWAWAY (.loop/floor-fog-spike) — revert at Loop 6
+import * as spikeApi from "../spike-floor"; // THROWAWAY (.craft/floor-fog-spike) — revert at Loop 6
 
 function registerIsorollGlobal(): void {
   (globalThis as Record<string, unknown>).isoroll = {

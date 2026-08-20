@@ -1,4 +1,4 @@
-// T6 (dsl-v2-ts-twin, .loop/dsl-v2-ts-twin/3-arch.md) — Layout -> canonical DSL v2 text, TS twin
+// T6 (dsl-v2-ts-twin, .craft/dsl-v2-ts-twin/3-arch.md) — Layout -> canonical DSL v2 text, TS twin
 // of layout_serialize.py (ported from rig.frag updateDsl L1088-1119). Round-trip contract (C2):
 // toDsl(parseTextV2(text)) == text, compared per-line-rstripped (PIN-2).
 import { ENCLOSE, ROOF_FORMS, SIDE_NAME, STAIR_TYPES } from "./layout-groups";

@@ -138,7 +138,7 @@ describe("manifestWallsToDefs — passthrough", () => {
   });
 });
 
-// C3 (dsl-v2-ts-twin, .loop/dsl-v2-ts-twin/3-arch.md, PIN-4) — WallDef.dir from opening side:
+// C3 (dsl-v2-ts-twin, .craft/dsl-v2-ts-twin/3-arch.md, PIN-4) — WallDef.dir from opening side:
 // ManifestWall.dir (Python `"dir": box.axis`, a "u"/"v" wall-run axis) must pass through onto
 // the returned WallDef. Distinct from WallDef.config.dir (numeric door-swing side) — PIN-4 flags
 // this as the landmine a medium executor will likely confuse. Currently NOT passed through in

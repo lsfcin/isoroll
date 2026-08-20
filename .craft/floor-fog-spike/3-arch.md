@@ -13,7 +13,7 @@ tasks:
   T2 — prototype (b) pure bg-regen builder — src/spike-floor/bg-regen-proto.ts, test/unit/spike-bg-regen.test.ts — medium
   T3 — measurement oracle module — src/spike-floor/measure.ts, test/unit/spike-measure.test.ts — medium
   T4 — e2e measurement scenario (THROWAWAY) — test/e2e/spike-floor.spec.mjs, test/e2e/output/spike-floor.json — medium
-  T5 — comparison table + open recommendation — .loop/floor-fog-spike/5-user.md, code/isoroll-content/SCENE-CREATION.md — medium
+  T5 — comparison table + open recommendation — .craft/floor-fog-spike/5-user.md, code/isoroll-content/SCENE-CREATION.md — medium
 context: /mnt/workspace/code/isoroll-module/CONTEXT.md, src/CONTEXT.md, src/render/CONTEXT.md, src/assemble/CONTEXT.md, src/import/CONTEXT.md, src/background/CONTEXT.md, /mnt/workspace/core/skills/foundry.md, /mnt/workspace/core/skills/iso-visual.md, /mnt/workspace/code/isoroll-content/SCENE-CREATION.md (§ Floor/background)
 grounded-paths: l-room DSL=test/unit/assets/l-room.txt | composed imgs=isoroll-content/output/assembled/l-room_{NE,NW,SE,SW}.png | composite helper=test/unit/helpers/composite.ts | fog-drive refs=test/e2e/b33-unhide.spec.mjs, b35-stale-sync.spec.mjs | import template=test/e2e/import-manifest.spec.mjs
 
@@ -50,7 +50,7 @@ in measure.ts, and ONE classifier `classifyFog` is the single source used by BOT
   (a) `specs=isoroll.spike.floorSpecsFor(text,"SW",100)`→createTiles→waitSlices; create+`control()` a viewer token at region A→`isoroll.spike.syncFog()`→`fogCoverage(dumpFogSlices())` (expect some visible + some unseen); move token→syncFog→region A now explored (tint darkened);
   (b) `isoroll.spike.backgroundSpecFor("SW")`; `t0=performance.now()`; `scene.update(bgSpec)`+await redraw; latency=now-t0; then `dumpFogSlices()` contains ONLY tile slices → bg absent → fogParticipation=0 (the gap, proven, not eyeballed).
   Write `test/e2e/output/spike-floor.json`: proto(a){tileCount,sliceCount,fog:{unseen,explored,visible},darkenedFraction,shot} vs proto(b){bgSwapLatencyMs,fogParticipation:0,note}.
-- T5 (Loop 5) — table lands in `.loop/.../5-user.md` + `SCENE-CREATION.md § Floor/background`; winner NOT wired (C4 open).
+- T5 (Loop 5) — table lands in `.craft/.../5-user.md` + `SCENE-CREATION.md § Floor/background`; winner NOT wired (C4 open).
 
 ## Evaluation
 criteria-coverage: C1→floor-tiles-proto (tile/slice counts) + measure.classifyFog/fogCoverage over dumpFogSlices (fog alpha states) + e2e (a); C2→bg-regen-proto + e2e (b) latency & fogParticipation=0; C3→measure.ts oracle + e2e spike-floor.json (numbers from dumpFogSlices, never eyeballs); C4→T5 table, decision left OPEN, no floor code shipped.

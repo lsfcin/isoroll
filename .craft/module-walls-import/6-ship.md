@@ -22,7 +22,7 @@ diff-scope: clean
 - 11 new files under src/import/ (T1–T4)
 - 5 new test files (T6 unit + e2e)
 - 3 new kit PNG assets (T5) + l-room.manifest.json fixture
-- .loop/module-walls-import kept (keep-trail: yes per Carry)
+- .craft/module-walls-import kept (keep-trail: yes per Carry)
 
 roadmap: isoroll-module/ROADMAP.md — no corresponding entry found for this feature (oversight from Loop 1; `SCENE-CREATION.md` references "§ Scene Painter track" in ROADMAP but section doesn't exist). All acceptance criteria met; leftovers routed separately.
 

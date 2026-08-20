@@ -166,7 +166,7 @@ describe("manifestTileToData — baked sprite metadata", () => {
   });
 });
 
-// C3 (dsl-v2-ts-twin, .loop/dsl-v2-ts-twin/3-arch.md, PIN-4) — tile elevation from level/z0:
+// C3 (dsl-v2-ts-twin, .craft/dsl-v2-ts-twin/3-arch.md, PIN-4) — tile elevation from level/z0:
 // ManifestTile.z (optional, from a v2 GRP box's z0) must flow through to flags.isoroll.baseElevation.
 describe("manifestTileToData — z -> baseElevation (C3)", () => {
   it("sets baseElevation from manifest tile z when present", () => {

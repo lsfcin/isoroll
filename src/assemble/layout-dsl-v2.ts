@@ -1,4 +1,4 @@
-// T4 (dsl-v2-ts-twin, .loop/dsl-v2-ts-twin/3-arch.md) — "level N:"/"layer X:"/"roof:"/"stair:"
+// T4 (dsl-v2-ts-twin, .craft/dsl-v2-ts-twin/3-arch.md) — "level N:"/"layer X:"/"roof:"/"stair:"
 // grammar -> Layout. TS twin of layout_dsl_v2.py. Imports from ./types + ./layout-groups +
 // ./layout-dsl-v2-validate only (never from ./layout-parse -> no cycle; layout-parse imports
 // this module, one-directional). Validation split into layout-dsl-v2-validate.ts (line-gate).

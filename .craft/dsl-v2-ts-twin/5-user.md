@@ -35,7 +35,7 @@ massing box and a synthetic wall-run box and push them through the actual manife
 functions (manifestTileToData, manifestWallsToDefs) to confirm z/dir/boundHeight really land where
 C3 claims they do.
 
-script: test/e2e/dsl-v2-twin-scenario.test.ts (oracle: .loop/dsl-v2-ts-twin/py_dsl_v2_dump.py,
+script: test/e2e/dsl-v2-twin-scenario.test.ts (oracle: .craft/dsl-v2-ts-twin/py_dsl_v2_dump.py,
 config: vitest.scenario.config.ts — kept outside vitest.config.ts's default include so it never
 runs inside `npm run verify:fast`/C4, per keep-trail:yes)
 run: `npx vitest run --config vitest.scenario.config.ts`
@@ -86,8 +86,8 @@ manifest-consumption chain verified end-to-end through the actual TS mapping fun
 
 New files this loop (flagging for Loop 6 diff-scope review, additive/scratch, keep-trail:yes):
 test/e2e/dsl-v2-twin-scenario.test.ts, vitest.scenario.config.ts,
-.loop/dsl-v2-ts-twin/py_dsl_v2_dump.py. None are referenced by src/ or by the default
+.craft/dsl-v2-ts-twin/py_dsl_v2_dump.py. None are referenced by src/ or by the default
 `npm run verify:fast` path — Loop 6 should decide whether to keep them as a reusable twin-audit
-script or fold them into `.loop/` cleanup.
+script or fold them into `.craft/` cleanup.
 
 executor: loop-medium model=sonnet tier=medium

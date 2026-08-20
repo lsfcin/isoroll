@@ -1,6 +1,6 @@
 // T7 — oracle unit tests for the assembler seams: rotateCw, validate, massing, pieceFor, planScene.
 // Oracle values cross-checked against the Python twins (layout_parse.py / layout_massing.py /
-// scene_assemble.py) run directly against the fixtures below — see .loop/ts-assembler/4a-tests.md.
+// scene_assemble.py) run directly against the fixtures below — see .craft/ts-assembler/4a-tests.md.
 import { describe, expect, it } from "vitest";
 
 import { massing } from "../../src/assemble/massing";

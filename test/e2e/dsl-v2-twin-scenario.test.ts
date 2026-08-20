@@ -1,4 +1,4 @@
-// Loop 5 (.loop/dsl-v2-ts-twin/5-user.md) — DSL v2 twin guarantee, scripted end-to-end scenario.
+// Loop 5 (.craft/dsl-v2-ts-twin/5-user.md) — DSL v2 twin guarantee, scripted end-to-end scenario.
 // NOT a permanent unit test: lives in test/e2e/ so vitest.config.ts's default
 // include (test/unit/**/*.test.ts) never picks it up in `npm run verify:fast`.
 //
@@ -30,7 +30,7 @@ import type { TileDoc } from "../../src/walls";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, "..", "unit", "assets", "dsl-v2");
 const PY = "/mnt/workspace/.venv/bin/python3";
-const ORACLE = join(HERE, "..", "..", ".loop", "dsl-v2-ts-twin", "py_dsl_v2_dump.py");
+const ORACLE = join(HERE, "..", "..", ".craft", "dsl-v2-ts-twin", "py_dsl_v2_dump.py");
 
 const FIXTURE_NAMES = [
   "dsl_v2_groups",

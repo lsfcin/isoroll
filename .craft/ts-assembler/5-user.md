@@ -21,10 +21,10 @@ public facade `src/assemble/index.ts` (nothing in the suite had imported it befo
 test reached into internal modules directly) — parse the layout, then assemble all four views
 (SW/SE/NE/NW) with `planScene`, and expect the piece counts, piece-name histograms, and axis
 choices to match what the actual Python pipeline computes on the byte-identical fixture.
-script: test/unit/assemble-scenario.test.ts (oracle: .loop/ts-assembler/scripts/oracle_twin_room.py)
+script: test/unit/assemble-scenario.test.ts (oracle: .craft/ts-assembler/scripts/oracle_twin_room.py)
 run: `npx vitest run test/unit/assemble-scenario.test.ts` then `npm run verify:fast` then `npm run build`
 observed:
-  - Oracle (`python3 .loop/ts-assembler/scripts/oracle_twin_room.py`, real layout_parse.py/
+  - Oracle (`python3 .craft/ts-assembler/scripts/oracle_twin_room.py`, real layout_parse.py/
     layout_massing.py/scene_assemble.py against test/unit/assets/twin-room.txt): SW 38 placements
     {floor:8,wall:27,window_v:2,door_v:1}; SE 36 {floor:6,wall:27,window_u:2,door_u:1}; NE 38
     {floor:8,wall:27,window_v:2,door_v:1}; NW 36 {floor:6,wall:27,window_u:2,door_u:1}. Floor count
@@ -46,7 +46,7 @@ all four views, reproduces the Python oracle's piece counts and axis choices exa
 tie-rule case (T-junction) and an asymmetric-geometry case (view-dependent floor merge count) that
 no prior unit or golden test exercised; verify:fast and build both stay green.
 touched: test/unit/assemble-scenario.test.ts (new), test/unit/assets/twin-room.txt (new fixture),
-.loop/ts-assembler/scripts/oracle_twin_room.py (new, oracle script), .loop/ts-assembler/scripts/
+.craft/ts-assembler/scripts/oracle_twin_room.py (new, oracle script), .craft/ts-assembler/scripts/
 oracle_twin_room_output.json (new, raw oracle transcript).
 
 executor: loop-medium model=sonnet tier=medium

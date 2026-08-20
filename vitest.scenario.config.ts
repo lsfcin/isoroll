@@ -1,4 +1,4 @@
-// Loop 5 (.loop/dsl-v2-ts-twin) — scratch config to run the DSL v2 twin user-scenario script,
+// Loop 5 (.craft/dsl-v2-ts-twin) — scratch config to run the DSL v2 twin user-scenario script,
 // which intentionally lives outside vitest.config.ts's default include (test/unit/**/*.test.ts)
 // so it never runs as part of `npm run verify:fast`. Delete after Loop 5/6 unless kept for reuse.
 import { defineConfig } from "vitest/config";

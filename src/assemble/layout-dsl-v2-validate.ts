@@ -1,4 +1,4 @@
-// T4 (dsl-v2-ts-twin, .loop/dsl-v2-ts-twin/3-arch.md) — DSL v2 grid + group validation, split
+// T4 (dsl-v2-ts-twin, .craft/dsl-v2-ts-twin/3-arch.md) — DSL v2 grid + group validation, split
 // out of layout-dsl-v2.ts to stay under the project's per-file line cap (3-arch.md T4 note).
 // TS twin of layout_dsl_v2.py's _validate_level/_validate_groups/_touches_wall. Imports from
 // ./types + ./layout-groups only (never from ./layout-dsl-v2 -> no cycle, one-directional).

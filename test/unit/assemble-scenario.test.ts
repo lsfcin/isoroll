@@ -3,7 +3,7 @@
 // test imports internal modules directly) across all four views. Piece counts and axis choices are
 // cross-checked against the real Python pipeline (layout_parse.py / layout_massing.py /
 // scene_assemble.py) run on the byte-identical fixture — oracle script + raw output logged in
-// .loop/ts-assembler/5-user.md.
+// .craft/ts-assembler/5-user.md.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,7 +20,7 @@ function loadKit(): KitMeta {
   return JSON.parse(readFileSync(join(ASSETS, "kit.json"), "utf-8")) as KitMeta;
 }
 
-// python3 .loop/ts-assembler/scripts/oracle_twin_room.py — real layout_parse.py/layout_massing.py/
+// python3 .craft/ts-assembler/scripts/oracle_twin_room.py — real layout_parse.py/layout_massing.py/
 // scene_assemble.py against the identical twin-room.txt. Full transcript in 5-user.md.
 const ORACLE: Record<View, { count: number; counter: Record<string, number> }> = {
   SW: { count: 38, counter: { floor: 8, wall: 27, window_v: 2, door_v: 1 } },

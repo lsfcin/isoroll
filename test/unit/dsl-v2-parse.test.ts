@@ -1,4 +1,4 @@
-// C1/C2 — TS twin parses the SAME DSL v2 fixtures as Python (.loop/dsl-v2-ts-twin/3-arch.md).
+// C1/C2 — TS twin parses the SAME DSL v2 fixtures as Python (.craft/dsl-v2-ts-twin/3-arch.md).
 // Oracle values cross-checked by running the Python twins offline (layout_dsl_v2.parse_text_v2)
 // against the fixtures copied verbatim into ./assets/dsl-v2/ — PIN-5. Error strings are asserted
 // EXACT per PIN-3 (Python `{ch!r}` single-quote repr, (col,row) order).

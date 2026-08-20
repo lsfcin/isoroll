@@ -29,8 +29,8 @@ extras (pre-existing-dirty, floor-fog-spike contamination):
   M  src/assemble/index.ts (T8 facade removed from scope due to interleaving with spike-floor load() concerns)
   M  src/walls/wall-types.d.ts
   M  src/walls/wall-types.ts
-  ?? .loop/floor-fog-spike/
-  ?? .loop/ts-assembler/6-ship.md
+  ?? .craft/floor-fog-spike/
+  ?? .craft/ts-assembler/6-ship.md
   ?? src/assemble/load.d.ts
   ?? src/assemble/load.ts
   ?? src/core/CONTEXT.md

@@ -14,11 +14,11 @@ suite runs with no pipeline and no network. Replace one only when the bake that 
 
 | File | Description |
 |------|-------------|
-| [`dsl-v2/dsl_v2_groups.txt`](dsl-v2/dsl_v2_groups.txt) | ← add first-line comment |
-| [`dsl-v2/dsl_v2_invalid_badincl.txt`](dsl-v2/dsl_v2_invalid_badincl.txt) | ← add first-line comment |
-| [`dsl-v2/dsl_v2_invalid_misplaced_r.txt`](dsl-v2/dsl_v2_invalid_misplaced_r.txt) | ← add first-line comment |
-| [`dsl-v2/dsl_v2_lroom.txt`](dsl-v2/dsl_v2_lroom.txt) | ← add first-line comment |
-| [`dsl-v2/dsl_v2_multilevel.txt`](dsl-v2/dsl_v2_multilevel.txt) | ← add first-line comment |
-| [`l-room.txt`](l-room.txt) | ← add first-line comment |
-| [`twin-room.txt`](twin-room.txt) | ← add first-line comment |
+| [`dsl-v2/dsl_v2_groups.txt`](dsl-v2/dsl_v2_groups.txt) | v2, valid: a level carrying GRP cells — the massing fixture, one box expected per group cell. |
+| [`dsl-v2/dsl_v2_invalid_badincl.txt`](dsl-v2/dsl_v2_invalid_badincl.txt) | v2, invalid on purpose: a stair whose `incl=3ft` is not a legal incline. Asserts the parser REJECTS. |
+| [`dsl-v2/dsl_v2_invalid_misplaced_r.txt`](dsl-v2/dsl_v2_invalid_misplaced_r.txt) | v2, invalid on purpose: an `R` cell where no ramp may sit. The second half of the reject pair. |
+| [`dsl-v2/dsl_v2_lroom.txt`](dsl-v2/dsl_v2_lroom.txt) | v2, valid: the L-room as one level, no groups, no errors — the twin-guarantee baseline against the Python parser. |
+| [`dsl-v2/dsl_v2_multilevel.txt`](dsl-v2/dsl_v2_multilevel.txt) | v2, valid: more than one `level:` block, so stacking and per-level z are exercised. |
+| [`l-room.txt`](l-room.txt) | v1: the L-shaped room, `wall_h: 3`. The golden fixture — its four baked PNGs here are what the pixel-diff compares against. |
+| [`twin-room.txt`](twin-room.txt) | v1: two rooms, `wall_h: 3`. The NOVEL layout for scenario tests, deliberately not l-room so a pass cannot come from the golden. |
 <!-- routing:end -->

@@ -15,7 +15,7 @@
 
 Manifest wall anchors are **scene-grid-normalized** (over the full cols×rows layout), distinct
 from the module's per-tile IMAGE-normalized `WallDef` space. `import-walls.ts` bridges the two via
-`wall-coords.canvasToAnchor` — see `.loop/module-walls-import/3-arch.md` Deferred #1.
+`wall-coords.canvasToAnchor` — see `.craft/module-walls-import/3-arch.md` Deferred #1.
 
 ## Routing
 

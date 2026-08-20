@@ -1,5 +1,5 @@
 // THROWAWAY spike e2e — measures floor-as-iso-tiles (proto a) vs background-regen (proto b) per
-// .loop/floor-fog-spike/3-arch.md. Self-contained by design: NOT imported by run.mjs, NOT part of
+// .craft/floor-fog-spike/3-arch.md. Self-contained by design: NOT imported by run.mjs, NOT part of
 // verify:full. Run directly: `node test/e2e/spike-floor.spec.mjs` against a live Foundry.
 // Whole spike (this file + src/spike-floor/ + the module.ts wire) is reverted at Loop 6.
 import assert from "node:assert/strict";

@@ -1,4 +1,4 @@
-// T3 (dsl-v2-ts-twin, .loop/dsl-v2-ts-twin/3-arch.md) — pure geometry helpers for sloped-surface
+// T3 (dsl-v2-ts-twin, .craft/dsl-v2-ts-twin/3-arch.md) — pure geometry helpers for sloped-surface
 // GROUPS (roofs/stairs), TS twin of layout_groups.py (ported from design/feel-rig/rig.frag
 // L184-199 vocab, L365-372 diagSolid, L423-443 grpBaseData/grpCellVoxels). Leaf runtime: imports
 // ONLY `import type { Group }` from ./types (type-only, erased -> no runtime edge).
