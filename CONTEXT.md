@@ -75,14 +75,14 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | Subdirectory | Description |
 |--------------|-------------|
-| [`refs/`](refs/CONTEXT.md) | Captured references for isoroll-module — tier-1 links in `refs/REFS.md`; promote… |
+| [`refs/`](refs/CONTEXT.md) | Captured references for isoroll-module — tier-1 links in `refs/REFS.md`; promote to `refs/<slug>.yaml` for deep study (schema: `academy/papers/*/refs/CONTEXT.md`). |
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
-| [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/… |
+| [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/ (Playwright headless Foundry, T2 regression specs). See workspace VERIFY.md. |
 
 | File | Description |
 |------|-------------|
 | [`ISSUES.md`](ISSUES.md) | isoroll-module — Issues |
-| [`ROADMAP.md`](ROADMAP.md) | Pending work only — a finished item is cut, not ticked; done work is deleted and… |
+| [`ROADMAP.md`](ROADMAP.md) | Pending work only — a finished item is cut, not ticked; done work is deleted and git is the history. See [SPECS.md](SPECS.md) for design decisions and [SETUP.md](SETUP.md) for dev setup. |
 | [`SETUP.md`](SETUP.md) | isoroll — Development Setup |
 | [`SPECS-decisions.md`](SPECS-decisions.md) | Every decision the module is built on, and what each one rules out. |
 | [`SPECS-practice.md`](SPECS-practice.md) | What bites when implementing against Foundry, and where each thing lives. |

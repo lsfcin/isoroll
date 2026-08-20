@@ -4,6 +4,10 @@
 <!-- routing:start -->
 ## Routing
 
+| Subdirectory | Description |
+|--------------|-------------|
+| [`assets/`](assets/CONTEXT.md) | — |
+
 | File | API | Description |
 |------|-----|-------------|
 | [`assemble-golden.test.ts`](assemble-golden.test.ts) | `loadKit` | T8 — C4 golden test: assembled l-room (4 views) pixel-diffs <=1% vs the Python-rendered PNGs. |

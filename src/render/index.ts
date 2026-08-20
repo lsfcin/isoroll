@@ -31,6 +31,7 @@ export { dumpTileRects, dumpStageMetrics } from "./iso-tile-rects";
 export type { TileRect, StageMetrics } from "./iso-tile-rects";
 export * from "./render-lifecycle";
 export { tileSlices } from "./iso-tile-renderer";
+export { EXPLORED_TINT } from "./fog-state";
 export {
   debugSlices,
   DEBUG_SLICES,

@@ -43,8 +43,8 @@ extras (pre-existing-dirty, floor-fog-spike contamination):
 
 roadmap: T8 (ROADMAP.md dsl-v2-ts-twin line) deliberately deferred — see leftovers.
 
-commit: (pending)
-pushed: (pending)
+commit: aad8dac (feat(dsl-v2-ts-twin): TS parser + massing + manifest twin for DSL v2 layouts)
+pushed: yes
 
 leftovers:
   T8 — facade index.ts re-export of layout-groups + layout-serialize, CONTEXT.md cross-reference, ROADMAP.md feature line — routed to P7a painter loop after floor-fog-spike resolution. Reason: src/assemble/index.ts facade edit conflicts with floor-fog spike's load() node:fs wrapping; defer facade update until spike branch lands and contamination can be cleanly separated.
