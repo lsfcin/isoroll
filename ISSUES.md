@@ -365,7 +365,7 @@ Clean.
 
 *promote when the work is green, or say which reason applies — /roundup Phase 5*
 
-- code/isoroll-module — feature/stub-backfill is 13 ahead of main
+- code/isoroll-module — feature/stub-backfill is 14 ahead of main
 
 ### Remote branches already merged into their base
 
