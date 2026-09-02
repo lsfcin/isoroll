@@ -378,7 +378,7 @@ Clean.
 
 *two machines share this workspace — push it, or give the repo a remote to push to: code/SPECS-git.md § Push policy*
 
-- code/isoroll-module — develop is 12 ahead of origin/develop
+- code/isoroll-module — develop is 13 ahead of origin/develop
 
 ### Local branches already merged into their base
 
