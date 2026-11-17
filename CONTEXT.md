@@ -79,17 +79,24 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
 | [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/ (Playwright headless Foundry, T2 regression specs). See workspace VERIFY.md. |
 
-| File | Description |
-|------|-------------|
-| [`ISSUES.md`](ISSUES.md) | isoroll-module — Issues |
-| [`ROADMAP.md`](ROADMAP.md) | Pending work only — a finished item is cut, not ticked; done work is deleted and git is the history. See [SPECS.md](SPECS.md) for design decisions and [SETUP.md](SETUP.md) for dev setup. |
-| [`SETUP.md`](SETUP.md) | isoroll — Development Setup |
-| [`SPECS-decisions.md`](SPECS-decisions.md) | Every decision the module is built on, and what each one rules out. |
-| [`SPECS-practice.md`](SPECS-practice.md) | What bites when implementing against Foundry, and where each thing lives. |
-| [`SPECS.md`](SPECS.md) | isoroll — Specs |
-| [`eslint.config.js`](eslint.config.js) | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
-| [`styles/isoroll.scss`](styles/isoroll.scss) | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
-| [`vite.config.ts`](vite.config.ts) | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
-| [`vitest.config.ts`](vitest.config.ts) | Vitest config — T1 unit tests for pure math modules (see workspace VERIFY.md). |
-| [`vitest.scenario.config.ts`](vitest.scenario.config.ts) | Loop 5 (.craft/dsl-v2-ts-twin) — scratch config to run the DSL v2 twin user-scenario script, |
+| File | Interface | Description |
+|------|-----------|-------------|
+| [`ISSUES.md`](ISSUES.md) | — | isoroll-module — Issues |
+| [`ROADMAP.md`](ROADMAP.md) | — | Pending work only — a finished item is cut, not ticked; done work is deleted and git is the history. See [SPECS.md](SPECS.md) for design decisions and [SETUP.md](SETUP.md) for dev setup. |
+| [`SETUP.md`](SETUP.md) | — | isoroll — Development Setup |
+| [`SPECS-decisions.md`](SPECS-decisions.md) | — | Every decision the module is built on, and what each one rules out. |
+| [`SPECS-practice.md`](SPECS-practice.md) | — | What bites when implementing against Foundry, and where each thing lives. |
+| [`SPECS.md`](SPECS.md) | — | isoroll — Specs |
+| [`eslint.config.js`](eslint.config.js) | [`eslint.config.d.ts`](eslint.config.d.ts) | ESLint flat config — TypeScript rules for isoroll-module; extends workspace shared rules (R1-R6). |
+| [`lang/en.json`](lang/en.json) | — | ← add first-line comment |
+| [`lang/pt-br.json`](lang/pt-br.json) | — | ← add first-line comment |
+| [`module.json`](module.json) | — | ← add first-line comment |
+| [`package-lock.json`](package-lock.json) | — | ← add first-line comment |
+| [`package.json`](package.json) | — | ← add first-line comment |
+| [`styles/isoroll.scss`](styles/isoroll.scss) | — | Global SCSS styles for isoroll-module — settings form, HUD, scene config tab |
+| [`tsconfig.declarations.json`](tsconfig.declarations.json) | — | ← add first-line comment |
+| [`tsconfig.json`](tsconfig.json) | — | ← add first-line comment |
+| [`vite.config.ts`](vite.config.ts) | [`vite.config.d.ts`](vite.config.d.ts) | Vite build config — bundles isoroll-module to FoundryVTT-compatible IIFE |
+| [`vitest.config.ts`](vitest.config.ts) | [`vitest.config.d.ts`](vitest.config.d.ts) | Vitest config — T1 unit tests for pure math modules (see workspace VERIFY.md). |
+| [`vitest.scenario.config.ts`](vitest.scenario.config.ts) | [`vitest.scenario.config.d.ts`](vitest.scenario.config.d.ts) | Loop 5 (.craft/dsl-v2-ts-twin) — scratch config to run the DSL v2 twin user-scenario script, |
 <!-- routing:end -->

@@ -13,8 +13,8 @@
 <!-- routing:start -->
 ## Routing
 
-| Shard | Description | Governs |
-|-------|-------------|---------|
+| Part | Description | Governs |
+|------|-------------|---------|
 | [`SPECS-decisions.md`](SPECS-decisions.md) | Every decision the module is built on, and what each one rules out. | src/ |
 | [`SPECS-practice.md`](SPECS-practice.md) | What bites when implementing against Foundry, and where each thing lives. | src/, test/ |
 <!-- routing:end -->

@@ -10,6 +10,14 @@
 
 ## Backlog
 
+- [ ] [spritefusion-normals] Assess normal-map lighting support and cost in Foundry, including projection and facing compatibility; coordinate with the content assessment. Ref: refs/REFS.md [spritefusion-normals].
+
+- [ ] [isoroll-environment-life] Compare one bounded environmental-life example with our geometry, sprite, animation and playback constraints before Lucas judges the achievable style. Ref: refs/REFS.md [isoroll-environment-life].
+
+- [ ] [anatomy] Assess Anatomy on one bounded isometric/temporal example, separating editable browser geometry from verified scene semantics, offline sprites and Foundry playback. Ref: refs/REFS.md [anatomy].
+
+- [ ] [web-motion] Assess web-motion preview/playback fit, preserving deterministic geometry and the offline sprite pipeline. Ref: refs/REFS.md [web-motion].
+
 - **[animater] Assess Animater** — compatibility with Isoroll projection, elevation, occlusion and asset requirements; refs/REFS.md (backlog).
 - **[modder-patterns] Assess Universal Modder** — transferable discovery, asset production, live-game verification and field-note patterns against our workflow; refs/REFS.md (backlog). Use reproducible Foundry fixtures.
 - **[object-brush] Compare the demonstrated object-brush controls** with the frozen painter grammar; identify compatible improvements for Lucas to choose; refs/REFS.md (backlog).
@@ -232,5 +240,6 @@ Stance switching exists but lacks system integration and manual override.
 
 ## Future — Animations 🔲 DEFERRED
 
-- Single-frame impact → fluid frame sequences
-- Frame naming: `{name}_{stance}_{facing}_{frame:04d}.{ext}`
+- Single-frame impact → fluid frame sequences; frame naming: `{name}_{stance}_{facing}_{frame:04d}.{ext}`
+- [ ] [pixelfx-foundry] Avaliar compatibilidade e performance dos efeitos/canvas do patch-gg/pixelfx no PIXI do Foundry VTT v14 (ref em refs/REFS.md).
+
