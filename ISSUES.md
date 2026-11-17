@@ -164,10 +164,10 @@ Fix is `_floor_cell_boxes`'s one loop; the goldens then need re-rendering from c
 | Header fields naming code that is not there | 0 |
 | Truncated routing descriptions | 0 |
 | Constraints trapped in a CONTEXT.md head | 2 |
-| Local branches holding unpromoted work | 5 |
+| Local branches holding unpromoted work | 6 |
 | Work that exists on this disk and nowhere else | 0 |
 | Local branches already merged into their base | 0 |
-| Remote branches already merged into their base | 1 |
+| Remote branches already merged into their base | 0 |
 
 *A check with no findings is the `0` in that table and nothing more. Only a check with something to show gets a section below.*
 
@@ -282,7 +282,7 @@ Fix is `_floor_cell_boxes`'s one loop; the goldens then need re-rendering from c
 
 *a closed item is deleted — cite the SPECS.md/SCHEMA.md section that owns the rule*
 
-- ISSUES.md: cites 'Front 17' (line 230).
+- ISSUES.md: cites 'Front 17' (line 285).
 
 ### Source files with no interface stub
 
@@ -350,15 +350,10 @@ Fix is `_floor_cell_boxes`'s one loop; the goldens then need re-rendering from c
 *promote when the work is green, or say which reason applies — /roundup Phase 5*
 
 - . — feature/b24-b20-wip is 2 ahead of main
+- . — feature/inbox-triage-20261016 is 1 ahead of main
 - . — feature/phase-1-depth-refinement is 2 ahead of main
 - . — feature/phase-6-roadmap-wip is 5 ahead of main
 - . — feature/token-visual-regrouping-wip is 2 ahead of main
 - . — refactor/phase-6-cleanup is 3 ahead of main
-
-### Remote branches already merged into their base
-
-*safe to delete, and outward-facing — `git -C <repo> push origin --delete <branch>`, Lucas*
-
-- . — 1 merged into main: git -C . push origin --delete feature/inbox-triage-20261016
 
 <!-- entropy:end -->

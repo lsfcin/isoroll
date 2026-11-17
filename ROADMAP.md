@@ -10,7 +10,9 @@
 
 ## Backlog
 
-- [ ] [spritefusion-normals] Assess normal-map lighting support and cost in Foundry, including projection and facing compatibility; coordinate with the content assessment. Ref: refs/REFS.md [spritefusion-normals].
+- [ ] [isoroll-2] Platform decision, staying on Foundry an explicit option. Spike, fixed timebox: same scene and assets, movement, occlusion, one moving light, in Foundry and in three.js; measure frame stability, load, memory and effort on the same phone and PC; estimate replacing Foundry's persistence and multiplayer. Candidates and techniques: refs/REFS.md (INBOX 2026-11). Goal: ../../brain/goals/rpg-isoroll.md.
+
+- [ ] [spritefusion-normals] Planned: 2D light shader over baked normal+depth maps (Undershine lead); check projection and facing; coordinate with the content task. Ref: refs/REFS.md [spritefusion-normals].
 
 - [ ] [isoroll-environment-life] Compare one bounded environmental-life example with our geometry, sprite, animation and playback constraints before Lucas judges the achievable style. Ref: refs/REFS.md [isoroll-environment-life].
 

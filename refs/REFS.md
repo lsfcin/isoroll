@@ -20,3 +20,9 @@
 - [V] [AFK Journey environmental animation](https://www.instagram.com/p/DeTHW7JAVjj/) — [src: web:instagram.com] Environmental animation inspiration; sampled frames do not verify loops; assessment: ../ROADMAP.md [isoroll-environment-life].
 - [PixelFX](https://github.com/patch-gg/pixelfx) — [src: web:instagram.com reel DfW9S0wjlTI via gittrend.io] 244 efeitos de combate/partículas 2D em canvas; avaliar compatibilidade de reprodução nativa no canvas PIXI do Foundry VTT v14 — assessment em ../ROADMAP.md [pixelfx-foundry].
 
+- [97 KB ocean world claim](https://lucassf.pages.dev/isoroll/ocean-97kb-post) — News carousel; likely clickbait; find the original, separate download size, memory, dependencies. [isoroll-2].
+- [One grass mesh per map](https://lucassf.pages.dev/isoroll/nostra-grass-post) — 37k quads bent by a vertex shader; perf technique, not a requirement. [isoroll-2].
+- [Estella](https://lucassf.pages.dev/isoroll/estella) — WASM+ECS engine, editor driven by agents; candidate only after maturity and mobile support check. [isoroll-2].
+- [Open-world three.js game](https://lucassf.pages.dev/isoroll/threejs-openworld-post) — Visual demo; needs phone perf evidence. [isoroll-2].
+- [Oil-paint browser game](https://lucassf.pages.dev/isoroll/oil-paint) — [post](https://lucassf.pages.dev/isoroll/oil-paint-post): "under an hour", 200 FPS; demo speed is not product cost. [isoroll-2].
+- [Undershine lighting](https://lucassf.pages.dev/isoroll/undershine-light-post) — Per-pixel wall+depth map lets a moving fire light walls. [spritefusion-normals].
