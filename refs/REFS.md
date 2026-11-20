@@ -1,5 +1,5 @@
 # References
-> Tier-1 capture: one line per ref. Promote to `<slug>.yaml` when a ref earns real study.
+> Level-1 capture: one line per ref. Promote to `<name>.yaml` when a ref earns real study.
 
 - [spritefusion-normals — Sprite Fusion](https://lucassf.pages.dev/isoroll/sprite-normals) — [src: web:instagram.com reel Det3bCRPqpP, sprite.fusion; github:Hugo-Dz/spritefusion-sprite-normals] Candidate sprite-lighting tool; inferred normals are not verified geometry. Assessment: ../ROADMAP.md [spritefusion-normals].
 
