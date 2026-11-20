@@ -10,8 +10,7 @@
     "noImplicitReturns": true,
     "outDir": "dist",
     "rootDir": "src",
-    "typeRoots": ["./node_modules/@league-of-foundry-developers/foundry-vtt-types/src"],
-    "types": []
+    "types": ["@league-of-foundry-developers/foundry-vtt-types"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

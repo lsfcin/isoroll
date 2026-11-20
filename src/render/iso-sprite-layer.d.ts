@@ -6,7 +6,6 @@ export declare const IsoSpriteLayer: {
     _onTick(): void;
     _onCanvasInit(): void;
     _teardown(): void;
-    _sort(): void;
     onCanvasReady(): void;
     onResetFogOfWar(): void;
     activate(): void;

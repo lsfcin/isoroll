@@ -27,7 +27,6 @@
 | [`preset/`](preset/CONTEXT.md) | Image preset system |
 | [`render/`](render/CONTEXT.md) | LayerManager — central PIXI layer registry |
 | [`occluder/`](occluder/CONTEXT.md) | Tile alpha occlusion |
-| [`sorter/`](sorter/CONTEXT.md) | Depth sort (dormant) |
 | [`resolver/`](resolver/CONTEXT.md) | Asset stance fallback |
 
 <!-- routing:start -->
@@ -46,7 +45,6 @@
 | [`preset/`](preset/CONTEXT.md) | Image preset system: auto-save and auto-apply per-tile/token/background image se |
 | [`render/`](render/CONTEXT.md) | Central PIXI layer registry for all isoroll overlay layers. |
 | [`resolver/`](resolver/CONTEXT.md) | Asset stance fallback chain for token sprite resolution. |
-| [`sorter/`](sorter/CONTEXT.md) | Depth sort for isometric z-ordering (dormant — not activated). |
 | [`tiles/`](tiles/CONTEXT.md) | Tile volume overlay (3D box + contour) and interactive gizmos (resize, elevation |
 | [`tokens/`](tokens/CONTEXT.md) | Token selection overlay (box, contour, handles, shadow) and always-visible indic |
 | [`transform/`](transform/CONTEXT.md) | Coordinate math, stage/object counter-transforms, HUD patches — no UI, no PIXI d |

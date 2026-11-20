@@ -27,6 +27,9 @@
 
 - **P6 floor/fog spike (`floor-fog-spike`)** 🔲 IN FLOW — evidence spike: floor-as-iso-tiles (merged strips) vs live background regen, measured for fog participation. Plan: `.craft/floor-fog-spike/1-plan.md`. Decision left OPEN for Lucas (☐ co-decide); resolves SCENE-CREATION § Floor/background.
 - **P7a — Painter MVP-1 (`painter-mvp-1`)** 🔲 IN FLOW — in-Foundry painter for the FROZEN grammar CORE (walls/floors/openings + slice + live re-assembly + auto WallDefs); MVP-2 (sloped groups / opacity-window / group-ops) deferred to a separate loop. Plan: `.craft/painter-mvp-1/1-plan.md`.
+- **Compass HUD** — N/S/E/W indicator on the iso canvas, to read direction (INBOX 2026-07).
+- **Vertical sight** — line of sight that accounts for elevation and height; no phase covers it (INBOX 2026-07).
+- **Foreground-tile checkbox** — decide keep or remove: is the Iso-tab checkbox still relevant (INBOX 2026-07)?
 - **Shadow params in presets** — shadow shape, radius, opacity, and enabled state should be included when saving/loading image presets for tiles and tokens. Currently presets only capture image transform fields.
 - **Assess Last Asylum for z-blocking** (INBOX 2026-08-01, ref in [refs/REFS.md](refs/REFS.md)) — Lucas flagged it as an isometric game that avoids z-blocking well. Look at it against **Phase 6** below and separate the two mechanisms it could be using: *authoring* discipline (level layout that never puts a tall occluder on a camera-near cell) versus *runtime* handling (cutaway walls, fade-on-overlap, per-slice sorting). Only the second is ours to copy; the first belongs to the painter grammar in `isoroll-content`. Scoping pass, not a build.
 
@@ -169,7 +172,7 @@ Remaining work:
 - [ ] Establish when O(n²) cycle detection becomes expensive.
 - [ ] If bands are viable, add the sort-band field to `src/ui/tile-config.ts`.
 
-Inspect `src/render/iso-tile-renderer.ts`, `src/render/iso-sprite-layer.ts`, `src/sorter/depth-sorter.ts` and projection parameters in `src/transform/`; the isometric-perspective fork's `assignTileDepths()` / `computeTokenEntries()` remain comparison leads.
+Inspect `src/render/iso-tile-renderer.ts`, `src/render/iso-sprite-layer.ts` and projection parameters in `src/transform/`; the isometric-perspective fork's `assignTileDepths()` / `computeTokenEntries()` remain comparison leads, as does the stable tiebreaker in tag `archive/feature/phase-1-depth-refinement`.
 
 ---
 

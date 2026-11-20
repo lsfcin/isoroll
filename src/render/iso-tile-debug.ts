@@ -8,7 +8,6 @@ import {
   drawCellLabels,
   makeText,
 } from "./iso-tile-debug-paint";
-import { drawCellMarkers } from "./iso-tile-debug-cells";
 
 type Mesh = PIXI.DisplayObject & {
   texture?: PIXI.Texture;
@@ -81,7 +80,6 @@ export function drawSliceDebug(p: SliceDebugParams, layer: PIXI.Container): void
   drawFrontierDots(id, frontierWorldPts, layer, debugWorldContainers);
   const wc = debugWorldContainers.get(id);
   if (wc) {
-    drawCellMarkers(wc, p);
     drawCellLabels(wc, p, snapX, snapY, gridC0, gridR0);
   }
   drawSliceOutlines(con, p, fw, ax, ay, fh, sx, sy, tid);

@@ -59,7 +59,6 @@ isoroll-module/          ← this repo (public, Foundry module)
     preset/              preset-types, preset-storage, preset-ops, preset-apply,
                          preset-diff, preset-upsert, preset-manager
     render/              layer-manager
-    sorter/              depth-sorter
     occluder/            occluder
     resolver/            asset-resolver
     flags.ts             module-level flag helpers

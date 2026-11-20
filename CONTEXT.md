@@ -9,7 +9,7 @@
 
 - Enable per scene: Scene Config → Basics → "Enable Isoroll" checkbox
 - Build: `npm run build` → symlink at `/home/lucas/foundrydata-v14/Data/modules/isoroll`
-- Start server `node /home/lucas/FoundryVTT/resources/app/main.js --dataPath=/home/lucas/foundrydata-v14 > /tmp/foundry.log 2>&1 &`
+- Start server `node /home/lucas/FoundryVTT/resources/app/main.js --dataPath=/home/lucas/foundrydata-v14 --world=isoroll-test > /tmp/foundry.log 2>&1 &`
 - Foundry running at `http://localhost:30000/game`
 - Source code: `src/` — see [`src/CONTEXT.md`](src/CONTEXT.md) for full source map
 
@@ -58,7 +58,6 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 ## Known Limitations
 
 - Token rotation: v14 auto-facing suppressed for undistorted tokens; 8-directional sprite selection not yet implemented (placeholder in `object-transform.ts`)
-- Depth sort: `DepthSorter` class exists but is not activated — see ROADMAP
 - `setFlag` not triggering `refreshTile` → [ISSUES B25](ISSUES.md)
 
 > Implementation gotchas (hidden invariants, Foundry quirks) → [SPECS-practice.md](SPECS-practice.md)
