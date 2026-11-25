@@ -2,6 +2,8 @@
 > Level-1 capture: one line per ref. Promote to `<name>.yaml` when a ref earns real study.
 
 - [spritefusion-normals — Sprite Fusion](https://lucassf.pages.dev/isoroll/sprite-normals) — [src: web:instagram.com reel Det3bCRPqpP, sprite.fusion; github:Hugo-Dz/spritefusion-sprite-normals] Candidate sprite-lighting tool; inferred normals are not verified geometry. Assessment: ../ROADMAP.md [spritefusion-normals].
+- [Pixel Art Lighter](https://www.moonfell-rpg.com/pixel-lighter) — [src: web:moonfell-rpg.com; instagram.com/moonfell_rpg] Normal/light-mask editing and moving-light preview; [reel](https://www.instagram.com/reel/Dfa3hBGvH9q/). Shader/input assessment: [ROADMAP](../ROADMAP.md) [spritefusion-normals].
+- [Diorama](https://github.com/sloemo01/diorama) — [src: github:sloemo01/diorama; instagram.com] Procedural Three.js scene/animation and frame-check candidate; [reel](https://www.instagram.com/reel/DfEdYDOiIoq/). Compare actual runtime costs in [ROADMAP](../ROADMAP.md) [isoroll-2]; offline lane: ../../isoroll-content/ROADMAP.md [diorama].
 
 ## Technique — occlusion & depth sorting
 
