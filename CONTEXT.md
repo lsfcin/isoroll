@@ -74,7 +74,7 @@ Dimetric 2:1 applied to `canvas.app.stage`:
 
 | Subdirectory | Description |
 |--------------|-------------|
-| [`refs/`](refs/CONTEXT.md) | Captured references for isoroll-module — tier-1 links in `refs/REFS.md`; promote to `refs/<slug>.yaml` for deep study (schema: `academy/papers/*/refs/CONTEXT.md`). |
+| [`refs/`](refs/CONTEXT.md) | Captured references for isoroll-module — level-1 links in `refs/REFS.md`; promote to `refs/<name>.yaml` for deep study (schema: `academy/papers/*/refs/CONTEXT.md`). |
 | [`src/`](src/CONTEXT.md) | All TypeScript source for isoroll-module. Entry point: module.ts. |
 | [`test/`](test/CONTEXT.md) | Verification suites: unit/ (vitest+fast-check, T1 pure math) and e2e/ (Playwright headless Foundry, T2 regression specs). See workspace VERIFY.md. |
 
