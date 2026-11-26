@@ -17,7 +17,7 @@ Start the server **with the world** — without `--world` there is no `/join` pa
 never appears:
 
 ```bash
-node ~/FoundryVTT/resources/app/main.js --dataPath=$HOME/foundrydata-v14 --world=isoroll-test &
+npm run foundry    # stops itself after 4 h; npm run foundry:stop to end it sooner
 npm run build      # dist must be current; the browser loads dist/module.js, not src/
 ```
 

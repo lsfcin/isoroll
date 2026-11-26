@@ -9,7 +9,7 @@
 
 - Enable per scene: Scene Config → Basics → "Enable Isoroll" checkbox
 - Build: `npm run build` → symlink at `/home/lucas/foundrydata-v14/Data/modules/isoroll`
-- Start server `node /home/lucas/FoundryVTT/resources/app/main.js --dataPath=/home/lucas/foundrydata-v14 --world=isoroll-test > /tmp/foundry.log 2>&1 &`
+- Start server `npm run foundry` — a systemd unit that stops itself after 4 h, never a bare `&`; log: `journalctl --user -u isoroll-foundry`; stop: `npm run foundry:stop`
 - Foundry running at `http://localhost:30000/game`
 - Source code: `src/` — see [`src/CONTEXT.md`](src/CONTEXT.md) for full source map
 

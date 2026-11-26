@@ -10,6 +10,8 @@
     "test": "vitest run",
     "verify:fast": "npm run lint && vitest run",
     "verify:full": "npm run verify:fast && npm run build && node test/e2e/run.mjs",
+    "foundry": "systemd-run --user --unit=isoroll-foundry --collect -p RuntimeMaxSec=4h node $HOME/FoundryVTT/resources/app/main.js --dataPath=$HOME/foundrydata-v14 --world=isoroll-test",
+    "foundry:stop": "systemctl --user stop isoroll-foundry",
     "format": "prettier --write src/**/*.ts styles/**/*.scss"
   },
   "devDependencies": {

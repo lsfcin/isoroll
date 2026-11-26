@@ -34,7 +34,7 @@ try {
   ({ browser, page } = await connect());
 } catch (e) {
   console.error(`Cannot reach Foundry at ${BASE_URL} — start it first:`);
-  console.error("  node ~/FoundryVTT/resources/app/main.js --dataPath=$HOME/foundrydata-v14 &");
+  console.error("  npm run foundry   (stops itself after 4 h)");
   console.error(String(e.message ?? e));
   process.exit(2);
 }
